@@ -92,6 +92,7 @@ export const getProducts = async (req, res) => {
         const {
             category,
             subCategory,
+            childCategory,
             search,
             isNew,
             isBestSeller,
@@ -106,8 +107,9 @@ export const getProducts = async (req, res) => {
         const query = { isAvailable: true };
 
         // Filters
-        if (category) query.category = category;
-        if (subCategory) query.subCategory = subCategory;
+        if (category) query.category = { $regex: new RegExp(`^${category}$`, 'i') };
+        if (subCategory) query.subCategory = { $regex: new RegExp(`^${subCategory}$`, 'i') };
+        if (childCategory) query.childCategory = { $regex: new RegExp(`^${childCategory}$`, 'i') };
         if (isNew === 'true') query.isNew = true;
         if (isBestSeller === 'true') query.isBestSeller = true;
         if (isOnSale === 'true') query.isOnSale = true;

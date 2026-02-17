@@ -6,10 +6,13 @@ import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, '../../uploads/inmart');
+// Ensure uploads directory exists - correctly relative to backend root
+const uploadsDir = path.join(__dirname, '../../../../uploads/inmart');
 if (!fs.existsSync(uploadsDir)) {
+    console.log('📂 Creating uploads directory at:', uploadsDir);
     fs.mkdirSync(uploadsDir, { recursive: true });
+} else {
+    console.log('📂 Uploads directory exists at:', uploadsDir);
 }
 
 // Configure storage
@@ -47,8 +50,10 @@ export const upload = multer({
 
 // Upload controller
 export const uploadImage = async (req, res) => {
+    console.log('📤 Image upload request received');
     try {
         if (!req.file) {
+            console.warn('⚠️ No file in upload request');
             return res.status(400).json({
                 success: false,
                 message: 'No file uploaded'
@@ -56,6 +61,7 @@ export const uploadImage = async (req, res) => {
         }
 
         const imageUrl = `/uploads/inmart/${req.file.filename}`;
+        console.log('✅ Image uploaded to:', imageUrl);
 
         res.status(200).json({
             success: true,

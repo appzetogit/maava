@@ -114,60 +114,49 @@ export default function ProductCategoryView({
                     {/* Product Grid */}
                     <div className="grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 p-2 sm:p-4 gap-y-6 sm:gap-y-10 gap-x-2.5 sm:gap-x-6">
                         {products.map((product) => (
-                            <div key={product.id} className="flex flex-col group relative w-full bg-white rounded-2xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-gray-100 h-full">
+                            <div key={product.id || product._id} className="flex flex-col group relative w-full bg-white rounded-[2.5rem] overflow-hidden shadow-xl shadow-neutral-200/20 border border-neutral-100 h-full p-2 sm:p-3 hover:border-black transition-all">
                                 {/* Image Container */}
-                                <div className="relative aspect-square w-full bg-[#F5F5F5] flex items-center justify-center p-2 overflow-hidden">
-                                    <img src={product.image} alt={product.name} className="w-[85%] h-[85%] object-contain transition-transform duration-500 group-hover:scale-110" />
+                                <div className="relative aspect-square w-full bg-[#F8F9FA] rounded-[2rem] flex items-center justify-center p-3 overflow-hidden">
+                                    <img src={product.image || "https://via.placeholder.com/200"} alt={product.name} className="w-[85%] h-[85%] object-contain transition-transform duration-700 group-hover:scale-110" />
 
-                                    {/* Discount Badge - Top Left */}
-                                    <div className="absolute top-1 left-1 z-10 scale-[0.8] sm:scale-90 origin-top-left">
-                                        <div className="relative">
-                                            <svg width="42" height="42" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-md">
-                                                <path d="M24 0L27.9 5.7L34.5 4.5L36.3 11.1L42.9 12.9L41.7 19.5L47.4 23.4L41.7 27.3L42.9 33.9L36.3 35.7L34.5 42.3L27.9 41.1L24 46.8L20.1 41.1L13.5 42.3L11.7 35.7L5.1 33.9L6.3 27.3L0.6 23.4L6.3 19.5L5.1 12.9L11.7 11.1L13.5 4.5L20.1 5.7L24 0Z" fill="#8B5CF6" />
-                                            </svg>
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center text-white leading-none">
-                                                <span className="text-[10px] font-black">{product.discount?.replace('% OFF', '')}</span>
-                                                <span className="text-[7px] font-black uppercase">OFF</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* New Tag - Top Right */}
-                                    {product.isNew && (
-                                        <div className="absolute top-2 right-2 z-10 bg-[#FF5C5C] text-white text-[9px] font-black px-2 py-0.5 rounded-md shadow-sm border border-white/20">
-                                            NEW
+                                    {/* Sunburst Discount Badge matching Screenshot 2 */}
+                                    {product.discount && (
+                                        <div className="absolute top-2 left-2 z-20 w-8 h-8 flex items-center justify-center">
+                                            <div className="absolute inset-0 bg-[#7B61FF] rotate-[22.5deg] rounded-lg shadow-sm" />
+                                            <div className="absolute inset-0 bg-[#7B61FF] rotate-[67.5deg] rounded-lg shadow-sm" />
+                                            <span className="relative z-30 text-[7px] font-black text-white leading-tight text-center px-1 uppercase whitespace-pre-line">
+                                                {product.discount.split(' ').join('\n')}
+                                            </span>
                                         </div>
                                     )}
 
                                     {/* Ad Tag & Veg Icon */}
-                                    <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1.5 bg-white/70 backdrop-blur-md rounded px-1.5 py-0.5">
-                                        {product.isAd && <span className="text-[8px] sm:text-[9px] font-black text-gray-700 uppercase tracking-tighter">Ad</span>}
-                                        {product.isVeg && (
-                                            <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 border border-green-600 flex items-center justify-center p-[0.5px] bg-white rounded-sm">
-                                                <div className="w-full h-full bg-green-600 rounded-full" />
-                                            </div>
-                                        )}
+                                    <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-white/95 backdrop-blur-md rounded-lg px-2 py-0.5 border border-neutral-100 shadow-sm">
+                                        <span className="text-[7px] sm:text-[8px] font-black text-[#101828] uppercase tracking-tighter">AD</span>
+                                        <div className="w-[10px] h-[10px] sm:w-3 sm:h-3 border border-emerald-500 flex items-center justify-center p-[0.5px] bg-white rounded-full">
+                                            <div className="w-1 h-1 bg-emerald-500 rounded-full" />
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Info Container */}
-                                <div className="p-3 flex flex-col flex-1">
+                                <div className="px-2 pt-3 pb-2 flex flex-col flex-1">
                                     <div className="flex-1 space-y-1">
-                                        <div className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-wider">{product.deliveryTime}</div>
-                                        <h3 className="text-[14px] font-[800] text-[#101828] line-clamp-2 leading-[1.3] tracking-tight min-h-[36px]">
+                                        <div className="text-[8px] sm:text-[9px] font-black text-neutral-400 uppercase tracking-widest">{product.deliveryTime || '10 MINS'}</div>
+                                        <h3 className="text-[13px] sm:text-[14px] font-bold text-[#101828] line-clamp-2 leading-[1.2] tracking-tight min-h-[34px]">
                                             {product.name}
                                         </h3>
-                                        <p className="text-[11px] font-bold text-slate-500">
-                                            {product.weight}
+                                        <p className="text-[10px] sm:text-[11px] font-bold text-neutral-400">
+                                            {product.weight || '1 unit'}
                                         </p>
                                     </div>
 
                                     {/* Price and Add Button */}
-                                    <div className="mt-3 flex items-center justify-between gap-2">
+                                    <div className="mt-4 pt-2 flex items-center justify-between gap-2 border-t border-neutral-50/10">
                                         <div className="flex flex-col">
-                                            <span className="text-base font-black text-[#101828] leading-none">₹{product.price}</span>
-                                            {product.originalPrice && (
-                                                <span className="text-[11px] text-slate-400 line-through font-bold mt-0.5">₹{product.originalPrice}</span>
+                                            <span className="text-[15px] font-black text-[#101828] leading-none">₹{product.price}</span>
+                                            {product.originalPrice && product.originalPrice !== product.price && (
+                                                <span className="text-[11px] text-neutral-300 line-through font-bold mt-1">₹{product.originalPrice}</span>
                                             )}
                                         </div>
                                         <AddToCartButton

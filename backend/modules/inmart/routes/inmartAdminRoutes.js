@@ -16,6 +16,10 @@ import {
     createStore,
     updateStore,
     deleteStore,
+    getAllBanners,
+    createBanner,
+    updateBanner,
+    deleteBanner,
     getDashboardStats
 } from '../controllers/inmartAdminController.js';
 import { upload, uploadImage } from '../controllers/uploadController.js';
@@ -63,5 +67,14 @@ router.route('/stores')
 router.route('/stores/:id')
     .put(updateStore)
     .delete(deleteStore);
+
+// Banners
+router.route('/banners')
+    .get(getAllBanners)
+    .post(createBanner);
+
+router.route('/banners/:id')
+    .put(updateBanner)
+    .delete(deleteBanner);
 
 export default router;

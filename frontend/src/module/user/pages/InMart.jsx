@@ -234,6 +234,17 @@ export default function InMart() {
   })
   const [isLoading, setIsLoading] = useState(true)
   const [apiError, setApiError] = useState(null)
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0)
+
+  // Auto-scroll banners
+  useEffect(() => {
+    if (apiData.banners && apiData.banners.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentBannerIndex((prev) => (prev + 1) % apiData.banners.length);
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [apiData.banners]);
 
   // Fetch InMart data from API
   useEffect(() => {
@@ -566,23 +577,55 @@ export default function InMart() {
           </section>
         </div>
 
-        {/* Banner Section */}
-        <section className="relative z-20 w-full px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6">
-          <div className="max-w-7xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className="w-full rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-xl border border-purple-100 dark:border-white/10 bg-[#F3E8FF]"
-            >
-              <img
-                src={promoBanner}
-                alt="Zepto Promo Banner"
-                className="w-full h-auto object-cover block"
-              />
-            </motion.div>
-          </div>
-        </section>
+        {/* Banner Carousel Section */}
+        {apiData.banners && apiData.banners.length > 0 && (
+          <section className="relative z-20 w-full px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6 overflow-hidden">
+            <div className="max-w-7xl mx-auto relative group">
+              <div className="relative overflow-hidden rounded-2xl sm:rounded-[2.5rem] shadow-2xl border border-purple-100 dark:border-white/10 bg-[#F3E8FF] aspect-[21/9] sm:aspect-[24/10]">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentBannerIndex}
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -50 }}
+                    transition={{ duration: 0.6, ease: "easeInOut" }}
+                    className="absolute inset-0 w-full h-full cursor-pointer"
+                    onClick={() => apiData.banners[currentBannerIndex].linkUrl && (window.location.href = apiData.banners[currentBannerIndex].linkUrl)}
+                  >
+                    <img
+                      src={apiData.banners[currentBannerIndex].imageUrl || apiData.banners[currentBannerIndex].image}
+                      alt={apiData.banners[currentBannerIndex].title || "Promo Banner"}
+                      className="w-full h-full object-cover block"
+                    />
+
+                    {/* Optional Overlay for better text visibility if we ever add text */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+                  </motion.div>
+                </AnimatePresence>
+
+                {/* Indicators/Dots */}
+                {apiData.banners.length > 1 && (
+                  <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-30">
+                    {apiData.banners.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentBannerIndex(idx);
+                        }}
+                        className={`transition-all duration-300 rounded-full ${currentBannerIndex === idx
+                          ? "w-6 sm:w-8 h-1.5 sm:h-2 bg-white"
+                          : "w-1.5 sm:w-2 h-1.5 sm:h-2 bg-white/50 hover:bg-white/80"
+                          }`}
+                        aria-label={`Go to banner ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Special Price Interactive Banner */}
         <section className="relative z-20 w-full px-4 sm:px-6 lg:px-8 xl:px-12 mt-4 sm:mt-6 md:mt-8">
@@ -765,38 +808,71 @@ export default function InMart() {
             themeColor={activeCategoryData.themeColor}
           />
 
-          {/* Dynamic Category Sections */}
-          {!isLoading && apiData.categories && apiData.categories.map((category) => (
-            <section key={category._id || category.slug} className="mb-12">
-              <div className="bg-white dark:bg-white/5 rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-7 md:p-8 lg:p-10 shadow-[0_4px_25px_rgba(0,0,0,0.03)] border border-gray-100/50 dark:border-white/5">
-                <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-8 px-1">
-                  {category.name}
-                </h2>
-                <div className="grid grid-cols-4 gap-2 sm:gap-4 md:gap-6 lg:gap-8">
-                  {(category.subCategories || []).map((subCat) => (
-                    <Link key={subCat.id || subCat.slug} to={`/in-mart/products/${subCat.slug || subCat.id}`}>
-                      <motion.div
-                        whileHover={{ y: -3 }}
-                        className="flex flex-col items-center gap-1 group cursor-pointer"
-                      >
-                        <div className="w-full aspect-square bg-[#F5F9FF] dark:bg-white/5 rounded-xl sm:rounded-2xl md:rounded-3xl overflow-hidden p-0 flex items-center justify-center transition-all group-hover:shadow-sm">
-                          <img
-                            src={subCat.image || "https://via.placeholder.com/200"}
-                            alt={subCat.name}
-                            className="w-full h-full object-cover transform transition-transform duration-500 group-hover:scale-105"
-                            style={{ background: 'transparent' }}
-                          />
-                        </div>
-                        <span className="text-[10px] sm:text-xs md:text-sm lg:text-base font-bold text-gray-800 dark:text-gray-200 text-center leading-tight pt-1 px-1">
-                          {subCat.name}
-                        </span>
-                      </motion.div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </section>
-          ))}
+          {/* Fixed Main Category Sections matching User Request */}
+          {!isLoading && apiData.categories && (
+            <div className="space-y-12">
+              {[
+                { id: 'grocery', title: 'Grocery & Kitchen' },
+                { id: 'snacks', title: 'Snacks & Drinks' },
+                { id: 'beauty', title: 'Beauty & Wellness' },
+                { id: 'household', title: 'Household & Lifestyle' }
+              ].map((header) => {
+                // More flexible matching for root categories
+                const rootCategory = apiData.categories.find(c => {
+                  const s = c.slug?.toLowerCase() || "";
+                  const n = c.name?.toLowerCase() || "";
+                  const id = header.id.toLowerCase();
+
+                  return s === id ||
+                    s.includes(id) ||
+                    n.includes(id) ||
+                    (id === 'grocery' && (s.includes('kitchen') || n.includes('kitchen'))) ||
+                    (id === 'snacks' && (s.includes('drinks') || n.includes('drinks'))) ||
+                    (id === 'beauty' && (s.includes('wellness') || n.includes('wellness'))) ||
+                    (id === 'household' && (s.includes('lifestyle') || n.includes('lifestyle')));
+                });
+
+                if (!rootCategory || !rootCategory.subCategories.length) return null;
+
+                return (
+                  <section key={header.id} className="w-full">
+                    <div className="flex items-center justify-between mb-6 px-1">
+                      <h2 className="text-xl sm:text-2xl md:text-[23px] font-black text-[#1F2937] tracking-tight">
+                        {header.title}
+                      </h2>
+                    </div>
+
+                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4 md:gap-5">
+                      {rootCategory.subCategories.map((subCat) => (
+                        <Link
+                          key={subCat.id || subCat.slug}
+                          to={`/in-mart/products/${subCat.slug || subCat.id}`}
+                          className="group"
+                        >
+                          <motion.div
+                            whileHover={{ y: -4 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                            className="flex flex-col items-center gap-2"
+                          >
+                            <div className="w-full aspect-square bg-[#ECF3FF] rounded-[2rem] overflow-hidden p-2 flex items-center justify-center transition-all group-hover:shadow-xl group-hover:shadow-blue-900/10">
+                              <img
+                                src={subCat.image || "https://via.placeholder.com/200"}
+                                alt={subCat.name}
+                                className="w-[85%] h-[85%] object-contain transform transition-transform duration-700 group-hover:scale-110"
+                              />
+                            </div>
+                            <span className="text-[10px] sm:text-[11px] md:text-[12px] font-bold text-[#1F2937] text-center leading-[1.2] pt-1 px-1 line-clamp-2">
+                              {subCat.name}
+                            </span>
+                          </motion.div>
+                        </Link>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
+          )}
 
 
           {/* Trending Near You Section */}

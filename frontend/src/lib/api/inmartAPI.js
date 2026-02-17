@@ -306,6 +306,58 @@ export const adminDeleteCollection = async (id) => {
 };
 
 /**
+ * Admin: Get all banners
+ */
+export const adminGetAllBanners = async () => {
+    try {
+        const response = await api.get('/admin/inmart/banners');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching admin banners:', error);
+        throw error;
+    }
+};
+
+/**
+ * Admin: Create banner
+ */
+export const adminCreateBanner = async (bannerData) => {
+    try {
+        const response = await api.post('/admin/inmart/banners', bannerData);
+        return response.data;
+    } catch (error) {
+        console.error('Error creating banner:', error);
+        throw error;
+    }
+};
+
+/**
+ * Admin: Update banner
+ */
+export const adminUpdateBanner = async (id, bannerData) => {
+    try {
+        const response = await api.put(`/admin/inmart/banners/${id}`, bannerData);
+        return response.data;
+    } catch (error) {
+        console.error('Error updating banner:', error);
+        throw error;
+    }
+};
+
+/**
+ * Admin: Delete banner
+ */
+export const adminDeleteBanner = async (id) => {
+    try {
+        const response = await api.delete(`/admin/inmart/banners/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error deleting banner:', error);
+        throw error;
+    }
+};
+
+/**
  * Admin: Upload image
  */
 export const uploadImage = async (formData) => {
@@ -348,5 +400,9 @@ export default {
     adminCreateCollection,
     adminUpdateCollection,
     adminDeleteCollection,
+    adminGetAllBanners,
+    adminCreateBanner,
+    adminUpdateBanner,
+    adminDeleteBanner,
     uploadImage,
 };

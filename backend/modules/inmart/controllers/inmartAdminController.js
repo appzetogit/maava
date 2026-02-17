@@ -462,6 +462,110 @@ export const deleteStore = async (req, res) => {
     }
 };
 
+// ==================== BANNERS ====================
+
+// @desc    Get all banners
+// @route   GET /api/admin/inmart/banners
+// @access  Private/Admin
+export const getAllBanners = async (req, res) => {
+    try {
+        const banners = await InMartBanner.find().sort({ displayOrder: 1 });
+        res.status(200).json({
+            success: true,
+            count: banners.length,
+            data: { banners }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching banners',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Create banner
+// @route   POST /api/admin/inmart/banners
+// @access  Private/Admin
+export const createBanner = async (req, res) => {
+    console.log('📝 Create Banner Request:', req.body);
+    try {
+        const banner = await InMartBanner.create(req.body);
+        console.log('✅ Banner Created:', banner._id);
+        res.status(201).json({
+            success: true,
+            message: 'Banner created successfully',
+            data: { banner }
+        });
+    } catch (error) {
+        console.error('❌ Error creating banner:', error);
+        res.status(400).json({
+            success: false,
+            message: 'Error creating banner',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Update banner
+// @route   PUT /api/admin/inmart/banners/:id
+// @access  Private/Admin
+export const updateBanner = async (req, res) => {
+    try {
+        const banner = await InMartBanner.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
+
+        if (!banner) {
+            return res.status(404).json({
+                success: false,
+                message: 'Banner not found'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Banner updated successfully',
+            data: { banner }
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: 'Error updating banner',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Delete banner
+// @route   DELETE /api/admin/inmart/banners/:id
+// @access  Private/Admin
+export const deleteBanner = async (req, res) => {
+    try {
+        const banner = await InMartBanner.findByIdAndDelete(req.params.id);
+
+        if (!banner) {
+            return res.status(404).json({
+                success: false,
+                message: 'Banner not found'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Banner deleted successfully'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error deleting banner',
+            error: error.message
+        });
+    }
+};
+
 // ==================== DASHBOARD STATS ====================
 
 // @desc    Get InMart dashboard statistics

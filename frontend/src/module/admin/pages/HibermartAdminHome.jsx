@@ -623,7 +623,8 @@ export default function HibermartAdminHome() {
             }
         } catch (error) {
             console.error('Upload error:', error);
-            alert('Failed to upload image. Please try again.');
+            const errMsg = error.response?.data?.message || error.message || 'Failed to upload image';
+            alert(`Failed to upload image: ${errMsg}`);
         } finally {
             setIsUploading(false);
         }
@@ -673,35 +674,63 @@ export default function HibermartAdminHome() {
                 const products = productsRes.data.products;
 
                 // Transform backend categories to UI nested structure
-                const transformedCatalog = categories.map(cat => ({
-                    ...cat,
-                    id: cat.slug || cat._id,
-                    type: 'category',
-                    children: (cat.subCategories || []).map(sub => ({
-                        ...sub,
-                        id: sub.id || sub.slug || sub._id,
-                        type: 'category',
-                        children: (sub.children || []).map(child => {
-                            // Find products belonging to this child category
-                            const childProducts = products.filter(p =>
-                                p.category === cat.name &&
-                                p.subCategory === sub.name &&
-                                p.childCategory === child.name
-                            ).map(p => ({
-                                ...p,
-                                id: p._id || p.productId,
-                                type: 'product'
-                            }));
+                const transformedCatalog = categories.map(cat => {
+                    // Map known categories to fixed IDs for routing compatibility
+                    let uiId = cat.slug || cat._id;
+                    const normalizedName = cat.name.toLowerCase().trim();
 
-                            return {
-                                ...child,
-                                id: child.id || child.slug || child._id,
-                                type: 'category',
-                                children: childProducts
-                            };
-                        })
-                    }))
-                }));
+                    if (normalizedName.includes("grocery") || cat.slug.includes("grocery")) uiId = "grocery";
+                    else if (normalizedName.includes("household") || normalizedName.includes("lifestyle") || cat.slug.includes("household") || cat.slug.includes("lifestyle")) uiId = "household";
+                    else if (normalizedName.includes("beauty") || normalizedName.includes("wellness") || cat.slug.includes("beauty") || cat.slug.includes("wellness")) uiId = "beauty";
+                    else if (normalizedName.includes("snacks") || normalizedName.includes("drinks") || cat.slug.includes("snacks") || cat.slug.includes("drinks")) uiId = "snacks";
+
+                    const rootProducts = products.filter(p => p.category === cat.name && !p.subCategory).map(p => ({
+                        ...p, id: p._id || p.productId, type: 'product'
+                    }));
+
+                    return {
+                        ...cat,
+                        id: uiId,
+                        type: 'category',
+                        children: [
+                            ...(cat.subCategories || []).map(sub => {
+                                const subProducts = products.filter(p =>
+                                    p.category === cat.name &&
+                                    p.subCategory === sub.name &&
+                                    (!p.childCategory || p.childCategory === "")
+                                ).map(p => ({
+                                    ...p, id: p._id || p.productId, type: 'product'
+                                }));
+
+                                return {
+                                    ...sub,
+                                    id: sub.slug || sub.id || sub._id || `sub-${Math.random()}`,
+                                    type: 'category',
+                                    children: [
+                                        ...(sub.children || []).map(child => {
+                                            const childProducts = products.filter(p =>
+                                                p.category === cat.name &&
+                                                p.subCategory === sub.name &&
+                                                p.childCategory === child.name
+                                            ).map(p => ({
+                                                ...p, id: p._id || p.productId, type: 'product'
+                                            }));
+
+                                            return {
+                                                ...child,
+                                                id: child.slug || child.id || child._id || `child-${Math.random()}`,
+                                                type: 'category',
+                                                children: childProducts
+                                            };
+                                        }),
+                                        ...subProducts
+                                    ]
+                                };
+                            }),
+                            ...rootProducts
+                        ]
+                    };
+                });
 
                 setCatalogItems(transformedCatalog);
                 setTrendingItems(products.filter(p => p.isTrending));
@@ -749,8 +778,8 @@ export default function HibermartAdminHome() {
     const handleDeleteItem = async (item) => {
         try {
             if (activeTab === "banners") {
-                // Implement banner delete API if exists, or just filter for now
-                setBanners(prev => prev.filter(b => b.id !== item.id))
+                await inmartAPI.adminDeleteBanner(item._id || item.id);
+                fetchAllData();
             } else if (activeTab === "sale") {
                 // Handle sale item removal from collection
             } else if (["grocery", "beauty", "household", "snacks", "overview"].includes(activeTab)) {
@@ -790,41 +819,50 @@ export default function HibermartAdminHome() {
         const name = formData.get("name")
         const image = formData.get("image")
         const price = formData.get("price")
+        const originalPrice = formData.get("originalPrice")
         const weight = formData.get("weight")
         const discount = formData.get("discount")
         const time = formData.get("time")
 
         try {
             if (modalType === "banner") {
-                // Banner save logic
+                const bannerData = { name, image, link: formData.get("link"), isActive: true };
+                if (editingItem) {
+                    await inmartAPI.adminUpdateBanner(editingItem._id || editingItem.id, bannerData);
+                } else {
+                    await inmartAPI.adminCreateBanner(bannerData);
+                }
             } else if (modalType === "product") {
-                // Determine which collection this product belongs to based on active tab
                 let collectionSlug = null;
                 if (activeTab === "sale") collectionSlug = "sale";
                 else if (activeTab === "newly-launched") collectionSlug = "newly-launched";
                 else if (activeTab === "best-sellers") collectionSlug = "best-sellers";
                 else if (activeTab === "trending") collectionSlug = "trending";
 
+                const sectionNames = {
+                    grocery: "Grocery & Kitchen",
+                    beauty: "Beauty & Wellness",
+                    household: "Household & Lifestyle",
+                    snacks: "Snacks & Drinks"
+                };
+
                 const productData = {
-                    name,
-                    image,
+                    name, image,
                     price: Number(price),
-                    originalPrice: Number(formData.get("originalPrice")) || Number(price),
+                    originalPrice: originalPrice ? Number(originalPrice) : Number(price),
                     weight,
                     discount,
                     deliveryTime: time,
-                    category: currentPath[0]?.name || activeTab,
-                    subCategory: currentPath[1]?.name || "",
-                    childCategory: currentPath[2]?.name || "",
-                    store: "65c0f1234567890abcdef123", // Default Store ID for Hibermart
-                    collectionSlug, // Add product to specific collection
+                    category: sectionNames[activeTab] || (currentPath.length > 0 ? (catalogItems.find(c => c.id === currentPath[0].id || c._id === currentPath[0].id)?.name || currentPath[0].name) : activeTab),
+                    subCategory: currentPath.length > 0 ? currentPath[0].name : "",
+                    childCategory: currentPath.length > 1 ? currentPath[1].name : "",
+                    store: "65c0f1234567890abcdef123",
+                    collectionSlug,
                     isNew: activeTab === "newly-launched",
                     isBestSeller: activeTab === "best-sellers",
                     isTrending: activeTab === "trending",
                     isOnSale: activeTab === "sale"
                 };
-
-                console.log('💾 Saving product:', productData);
 
                 if (editingItem) {
                     await inmartAPI.adminUpdateProduct(editingItem._id || editingItem.id, productData);
@@ -832,26 +870,98 @@ export default function HibermartAdminHome() {
                     await inmartAPI.adminCreateProduct(productData);
                 }
             } else if (modalType === "category") {
-                const categoryData = {
-                    name,
-                    image,
-                    level: currentPath.length === 0 ? "main" : (currentPath.length === 1 ? "sub" : "child")
-                };
-
-                if (editingItem) {
-                    await inmartAPI.adminUpdateCategory(editingItem._id || editingItem.id, categoryData);
+                if (currentPath.length === 0) {
+                    const sectionTabs = ["grocery", "beauty", "household", "snacks"];
+                    if (sectionTabs.includes(activeTab) && !editingItem) {
+                        const rootCategory = catalogItems.find(c => c.id === activeTab);
+                        if (rootCategory) {
+                            const updatedRoot = JSON.parse(JSON.stringify(rootCategory));
+                            if (!updatedRoot.subCategories) updatedRoot.subCategories = [];
+                            updatedRoot.subCategories.push({
+                                name, image, level: "sub",
+                                slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                                children: []
+                            });
+                            await inmartAPI.adminUpdateCategory(rootCategory._id, updatedRoot);
+                        } else {
+                            const sectionNames = {
+                                grocery: "Grocery & Kitchen", beauty: "Beauty & Wellness",
+                                household: "Household & Lifestyle", snacks: "Snacks & Drinks"
+                            };
+                            const categoryData = {
+                                name: sectionNames[activeTab], level: "main",
+                                slug: activeTab === 'grocery' ? 'grocery-kitchen' :
+                                    activeTab === 'beauty' ? 'beauty-wellness' :
+                                        activeTab === 'household' ? 'household-lifestyle' : 'snacks-drinks',
+                                subCategories: [{
+                                    name, image, level: "sub",
+                                    slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                                    children: []
+                                }]
+                            };
+                            await inmartAPI.adminCreateCategory(categoryData);
+                        }
+                    } else {
+                        const categoryData = { name, image, level: "main" };
+                        if (editingItem) {
+                            await inmartAPI.adminUpdateCategory(editingItem._id || editingItem.id, categoryData);
+                        } else {
+                            await inmartAPI.adminCreateCategory(categoryData);
+                        }
+                    }
                 } else {
-                    // Logic for sub/child categories would need nested updates in the backend
-                    await inmartAPI.adminCreateCategory(categoryData);
+                    let rootCategory;
+                    const sectionTabs = ["grocery", "beauty", "household", "snacks"];
+                    if (sectionTabs.includes(activeTab)) {
+                        rootCategory = catalogItems.find(c => c.id === activeTab);
+                    } else if (currentPath.length > 0) {
+                        const rootCategoryId = currentPath[0]._id || currentPath[0].id;
+                        rootCategory = catalogItems.find(c => c.id === currentPath[0].id) ||
+                            catalogItems.find(c => c._id === rootCategoryId);
+                    }
+
+                    if (!rootCategory) throw new Error("Root category not found for nested update.");
+
+                    const updatedRoot = JSON.parse(JSON.stringify(rootCategory));
+                    if (currentPath.length === 1) {
+                        const subCatId = currentPath[0].id || currentPath[0]._id;
+                        const subIndex = updatedRoot.subCategories.findIndex(s => (s.id === subCatId || s._id === subCatId || s.slug === subCatId));
+                        if (subIndex > -1) {
+                            if (editingItem && editingItem.level === 'sub') {
+                                updatedRoot.subCategories[subIndex] = { ...updatedRoot.subCategories[subIndex], name, image };
+                            } else {
+                                if (!updatedRoot.subCategories[subIndex].children) updatedRoot.subCategories[subIndex].children = [];
+                                updatedRoot.subCategories[subIndex].children.push({
+                                    name, image, level: "child",
+                                    slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                                });
+                            }
+                        }
+                    } else if (currentPath.length === 2) {
+                        const subCatId = currentPath[0].id || currentPath[0]._id;
+                        const childCatId = currentPath[1].id || currentPath[1]._id;
+                        const subIndex = updatedRoot.subCategories.findIndex(s => (s.id === subCatId || s._id === subCatId || s.slug === subCatId));
+                        if (subIndex > -1) {
+                            const childIndex = updatedRoot.subCategories[subIndex].children?.findIndex(c => (c.id === childCatId || c._id === childCatId || c.slug === childCatId));
+                            if (childIndex > -1) {
+                                updatedRoot.subCategories[subIndex].children[childIndex] = {
+                                    ...updatedRoot.subCategories[subIndex].children[childIndex], name, image
+                                };
+                            }
+                        }
+                    }
+                    await inmartAPI.adminUpdateCategory(rootCategory._id, updatedRoot);
                 }
             }
 
             fetchAllData();
-            setShowUploadModal(false)
-            setEditingItem(null)
+            setShowUploadModal(false);
+            setEditingItem(null);
+            alert("Changes saved successfully!");
         } catch (err) {
             console.error("Save failed:", err);
-            alert("Failed to save changes.");
+            const errMsg = err.response?.data?.message || err.message || "Failed to save changes.";
+            alert(`Save failed: ${errMsg}`);
         }
     }
 
@@ -1137,94 +1247,82 @@ export default function HibermartAdminHome() {
                             className="relative bg-white w-full sm:max-w-2xl sm:rounded-[3rem] rounded-t-[2.5rem] shadow-2xl overflow-hidden max-h-[95vh] flex flex-col mt-auto sm:mt-0"
                         >
                             <div className="p-6 sm:p-10 overflow-y-auto">
-                                <div className="flex justify-between items-center mb-6 sm:mb-8">
+                                <div className="flex justify-between items-center mb-8">
                                     <div>
-                                        <h3 className="text-xl sm:text-2xl font-black text-neutral-900">
+                                        <h3 className="text-2xl font-black text-neutral-900">
                                             {editingItem ? "Edit Existing" : "Create New"} {modalType}
                                         </h3>
-                                        <p className="text-[10px] sm:text-sm font-bold text-neutral-400">Configure visual and operational aspects.</p>
+                                        <p className="text-sm font-bold text-neutral-400">Configure visual and operational aspects.</p>
                                     </div>
-                                    <button onClick={() => setShowUploadModal(false)} className="p-2 sm:p-3 bg-neutral-50 hover:bg-neutral-100 rounded-xl sm:rounded-2xl transition-all">
+                                    <button onClick={() => setShowUploadModal(false)} className="p-3 bg-neutral-50 hover:bg-neutral-100 rounded-2xl transition-all">
                                         <X className="w-5 h-5 text-neutral-400" />
                                     </button>
                                 </div>
 
-                                <form onSubmit={handleSaveItem} className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                                <form onSubmit={handleSaveItem} className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                     <div className="sm:col-span-2">
-                                        <label className="text-[9px] font-black uppercase text-neutral-400 tracking-widest block mb-2">{modalType === "product" ? "Product Name" : "Category / Display Name"}</label>
-                                        <input name="name" type="text" defaultValue={editingItem?.name || editingItem?.title} placeholder="e.g. Fresh Spinach..." className="w-full bg-white border border-neutral-200 rounded-xl sm:rounded-2xl px-4 py-3 sm:px-5 sm:py-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all" required />
+                                        <label className="text-[10px] font-black uppercase text-neutral-400 tracking-widest block mb-2">
+                                            {modalType === "product" ? "PRODUCT NAME" : modalType === "banner" ? "BANNER NAME" : "CATEGORY / DISPLAY NAME"}
+                                        </label>
+                                        <input
+                                            name="name"
+                                            type="text"
+                                            defaultValue={editingItem?.name || editingItem?.title}
+                                            placeholder={modalType === "product" ? "e.g. Fortune Oil..." : "e.g. Fresh Spinach..."}
+                                            className="w-full bg-white border border-neutral-200 rounded-3xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all placeholder:text-neutral-300"
+                                            required
+                                        />
                                     </div>
 
                                     {modalType === "product" && (
                                         <>
+                                            <div>
+                                                <label className="text-[10px] font-black uppercase text-neutral-400 tracking-widest block mb-2">WEIGHT / QTY</label>
+                                                <input name="weight" type="text" defaultValue={editingItem?.weight} placeholder="e.g. 1 Bunch / 500g..." className="w-full bg-white border border-neutral-200 rounded-3xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all placeholder:text-neutral-300" />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-black uppercase text-neutral-400 tracking-widest block mb-2">DELIVERY TIME</label>
+                                                <input name="time" type="text" defaultValue={editingItem?.time} placeholder="e.g. 10 MINS..." className="w-full bg-white border border-neutral-200 rounded-3xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all placeholder:text-neutral-300" />
+                                            </div>
 
                                             <div>
-                                                <label className="text-[9px] font-black uppercase text-neutral-400 tracking-widest block mb-1.5 sm:mb-2">Weight / Qty</label>
-                                                <input name="weight" type="text" defaultValue={editingItem?.weight} placeholder="e.g. 1 Bunch / 500g..." className="w-full bg-neutral-50 border border-neutral-200 rounded-xl sm:rounded-2xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all" />
+                                                <label className="text-[10px] font-black uppercase text-neutral-400 tracking-widest block mb-2">SELLING PRICE (₹)</label>
+                                                <input name="price" type="number" defaultValue={editingItem?.price} placeholder="0.00" className="w-full bg-white border border-neutral-200 rounded-3xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all placeholder:text-neutral-300" />
                                             </div>
                                             <div>
-                                                <label className="text-[9px] font-black uppercase text-neutral-400 tracking-widest block mb-1.5 sm:mb-2">Delivery Time</label>
-                                                <input name="time" type="text" defaultValue={editingItem?.time} placeholder="e.g. 10 MINS..." className="w-full bg-neutral-50 border border-neutral-200 rounded-xl sm:rounded-2xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all" />
-                                            </div>
-
-                                            <div>
-                                                <label className="text-[9px] font-black uppercase text-neutral-400 tracking-widest block mb-1.5 sm:mb-2">Selling Price (₹)</label>
-                                                <input name="price" type="number" defaultValue={editingItem?.price} placeholder="0.00" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl sm:rounded-2xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all" />
-                                            </div>
-                                            <div className="flex flex-col gap-4">
-                                                <div>
-                                                    <label className="text-[9px] font-black uppercase text-neutral-400 tracking-widest block mb-1.5">Original Price (₹)</label>
-                                                    <input name="originalPrice" type="number" defaultValue={editingItem?.originalPrice} placeholder="0.00" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl sm:rounded-2xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all" />
-                                                </div>
+                                                <label className="text-[10px] font-black uppercase text-neutral-400 tracking-widest block mb-2">ORIGINAL PRICE (₹)</label>
+                                                <input name="originalPrice" type="number" defaultValue={editingItem?.originalPrice} placeholder="0.00" className="w-full bg-white border border-neutral-200 rounded-3xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all placeholder:text-neutral-300" />
                                             </div>
 
                                             <div className="sm:col-span-2">
-                                                <label className="text-[9px] font-black uppercase text-neutral-400 tracking-widest block mb-1.5 sm:mb-2">Offer / Discount (e.g. 20% OFF)</label>
-                                                <input name="discount" type="text" defaultValue={editingItem?.discount} placeholder="e.g. 20% OFF..." className="w-full bg-neutral-50 border border-neutral-200 rounded-xl sm:rounded-2xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all" />
+                                                <label className="text-[10px] font-black uppercase text-neutral-400 tracking-widest block mb-2">OFFER / DISCOUNT (E.G. 20% OFF)</label>
+                                                <input name="discount" type="text" defaultValue={editingItem?.discount} placeholder="e.g. 20% OFF..." className="w-full bg-white border border-neutral-200 rounded-3xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all placeholder:text-neutral-300" />
                                             </div>
                                         </>
                                     )}
-
-                                    {modalType === "nav" && (
-                                        <>
-                                            <div>
-                                                <label className="text-[9px] font-black uppercase text-neutral-400 tracking-widest block mb-1.5 sm:mb-2 text-left">Theme Color</label>
-                                                <div className="flex gap-3">
-                                                    <input name="themeColor" type="color" defaultValue={editingItem?.themeColor || "#000000"} className="w-12 h-12 rounded-xl border-0 p-0 cursor-pointer overflow-hidden shadow-sm" />
-                                                    <input type="text" value={editingItem?.themeColor || "#000000"} className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-4 text-xs font-bold font-mono uppercase tracking-widest" readOnly />
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label className="text-[9px] font-black uppercase text-neutral-400 tracking-widest block mb-1.5 sm:mb-2 text-left">Lucide Icon</label>
-                                                <select name="icon" defaultValue={editingItem?.icon || "ShoppingBag"} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl sm:rounded-2xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all">
-                                                    <option value="ShoppingBag">Shopping Bag</option>
-                                                    <option value="Home">Home</option>
-                                                    <option value="Gamepad2">Toys</option>
-                                                    <option value="Apple">Fresh</option>
-                                                    <option value="Headphones">Electronics</option>
-                                                    <option value="Smartphone">Mobiles</option>
-                                                    <option value="Sparkles">Beauty</option>
-                                                    <option value="Shirt">Fashion</option>
-                                                    <option value="Coffee">Snacks</option>
-                                                </select>
-                                            </div>
-                                        </>
-                                    )}
-
 
                                     <div className="sm:col-span-2">
-                                        <label className="text-[9px] font-black uppercase text-neutral-400 tracking-widest block mb-2">{modalType === "product" ? "Product Image URL" : "Visual Media (Cloud URL)"}</label>
-                                        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                                        <label className="text-[10px] font-black uppercase text-neutral-400 tracking-widest block mb-2">
+                                            {modalType === "product" ? "PRODUCT IMAGE URL" : modalType === "banner" ? "BANNER IMAGE URL" : "VISUAL MEDIA (CLOUD URL)"}
+                                        </label>
+                                        <div className="flex flex-col sm:flex-row gap-4">
                                             <div className="flex-1">
-                                                <input name="image" type="text" defaultValue={editingItem?.image} placeholder="Paste image URL or upload below..." className="w-full bg-white border border-neutral-200 rounded-xl sm:rounded-2xl px-4 py-3 sm:px-5 sm:py-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all" required />
+                                                <input
+                                                    name="image"
+                                                    type="text"
+                                                    defaultValue={editingItem?.image}
+                                                    placeholder="Paste image URL or upload below..."
+                                                    className="w-full bg-white border border-neutral-200 rounded-3xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all placeholder:text-neutral-300"
+                                                    required
+                                                />
                                             </div>
                                             <button
                                                 type="button"
                                                 onClick={() => fileInputRef.current?.click()}
                                                 disabled={isUploading}
-                                                className="px-6 py-3 sm:py-0 bg-neutral-900 text-white rounded-xl sm:rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all disabled:bg-neutral-400 disabled:cursor-not-allowed"
+                                                className="px-8 py-4 bg-neutral-900 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all disabled:bg-neutral-400"
                                             >
-                                                {isUploading ? 'Uploading...' : 'Upload'}
+                                                {isUploading ? '...' : 'UPLOAD'}
                                             </button>
                                             <input
                                                 type="file"
@@ -1234,13 +1332,10 @@ export default function HibermartAdminHome() {
                                                 className="hidden"
                                             />
                                         </div>
-                                        {isUploading && (
-                                            <p className="text-xs text-neutral-500 mt-2 font-semibold">Uploading image, please wait...</p>
-                                        )}
                                     </div>
 
-                                    <button type="submit" className="sm:col-span-2 bg-black text-white py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-widest shadow-xl shadow-black/10 hover:bg-neutral-800 hover:-translate-y-1 active:translate-y-0 transition-all mt-4 sm:mt-6">
-                                        {editingItem ? "Update Changes" : editingItem === null && modalType === "product" ? "Create Product" : `Create ${modalType}`}
+                                    <button type="submit" className="sm:col-span-2 bg-black text-white py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-black/20 hover:bg-neutral-800 hover:-translate-y-1 active:translate-y-0 transition-all mt-6">
+                                        {editingItem ? "Update Changes" : editingItem === null && modalType === "product" ? "Create Product" : `CREATE ${modalType.toUpperCase()}`}
                                     </button>
                                 </form>
                             </div>
@@ -1337,115 +1432,63 @@ function NestedManagement({ rootName, items, path, setPath, activeRootId, onAdd,
     const showSidebar = !!activeRootId && sidebarItems.length > 0 && path.length > 0
 
     return (
-        <div className="space-y-6">
-            {/* Navigation & Dropdown Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0">
-                        <h2 className="text-2xl font-black text-neutral-900">
-                            {path.length === 0 ? (activeRootId ? rootCategory?.name : rootName) : path[path.length - 1].name}
-                        </h2>
-                        <div className="flex items-center gap-2 mt-0.5">
-                            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-[0.2em]">
-                                {isProductView ? "Product Inventory" : "Category Management"}
-                            </p>
-                            {isProductView && (
-                                <span className="bg-emerald-50 text-emerald-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase border border-emerald-100">
-                                    {currentItems.length} SKUs Total
-                                </span>
-                            )}
-                        </div>
+        <div className="space-y-8">
+            {/* Header matching Screenshot 2 style (Heading + Category Management label) */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+                <div className="flex-shrink-0">
+                    <h2 className="text-4xl font-black text-neutral-900 tracking-tighter">
+                        {path.length === 0 ? (activeRootId ? rootCategory?.name : rootName) : path[path.length - 1].name}
+                    </h2>
+                    <div className="flex items-center gap-2 mt-2">
+                        <span className="bg-black text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest">
+                            {isProductView ? "Product Inventory" : "Category Management"}
+                        </span>
+                        {isProductView && (
+                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest ml-1">
+                                {currentItems.length} SKUs Total
+                            </span>
+                        )}
                     </div>
-
-                    {/* Category Quick-Switch Dropdown (Only show when drilled down) */}
-                    {activeRootId && departmentCategories.length > 0 && path.length > 0 && (
-                        <div className="relative group">
-                            <button className="flex items-center gap-2 bg-neutral-50 px-4 py-2 rounded-xl border border-neutral-200 hover:border-black transition-all">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-600">Switch {path.length === 0 ? "Category" : "Sub-Category"}</span>
-                                <ChevronDown className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black transition-colors" />
-                            </button>
-
-                            <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-neutral-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[60] p-2">
-                                {(() => {
-                                    const activeDept = path.length > 0 ? departmentCategories.find(c => c.id === path[0].id) : null;
-                                    const itemsToShow = activeDept ? (activeDept.children || []) : departmentCategories;
-
-                                    return itemsToShow.map((cat) => (
-                                        <button
-                                            key={cat.id}
-                                            onClick={() => {
-                                                if (path.length === 0) {
-                                                    // Root level: Clicking a department should drill down to first sub if exists
-                                                    if (cat.children && cat.children.length > 0) {
-                                                        setPath([{ id: cat.id, name: cat.name }, { id: cat.children[0].id, name: cat.children[0].name }])
-                                                    } else {
-                                                        setPath([{ id: cat.id, name: cat.name }])
-                                                    }
-                                                } else {
-                                                    // Inside a department: Clicking a sub-category should jump to it
-                                                    setPath([{ id: activeDept.id, name: activeDept.name }, { id: cat.id, name: cat.name }])
-                                                }
-                                            }}
-                                            className={`w-full flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-50 transition-all text-left ${path[path.length - 1]?.id === cat.id ? "bg-neutral-50" : ""}`}
-                                        >
-                                            <div className="w-10 h-10 rounded-lg bg-neutral-100 overflow-hidden flex-shrink-0">
-                                                <img src={cat.image} className="w-full h-full object-contain" alt="" />
-                                            </div>
-                                            <div>
-                                                <p className="text-[11px] font-black text-neutral-900 leading-tight">{cat.name}</p>
-                                                <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-tighter">
-                                                    {cat.type === "product" ? "Product" : `${cat.children?.length || 0} Items`}
-                                                </p>
-                                            </div>
-                                            {path[path.length - 1]?.id === cat.id && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500" />}
-                                        </button>
-                                    ));
-                                })()}
-                            </div>
-                        </div>
-                    )}
-
                 </div>
 
-                <div className="flex items-center gap-1.5">
-                    {isProductView && (
-                        <div className="hidden md:flex items-center gap-2 bg-neutral-100 px-3 py-1.5 rounded-xl border border-neutral-200">
-                            <Search className="w-3 h-3 text-neutral-400" />
-                            <input
-                                type="text"
-                                placeholder="Search inventory..."
-                                className="bg-transparent border-none outline-none text-[9px] font-black uppercase tracking-widest w-32 placeholder:text-neutral-400"
-                            />
-                        </div>
+                <div className="flex items-center gap-3">
+                    {/* Multi-add capability at sub/child levels */}
+                    {(path.length < 2) && (
+                        <button
+                            onClick={() => onAdd("category")}
+                            className="flex items-center gap-2 bg-white text-black border-2 border-black px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-neutral-50 transition-all"
+                        >
+                            <Plus className="w-4 h-4" />
+                            {path.length === 0 ? "Sub Category" : "Child Category"}
+                        </button>
                     )}
-                    <button onClick={() => onAdd("category")} className="flex items-center gap-1.5 bg-neutral-50 text-neutral-600 px-4 py-2 rounded-xl font-black text-[8px] uppercase tracking-widest hover:bg-neutral-100 transition-all border border-neutral-200">
-                        <Plus className="w-3 h-3" />
-                        {path.length === 0 ? "Category" : "Sub Category"}
-                    </button>
-                    {isProductView && (
-                        <button onClick={() => onAdd("product")} className="flex items-center gap-1.5 bg-black text-white px-4 py-2 rounded-xl font-black text-[8px] uppercase tracking-widest shadow-lg hover:shadow-black/20 hover:-translate-y-0.5 transition-all">
-                            <Plus className="w-3 h-3" />
+                    {(path.length >= 1) && (
+                        <button
+                            onClick={() => onAdd("product")}
+                            className="flex items-center gap-2 bg-black text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-black/20 hover:scale-105 active:scale-95 transition-all"
+                        >
+                            <Plus className="w-4 h-4" />
                             Product
                         </button>
                     )}
                 </div>
             </div>
 
-            {/* Breadcrumb Tray - Only show when drilled down */}
+            {/* Breadcrumb Tray (Only show when drilled down) */}
             {path.length > 0 && (
-                <div className="flex items-center gap-1 bg-white shadow-sm px-2 py-1.5 rounded-xl w-fit border border-neutral-100">
+                <div className="flex items-center gap-2 bg-white/50 backdrop-blur-sm px-4 py-2 rounded-2xl w-fit border border-neutral-100 shadow-sm">
                     <button
                         onClick={() => setPath([])}
-                        className="text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-lg transition-all text-neutral-400 hover:text-black hover:bg-neutral-50"
+                        className="text-[9px] font-black uppercase tracking-widest text-neutral-400 hover:text-black transition-colors"
                     >
                         {activeRootId ? rootCategory?.name || rootName : rootName}
                     </button>
                     {path.map((segment, idx) => (
-                        <div key={idx} className="flex items-center gap-1">
-                            <ChevronRight className="w-2.5 h-2.5 text-neutral-300" />
+                        <div key={idx} className="flex items-center gap-2">
+                            <ChevronRight className="w-3 h-3 text-neutral-300" />
                             <button
                                 onClick={() => setPath(path.slice(0, idx + 1))}
-                                className={`text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-lg transition-all ${idx === path.length - 1 ? "bg-black text-white shadow-md" : "text-neutral-400 hover:text-black hover:bg-neutral-50"}`}
+                                className={`text-[9px] font-black uppercase tracking-widest transition-all ${idx === path.length - 1 ? "text-black" : "text-neutral-400 hover:text-black"}`}
                             >
                                 {segment.name}
                             </button>
@@ -1454,61 +1497,62 @@ function NestedManagement({ rootName, items, path, setPath, activeRootId, onAdd,
                 </div>
             )}
 
-            <div className="flex flex-col lg:flex-row gap-8 min-h-[500px]">
+            <div className="flex flex-col lg:flex-row gap-10 min-h-[500px]">
                 {/* Vertical Category Selector Sidebar (Screenshot 2 Style) */}
                 {showSidebar && (
-                    <div className="lg:w-32 flex-shrink-0 space-y-0.5 border-r border-neutral-100 pr-4 hidden lg:block overflow-y-auto max-h-[80vh] scrollbar-hide">
-                        <p className="text-[10px] font-black uppercase text-neutral-900 tracking-wider mb-4 border-b border-neutral-100 pb-2">All Sub Categories</p>
-                        <p className="text-[8px] font-black uppercase text-neutral-300 tracking-[0.2em] mb-3">Browse</p>
-                        {sidebarItems.map((cat) => (
-                            <div key={cat.id} className="group relative">
-                                <button
-                                    onClick={() => {
-                                        if (path.length === 0) {
-                                            if (cat.children && cat.children.length > 0) {
-                                                setPath([{ id: cat.id, name: cat.name }, { id: cat.children[0].id, name: cat.children[0].name }])
+                    <div className="lg:w-48 flex-shrink-0 border-r border-neutral-100 pr-6 hidden lg:block overflow-y-auto max-h-[80vh] scrollbar-hide">
+                        <h3 className="text-[12px] font-black uppercase text-neutral-900 tracking-wider mb-6 pb-2 border-b-2 border-neutral-900 w-fit">All Sub Categories</h3>
+                        <div className="space-y-2">
+                            {sidebarItems.map((cat) => (
+                                <div key={cat.id} className="group relative">
+                                    <button
+                                        onClick={() => {
+                                            if (path.length === 0) {
+                                                if (cat.children && cat.children.length > 0) {
+                                                    setPath([{ id: cat.id, name: cat.name }, { id: cat.children[0].id, name: cat.children[0].name }])
+                                                } else {
+                                                    setPath([{ id: cat.id, name: cat.name }])
+                                                }
                                             } else {
-                                                setPath([{ id: cat.id, name: cat.name }])
+                                                const newPath = [...path.slice(0, -1), { id: cat.id, name: cat.name }]
+                                                setPath(newPath)
                                             }
-                                        } else {
-                                            const newPath = [...path.slice(0, -1), { id: cat.id, name: cat.name }]
-                                            setPath(newPath)
-                                        }
-                                    }}
-                                    className={`w-full flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all hover:bg-neutral-50 ${path[path.length - 1]?.id === cat.id ? "bg-white shadow-lg shadow-neutral-100/50 ring-1 ring-neutral-100" : ""}`}
-                                >
-                                    <div className={`w-11 h-11 rounded-full flex items-center justify-center p-2 transition-all duration-500 overflow-hidden ${path[path.length - 1]?.id === cat.id ? "bg-white ring-2 ring-black scale-105" : "bg-neutral-50"}`}>
-                                        <img src={cat.image} className="w-full h-full object-contain" alt="" />
+                                        }}
+                                        className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all ${path[path.length - 1]?.id === cat.id ? "bg-black text-white shadow-xl shadow-black/10" : "hover:bg-neutral-100 text-neutral-600"}`}
+                                    >
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center p-1 overflow-hidden shrink-0 ${path[path.length - 1]?.id === cat.id ? "bg-white" : "bg-neutral-100"}`}>
+                                            <img src={cat.image} className="w-full h-full object-contain" alt="" />
+                                        </div>
+                                        <span className="text-[10px] font-black uppercase tracking-tight text-left leading-tight">
+                                            {cat.name}
+                                        </span>
+                                    </button>
+
+                                    <div className="absolute top-1/2 -right-2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all z-10 scale-75 group-hover:scale-100 invisible group-hover:visible lg:-mr-4">
+                                        <button onClick={(e) => { e.stopPropagation(); onEdit(cat); }} className="bg-black text-white p-2 rounded-full shadow-lg hover:rotate-12 transition-transform border border-white/10">
+                                            <Edit className="w-3 h-3" />
+                                        </button>
+                                        <button onClick={(e) => { e.stopPropagation(); onDelete(cat); }} className="bg-white text-red-500 p-2 rounded-full shadow-lg border border-neutral-100 hover:scale-110 transition-transform">
+                                            <Trash2 className="w-3 h-3" />
+                                        </button>
                                     </div>
-                                    <span className={`text-[7px] font-black text-center leading-tight transition-colors uppercase tracking-tighter ${path[path.length - 1]?.id === cat.id ? "text-black" : "text-neutral-400"}`}>
-                                        {cat.name}
-                                    </span>
-                                </button>
-
-                                <div className="absolute top-1 right-1 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all z-10 scale-75 group-hover:scale-100">
-                                    <button onClick={(e) => { e.stopPropagation(); onEdit(cat); }} className="bg-black text-white p-2 rounded-full shadow-lg hover:rotate-12 transition-transform">
-                                        <Edit className="w-2.5 h-2.5" />
-                                    </button>
-                                    <button onClick={(e) => { e.stopPropagation(); onDelete(cat); }} className="bg-white text-red-500 p-2 rounded-full shadow-lg border border-neutral-100 hover:scale-110 transition-transform">
-                                        <Trash2 className="w-2.5 h-2.5" />
-                                    </button>
                                 </div>
-
-                                {path[path.length - 1]?.id === cat.id && (
-                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-6 w-1 h-8 bg-black rounded-full shadow-[0_0_10px_rgba(0,0,0,0.1)]" />
-                                )}
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 )}
 
                 {/* Main Content Pane */}
                 <div className="flex-1">
-                    <h3 className="text-sm font-black text-neutral-900 uppercase tracking-widest mb-6 flex items-center gap-2">
-                        {path.length > 0 ? path[path.length - 1].name : (activeRootId ? rootCategory?.name : "All Categories")}
-                        <span className="text-neutral-300 font-bold ml-1">{isProductView ? "Products" : "Sub Categories"}</span>
-                    </h3>
-                    <div className={`grid gap-2 sm:gap-3 ${isProductView ? "grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8" : "grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8"}`}>
+                    <div className="flex items-center gap-2 mb-8">
+                        <h3 className="text-sm font-black text-neutral-900 uppercase tracking-[0.2em]">
+                            {path.length > 0 ? path[path.length - 1].name : (activeRootId ? rootCategory?.name : "All Categories")}
+                        </h3>
+                        <div className="h-[2px] flex-1 bg-neutral-100" />
+                        <span className="text-[10px] font-black text-neutral-300 uppercase tracking-widest">{isProductView ? "Displaying Products" : "Sub-Categories"}</span>
+                    </div>
+
+                    <div className={`grid gap-4 sm:gap-6 ${isProductView ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5" : "grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"}`}>
                         {currentItems.map((item) => (
                             item.type === "product" ? (
                                 <HibermartProductCard
@@ -1530,14 +1574,13 @@ function NestedManagement({ rootName, items, path, setPath, activeRootId, onAdd,
 
                         <button
                             onClick={() => onAdd(isProductView ? "product" : "category")}
-                            className={`flex flex-col items-center justify-center bg-white border-2 border-dashed border-neutral-200 rounded-xl hover:bg-white hover:border-black transition-all group relative overflow-hidden ${isProductView ? "min-h-[160px]" : "min-h-[100px]"}`}
+                            className={`flex flex-col items-center justify-center bg-white border-4 border-dashed border-neutral-100 rounded-[2.5rem] hover:border-black transition-all group relative overflow-hidden ${isProductView ? "min-h-[220px]" : "min-h-[160px]"}`}
                         >
-                            <div className="absolute inset-0 bg-neutral-50/30 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            <div className="p-1.5 bg-neutral-50 rounded-lg shadow-sm group-hover:scale-110 transition-transform text-neutral-400 relative z-10 border border-neutral-100">
-                                <Plus className="w-3.5 h-3.5 mx-auto" strokeWidth={3} />
+                            <div className="p-3 bg-neutral-50 rounded-2xl shadow-sm group-hover:scale-110 transition-transform text-neutral-300 group-hover:text-black border border-neutral-100">
+                                <Plus className="w-6 h-6" strokeWidth={3} />
                             </div>
-                            <p className="text-[6px] font-black uppercase tracking-widest text-neutral-300 mt-1.5 relative z-10 group-hover:text-black transition-colors text-center px-1">
-                                Add {isProductView ? "Product" : "New"}
+                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-300 mt-4 group-hover:text-black transition-colors">
+                                Add {isProductView ? "SKU" : "New"}
                             </p>
                         </button>
                     </div>
@@ -1550,31 +1593,37 @@ function NestedManagement({ rootName, items, path, setPath, activeRootId, onAdd,
 function CategoryManagementCard({ item, onClick, onEdit, onDelete }) {
     return (
         <div className="group relative">
-            {/* Circular Category Card matching Screenshot 1 */}
+            {/* Rounded Square Category Card matching Screenshot 2 */}
             <div
                 onClick={onClick}
-                className="cursor-pointer bg-white rounded-xl border border-neutral-100 shadow-sm overflow-hidden p-2 hover:shadow-lg hover:shadow-neutral-200/50 transition-all text-center flex flex-col items-center justify-center min-h-[100px]"
+                className="cursor-pointer bg-white rounded-[2rem] border border-neutral-100 shadow-sm overflow-hidden p-3 hover:shadow-xl hover:shadow-neutral-200/50 transition-all text-center flex flex-col items-center gap-2 group/card"
             >
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-black flex items-center justify-center p-1 mb-1 bg-white relative">
-                    <img src={item.image} alt="" className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
+                <div className="w-full aspect-square rounded-[1.5rem] bg-sky-50 flex items-center justify-center p-3 transition-all duration-500 overflow-hidden relative">
+                    <img
+                        src={item.image || "https://via.placeholder.com/150"}
+                        alt={item.name}
+                        className="w-full h-full object-contain group-hover/card:scale-110 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover/card:bg-black/5 transition-colors" />
                 </div>
-                <h4 className="font-black text-neutral-900 text-[7px] sm:text-[8px] leading-tight uppercase tracking-widest px-0.5">{item.name}</h4>
-                <div className="mt-1 text-[5px] font-black text-emerald-500 bg-emerald-50 px-1 py-0.5 rounded-full uppercase tracking-widest">Active</div>
+                <h4 className="font-bold text-neutral-800 text-[11px] leading-tight px-1 min-h-[2rem] flex items-center justify-center">
+                    {item.name}
+                </h4>
             </div>
 
-            {/* Admin Controls matching Screenshot 1 */}
-            <div className="absolute top-2 -right-1 flex flex-col gap-2 z-30 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100">
+            {/* Admin Controls Overlay */}
+            <div className="absolute top-2 right-2 flex flex-col gap-2 z-30 opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100">
                 <button
                     onClick={(e) => { e.stopPropagation(); onEdit(); }}
-                    className="bg-black text-white p-2.5 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-all"
+                    className="bg-black text-white p-2 rounded-full shadow-lg hover:rotate-12 transition-transform"
                 >
-                    <Edit className="w-4 h-4" />
+                    <Edit className="w-3.5 h-3.5" />
                 </button>
                 <button
                     onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                    className="bg-white text-red-500 p-2.5 rounded-full shadow-lg border border-neutral-100 hover:scale-110 active:scale-95 transition-all"
+                    className="bg-white text-red-500 p-2 rounded-full shadow-lg border border-neutral-100 hover:scale-110 transition-transform"
                 >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5" />
                 </button>
             </div>
         </div>
@@ -1583,69 +1632,75 @@ function CategoryManagementCard({ item, onClick, onEdit, onDelete }) {
 
 function HibermartProductCard({ product, onEdit, onDelete }) {
     return (
-        <div className="bg-white rounded-xl border border-neutral-100 shadow-md shadow-neutral-200/20 overflow-hidden group hover:border-black transition-all p-1 sm:p-1.5 relative h-full flex flex-col min-h-[180px]">
+        <div className="bg-white rounded-[2.5rem] border border-neutral-100 shadow-xl shadow-neutral-200/20 overflow-hidden group hover:border-black transition-all p-2 sm:p-3 relative h-full flex flex-col min-h-[220px]">
             {/* Sunburst Discount Badge matching Screenshot 2 */}
-            <div className="absolute top-0.5 left-0.5 z-10 w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center">
-                <div className="absolute inset-0 bg-[#7B61FF] rotate-[22.5deg] rounded-sm" />
-                <div className="absolute inset-0 bg-[#7B61FF] rotate-[67.5deg] rounded-sm shadow-sm" />
-                <span className="relative z-20 text-[5px] sm:text-[6px] font-black text-white leading-tight text-center px-0.5 uppercase">
-                    {product.discount ? product.discount.split(' ')[0] : 'SALE'}
-                </span>
-            </div>
+            {product.discount && (
+                <div className="absolute top-4 left-4 z-20 w-8 h-8 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-[#7B61FF] rotate-[22.5deg] rounded-lg shadow-sm" />
+                    <div className="absolute inset-0 bg-[#7B61FF] rotate-[67.5deg] rounded-lg shadow-sm" />
+                    <span className="relative z-30 text-[7px] font-black text-white leading-tight text-center px-1 uppercase whitespace-pre-line">
+                        {product.discount.split(' ').join('\n')}
+                    </span>
+                </div>
+            )}
 
             {/* Product Image with AD mark matching Screenshot 2 */}
-            <div className="aspect-square rounded-lg overflow-hidden mb-1.5 sm:mb-2 relative bg-neutral-50 flex-shrink-0 flex items-center justify-center p-1.5">
-                <img src={product.image} className="max-w-[90%] max-h-[90%] object-contain group-hover:scale-110 transition-transform duration-700" alt="" />
+            <div className="aspect-square rounded-[2rem] overflow-hidden mb-3 relative bg-[#F8F9FA] flex-shrink-0 flex items-center justify-center p-4">
+                <img
+                    src={product.image || "https://via.placeholder.com/200"}
+                    className="max-w-[90%] max-h-[90%] object-contain group-hover:scale-110 transition-transform duration-700"
+                    alt={product.name}
+                />
 
-                <div className="absolute bottom-1 left-1 flex flex-col items-start gap-1">
-                    <div className="flex items-center gap-0.5 bg-white/95 backdrop-blur px-1 py-0.5 rounded-md border border-neutral-100 shadow-sm">
-                        <span className="text-[5px] font-black text-neutral-600 uppercase tracking-tighter">AD</span>
-                        <div className="w-1.5 h-1.5 rounded-full border border-emerald-500 flex items-center justify-center pb-[0.5px]">
-                            <div className="w-0.5 h-0.5 bg-emerald-500 rounded-full" />
+                <div className="absolute bottom-3 left-3 flex flex-col items-start gap-1">
+                    <div className="flex items-center gap-1 bg-white/95 backdrop-blur px-2 py-0.5 rounded-lg border border-neutral-100 shadow-sm">
+                        <span className="text-[7px] font-black text-neutral-600 uppercase tracking-tighter">AD</span>
+                        <div className="w-2.5 h-2.5 rounded-full border border-emerald-500 flex items-center justify-center">
+                            <div className="w-1 h-1 bg-emerald-500 rounded-full" />
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* Details matching Screenshot 2 */}
-            <div className="px-0.5 pb-0.5 space-y-0 flex-1 flex flex-col">
+            <div className="px-2 pb-2 space-y-1 flex-1 flex flex-col">
                 <div className="flex items-center gap-1 text-neutral-400 mb-0.5">
-                    <span className="text-[6px] font-black uppercase tracking-tight">{product.time || '10 MINS'}</span>
+                    <span className="text-[8px] font-black uppercase tracking-tight">{product.deliveryTime || '10 MINS'}</span>
                 </div>
 
-                <h4 className="font-black text-neutral-900 text-[9px] sm:text-[10px] line-clamp-2 leading-tight min-h-[1.5rem] mb-0.5">
+                <h4 className="font-bold text-neutral-900 text-[12px] line-clamp-2 leading-tight min-h-[2.4rem]">
                     {product.name}
                 </h4>
 
-                <p className="text-[8px] font-bold text-neutral-400 mb-1">{product.weight || '1 Unit'}</p>
+                <p className="text-[10px] font-bold text-neutral-400">{product.weight || '1 unit'}</p>
 
-                <div className="mt-auto flex items-center justify-between gap-1">
+                <div className="mt-auto pt-2 flex items-center justify-between gap-1">
                     <div className="flex flex-col">
-                        <span className="text-[10px] sm:text-[11px] font-black text-neutral-900 leading-none">₹{product.price || 0}</span>
-                        {product.originalPrice && (
-                            <span className="text-[7px] sm:text-[8px] font-bold text-neutral-300 line-through">₹{product.originalPrice}</span>
+                        <span className="text-[14px] font-black text-neutral-900 leading-none">₹{product.price || 0}</span>
+                        {product.originalPrice && product.originalPrice !== product.price && (
+                            <span className="text-[10px] font-bold text-neutral-300 line-through">₹{product.originalPrice}</span>
                         )}
                     </div>
 
-                    <button className="flex items-center gap-0.5 border border-emerald-500 text-emerald-600 px-1.5 py-0.5 rounded-md font-black text-[7px] hover:bg-emerald-50 transition-all group/btn active:scale-95 uppercase tracking-tighter bg-emerald-50/20">
-                        ADD <Plus className="w-2.5 h-2.5 group-hover/btn:rotate-90 transition-transform" strokeWidth={3} />
+                    <button className="flex items-center gap-1 border border-emerald-500 text-emerald-600 px-3 py-1 rounded-xl font-black text-[10px] hover:bg-emerald-50 transition-all active:scale-95 uppercase bg-white">
+                        ADD <Plus className="w-3.5 h-3.5" strokeWidth={3} />
                     </button>
                 </div>
             </div>
 
             {/* Admin Actions Overlay on Hover */}
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-30 rounded-2xl">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 z-30 rounded-[2.5rem]">
                 <button
                     onClick={(e) => { e.stopPropagation(); onEdit(); }}
-                    className="bg-white p-2.5 rounded-xl hover:scale-110 active:scale-95 transition-all shadow-xl group/edit border border-neutral-100"
+                    className="bg-white p-4 rounded-2xl hover:scale-110 active:scale-95 transition-all shadow-xl group/edit border border-neutral-100"
                 >
-                    <Edit className="w-4 h-4 text-black group-hover/edit:rotate-12 transition-transform" />
+                    <Edit className="w-5 h-5 text-black group-hover/edit:rotate-12 transition-transform" />
                 </button>
                 <button
                     onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                    className="bg-white p-2.5 rounded-xl hover:scale-110 active:scale-95 transition-all shadow-xl group/del border border-neutral-100"
+                    className="bg-white p-4 rounded-2xl hover:scale-110 active:scale-95 transition-all shadow-xl group/del border border-neutral-100"
                 >
-                    <Trash2 className="w-4 h-4 text-red-500 group-hover/del:scale-110 transition-transform" />
+                    <Trash2 className="w-5 h-5 text-red-500 group-hover/del:scale-110 transition-transform" />
                 </button>
             </div>
         </div>
