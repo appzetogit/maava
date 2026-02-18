@@ -182,18 +182,16 @@ const NewlyLaunchedCard = ({ product }) => (
 
 const CategoryCard = ({ category, onClick, themeColor }) => (
   <motion.button
-    whileHover={{ y: -8, scale: 1.02 }}
-    whileTap={{ scale: 0.95 }}
     onClick={onClick}
-    className="relative flex flex-col items-center rounded-[2.5rem] sm:rounded-[3.2rem] p-4 sm:p-5 overflow-hidden group aspect-[0.78/1] transition-all border border-white/10"
+    className="relative flex flex-col items-center rounded-[1.8rem] sm:rounded-[2.4rem] p-3.5 sm:p-4 overflow-hidden aspect-[0.78/1] transition-all border border-white/10"
     style={{
       background: `linear-gradient(180deg, ${themeColor}cc 0%, ${themeColor}66 100%)`,
-      boxShadow: `0 20px 40px -20px rgba(0,0,0,0.15)`,
+      boxShadow: `0 15px 30px -15px rgba(0,0,0,0.12)`,
     }}
   >
     {/* Category Name Area - Fixed Height for Stability */}
-    <div className="w-full h-[2.8rem] sm:h-[3.2rem] flex items-center justify-center mb-2 px-1">
-      <span className="text-[12px] sm:text-base font-black text-white text-center leading-tight tracking-tight drop-shadow-sm uppercase line-clamp-2">
+    <div className="w-full h-[2.6rem] sm:h-[3rem] flex items-center justify-center mb-2 px-1">
+      <span className="text-[11px] sm:text-[15px] font-black text-white text-center leading-tight tracking-tight drop-shadow-sm uppercase line-clamp-2">
         {category.name}
       </span>
     </div>
@@ -203,18 +201,18 @@ const CategoryCard = ({ category, onClick, themeColor }) => (
       className="flex-1 w-full flex items-center justify-center p-1.5 sm:p-2 overflow-hidden shadow-inner bg-white"
       style={{
         clipPath: 'polygon(0% 100%, 100% 100%, 100% 25%, 50% 0%, 0% 25%)',
-        borderRadius: '0 0 2rem 2rem'
+        borderRadius: '0 0 1.5rem 1.5rem'
       }}
     >
       <img
         src={category.image}
         alt={category.name}
-        className="w-[92%] h-[92%] object-contain transform group-hover:scale-110 transition-transform duration-500 ease-out"
+        className="w-[90%] h-[90%] object-contain transition-transform duration-500 ease-out"
       />
     </div>
 
     {/* Elegant Shine Overlay */}
-    <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+    <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-0 transition-opacity duration-500" />
   </motion.button>
 );
 
@@ -302,10 +300,67 @@ const AnimatedCategoryHeader = ({ categoryName }) => {
 
       <style>
         {`
+          @keyframes ropeSway {
+            0%, 100% { transform: rotate(-2deg); transform-origin: top center; }
+            50% { transform: rotate(2deg); transform-origin: top center; }
+          }
+          .hanging-rope {
+            animation: ropeSway 4s ease-in-out infinite;
+          }
+        `}
+      </style>
+
+      {/* Hanging Decorations - Left and Right */}
+      {['left-2 sm:left-4 md:left-8', 'right-2 sm:right-4 md:right-8'].map((pos, idx) => (
+        <div
+          key={idx}
+          className={`absolute top-[-20%] h-[150%] flex flex-col items-center pointer-events-none z-20 hanging-rope ${pos}`}
+          style={{ animationDelay: `${idx * 1.5}s` }}
+        >
+          {/* Main Rope Line */}
+          <div className="w-[1.5px] h-full bg-gradient-to-b from-white/0 via-white/30 to-white/0 shadow-[0_0_8px_rgba(255,255,255,0.2)]" />
+
+          {/* Decorative Elements on Rope */}
+          <div className="absolute inset-x-0 top-0 h-full flex flex-col items-center gap-12 sm:gap-20 pt-10">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="flex flex-col items-center gap-2">
+                <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-white/40 shadow-[0_0_10px_rgba(255,255,255,0.5)] border border-white/20" />
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }}
+                  transition={{ duration: 3, repeat: Infinity, delay: i * 0.5 }}
+                >
+                  <Sparkles
+                    size={i % 2 === 0 ? 14 : 20}
+                    className={i % 2 === 0 ? "text-white/60" : "text-yellow-200/80"}
+                    fill="currentColor"
+                  />
+                </motion.div>
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-white/30" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      <style>
+        {`
           @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,900;1,400;1,900&family=Cinzel:wght@400;700;900&display=swap');
+          
           @keyframes shimmerSweep {
             0% { background-position: -200% center; }
             100% { background-position: 200% center; }
+          }
+
+          @keyframes windWave {
+            0%, 100% { transform: translate(0, 0) skewX(0deg); }
+            25% { transform: translate(3px, -2px) skewX(2deg); }
+            50% { transform: translate(0px, 1px) skewX(-1deg); }
+            75% { transform: translate(-2px, -1px) skewX(1deg); }
+          }
+
+          .wind-char {
+            display: inline-block;
+            animation: windWave 4s ease-in-out infinite;
           }
         `}
       </style>
@@ -323,21 +378,32 @@ const AnimatedCategoryHeader = ({ categoryName }) => {
 
       {/* Main Heading Container */}
       <div className="relative w-full flex justify-center items-center">
-        {/* Base White Title with Refined Font Size */}
+        {/* Base White Title with Wind Wave Stagger */}
         <motion.h2
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
           style={{
             fontFamily: "'Playfair Display', serif",
-            fontSize: "clamp(1.8rem, 7vw, 6rem)", /* Reduced from 11rem */
+            fontSize: "clamp(1.8rem, 7vw, 6rem)",
             lineHeight: "1.05"
           }}
-          className="font-[1000] italic tracking-tightest text-white drop-shadow-[0_10px_20px_rgba(0,0,0,0.3)] relative px-2 whitespace-nowrap"
+          className="font-[1000] italic tracking-tightest text-white drop-shadow-[0_10px_20px_rgba(0,0,0,0.3)] relative px-2 whitespace-nowrap z-10"
         >
-          <span className="relative z-10">{categoryName} Store</span>
+          {`${categoryName} Store`.split('').map((char, i) => (
+            <span
+              key={i}
+              className="wind-char"
+              style={{
+                animationDelay: `${i * 0.1}s`,
+                whiteSpace: char === ' ' ? 'pre' : 'normal'
+              }}
+            >
+              {char}
+            </span>
+          ))}
 
-          {/* Golden Splash & White Glint Overlay */}
+          {/* Golden Splash & White Glint Overlay with synchronized Wind Wave */}
           <motion.span
             style={{
               position: 'absolute',
@@ -350,9 +416,20 @@ const AnimatedCategoryHeader = ({ categoryName }) => {
               zIndex: 20,
               animation: 'shimmerSweep 2.8s infinite cubic-bezier(0.45, 0.05, 0.55, 0.95)'
             }}
-            className="filter brightness-125 saturate-150"
+            className="filter brightness-125 saturate-150 pointer-events-none"
           >
-            {categoryName} Store
+            {`${categoryName} Store`.split('').map((char, i) => (
+              <span
+                key={`gold-${i}`}
+                className="wind-char"
+                style={{
+                  animationDelay: `${i * 0.1}s`,
+                  whiteSpace: char === ' ' ? 'pre' : 'normal'
+                }}
+              >
+                {char}
+              </span>
+            ))}
           </motion.span>
         </motion.h2>
 
@@ -400,6 +477,53 @@ const AnimatedCategoryHeader = ({ categoryName }) => {
     </div>
   );
 };
+const PartyCelebration = () => {
+  const [trigger, setTrigger] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTrigger(prev => prev + 1);
+    }, 7000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="absolute inset-0 pointer-events-none z-40 overflow-visible" key={trigger}>
+      {[...Array(40)].map((_, i) => {
+        const colors = ['#FFD700', '#FF69B4', '#00CED1', '#ADFF2F', '#FFA500', '#FF4500'];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const size = 6 + Math.random() * 8;
+
+        return (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, scale: 0, x: "-50%", y: "20%" }}
+            animate={{
+              opacity: [0, 1, 1, 0],
+              scale: [0.5, 1.2, 0.7],
+              x: ["-50%", `calc(-50% + ${(Math.random() - 0.5) * 600}px)`],
+              y: ["20%", `calc(20% - ${150 + Math.random() * 350}px)`],
+              rotate: [0, Math.random() * 720]
+            }}
+            transition={{
+              duration: 3 + Math.random() * 2,
+              ease: "easeOut"
+            }}
+            className="absolute left-1/2 top-1/2"
+            style={{
+              width: `${size}px`,
+              height: Math.random() > 0.5 ? `${size}px` : `${size * 1.5}px`,
+              backgroundColor: color,
+              borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+              boxShadow: `0 0 10px ${color}40`
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+};
+
 export default function InMart() {
   const navigate = useNavigate()
   const [heroSearch, setHeroSearch] = useState("")
@@ -1153,6 +1277,7 @@ export default function InMart() {
 
               {/* Section Header */}
               <div className="relative z-10 flex flex-col items-center mb-6 sm:mb-10 md:mb-14">
+                <PartyCelebration />
                 <motion.h2
                   initial={{ scale: 0.8, opacity: 0 }}
                   whileInView={{ scale: 1, opacity: 1 }}
