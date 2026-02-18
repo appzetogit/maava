@@ -3,6 +3,8 @@ import ProtectedRoute from "@/components/ProtectedRoute"
 import AuthRedirect from "@/components/AuthRedirect"
 import UserLayout from "./UserLayout"
 
+
+
 // Home & Discovery
 import Home from "../pages/Home"
 import InMart from "../pages/InMart"
@@ -99,6 +101,7 @@ export default function UserRouter() {
           }
         />
         <Route path="/in-mart" element={<InMart />} />
+
         <Route path="/in-mart/restaurants" element={<InMartRestaurants />} />
         <Route path="/in-mart/products/:categorySlug" element={<InMartProductCategory />} />
         <Route path="/in-mart/:category" element={<InMartCategory />} />

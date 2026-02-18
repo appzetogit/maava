@@ -569,14 +569,9 @@ export default function HibermartAdminHome() {
     const [newlyLaunchedItems, setNewlyLaunchedItems] = useState([])
     const [bestSellersItems, setBestSellersItems] = useState([])
 
-    const [navCategories, setNavCategories] = useState([
-        { id: "all", name: "All", icon: "ShoppingBag", themeColor: "#D3AEFE" },
-        { id: "home", name: "Home", icon: "Home", themeColor: "#BFF7D4" },
-        { id: "toys", name: "Toys", icon: "Gamepad2", themeColor: "#FBE04C" },
-        { id: "fresh", name: "Fresh", icon: "Apple", themeColor: "#21C063" },
-        { id: "electronics", name: "Electronics", icon: "Headphones", themeColor: "#FDE256" },
-        { id: "mobiles", name: "Mobiles", icon: "Smartphone", themeColor: "#FD8930" },
-    ])
+    const [navCategories, setNavCategories] = useState([])
+    const [allCategoriesList, setAllCategoriesList] = useState([])
+    const [allCollectionsList, setAllCollectionsList] = useState([])
 
     // File upload ref and state
     const fileInputRef = useRef(null);
@@ -630,11 +625,13 @@ export default function HibermartAdminHome() {
         }
     };
 
-    // UI States
+    // --- UI STATES ---
     const [showUploadModal, setShowUploadModal] = useState(false)
     const [modalType, setModalType] = useState("") // category, banner, product, story, item
     const [editingItem, setEditingItem] = useState(null)
     const [selectedOrder, setSelectedOrder] = useState(null)
+    const [selectedFeaturedCats, setSelectedFeaturedCats] = useState([])
+    const [expandedMainCat, setExpandedMainCat] = useState(null)
     // The fileInputRef is already declared above, so we remove the duplicate here.
 
     // Reset path when tab changes to avoid mismatched data drill-down and "nothing showing" errors
@@ -743,6 +740,7 @@ export default function HibermartAdminHome() {
             if (collectionsRes.success) {
                 const collections = collectionsRes.data.collections;
                 console.log('📦 Collections fetched:', collections);
+                setAllCollectionsList(collections);
 
                 const sale = collections.find(c => c.slug === 'sale');
                 if (sale) setSaleItems(sale.products || []);
@@ -755,6 +753,26 @@ export default function HibermartAdminHome() {
 
                 const trending = collections.find(c => c.slug === 'trending');
                 if (trending) setTrendingItems(trending.products || []);
+            }
+
+            // Fetch Nav Categories
+            const navRes = await inmartAPI.adminGetAllNavEntries();
+            if (navRes.success) {
+                setNavCategories(navRes.data.navigation);
+            }
+
+            // Flat categories for dropdowns
+            if (categoriesRes.success) {
+                const flat = [];
+                const traverse = (cats) => {
+                    cats.forEach(c => {
+                        flat.push({ name: c.name, slug: c.slug || c._id });
+                        if (c.subCategories) traverse(c.subCategories);
+                        if (c.children) traverse(c.children);
+                    });
+                };
+                traverse(categoriesRes.data.categories);
+                setAllCategoriesList(flat);
             }
 
         } catch (err) {
@@ -772,6 +790,12 @@ export default function HibermartAdminHome() {
     const handleOpenModal = (type, item = null) => {
         setModalType(type)
         setEditingItem(item)
+        if (type === "nav" && item) {
+            setSelectedFeaturedCats(item.featuredCategories || [])
+        } else {
+            setSelectedFeaturedCats([])
+        }
+        setExpandedMainCat(null)
         setShowUploadModal(true)
     }
 
@@ -779,6 +803,9 @@ export default function HibermartAdminHome() {
         try {
             if (activeTab === "banners") {
                 await inmartAPI.adminDeleteBanner(item._id || item.id);
+                fetchAllData();
+            } else if (activeTab === "navigation") {
+                await inmartAPI.adminDeleteNavEntry(item._id || item.id);
                 fetchAllData();
             } else if (activeTab === "sale") {
                 // Handle sale item removal from collection
@@ -849,7 +876,7 @@ export default function HibermartAdminHome() {
                 const productData = {
                     name, image,
                     price: Number(price),
-                    originalPrice: originalPrice ? Number(originalPrice) : Number(price),
+                    originalPrice: originalPrice ? Number(originalPrice) : (Number(formData.get("originalPrice")) || Number(price)),
                     weight,
                     discount,
                     deliveryTime: time,
@@ -951,6 +978,22 @@ export default function HibermartAdminHome() {
                         }
                     }
                     await inmartAPI.adminUpdateCategory(rootCategory._id, updatedRoot);
+                }
+            } else if (modalType === "nav") {
+                const navData = {
+                    name,
+                    icon: formData.get("icon"),
+                    themeColor: formData.get("themeColor"),
+                    targetType: formData.get("targetType"),
+                    targetId: formData.get("targetId"),
+                    featuredCategories: selectedFeaturedCats,
+                    isActive: true,
+                    displayOrder: editingItem?.displayOrder || 0
+                };
+                if (editingItem) {
+                    await inmartAPI.adminUpdateNavEntry(editingItem._id || editingItem.id, navData);
+                } else {
+                    await inmartAPI.adminCreateNavEntry(navData);
                 }
             }
 
@@ -1209,7 +1252,7 @@ export default function HibermartAdminHome() {
                                                     <button onClick={() => handleOpenModal("nav", cat)} className="p-2 bg-white rounded-xl shadow-sm hover:bg-neutral-50 transition-colors">
                                                         <Edit className="w-3.5 h-3.5 text-neutral-400" />
                                                     </button>
-                                                    <button onClick={() => setNavCategories(prev => prev.filter(c => c.id !== cat.id))} className="p-2 bg-white rounded-xl shadow-sm hover:bg-red-50 transition-colors border-red-100">
+                                                    <button onClick={() => handleDeleteItem(cat)} className="p-2 bg-white rounded-xl shadow-sm hover:bg-red-50 transition-colors border-red-100">
                                                         <Trash2 className="w-3.5 h-3.5 text-red-400" />
                                                     </button>
                                                 </div>
@@ -1301,38 +1344,170 @@ export default function HibermartAdminHome() {
                                         </>
                                     )}
 
-                                    <div className="sm:col-span-2">
-                                        <label className="text-[10px] font-black uppercase text-neutral-400 tracking-widest block mb-2">
-                                            {modalType === "product" ? "PRODUCT IMAGE URL" : modalType === "banner" ? "BANNER IMAGE URL" : "VISUAL MEDIA (CLOUD URL)"}
-                                        </label>
-                                        <div className="flex flex-col sm:flex-row gap-4">
-                                            <div className="flex-1">
+                                    {modalType === "nav" && (
+                                        <>
+                                            <div>
+                                                <label className="text-[10px] font-black uppercase text-neutral-400 tracking-widest block mb-2">ICON</label>
+                                                <select name="icon" defaultValue={editingItem?.icon || "ShoppingBag"} className="w-full bg-white border border-neutral-200 rounded-3xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all">
+                                                    {["ShoppingBag", "Home", "Gamepad2", "Apple", "Headphones", "Smartphone", "Sparkles", "Shirt", "Coffee", "Compass"].map(icon => (
+                                                        <option key={icon} value={icon}>{icon}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-black uppercase text-neutral-400 tracking-widest block mb-2">THEME COLOR</label>
+                                                <div className="flex gap-2">
+                                                    <input name="themeColor" type="color" defaultValue={editingItem?.themeColor || "#8B5CF6"} className="w-16 h-14 bg-white border border-neutral-200 rounded-2xl p-1 focus:ring-2 focus:ring-black outline-none transition-all" />
+                                                    <input type="text" defaultValue={editingItem?.themeColor || "#8B5CF6"} placeholder="#000000" className="flex-1 bg-white border border-neutral-200 rounded-3xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all" />
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="text-[10px] font-black uppercase text-neutral-400 tracking-widest block mb-2">TARGET LINK TYPE</label>
+                                                <select name="targetType" defaultValue={editingItem?.targetType || "category"} className="w-full bg-white border border-neutral-200 rounded-3xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all">
+                                                    <option value="category">Category</option>
+                                                    <option value="collection">Collection</option>
+                                                    <option value="external">External Link</option>
+                                                    <option value="none">None</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-black uppercase text-neutral-400 tracking-widest block mb-2">TARGET CATEGORY / COLLECTION</label>
+                                                <select name="targetId" defaultValue={editingItem?.targetId} className="w-full bg-white border border-neutral-200 rounded-3xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all">
+                                                    <option value="">Select Target...</option>
+                                                    <optgroup label="Categories">
+                                                        {allCategoriesList.map(c => (
+                                                            <option key={c.slug} value={c.name}>{c.name}</option>
+                                                        ))}
+                                                    </optgroup>
+                                                    <optgroup label="Collections">
+                                                        {allCollectionsList.map(c => (
+                                                            <option key={c.slug} value={c.slug}>{c.name}</option>
+                                                        ))}
+                                                    </optgroup>
+                                                </select>
+                                            </div>
+
+                                            <div className="sm:col-span-2 mt-4">
+                                                <label className="text-[10px] font-black uppercase text-neutral-400 tracking-widest block mb-4">Featured Categories (Store Cards)</label>
+                                                <div className="bg-neutral-50 rounded-[2rem] p-6 border border-neutral-100 max-h-96 overflow-y-auto space-y-4">
+                                                    {catalogItems.map((cat) => (
+                                                        <div key={cat._id || cat.id} className="bg-white rounded-2xl border border-neutral-100 overflow-hidden">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setExpandedMainCat(expandedMainCat === cat._id ? null : cat._id)}
+                                                                className="w-full px-5 py-4 flex items-center justify-between hover:bg-neutral-50 transition-colors"
+                                                            >
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-10 h-10 rounded-xl overflow-hidden bg-neutral-100">
+                                                                        <img src={cat.image} alt="" className="w-full h-full object-cover" />
+                                                                    </div>
+                                                                    <div className="text-left">
+                                                                        <h5 className="text-sm font-black text-neutral-900">{cat.name}</h5>
+                                                                        <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
+                                                                            {cat.subCategories?.length || 0} Categories Inside
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                                <ChevronDown className={`w-4 h-4 text-neutral-400 transition-transform ${expandedMainCat === cat._id ? 'rotate-180' : ''}`} />
+                                                            </button>
+
+                                                            {expandedMainCat === cat._id && (
+                                                                <div className="p-4 bg-neutral-50/50 border-t border-neutral-100 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                                    {cat.subCategories?.map((sub) => {
+                                                                        const subId = sub.slug || sub.id;
+                                                                        const isSelected = selectedFeaturedCats.some(fc => fc.categoryId === cat._id && fc.subCategoryIds.includes(subId));
+                                                                        return (
+                                                                            <div
+                                                                                key={subId}
+                                                                                onClick={() => {
+                                                                                    const updated = [...selectedFeaturedCats];
+                                                                                    const catIndex = updated.findIndex(fc => fc.categoryId === cat._id);
+
+                                                                                    if (catIndex > -1) {
+                                                                                        const subIndex = updated[catIndex].subCategoryIds.indexOf(subId);
+                                                                                        if (subIndex > -1) {
+                                                                                            const newSubIds = [...updated[catIndex].subCategoryIds];
+                                                                                            newSubIds.splice(subIndex, 1);
+                                                                                            if (newSubIds.length === 0) {
+                                                                                                updated.splice(catIndex, 1);
+                                                                                            } else {
+                                                                                                updated[catIndex] = { ...updated[catIndex], subCategoryIds: newSubIds };
+                                                                                            }
+                                                                                        } else {
+                                                                                            updated[catIndex] = {
+                                                                                                ...updated[catIndex],
+                                                                                                subCategoryIds: [...updated[catIndex].subCategoryIds, subId]
+                                                                                            };
+                                                                                        }
+                                                                                    } else {
+                                                                                        updated.push({
+                                                                                            categoryId: cat._id,
+                                                                                            subCategoryIds: [subId]
+                                                                                        });
+                                                                                    }
+                                                                                    setSelectedFeaturedCats(updated);
+                                                                                }}
+                                                                                className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${isSelected ? 'bg-black border-black shadow-lg shadow-black/10' : 'bg-white border-neutral-100 hover:border-neutral-300'
+                                                                                    }`}
+                                                                            >
+                                                                                <div className="w-8 h-8 rounded-lg overflow-hidden bg-neutral-100 shrink-0">
+                                                                                    <img src={sub.image} alt="" className="w-full h-full object-cover" />
+                                                                                </div>
+                                                                                <span className={`text-[11px] font-bold truncate flex-1 shrink-0 ${isSelected ? 'text-white' : 'text-neutral-700'}`}>
+                                                                                    {sub.name}
+                                                                                </span>
+                                                                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${isSelected ? 'border-white bg-white' : 'border-neutral-200'}`}>
+                                                                                    {isSelected && <div className="w-2 h-2 bg-black rounded-full" />}
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <p className="text-[10px] font-bold text-neutral-400 mt-2 italic px-2">
+                                                    * Select the sub-categories you want to display as cards in this store section.
+                                                </p>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {modalType !== "nav" && (
+                                        <div className="sm:col-span-2">
+                                            <label className="text-[10px] font-black uppercase text-neutral-400 tracking-widest block mb-2">
+                                                {modalType === "product" ? "PRODUCT IMAGE URL" : modalType === "banner" ? "BANNER IMAGE URL" : "VISUAL MEDIA (CLOUD URL)"}
+                                            </label>
+                                            <div className="flex flex-col sm:flex-row gap-4">
+                                                <div className="flex-1">
+                                                    <input
+                                                        name="image"
+                                                        type="text"
+                                                        defaultValue={editingItem?.image}
+                                                        placeholder="Paste image URL or upload below..."
+                                                        className="w-full bg-white border border-neutral-200 rounded-3xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all placeholder:text-neutral-300"
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    disabled={isUploading}
+                                                    className="px-8 py-4 bg-neutral-900 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all disabled:bg-neutral-400"
+                                                >
+                                                    {isUploading ? '...' : 'UPLOAD'}
+                                                </button>
                                                 <input
-                                                    name="image"
-                                                    type="text"
-                                                    defaultValue={editingItem?.image}
-                                                    placeholder="Paste image URL or upload below..."
-                                                    className="w-full bg-white border border-neutral-200 rounded-3xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all placeholder:text-neutral-300"
-                                                    required
+                                                    type="file"
+                                                    ref={fileInputRef}
+                                                    onChange={handleFileUpload}
+                                                    accept="image/*"
+                                                    className="hidden"
                                                 />
                                             </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => fileInputRef.current?.click()}
-                                                disabled={isUploading}
-                                                className="px-8 py-4 bg-neutral-900 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all disabled:bg-neutral-400"
-                                            >
-                                                {isUploading ? '...' : 'UPLOAD'}
-                                            </button>
-                                            <input
-                                                type="file"
-                                                ref={fileInputRef}
-                                                onChange={handleFileUpload}
-                                                accept="image/*"
-                                                className="hidden"
-                                            />
                                         </div>
-                                    </div>
+                                    )}
 
                                     <button type="submit" className="sm:col-span-2 bg-black text-white py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-black/20 hover:bg-neutral-800 hover:-translate-y-1 active:translate-y-0 transition-all mt-6">
                                         {editingItem ? "Update Changes" : editingItem === null && modalType === "product" ? "Create Product" : `CREATE ${modalType.toUpperCase()}`}
@@ -1451,18 +1626,15 @@ function NestedManagement({ rootName, items, path, setPath, activeRootId, onAdd,
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    {/* Multi-add capability at sub/child levels */}
-                    {(path.length < 2) && (
-                        <button
-                            onClick={() => onAdd("category")}
-                            className="flex items-center gap-2 bg-white text-black border-2 border-black px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-neutral-50 transition-all"
-                        >
-                            <Plus className="w-4 h-4" />
-                            {path.length === 0 ? "Sub Category" : "Child Category"}
-                        </button>
-                    )}
-                    {(path.length >= 1) && (
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => onAdd("category")}
+                        className="flex items-center gap-2 bg-neutral-100 text-neutral-600 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-neutral-200 transition-all border border-neutral-200"
+                    >
+                        <Plus className="w-4 h-4" />
+                        {path.length === 0 ? "Category" : "Sub Category"}
+                    </button>
+                    {isProductView && (
                         <button
                             onClick={() => onAdd("product")}
                             className="flex items-center gap-2 bg-black text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-black/20 hover:scale-105 active:scale-95 transition-all"

@@ -9,6 +9,7 @@ import {
     getCollections,
     getBanners,
     getStories,
+    getNavCategories,
     getHomeData
 } from '../controllers/inmartController.js';
 
@@ -37,5 +38,8 @@ router.get('/banners', getBanners);
 
 // Stories
 router.get('/stories', getStories);
+
+// Navigation
+router.get('/navigation', getNavCategories);
 
 export default router;

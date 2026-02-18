@@ -20,6 +20,10 @@ import {
     createBanner,
     updateBanner,
     deleteBanner,
+    getAllNavEntries,
+    createNavEntry,
+    updateNavEntry,
+    deleteNavEntry,
     getDashboardStats
 } from '../controllers/inmartAdminController.js';
 import { upload, uploadImage } from '../controllers/uploadController.js';
@@ -76,5 +80,14 @@ router.route('/banners')
 router.route('/banners/:id')
     .put(updateBanner)
     .delete(deleteBanner);
+
+// Navigation
+router.route('/navigation')
+    .get(getAllNavEntries)
+    .post(createNavEntry);
+
+router.route('/navigation/:id')
+    .put(updateNavEntry)
+    .delete(deleteNavEntry);
 
 export default router;

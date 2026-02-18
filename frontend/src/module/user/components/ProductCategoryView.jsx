@@ -165,7 +165,7 @@ export default function ProductCategoryView({
                                                 restaurant: "Hibermart",
                                                 restaurantId: "hibermart-id"
                                             }}
-                                            className="w-[75px] sm:w-[85px]"
+                                            className="w-[66px] sm:w-[76px]"
                                         />
                                     </div>
                                 </div>

@@ -45,27 +45,27 @@ export default function AddToCartButton({ item, className = "", disabled = false
   if (inCart) {
     return (
       <div className={`flex items-center ${className}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-        <div className={`flex items-center gap-0.5 border rounded-lg overflow-hidden h-8 bg-white dark:bg-black/20 ${disabled ? "border-gray-300 opacity-50" : "border-green-600"}`}>
+        <div className={`flex items-center gap-0.5 border rounded-lg overflow-hidden h-7 bg-white dark:bg-black/20 ${disabled ? "border-gray-300 opacity-50" : "border-green-600"}`}>
           <Button
             variant="ghost"
             size="icon"
-            className={`h-full w-7 rounded-none transition-colors ${disabled ? "text-gray-400 cursor-not-allowed" : "text-green-600 hover:bg-green-50"}`}
+            className={`h-full w-6 rounded-none transition-colors ${disabled ? "text-gray-400 cursor-not-allowed" : "text-green-600 hover:bg-green-50"}`}
             onClick={handleIncrease}
             disabled={disabled}
           >
-            <Plus className="h-3.5 w-3.5" strokeWidth={3} />
+            <Plus className="h-3 w-3" strokeWidth={3} />
           </Button>
-          <span className={`px-1 text-sm font-bold min-w-[1.2rem] text-center ${disabled ? "text-gray-400" : "text-green-600"}`}>
+          <span className={`px-1 text-[11px] font-bold min-w-[1rem] text-center ${disabled ? "text-gray-400" : "text-green-600"}`}>
             {cartItem?.quantity || 0}
           </span>
           <Button
             variant="ghost"
             size="icon"
-            className={`h-full w-7 rounded-none transition-colors ${disabled ? "text-gray-400 cursor-not-allowed" : "text-green-600 hover:bg-green-50"}`}
+            className={`h-full w-6 rounded-none transition-colors ${disabled ? "text-gray-400 cursor-not-allowed" : "text-green-600 hover:bg-green-50"}`}
             onClick={handleDecrease}
             disabled={disabled}
           >
-            <Minus className="h-3.5 w-3.5" strokeWidth={3} />
+            <Minus className="h-3 w-3" strokeWidth={3} />
           </Button>
         </div>
       </div>
@@ -77,7 +77,7 @@ export default function AddToCartButton({ item, className = "", disabled = false
       size="sm"
       onClick={handleAddToCart}
       disabled={disabled}
-      className={`h-8 px-2 sm:px-3 font-black rounded-lg text-[10px] sm:text-xs transition-all transform active:scale-95 shadow-sm ${disabled
+      className={`h-7 px-2 sm:px-2.5 font-black rounded-lg text-[9px] sm:text-[10px] transition-all transform active:scale-95 shadow-sm ${disabled
         ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-70"
         : "bg-white dark:bg-transparent border border-green-600 text-green-600 hover:bg-green-600 hover:text-white"
         } ${className}`}

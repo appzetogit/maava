@@ -4,6 +4,7 @@ import InMartCategory from '../models/InMartCategory.js';
 import InMartCollection from '../models/InMartCollection.js';
 import InMartBanner from '../models/InMartBanner.js';
 import InMartStory from '../models/InMartStory.js';
+import InMartNavigation from '../models/InMartNavigation.js';
 
 // ==================== PRODUCTS ====================
 
@@ -566,6 +567,107 @@ export const deleteBanner = async (req, res) => {
     }
 };
 
+// ==================== NAVIGATION ====================
+
+// @desc    Get all navigation entries
+// @route   GET /api/admin/inmart/navigation
+// @access  Private/Admin
+export const getAllNavEntries = async (req, res) => {
+    try {
+        const navigation = await InMartNavigation.find().sort({ displayOrder: 1 });
+        res.status(200).json({
+            success: true,
+            count: navigation.length,
+            data: { navigation }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching navigation entries',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Create navigation entry
+// @route   POST /api/admin/inmart/navigation
+// @access  Private/Admin
+export const createNavEntry = async (req, res) => {
+    try {
+        const navEntry = await InMartNavigation.create(req.body);
+        res.status(201).json({
+            success: true,
+            message: 'Navigation entry created successfully',
+            data: { navigation: navEntry }
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: 'Error creating navigation entry',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Update navigation entry
+// @route   PUT /api/admin/inmart/navigation/:id
+// @access  Private/Admin
+export const updateNavEntry = async (req, res) => {
+    try {
+        const navEntry = await InMartNavigation.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
+
+        if (!navEntry) {
+            return res.status(404).json({
+                success: false,
+                message: 'Navigation entry not found'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Navigation entry updated successfully',
+            data: { navigation: navEntry }
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: 'Error updating navigation entry',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Delete navigation entry
+// @route   DELETE /api/admin/inmart/navigation/:id
+// @access  Private/Admin
+export const deleteNavEntry = async (req, res) => {
+    try {
+        const navEntry = await InMartNavigation.findByIdAndDelete(req.params.id);
+
+        if (!navEntry) {
+            return res.status(404).json({
+                success: false,
+                message: 'Navigation entry not found'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Navigation entry deleted successfully'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error deleting navigation entry',
+            error: error.message
+        });
+    }
+};
+
 // ==================== DASHBOARD STATS ====================
 
 // @desc    Get InMart dashboard statistics
@@ -578,6 +680,7 @@ export const getDashboardStats = async (req, res) => {
             totalCategories,
             totalCollections,
             totalStores,
+            totalNavEntries,
             activeProducts,
             newProducts,
             saleProducts
@@ -586,6 +689,7 @@ export const getDashboardStats = async (req, res) => {
             InMartCategory.countDocuments(),
             InMartCollection.countDocuments(),
             InMartStore.countDocuments(),
+            InMartNavigation.countDocuments(),
             InMartProduct.countDocuments({ isAvailable: true }),
             InMartProduct.countDocuments({ isNew: true }),
             InMartProduct.countDocuments({ isOnSale: true })
@@ -599,6 +703,7 @@ export const getDashboardStats = async (req, res) => {
                     totalCategories,
                     totalCollections,
                     totalStores,
+                    totalNavEntries,
                     activeProducts,
                     newProducts,
                     saleProducts

@@ -16,7 +16,14 @@ import {
   Heart,
   Mic,
   Navigation,
-  MapPin
+  MapPin,
+  Clock,
+  Plus,
+  Minus,
+  Trash2,
+  ArrowRight,
+  MoreVertical,
+  Compass
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import AnimatedPage from "../components/AnimatedPage"
@@ -31,13 +38,13 @@ import mccainFries from "@/assets/inmart/mccain_fries.png"
 
 
 
-const ProductCard = ({ product }) => (
+const ProductCard = ({ product, themeColor }) => (
   <div className="flex-shrink-0 w-[145px] sm:w-[175px] md:w-[200px] lg:w-[225px] bg-white dark:bg-[#1a1a1a] rounded-2xl p-2 md:p-3 relative shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100/50 dark:border-white/5 group">
     {/* Discount Badge */}
     <div className="absolute top-0 left-0 z-10">
       <div className="relative">
         <svg width="42" height="42" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="sm:w-11 sm:h-11 drop-shadow-sm">
-          <path d="M24 0L27.9 5.7L34.5 4.5L36.3 11.1L42.9 12.9L41.7 19.5L47.4 23.4L41.7 27.3L42.9 33.9L36.3 35.7L34.5 42.3L27.9 41.1L24 46.8L20.1 41.1L13.5 42.3L11.7 35.7L5.1 33.9L6.3 27.3L0.6 23.4L6.3 19.5L5.1 12.9L11.7 11.1L13.5 4.5L20.1 5.7L24 0Z" fill="#8B5CF6" />
+          <path d="M24 0L27.9 5.7L34.5 4.5L36.3 11.1L42.9 12.9L41.7 19.5L47.4 23.4L41.7 27.3L42.9 33.9L36.3 35.7L34.5 42.3L27.9 41.1L24 46.8L20.1 41.1L13.5 42.3L11.7 35.7L5.1 33.9L6.3 27.3L0.6 23.4L6.3 19.5L5.1 12.9L11.7 11.1L13.5 4.5L20.1 5.7L24 0Z" fill={themeColor || "#8B5CF6"} />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center text-white font-[900] leading-none">
           <span className="text-[10px] sm:text-[11px]">{product.discount}</span>
@@ -92,7 +99,7 @@ const ProductCard = ({ product }) => (
             restaurant: "Hibermart",
             restaurantId: "hibermart-id"
           }}
-          className="w-[50px] sm:w-[55px]"
+          className="w-[45px] sm:w-[50px]"
         />
       </div>
     </div>
@@ -165,12 +172,50 @@ const NewlyLaunchedCard = ({ product }) => (
               restaurant: "Hibermart",
               restaurantId: "hibermart-id"
             }}
-            className="w-[55px] sm:w-[65px]"
+            className="w-[50px] sm:w-[60px]"
           />
         </div>
       </div>
     </div>
   </div>
+);
+
+const CategoryCard = ({ category, onClick, themeColor }) => (
+  <motion.button
+    whileHover={{ y: -8, scale: 1.02 }}
+    whileTap={{ scale: 0.95 }}
+    onClick={onClick}
+    className="relative flex flex-col items-center rounded-[2.5rem] sm:rounded-[3.2rem] p-4 sm:p-5 overflow-hidden group aspect-[0.78/1] transition-all border border-white/10"
+    style={{
+      background: `linear-gradient(180deg, ${themeColor}cc 0%, ${themeColor}66 100%)`,
+      boxShadow: `0 20px 40px -20px rgba(0,0,0,0.15)`,
+    }}
+  >
+    {/* Category Name Area - Fixed Height for Stability */}
+    <div className="w-full h-[2.8rem] sm:h-[3.2rem] flex items-center justify-center mb-2 px-1">
+      <span className="text-[12px] sm:text-base font-black text-white text-center leading-tight tracking-tight drop-shadow-sm uppercase line-clamp-2">
+        {category.name}
+      </span>
+    </div>
+
+    {/* White House-Shaped Image Container (Inside Colored Card) */}
+    <div
+      className="flex-1 w-full flex items-center justify-center p-1.5 sm:p-2 overflow-hidden shadow-inner bg-white"
+      style={{
+        clipPath: 'polygon(0% 100%, 100% 100%, 100% 25%, 50% 0%, 0% 25%)',
+        borderRadius: '0 0 2rem 2rem'
+      }}
+    >
+      <img
+        src={category.image}
+        alt={category.name}
+        className="w-[92%] h-[92%] object-contain transform group-hover:scale-110 transition-transform duration-500 ease-out"
+      />
+    </div>
+
+    {/* Elegant Shine Overlay */}
+    <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+  </motion.button>
 );
 
 const ProductSection = ({ title, products, onSeeAll, isNewlyLaunched = false, themeColor }) => {
@@ -208,7 +253,7 @@ const ProductSection = ({ title, products, onSeeAll, isNewlyLaunched = false, th
               isNewlyLaunched ? (
                 <NewlyLaunchedCard key={product.id} product={product} />
               ) : (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product.id} product={product} themeColor={themeColor} />
               )
             ))}
             <div className="min-w-[4px] h-full"></div>
@@ -218,18 +263,157 @@ const ProductSection = ({ title, products, onSeeAll, isNewlyLaunched = false, th
     </div>
   );
 };
+const AnimatedCategoryHeader = ({ categoryName }) => {
+  return (
+    <div className="relative w-full flex flex-col items-center justify-center py-4 md:py-6 mb-2 text-center select-none overflow-visible">
+      {/* Cinematic Snow Shower Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        {[...Array(25)].map((_, i) => (
+          <motion.div
+            key={`snow-${i}`}
+            initial={{
+              top: "-5%",
+              left: `${Math.random() * 100}%`,
+              opacity: 0,
+              scale: 0.2 + Math.random() * 0.5
+            }}
+            animate={{
+              top: "105%",
+              left: [`${Math.random() * 100}%`, `${(Math.random() * 100) + (Math.random() > 0.5 ? 5 : -5)}%`],
+              opacity: [0, 0.8, 0.8, 0],
+            }}
+            transition={{
+              duration: 4 + Math.random() * 6,
+              repeat: Infinity,
+              delay: Math.random() * 10,
+              ease: "linear"
+            }}
+            style={{
+              position: 'absolute',
+              width: `${Math.random() * 6 + 2}px`,
+              height: `${Math.random() * 6 + 2}px`,
+              background: 'white',
+              borderRadius: '50%',
+              filter: 'blur(1px) drop-shadow(0 0 2px rgba(255,255,255,0.8))'
+            }}
+          />
+        ))}
+      </div>
 
+      <style>
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,900;1,400;1,900&family=Cinzel:wght@400;700;900&display=swap');
+          @keyframes shimmerSweep {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+          }
+        `}
+      </style>
+
+      {/* "THE" Above the main heading - Reduced Margin */}
+      <motion.span
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="text-[10px] sm:text-[14px] md:text-[16px] font-black tracking-[0.6em] uppercase mb-1 text-white/80 z-20"
+        style={{ fontFamily: "'Cinzel', serif" }}
+      >
+        THE
+      </motion.span>
+
+      {/* Main Heading Container */}
+      <div className="relative w-full flex justify-center items-center">
+        {/* Base White Title with Refined Font Size */}
+        <motion.h2
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
+          style={{
+            fontFamily: "'Playfair Display', serif",
+            fontSize: "clamp(1.8rem, 7vw, 6rem)", /* Reduced from 11rem */
+            lineHeight: "1.05"
+          }}
+          className="font-[1000] italic tracking-tightest text-white drop-shadow-[0_10px_20px_rgba(0,0,0,0.3)] relative px-2 whitespace-nowrap"
+        >
+          <span className="relative z-10">{categoryName} Store</span>
+
+          {/* Golden Splash & White Glint Overlay */}
+          <motion.span
+            style={{
+              position: 'absolute',
+              inset: 0,
+              padding: '0 0.5rem',
+              background: 'linear-gradient(110deg, transparent 30%, rgba(255,215,0,0) 35%, #FFD700 45%, #FFFFFF 50%, #FFD700 55%, rgba(255,215,0,0) 65%, transparent 70%)',
+              backgroundSize: '200% 100%',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              zIndex: 20,
+              animation: 'shimmerSweep 2.8s infinite cubic-bezier(0.45, 0.05, 0.55, 0.95)'
+            }}
+            className="filter brightness-125 saturate-150"
+          >
+            {categoryName} Store
+          </motion.span>
+        </motion.h2>
+
+        {/* Limited Sparkles - Reduced count to 4 for premium feel */}
+        <div className="absolute inset-0 pointer-events-none z-30">
+          {[...Array(4)].map((_, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
+              animate={{
+                opacity: [0, 1, 0],
+                scale: [0, 1, 0.5],
+                y: [0, -40 - Math.random() * 30],
+                x: [(i % 2 === 0 ? 20 : -20) * Math.random(), (i % 2 === 0 ? 40 : -40) * Math.random()],
+                rotate: [0, 90]
+              }}
+              transition={{
+                duration: 2.5 + Math.random() * 2,
+                repeat: Infinity,
+                delay: i * 0.8,
+                ease: "easeInOut"
+              }}
+              className="absolute"
+              style={{
+                left: `${20 + i * 20}%`,
+                top: `30%`,
+              }}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                className="drop-shadow-[0_0_5px_rgba(255,215,0,0.5)]"
+              >
+                <path d="M12 0L14 10L24 12L14 14L12 24L10 14L0 12L10 10L12 0Z" fill={i % 2 === 0 ? "#FFD700" : "#FFF"} />
+              </svg>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Atmospheric Glow */}
+        <div className="absolute inset-0 -z-10 bg-yellow-500/5 blur-[80px] rounded-full pointer-events-none" />
+      </div>
+    </div>
+  );
+};
 export default function InMart() {
   const navigate = useNavigate()
   const [heroSearch, setHeroSearch] = useState("")
   const [activeCategory, setActiveCategory] = useState("All")
+  const [inlineProducts, setInlineProducts] = useState([])
+  const [isInlineLoading, setIsInlineLoading] = useState(false)
 
   // API Data State
   const [apiData, setApiData] = useState({
-    categories: [],
+    allCategories: [],
     collections: [],
     banners: [],
     stories: [],
+    navigation: [],
     store: null
   })
   const [isLoading, setIsLoading] = useState(true)
@@ -251,14 +435,20 @@ export default function InMart() {
     const fetchInMartData = async () => {
       try {
         setIsLoading(true)
-        const response = await inmartAPI.getInMartHome()
+        const [homeRes, navRes] = await Promise.all([
+          inmartAPI.getInMartHome(),
+          inmartAPI.getNavCategories()
+        ]);
 
-        if (response.success) {
-          setApiData(response.data)
-          console.log('✅ InMart data loaded:', response.data)
+        if (homeRes.success && navRes.success) {
+          setApiData({
+            ...homeRes.data,
+            allCategories: homeRes.data.categories,
+            navigation: navRes.data.navigation
+          })
+          console.log('✅ InMart data loaded:', homeRes.data, navRes.data)
         } else {
-          console.error('❌ Failed to load InMart data:', response.message)
-          setApiError(response.message)
+          setApiError(homeRes.message || navRes.message)
         }
       } catch (error) {
         console.error('❌ Error fetching InMart data:', error)
@@ -271,20 +461,64 @@ export default function InMart() {
     fetchInMartData()
   }, [])
 
-  const categoriesData = [
-    { id: "all", name: "All", icon: ShoppingBag, color: "#8B5CF6", themeColor: "#D3AEFE" },
-    { id: "home", name: "Home", icon: Home, color: "#64748B", themeColor: "#BFF7D4" },
-    { id: "toys", name: "Toys", icon: Gamepad2, color: "#64748B", themeColor: "#FBE04C" },
-    { id: "fresh", name: "Fresh", icon: Apple, color: "#64748B", themeColor: "#21C063" },
-    { id: "electronics", name: "Electronics", icon: Headphones, color: "#64748B", themeColor: "#FDE256" },
-    { id: "mobiles", name: "Mobiles", icon: Smartphone, color: "#64748B", themeColor: "#FD8930" },
-    { id: "beauty", name: "Beauty", icon: Sparkles, color: "#64748B", themeColor: "#FAD0E8" },
-    { id: "fashion", name: "Fashion", icon: Shirt, color: "#64748B", themeColor: "#D3AEFE" },
-  ]
+  const iconMap = { ShoppingBag, Home, Gamepad2, Apple, Headphones, Smartphone, Sparkles, Shirt, Coffee, Compass };
 
-  const activeCategoryData = useMemo(() =>
-    categoriesData.find(cat => cat.name === activeCategory) || categoriesData[0]
-    , [activeCategory])
+  const categoriesData = useMemo(() => {
+    const base = [
+      { id: "all", name: "All", icon: ShoppingBag, color: "#8B5CF6", themeColor: "#D3AEFE", slug: "all" }
+    ];
+
+    if (!apiData.navigation || apiData.navigation.length === 0) return base;
+
+    const dynamic = apiData.navigation.map(n => ({
+      id: n._id,
+      name: n.name,
+      icon: iconMap[n.icon] || ShoppingBag,
+      themeColor: n.themeColor || "#D3AEFE",
+      color: n.themeColor || "#8B5CF6",
+      slug: n.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      targetType: n.targetType,
+      targetId: n.targetId,
+      featuredCategories: n.featuredCategories || []
+    }));
+
+    return [...base, ...dynamic];
+  }, [apiData.navigation]);
+
+  // Fetch inline products when active category changes
+  useEffect(() => {
+    const activeData = categoriesData.find(c => c.name === activeCategory);
+    if (!activeData || activeData.name === "All") {
+      setInlineProducts([]);
+      return;
+    }
+
+    const fetchInlineData = async () => {
+      try {
+        setIsInlineLoading(true);
+        let products = [];
+        if (activeData.targetType === 'category') {
+          const res = await inmartAPI.getProducts({ category: activeData.targetId });
+          products = res.data.products;
+        } else if (activeData.targetType === 'collection') {
+          const res = await inmartAPI.getCollectionBySlug(activeData.targetId);
+          products = res.data.collection.products;
+        }
+        setInlineProducts(products);
+      } catch (err) {
+        console.error("Error fetching inline products:", err);
+      } finally {
+        setIsInlineLoading(false);
+      }
+    }
+
+    fetchInlineData();
+  }, [activeCategory, categoriesData]);
+
+  const activeCategoryData = useMemo(() => {
+    const found = categoriesData.find(cat => cat.name === activeCategory);
+    return found || categoriesData[0] || { color: "#8B5CF6", themeColor: "#D3AEFE" };
+  }, [activeCategory, categoriesData]);
 
   const [showSplash, setShowSplash] = useState(true)
   const { userProfile, addresses } = useProfile()
@@ -531,7 +765,41 @@ export default function InMart() {
 
           {/* Categories Section */}
           <section className="relative z-20 w-full mt-1 sm:mt-2 pb-2 px-0 overflow-hidden">
-            <div className="max-w-7xl lg:max-w-[1400px] xl:max-w-[1600px] mx-auto">
+            {/* Subtle Snow Shower Background for Navigation */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+              {[...Array(15)].map((_, i) => (
+                <motion.div
+                  key={`nav-snow-${i}`}
+                  initial={{
+                    top: "-10%",
+                    left: `${Math.random() * 100}%`,
+                    opacity: 0,
+                    scale: 0.1 + Math.random() * 0.4
+                  }}
+                  animate={{
+                    top: "110%",
+                    left: [`${Math.random() * 100}%`, `${(Math.random() * 100) + (Math.random() > 0.5 ? 3 : -3)}%`],
+                    opacity: [0, 0.4, 0.4, 0],
+                  }}
+                  transition={{
+                    duration: 6 + Math.random() * 8,
+                    repeat: Infinity,
+                    delay: Math.random() * 10,
+                    ease: "linear"
+                  }}
+                  style={{
+                    position: 'absolute',
+                    width: `${Math.random() * 4 + 1}px`,
+                    height: `${Math.random() * 4 + 1}px`,
+                    background: 'white',
+                    borderRadius: '50%',
+                    filter: 'blur(0.5px) drop-shadow(0 0 1px rgba(255,255,255,0.5))'
+                  }}
+                />
+              ))}
+            </div>
+
+            <div className="max-w-7xl lg:max-w-[1400px] xl:max-w-[1600px] mx-auto relative z-10">
               <div
                 className="flex items-center gap-4 sm:gap-6 md:gap-8 overflow-x-auto scrollbar-hide pb-1 px-4 sm:px-6 lg:px-8 xl:px-12"
                 style={{
@@ -546,26 +814,42 @@ export default function InMart() {
                   return (
                     <button
                       key={cat.id}
-                      onClick={() => setActiveCategory(cat.name)}
+                      onClick={() => {
+                        if (cat.name === "All" || cat.name === "Home" || cat.slug === "home") {
+                          setActiveCategory(cat.name);
+                        } else if (cat.targetType === "external") {
+                          window.open(cat.targetId, "_blank");
+                        } else {
+                          setActiveCategory(cat.name);
+                        }
+                      }}
                       className="flex flex-col items-center gap-1 sm:gap-2 group relative pb-3 px-1 transition-all hover:translate-y-[-2px] min-w-[60px] sm:min-w-[80px]"
                     >
-                      <div className={`p-2 sm:p-3 rounded-xl transition-all ${isActive ? 'bg-green-50' : 'group-hover:bg-black/5'}`}>
+                      <div
+                        className="p-2 sm:p-3 transition-all shadow-sm flex items-center justify-center overflow-hidden"
+                        style={{
+                          backgroundColor: isActive ? 'white' : 'transparent',
+                          clipPath: isActive ? 'polygon(50% 0%, 100% 35%, 100% 100%, 0 100%, 0 35%)' : 'none',
+                          borderRadius: isActive ? '0' : '1.2rem'
+                        }}
+                      >
                         <Icon
-                          className="w-6 h-6 sm:w-8 sm:h-8 md:w-9 md:h-9"
-                          color={isActive ? "#16A34A" : "black"}
-                          strokeWidth={isActive ? 3 : 2.5}
+                          className="w-5 h-5 sm:w-7 sm:h-7 md:w-8 md:h-8 mb-[-2px]" // Adjusted for house shape bottom heavy
+                          color={isActive ? cat.themeColor : "black"}
+                          strokeWidth={isActive ? 3.5 : 2.5}
                         />
                       </div>
                       <span
-                        className={`text-[10px] sm:text-sm md:text-base font-bold transition-colors whitespace-nowrap text-center ${isActive ? 'text-green-600 opacity-100' : 'text-black opacity-60 group-hover:opacity-100'}`}
+                        className={`text-[10px] sm:text-sm md:text-base font-bold transition-colors whitespace-nowrap text-center ${isActive ? 'opacity-100' : 'text-black opacity-60 group-hover:opacity-100'}`}
+                        style={{ color: isActive ? cat.themeColor : undefined }}
                       >
                         {cat.name}
                       </span>
                       {isActive && (
                         <motion.div
                           layoutId="activeIndicator"
-                          className="absolute bottom-0 left-0 right-0 h-1 bg-green-600 rounded-full"
-                          style={{ width: '100%' }}
+                          className="absolute bottom-0 left-0 right-0 h-1 rounded-full"
+                          style={{ width: '100%', backgroundColor: cat.themeColor }}
                           transition={{ type: "spring", stiffness: 300, damping: 30 }}
                         />
                       )}
@@ -577,52 +861,164 @@ export default function InMart() {
           </section>
         </div>
 
-        {/* Banner Carousel Section */}
-        {apiData.banners && apiData.banners.length > 0 && (
-          <section className="relative z-20 w-full px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6 overflow-hidden">
-            <div className="max-w-7xl mx-auto relative group">
-              <div className="relative overflow-hidden rounded-2xl sm:rounded-[2.5rem] shadow-2xl border border-purple-100 dark:border-white/10 bg-[#F3E8FF] aspect-[21/9] sm:aspect-[24/10]">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentBannerIndex}
-                    initial={{ opacity: 0, x: 50 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -50 }}
-                    transition={{ duration: 0.6, ease: "easeInOut" }}
-                    className="absolute inset-0 w-full h-full cursor-pointer"
-                    onClick={() => apiData.banners[currentBannerIndex].linkUrl && (window.location.href = apiData.banners[currentBannerIndex].linkUrl)}
-                  >
-                    <img
-                      src={apiData.banners[currentBannerIndex].imageUrl || apiData.banners[currentBannerIndex].image}
-                      alt={apiData.banners[currentBannerIndex].title || "Promo Banner"}
-                      className="w-full h-full object-cover block"
-                    />
-
-                    {/* Optional Overlay for better text visibility if we ever add text */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-                  </motion.div>
-                </AnimatePresence>
-
-                {/* Indicators/Dots */}
-                {apiData.banners.length > 1 && (
-                  <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-30">
-                    {apiData.banners.map((_, idx) => (
-                      <button
-                        key={idx}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCurrentBannerIndex(idx);
-                        }}
-                        className={`transition-all duration-300 rounded-full ${currentBannerIndex === idx
-                          ? "w-6 sm:w-8 h-1.5 sm:h-2 bg-white"
-                          : "w-1.5 sm:w-2 h-1.5 sm:h-2 bg-white/50 hover:bg-white/80"
-                          }`}
-                        aria-label={`Go to banner ${idx + 1}`}
+        {/* Banner Carousel or Inline Category Content */}
+        {activeCategory === "All" ? (
+          apiData.banners && apiData.banners.length > 0 && (
+            <section className="relative z-20 w-full px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6 overflow-hidden">
+              <div className="max-w-7xl mx-auto relative group">
+                <div className="relative overflow-hidden rounded-2xl sm:rounded-[2.5rem] shadow-2xl border border-purple-100 dark:border-white/10 bg-[#F3E8FF] aspect-[21/9] sm:aspect-[24/10]">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={currentBannerIndex}
+                      initial={{ opacity: 0, x: 50 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -50 }}
+                      transition={{ duration: 0.6, ease: "easeInOut" }}
+                      className="absolute inset-0 w-full h-full cursor-pointer"
+                      onClick={() => apiData.banners[currentBannerIndex].linkUrl && (window.location.href = apiData.banners[currentBannerIndex].linkUrl)}
+                    >
+                      <img
+                        src={apiData.banners[currentBannerIndex].imageUrl || apiData.banners[currentBannerIndex].image}
+                        alt={apiData.banners[currentBannerIndex].title || "Promo Banner"}
+                        className="w-full h-full object-cover block"
                       />
+
+                      {/* Optional Overlay for better text visibility if we ever add text */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+                    </motion.div>
+                  </AnimatePresence>
+
+                  {/* Indicators/Dots */}
+                  {apiData.banners.length > 1 && (
+                    <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-30">
+                      {apiData.banners.map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentBannerIndex(idx);
+                          }}
+                          className={`transition-all duration-300 rounded-full ${currentBannerIndex === idx
+                            ? "w-6 sm:w-8 h-1.5 sm:h-2 bg-white"
+                            : "w-1.5 sm:w-2 h-1.5 sm:h-2 bg-white/50 hover:bg-white/80"
+                            }`}
+                          aria-label={`Go to banner ${idx + 1}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          )
+        ) : (
+          <section className="relative z-20 w-full px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6">
+            <div className="max-w-7xl mx-auto">
+              {isInlineLoading ? (
+                <div className="w-full aspect-[21/9] sm:aspect-[24/10] bg-gray-50 animate-pulse rounded-[2.5rem] flex items-center justify-center border border-gray-100">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-10 h-10 border-4 border-black/10 border-t-black rounded-full animate-spin" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400">Loading {activeCategory}...</span>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="rounded-[3rem] pt-10 pb-6 sm:pt-20 sm:pb-12 shadow-[0_40px_120px_-20px_rgba(0,0,0,0.2)] border border-white/20 backdrop-blur-2xl transition-all relative overflow-hidden flex flex-col items-center text-center"
+                  style={{
+                    background: `radial-gradient(circle at center, ${activeCategoryData.themeColor} 0%, ${activeCategoryData.themeColor}dd 100%)`,
+                  }}
+                >
+                  {/* Premium Glow Effects */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-white/20 rounded-full blur-[120px]" />
+                    <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-black/30 rounded-full blur-[120px]" />
+                  </div>
+
+                  {/* Enhanced Floating Decorative Elements */}
+                  <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                    {[...Array(12)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{
+                          x: `${Math.random() * 100}%`,
+                          y: `${Math.random() * 100}%`,
+                          opacity: 0,
+                          scale: 0
+                        }}
+                        animate={{
+                          y: ["-10%", "110%"],
+                          opacity: [0, 0.7, 0],
+                          scale: [0.3, 1, 0.3],
+                          rotate: Math.random() * 360
+                        }}
+                        transition={{
+                          duration: 5 + Math.random() * 8,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                          delay: Math.random() * 5
+                        }}
+                        className="absolute"
+                        style={{ color: i % 2 === 0 ? '#FFE082' : 'white' }}
+                      >
+                        {i % 3 === 0 ? <Sparkles size={16} /> : i % 3 === 1 ? <Heart size={14} fill="currentColor" /> : <div className="w-2 h-2 rounded-full bg-current opacity-60" />}
+                      </motion.div>
                     ))}
                   </div>
-                )}
-              </div>
+
+                  <div className="relative z-10 w-full max-w-5xl">
+                    <AnimatedCategoryHeader categoryName={activeCategory} />
+                  </div>
+
+                  {/* Horizontal Product Scroll */}
+                  <div className="relative z-10 w-full mb-0 px-4 sm:px-6 lg:px-8">
+                    {activeCategoryData.featuredCategories && activeCategoryData.featuredCategories.length > 0 ? (
+                      <div className="grid grid-cols-3 gap-3 sm:gap-6 pb-12 transition-all">
+                        {activeCategoryData.featuredCategories.flatMap((fc) => {
+                          const mainCat = apiData.allCategories.find(c => c._id === fc.categoryId);
+                          if (!mainCat) return [];
+                          return mainCat.subCategories?.filter(s =>
+                            fc.subCategoryIds.includes(s.slug || s.id)
+                          ) || [];
+                        }).slice(0, 6).map((sub, idx) => (
+                          <CategoryCard
+                            key={`${sub.slug || sub.id}-${idx}`}
+                            category={sub}
+                            themeColor={activeCategoryData.themeColor}
+                            onClick={() => {
+                              console.log("Category clicked:", sub);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div
+                        className="flex items-center gap-4 sm:gap-6 md:gap-8 overflow-x-auto scrollbar-hide pb-6"
+                        style={{
+                          scrollbarWidth: 'none',
+                          msOverflowStyle: 'none',
+                          WebkitOverflowScrolling: 'touch'
+                        }}
+                      >
+                        {inlineProducts.length > 0 ? (
+                          <>
+                            {inlineProducts.map(p => (
+                              <ProductCard key={p._id} product={p} themeColor={activeCategoryData.themeColor} />
+                            ))}
+                            <div className="min-w-[20px] sm:min-w-[40px] h-full" />
+                          </>
+                        ) : (
+                          <div className="w-full py-32 text-center">
+                            <div className="w-28 h-28 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-8 backdrop-blur-lg">
+                              <ShoppingBag className="w-12 h-12 text-white/40" />
+                            </div>
+                            <p className="text-white font-black uppercase tracking-[0.3em] text-sm">Curating more products for the {activeCategory} Store...</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         )}
@@ -633,28 +1029,61 @@ export default function InMart() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              whileHover={{
-                backgroundColor: `${activeCategoryData.themeColor}22`
-              }}
               transition={{ duration: 0.5 }}
-              className="w-full rounded-xl sm:rounded-2xl md:rounded-[1.5rem] py-3 sm:py-4 md:py-5 px-5 sm:px-8 md:px-10 flex items-center justify-start gap-4 sm:gap-6 shadow-sm hover:shadow-lg transition-all cursor-pointer group"
+              className="w-full rounded-xl sm:rounded-2xl md:rounded-[1.5rem] py-3 sm:py-4 md:py-5 px-5 sm:px-8 md:px-10 flex items-center justify-start gap-4 sm:gap-6 shadow-sm hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden"
               style={{
                 backgroundColor: `${activeCategoryData.themeColor}15`,
                 border: `1.5px solid ${activeCategoryData.themeColor}33`
               }}
             >
-              {/* Gold Coin Icon */}
-              <div className="flex-shrink-0 w-8 h-8 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full flex items-center justify-center shadow-inner border-[1.5px] border-yellow-200 group-hover:rotate-12 transition-transform">
-                <span className="text-white font-black text-lg sm:text-2xl md:text-3xl drop-shadow-sm">₹</span>
+              {/* Gold Coin Icon with Glint */}
+              <div className="flex-shrink-0 w-8 h-8 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full flex items-center justify-center shadow-inner border-[1.5px] border-yellow-200 relative overflow-hidden group-hover:rotate-12 transition-transform">
+                <span className="text-white font-black text-lg sm:text-2xl md:text-3xl drop-shadow-sm relative z-10">₹</span>
+
+                {/* Coin Glint Effect */}
+                <motion.div
+                  initial={{ x: '-150%', skewX: -20 }}
+                  animate={{ x: '150%' }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    repeatDelay: 3,
+                    ease: "easeInOut"
+                  }}
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full"
+                />
               </div>
 
-              <div className="flex flex-col min-w-0">
+              <div className="flex flex-col min-w-0 relative">
                 <span
                   className="font-bold text-[12px] sm:text-xl md:text-2xl lg:text-3xl tracking-tighter uppercase leading-tight whitespace-nowrap"
                   style={{ color: activeCategoryData.themeColor }}
                 >
                   Special Prices for your 1st order
                 </span>
+
+                {/* Golden Text Shimmer */}
+                <motion.span
+                  initial={{ backgroundPosition: '200% 0' }}
+                  animate={{ backgroundPosition: '-200% 0' }}
+                  transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    ease: "linear"
+                  }}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(110deg, transparent 30%, rgba(255, 215, 0, 0) 35%, rgba(255, 215, 0, 0.4) 45%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 215, 0, 0.4) 55%, rgba(255, 215, 0, 0) 65%, transparent 70%)',
+                    backgroundSize: '200% 100%',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    zIndex: 20,
+                  }}
+                  className="filter brightness-110 saturate-120 pointer-events-none font-bold text-[12px] sm:text-xl md:text-2xl lg:text-3xl tracking-tighter uppercase leading-tight whitespace-nowrap"
+                >
+                  Special Prices for your 1st order
+                </motion.span>
               </div>
 
               <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
@@ -679,7 +1108,8 @@ export default function InMart() {
               transition={{ duration: 0.8 }}
               className="w-full rounded-[2rem] sm:rounded-[3rem] md:rounded-[4rem] overflow-hidden py-8 sm:py-12 md:py-16 px-4 sm:px-8 md:px-12 shadow-xl border border-purple-100/50 relative transition-colors duration-500 ease-in-out"
               style={{
-                background: `linear-gradient(180deg, ${activeCategoryData.themeColor} 0%, ${activeCategoryData.themeColor}dd 100%)`
+                background: `linear-gradient(180deg, ${activeCategoryData.themeColor}80 0%, ${activeCategoryData.themeColor}40 100%)`,
+                border: `1.5px solid ${activeCategoryData.themeColor}99`
               }}
             >
               {/* Sunburst Background Effect */}
@@ -727,7 +1157,7 @@ export default function InMart() {
                   initial={{ scale: 0.8, opacity: 0 }}
                   whileInView={{ scale: 1, opacity: 1 }}
                   viewport={{ once: true }}
-                  className="text-5xl sm:text-8xl md:text-9xl lg:text-[11rem] font-[1000] text-white italic tracking-tighter flex flex-col items-center select-none"
+                  className="text-5xl sm:text-8xl md:text-9xl lg:text-[11rem] font-[1000] text-white italic tracking-tighter flex flex-col items-center select-none relative"
                   style={{
                     WebkitTextStroke: '2px black',
                     textShadow: `
@@ -742,7 +1172,11 @@ export default function InMart() {
                   `
                   }}
                 >
-                  BIG SALE
+                  <span className="relative z-10">BIG SALE</span>
+                  {/* Luxury Gold Flash Overlay */}
+                  <span className="absolute inset-0 easy-gold-flash pointer-events-none z-20">
+                    BIG SALE
+                  </span>
                 </motion.h2>
               </div>
 
@@ -762,7 +1196,7 @@ export default function InMart() {
                       ...product,
                       id: product.id || product._id?.toString() || product._id
                     };
-                    return <ProductCard key={productWithId.id} product={productWithId} />;
+                    return <ProductCard key={productWithId.id} product={productWithId} themeColor={activeCategoryData.themeColor} />;
                   })}
                   <div className="min-w-[4px] h-full"></div>
                 </div>
@@ -809,7 +1243,7 @@ export default function InMart() {
           />
 
           {/* Fixed Main Category Sections matching User Request */}
-          {!isLoading && apiData.categories && (
+          {!isLoading && apiData.allCategories && (
             <div className="space-y-12">
               {[
                 { id: 'grocery', title: 'Grocery & Kitchen' },
@@ -818,7 +1252,7 @@ export default function InMart() {
                 { id: 'household', title: 'Household & Lifestyle' }
               ].map((header) => {
                 // More flexible matching for root categories
-                const rootCategory = apiData.categories.find(c => {
+                const rootCategory = apiData.allCategories.find(c => {
                   const s = c.slug?.toLowerCase() || "";
                   const n = c.name?.toLowerCase() || "";
                   const id = header.id.toLowerCase();

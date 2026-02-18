@@ -44,7 +44,11 @@ export default function InMartProductCategory() {
                         subCategory: foundSub.name
                     })
                     if (productData.success) {
-                        setProducts(productData.data.products)
+                        const normalizedProducts = productData.data.products.map(p => ({
+                            ...p,
+                            id: p.id || p._id?.toString() || p._id
+                        }))
+                        setProducts(normalizedProducts)
                     }
                 }
             }
@@ -71,7 +75,13 @@ export default function InMartProductCategory() {
                     category: parentCat?.name,
                     subCategory: subCategory.name
                 })
-                if (productData.success) setProducts(productData.data.products)
+                if (productData.success) {
+                    const normalizedProducts = productData.data.products.map(p => ({
+                        ...p,
+                        id: p.id || p._id?.toString() || p._id
+                    }))
+                    setProducts(normalizedProducts)
+                }
             } else {
                 const childCat = subCategory.children.find(c => c.name === childCatName)
                 if (childCat) {
@@ -85,7 +95,11 @@ export default function InMartProductCategory() {
                         childCategory: childCat.name
                     })
                     if (productData.success) {
-                        setProducts(productData.data.products)
+                        const normalizedProducts = productData.data.products.map(p => ({
+                            ...p,
+                            id: p.id || p._id?.toString() || p._id
+                        }))
+                        setProducts(normalizedProducts)
                     }
                 }
             }

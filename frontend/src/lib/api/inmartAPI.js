@@ -35,6 +35,19 @@ export const getCategories = async () => {
 };
 
 /**
+ * Get all active navigation categories
+ */
+export const getNavCategories = async () => {
+    try {
+        const response = await api.get('/inmart/navigation');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching navigation:', error);
+        throw error;
+    }
+};
+
+/**
  * Get products with optional filters
  * @param {Object} filters - { category, subCategory, search, isNew, isBestSeller, isOnSale, isTrending, minPrice, maxPrice, page, limit }
  */
@@ -358,6 +371,58 @@ export const adminDeleteBanner = async (id) => {
 };
 
 /**
+ * Admin: Get all navigation entries
+ */
+export const adminGetAllNavEntries = async () => {
+    try {
+        const response = await api.get('/admin/inmart/navigation');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching admin nav entries:', error);
+        throw error;
+    }
+};
+
+/**
+ * Admin: Create navigation entry
+ */
+export const adminCreateNavEntry = async (navData) => {
+    try {
+        const response = await api.post('/admin/inmart/navigation', navData);
+        return response.data;
+    } catch (error) {
+        console.error('Error creating nav entry:', error);
+        throw error;
+    }
+};
+
+/**
+ * Admin: Update navigation entry
+ */
+export const adminUpdateNavEntry = async (id, navData) => {
+    try {
+        const response = await api.put(`/admin/inmart/navigation/${id}`, navData);
+        return response.data;
+    } catch (error) {
+        console.error('Error updating nav entry:', error);
+        throw error;
+    }
+};
+
+/**
+ * Admin: Delete navigation entry
+ */
+export const adminDeleteNavEntry = async (id) => {
+    try {
+        const response = await api.delete(`/admin/inmart/navigation/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error deleting nav entry:', error);
+        throw error;
+    }
+};
+
+/**
  * Admin: Upload image
  */
 export const uploadImage = async (formData) => {
@@ -378,6 +443,7 @@ export default {
     // Public
     getInMartHome,
     getCategories,
+    getNavCategories,
     getProducts,
     getProductBySlug,
     getCollections,
@@ -404,5 +470,9 @@ export default {
     adminCreateBanner,
     adminUpdateBanner,
     adminDeleteBanner,
+    adminGetAllNavEntries,
+    adminCreateNavEntry,
+    adminUpdateNavEntry,
+    adminDeleteNavEntry,
     uploadImage,
 };

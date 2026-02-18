@@ -4,6 +4,7 @@ import InMartCategory from '../models/InMartCategory.js';
 import InMartCollection from '../models/InMartCollection.js';
 import InMartBanner from '../models/InMartBanner.js';
 import InMartStory from '../models/InMartStory.js';
+import InMartNavigation from '../models/InMartNavigation.js';
 
 // @desc    Get all active InMart stores
 // @route   GET /api/inmart/stores
@@ -311,13 +312,34 @@ export const getStories = async (req, res) => {
     }
 };
 
+// @desc    Get all active navigation entries
+// @route   GET /api/inmart/navigation
+// @access  Public
+export const getNavCategories = async (req, res) => {
+    try {
+        const navigation = await InMartNavigation.find({ isActive: true }).sort({ displayOrder: 1 });
+        res.status(200).json({
+            success: true,
+            count: navigation.length,
+            data: { navigation }
+        });
+    } catch (error) {
+        console.error('Error fetching navigation entries:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching navigation',
+            error: error.message
+        });
+    }
+};
+
 // @desc    Get InMart home page data (all in one)
 // @route   GET /api/inmart/home
 // @access  Public
 export const getHomeData = async (req, res) => {
     try {
         // Fetch all data in parallel
-        const [categories, collections, banners, stories, store] = await Promise.all([
+        const [categories, collections, banners, stories, navigation, store] = await Promise.all([
             InMartCategory.find({ isActive: true }).sort({ displayOrder: 1 }).select('-__v'),
             InMartCollection.find({ isActive: true })
                 .populate({
@@ -330,6 +352,7 @@ export const getHomeData = async (req, res) => {
                 .select('-__v'),
             InMartBanner.find({ isActive: true }).sort({ displayOrder: 1 }).select('-__v'),
             InMartStory.find({ isActive: true }).sort({ displayOrder: 1 }).select('-__v'),
+            InMartNavigation.find({ isActive: true }).sort({ displayOrder: 1 }).select('-__v'),
             InMartStore.findOne({ isActive: true, isAcceptingOrders: true }).select('name slug deliveryTime minimumOrder rating')
         ]);
 
@@ -340,7 +363,8 @@ export const getHomeData = async (req, res) => {
                 categories,
                 collections,
                 banners,
-                stories
+                stories,
+                navigation
             }
         });
     } catch (error) {
