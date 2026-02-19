@@ -23,7 +23,9 @@ import {
   Trash2,
   ArrowRight,
   MoreVertical,
-  Compass
+  Compass,
+  X,
+  ArrowLeft
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import AnimatedPage from "../components/AnimatedPage"
@@ -477,6 +479,303 @@ const AnimatedCategoryHeader = ({ categoryName }) => {
     </div>
   );
 };
+const VoiceSearchModal = ({ isOpen, onClose, onResult }) => {
+  const [isListening, setIsListening] = useState(false);
+  const [transcript, setTranscript] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsListening(false);
+      setTranscript("");
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.error("Speech recognition is not supported in this browser.");
+      onClose();
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event) => {
+      const current = event.resultIndex;
+      const resultTranscript = event.results[current][0].transcript;
+      setTranscript(resultTranscript);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      if (transcript) {
+        onResult(transcript);
+        // Delay closing slightly so user can see what was captured
+        setTimeout(onClose, 800);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error", event.error);
+      setIsListening(false);
+      onClose();
+    };
+
+    recognition.start();
+
+    return () => {
+      recognition.stop();
+    };
+  }, [isOpen, onClose, onResult, transcript]);
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+        >
+          <motion.div
+            initial={{ scale: 0.9, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.9, y: 20 }}
+            className="w-full max-w-md bg-white rounded-[2.5rem] p-8 flex flex-col items-center relative overflow-hidden shadow-2xl"
+          >
+            <button
+              onClick={onClose}
+              className="absolute top-6 right-6 p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-600"
+            >
+              <X size={24} />
+            </button>
+
+            <div className="text-xl font-medium text-gray-400 mb-12 flex items-center gap-1">
+              <span className="text-blue-500 font-bold">G</span>
+              <span className="text-red-500 font-bold">o</span>
+              <span className="text-yellow-500 font-bold">o</span>
+              <span className="text-blue-500 font-bold">g</span>
+              <span className="text-green-500 font-bold">l</span>
+              <span className="text-red-500 font-bold">e</span>
+            </div>
+
+            <div className="relative mb-12">
+              {/* Pulsing rings */}
+              {isListening && (
+                <>
+                  <motion.div
+                    animate={{ scale: [1, 2.2], opacity: [0.5, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                    className="absolute inset-0 bg-blue-100 rounded-full"
+                  />
+                  <motion.div
+                    animate={{ scale: [1, 1.8], opacity: [0.4, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity, delay: 0.3 }}
+                    className="absolute inset-0 bg-blue-50 rounded-full"
+                  />
+                </>
+              )}
+
+              <div className="relative w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center shadow-lg shadow-blue-200">
+                <Mic size={40} className="text-white" strokeWidth={2.5} />
+              </div>
+            </div>
+
+            <h2 className={`text-3xl font-semibold mb-3 text-center px-4 ${transcript ? 'text-gray-800' : 'text-gray-400'}`}>
+              {transcript || "Speak now"}
+            </h2>
+
+            <p className="text-gray-400 text-lg mb-12 font-medium">English (United States)</p>
+
+            <div className="w-full bg-gray-50 rounded-3xl p-6 text-center border border-gray-100">
+              <p className="text-gray-500 text-sm leading-relaxed font-medium">
+                Google Speech Services converts audio to text and shares the text with this app.
+              </p>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+const InMartSearchOverlay = ({ isOpen, onClose, allProducts, searchCategories, themeColor, initialSearch }) => {
+  const [searchTerm, setSearchTerm] = useState(initialSearch || "");
+  const [results, setResults] = useState({ products: [], categories: [] });
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    setSearchTerm(initialSearch || "");
+  }, [initialSearch]);
+
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setResults({ products: [], categories: [] });
+      return;
+    }
+
+    const lowerTerm = searchTerm.toLowerCase();
+
+    // Local Search First
+    const filteredCategories = searchCategories.filter(cat =>
+      cat.name?.toLowerCase().includes(lowerTerm) ||
+      cat.slug?.toLowerCase().includes(lowerTerm)
+    );
+
+    const filteredProducts = allProducts.filter(prod => {
+      const nameMatch = prod.name?.toLowerCase().includes(lowerTerm);
+      const descMatch = prod.description?.toLowerCase().includes(lowerTerm);
+      const catMatch = prod.category?.toLowerCase().includes(lowerTerm) || prod.categoryName?.toLowerCase().includes(lowerTerm);
+      const subCatMatch = prod.subCategory?.toLowerCase().includes(lowerTerm) || prod.subCategoryName?.toLowerCase().includes(lowerTerm);
+
+      return nameMatch || descMatch || catMatch || subCatMatch;
+    });
+
+    setResults({ products: filteredProducts, categories: filteredCategories });
+
+    // Live API Search for deeper catalog coverage
+    const fetchLiveResults = async () => {
+      try {
+        const res = await inmartAPI.getProducts({ search: searchTerm, limit: 20 });
+        if (res.success && res.data.products) {
+          setResults(prev => {
+            const existingIds = new Set(prev.products.map(p => p.id || p._id));
+            const newProducts = res.data.products.filter(p => !existingIds.has(p.id || p._id));
+            return {
+              ...prev,
+              products: [...prev.products, ...newProducts.map(p => ({ ...p, id: p.id || p._id }))]
+            };
+          });
+        }
+      } catch (err) {
+        console.error("Live search error:", err);
+      }
+    };
+
+    const timeoutId = setTimeout(fetchLiveResults, 400);
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, allProducts, searchCategories]);
+
+  if (!isOpen) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 10 }}
+      className="fixed inset-0 z-[100] bg-white dark:bg-[#0a0a0a] flex flex-col pt-safe"
+    >
+      {/* Search Header */}
+      <div className="flex items-center gap-3 p-4 border-b border-gray-100 dark:border-white/5 sticky top-0 bg-white dark:bg-[#0a0a0a] z-10 shadow-sm">
+        <button
+          onClick={() => {
+            setSearchTerm("");
+            onClose();
+          }}
+          className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-full transition-colors"
+        >
+          <ArrowLeft className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+        </button>
+        <div className="flex-1 relative group">
+          <input
+            autoFocus
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder='Search products or categories...'
+            className="w-full h-12 pl-4 pr-12 bg-gray-50 dark:bg-white/5 border border-transparent focus:border-[#E7D1FF] rounded-2xl outline-none text-base font-medium transition-all"
+          />
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="p-1.5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-full text-gray-400 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Results Content */}
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 py-6">
+        {searchTerm ? (
+          <div className="space-y-8 max-w-7xl mx-auto">
+            {/* Category Suggestions */}
+            {results.categories.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 px-1">Categories</h3>
+                <div className="flex flex-col gap-1">
+                  {results.categories.map((subCat) => (
+                    <button
+                      key={subCat.id || subCat.slug}
+                      onClick={() => {
+                        onClose();
+                        navigate(`/in-mart/products/${subCat.slug || subCat.id}`);
+                      }}
+                      className="flex items-center gap-4 p-3 hover:bg-gray-50 dark:hover:bg-white/5 rounded-2xl transition-all group"
+                    >
+                      <div className="w-12 h-12 bg-gray-50 dark:bg-white/10 rounded-xl overflow-hidden p-1.5 flex items-center justify-center border border-gray-100 dark:border-white/5">
+                        <img
+                          src={subCat.image || "https://via.placeholder.com/200"}
+                          alt={subCat.name}
+                          className="w-full h-full object-contain group-hover:scale-110 transition-transform"
+                        />
+                      </div>
+                      <div className="flex flex-col items-start leading-tight">
+                        <span className="font-bold text-gray-800 dark:text-gray-200">{subCat.name}</span>
+                        <span className="text-xs text-gray-400">View Category</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Product Results */}
+            {results.products.length > 0 ? (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between px-1">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Showing results for "{searchTerm}"</h3>
+                  <span className="text-[10px] font-bold text-gray-400 bg-gray-50 dark:bg-white/5 px-2 py-1 rounded-md">{results.products.length} Items</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+                  {results.products.map((product) => (
+                    <ProductCard key={product.id || product._id} product={product} themeColor={themeColor} />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              results.categories.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="w-24 h-24 bg-gray-50 dark:bg-white/5 rounded-full flex items-center justify-center mb-6">
+                    <Search className="w-10 h-10 text-gray-300" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">No results found</h3>
+                  <p className="text-gray-400">We couldn't find anything matching "{searchTerm}"</p>
+                </div>
+              )
+            )}
+          </div>
+        ) : (
+          /* Initial Search State (e.g. Popular or Recent) */
+          <div className="flex flex-col items-center justify-center py-32 opacity-40">
+            <Search size={64} strokeWidth={1} className="mb-4 text-gray-300" />
+            <p className="text-lg font-medium text-gray-400 tracking-tight">Search for fresh essentials...</p>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+};
+
 const PartyCelebration = () => {
   const [trigger, setTrigger] = useState(0);
 
@@ -645,6 +944,70 @@ export default function InMart() {
   }, [activeCategory, categoriesData]);
 
   const [showSplash, setShowSplash] = useState(true)
+  const [isVoiceSearchOpen, setIsVoiceSearchOpen] = useState(false)
+  const [isInMartSearchOpen, setIsInMartSearchOpen] = useState(false)
+
+  const allProducts = useMemo(() => {
+    const productsMap = new Map();
+
+    const addProductsFromCatalog = (items) => {
+      if (!items) return;
+      items.forEach(item => {
+        // Add direct products
+        item.products?.forEach(product => {
+          const id = product.id || product._id?.toString() || product._id;
+          if (id && !productsMap.has(id)) {
+            productsMap.set(id, { ...product, id });
+          }
+        });
+        // Recurse into sub-categories
+        if (item.subCategories) {
+          addProductsFromCatalog(item.subCategories);
+        }
+      });
+    };
+
+    // 1. Add products from collections (Sale, Best Sellers, etc.)
+    apiData.collections?.forEach(collection => {
+      collection.products?.forEach(product => {
+        const id = product.id || product._id?.toString() || product._id;
+        if (id && !productsMap.has(id)) {
+          productsMap.set(id, { ...product, id });
+        }
+      });
+    });
+
+    // 2. Add products from all levels of the category tree
+    addProductsFromCatalog(apiData.allCategories);
+
+    // 3. Add any currently loaded inline products from the category store
+    inlineProducts?.forEach(product => {
+      const id = product.id || product._id?.toString() || product._id;
+      if (id && !productsMap.has(id)) {
+        productsMap.set(id, { ...product, id });
+      }
+    });
+
+    return Array.from(productsMap.values());
+  }, [apiData.collections, apiData.allCategories, inlineProducts]);
+
+  const searchCategories = useMemo(() => {
+    const categories = [];
+    const collectSubCategories = (items) => {
+      if (!items) return;
+      items.forEach(item => {
+        if (item.subCategories) {
+          item.subCategories.forEach(sub => {
+            categories.push(sub);
+            collectSubCategories([sub]);
+          });
+        }
+      });
+    };
+
+    collectSubCategories(apiData.allCategories);
+    return categories;
+  }, [apiData.allCategories]);
   const { userProfile, addresses } = useProfile()
   const defaultAddress = addresses?.find(a => a.isDefault) || addresses?.[0] || { addressLine1: "Detecting Location..." }
 
@@ -699,11 +1062,8 @@ export default function InMart() {
 
 
   const handleSearchFocus = useCallback(() => {
-    if (heroSearch) {
-      setSearchValue(heroSearch)
-    }
-    openSearch()
-  }, [heroSearch, openSearch, setSearchValue])
+    setIsInMartSearchOpen(true)
+  }, [])
 
 
 
@@ -857,7 +1217,7 @@ export default function InMart() {
                   {/* Search Input Container */}
                   <div
                     className="relative flex-1 group cursor-pointer"
-                    onClick={openSearch}
+                    onClick={() => setIsInMartSearchOpen(true)}
                   >
                     <Search className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-[#8B5CF6] transition-colors w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
                     <div className="w-full h-12 sm:h-14 md:h-16 bg-white dark:bg-[#1a1a1a] border-2 border-transparent group-hover:border-[#E7D1FF] rounded-2xl sm:rounded-[1.25rem] pl-12 sm:pl-14 pr-12 flex items-center shadow-[0_4px_20px_rgba(0,0,0,0.04)] transition-all">
@@ -865,7 +1225,14 @@ export default function InMart() {
                         {placeholderItems[placeholderIndex]}
                       </span>
                     </div>
-                    <Mic className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-[#8B5CF6] transition-colors w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
+                    <Mic
+                      className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#8B5CF6] transition-colors w-5 h-5 sm:w-6 sm:h-6 cursor-pointer z-10"
+                      strokeWidth={2.5}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsVoiceSearchOpen(true);
+                      }}
+                    />
                   </div>
 
                   {/* Trending Deals Toggle - Hidden on mobile, shown on md+ */}
@@ -1109,7 +1476,7 @@ export default function InMart() {
                             category={sub}
                             themeColor={activeCategoryData.themeColor}
                             onClick={() => {
-                              console.log("Category clicked:", sub);
+                              navigate(`/in-mart/products/${sub.slug || sub.id}`);
                             }}
                           />
                         ))}
@@ -1453,6 +1820,25 @@ export default function InMart() {
           </section>
         </div>
       </AnimatedPage>
+
+      <VoiceSearchModal
+        isOpen={isVoiceSearchOpen}
+        onClose={() => setIsVoiceSearchOpen(false)}
+        onResult={(text) => {
+          setIsInMartSearchOpen(true);
+          setHeroSearch(text);
+        }}
+      />
+
+      <InMartSearchOverlay
+        isOpen={isInMartSearchOpen}
+        onClose={() => setIsInMartSearchOpen(false)}
+        apiData={apiData}
+        allProducts={allProducts}
+        searchCategories={searchCategories}
+        themeColor={activeCategoryData.themeColor}
+        initialSearch={heroSearch}
+      />
     </>
   )
 }
