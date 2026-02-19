@@ -1,6 +1,7 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
-import { ArrowLeft, Search, SlidersHorizontal, ChevronDown } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { ArrowLeft, Search, SlidersHorizontal, ChevronDown, X } from "lucide-react"
 import AnimatedPage from "./AnimatedPage"
 import { Button } from "@/components/ui/button"
 import AddToCartButton from "./AddToCartButton"
@@ -31,11 +32,29 @@ export default function ProductCategoryView({
 }) {
     const navigate = useNavigate()
     const [activeCategory, setActiveCategory] = useState(initialCategory || (sidebarCategories[0]?.name))
+    const [isSortOpen, setIsSortOpen] = useState(false)
+    const [sortBy, setSortBy] = useState('relevance')
+
+    const sortedProducts = useMemo(() => {
+        let items = [...products];
+        if (sortBy === 'lowToHigh') {
+            return items.sort((a, b) => a.price - b.price);
+        } else if (sortBy === 'highToLow') {
+            return items.sort((a, b) => b.price - a.price);
+        }
+        return items;
+    }, [products, sortBy]);
 
     const handleCategoryClick = (catName) => {
         setActiveCategory(catName)
         if (onCategoryChange) onCategoryChange(catName)
     }
+
+    const sortOptions = [
+        { id: 'relevance', label: 'Relevance (default)' },
+        { id: 'lowToHigh', label: 'Price (low to high)' },
+        { id: 'highToLow', label: 'Price (high to low)' }
+    ];
 
     return (
         <AnimatedPage className="bg-white" style={{ minHeight: '100vh', paddingBottom: '80px' }}>
@@ -87,33 +106,19 @@ export default function ProductCategoryView({
                     {/* Quick Filters */}
                     <div className="sticky top-14 z-40 bg-white/95 backdrop-blur-md py-3 px-3 sm:px-4 flex flex-col gap-3 border-b border-gray-100 shadow-sm/5">
                         <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-0.5">
-                            <Button variant="outline" className="rounded-xl h-8 px-3 border-gray-200 text-[10px] sm:text-xs font-bold gap-1.5 flex-shrink-0 bg-white shadow-sm hover:bg-gray-50">
+                            <Button
+                                onClick={() => setIsSortOpen(true)}
+                                variant="outline"
+                                className="rounded-xl h-8 px-3 border-gray-200 text-[10px] sm:text-xs font-bold gap-1.5 flex-shrink-0 bg-white shadow-sm hover:bg-gray-50 transition-all active:scale-95"
+                            >
                                 Filters <SlidersHorizontal size={12} strokeWidth={3} />
                             </Button>
-                            <Button variant="outline" className="rounded-xl h-8 px-4 border-gray-200 text-[10px] sm:text-xs font-bold flex-shrink-0 bg-white shadow-sm hover:bg-gray-50">
-                                Gourmet
-                            </Button>
-                            <div className="h-4 w-px bg-gray-200 mx-1 flex-shrink-0" />
-                            <Button variant="outline" className="rounded-xl h-8 px-3 border-gray-200 text-[10px] sm:text-xs font-bold gap-1.5 flex-shrink-0 bg-white shadow-sm hover:bg-gray-50">
-                                Sort By <ChevronDown size={12} strokeWidth={3} />
-                            </Button>
-                        </div>
-
-                        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-1">
-                            {["All", "Popular", "Organic", "New Arrivals", "Best Sellers"].map((filter, i) => (
-                                <button
-                                    key={i}
-                                    className={`px-3.5 py-1.5 rounded-full border text-[10px] sm:text-[11px] font-bold whitespace-nowrap transition-all ${i === 0 ? 'bg-gray-100 border-gray-300 text-gray-900' : 'bg-white border-gray-100 text-gray-500 hover:border-gray-300'}`}
-                                >
-                                    {filter}
-                                </button>
-                            ))}
                         </div>
                     </div>
 
                     {/* Product Grid */}
                     <div className="grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 p-2 sm:p-4 gap-y-6 sm:gap-y-10 gap-x-2.5 sm:gap-x-6">
-                        {products.map((product) => (
+                        {sortedProducts.map((product) => (
                             <div key={product.id || product._id} className="flex flex-col group relative w-full bg-white rounded-[2.5rem] overflow-hidden shadow-xl shadow-neutral-200/20 border border-neutral-100 h-full p-2 sm:p-3 hover:border-black transition-all">
                                 {/* Image Container */}
                                 <div className="relative aspect-square w-full bg-[#F8F9FA] rounded-[2rem] flex items-center justify-center p-3 overflow-hidden">
@@ -174,6 +179,67 @@ export default function ProductCategoryView({
                     </div>
                 </main>
             </div>
+
+            {/* Sort Bottom Sheet */}
+            <AnimatePresence>
+                {isSortOpen && (
+                    <>
+                        {/* Backdrop */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsSortOpen(false)}
+                            className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[100]"
+                        />
+
+                        {/* Bottom Sheet */}
+                        <motion.div
+                            initial={{ y: "100%" }}
+                            animate={{ y: 0 }}
+                            exit={{ y: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] z-[101] shadow-[0_-8px_30px_rgba(0,0,0,0.1)] pb-20"
+                        >
+                            {/* Close Button Container */}
+                            <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex justify-center">
+                                <button
+                                    onClick={() => setIsSortOpen(false)}
+                                    className="w-12 h-12 bg-[#1F2937] rounded-full flex items-center justify-center text-white shadow-lg active:scale-95 transition-transform"
+                                >
+                                    <X size={24} strokeWidth={2.5} />
+                                </button>
+                            </div>
+
+                            <div className="p-6">
+                                <h3 className="text-2xl font-black text-gray-900 mb-8 px-2 tracking-tight">Sort by</h3>
+
+                                <div className="space-y-2">
+                                    {sortOptions.map((option) => (
+                                        <button
+                                            key={option.id}
+                                            onClick={() => {
+                                                setSortBy(option.id);
+                                                setTimeout(() => setIsSortOpen(false), 200);
+                                            }}
+                                            className="w-full flex items-center justify-between p-4 rounded-2xl hover:bg-gray-50 transition-colors group"
+                                        >
+                                            <span className={`text-base font-bold transition-colors ${sortBy === option.id ? 'text-[#166534]' : 'text-gray-500'}`}>
+                                                {option.label}
+                                            </span>
+                                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${sortBy === option.id ? 'border-[#166534] bg-white' : 'border-gray-200'}`}>
+                                                {sortBy === option.id && (
+                                                    <div className="w-3 h-3 rounded-full bg-[#166534]" />
+                                                )}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
         </AnimatedPage>
     )
 }

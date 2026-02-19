@@ -108,7 +108,7 @@ const ProductCard = ({ product, themeColor }) => (
   </div>
 );
 
-const NewlyLaunchedCard = ({ product }) => (
+const NewlyLaunchedCard = ({ product, themeColor }) => (
   <div className="flex-shrink-0 w-[150px] sm:w-[185px] md:w-[210px] bg-white dark:bg-[#1a1a1a] rounded-2xl overflow-hidden relative shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-gray-100 dark:border-white/5 group flex flex-col h-full">
     {/* Product Image Area */}
     <div className="relative aspect-square w-full bg-[#F5F5F5] dark:bg-white/5 flex items-center justify-center p-2 overflow-hidden">
@@ -122,7 +122,7 @@ const NewlyLaunchedCard = ({ product }) => (
       <div className="absolute top-1 left-1 z-10 scale-90 sm:scale-100 origin-top-left">
         <div className="relative">
           <svg width="42" height="42" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-md">
-            <path d="M24 0L27.9 5.7L34.5 4.5L36.3 11.1L42.9 12.9L41.7 19.5L47.4 23.4L41.7 27.3L42.9 33.9L36.3 35.7L34.5 42.3L27.9 41.1L24 46.8L20.1 41.1L13.5 42.3L11.7 35.7L5.1 33.9L6.3 27.3L0.6 23.4L6.3 19.5L5.1 12.9L11.7 11.1L13.5 4.5L20.1 5.7L24 0Z" fill="#8B5CF6" />
+            <path d="M24 0L27.9 5.7L34.5 4.5L36.3 11.1L42.9 12.9L41.7 19.5L47.4 23.4L41.7 27.3L42.9 33.9L36.3 35.7L34.5 42.3L27.9 41.1L24 46.8L20.1 41.1L13.5 42.3L11.7 35.7L5.1 33.9L6.3 27.3L0.6 23.4L6.3 19.5L5.1 12.9L11.7 11.1L13.5 4.5L20.1 5.7L24 0Z" fill={themeColor || "#8B5CF6"} />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center text-white leading-none">
             <span className="text-[10px] font-black">{product.discount}</span>
@@ -251,7 +251,7 @@ const ProductSection = ({ title, products, onSeeAll, isNewlyLaunched = false, th
           >
             {productsWithIds.map((product) => (
               isNewlyLaunched ? (
-                <NewlyLaunchedCard key={product.id} product={product} />
+                <NewlyLaunchedCard key={product.id} product={product} themeColor={themeColor} />
               ) : (
                 <ProductCard key={product.id} product={product} themeColor={themeColor} />
               )
@@ -349,8 +349,9 @@ const AnimatedCategoryHeader = ({ categoryName }) => {
           @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,900;1,400;1,900&family=Cinzel:wght@400;700;900&display=swap');
           
           @keyframes shimmerSweep {
-            0% { background-position: -200% center; }
-            100% { background-position: 200% center; }
+            0% { background-position: -150% 0; }
+            20% { background-position: 150% 0; }
+            100% { background-position: 150% 0; }
           }
 
           @keyframes windWave {
@@ -410,15 +411,17 @@ const AnimatedCategoryHeader = ({ categoryName }) => {
             style={{
               position: 'absolute',
               inset: 0,
+              display: 'block',
               padding: '0 0.5rem',
-              background: 'linear-gradient(110deg, transparent 30%, rgba(255,215,0,0) 35%, #FFD700 45%, #FFFFFF 50%, #FFD700 55%, rgba(255,215,0,0) 65%, transparent 70%)',
-              backgroundSize: '200% 100%',
+              background: 'linear-gradient(110deg, transparent 35%, rgba(255,215,0,0.4) 42%, #FFD700 48%, #FFFFFF 50%, #FFD700 52%, rgba(255,215,0,0.4) 58%, transparent 65%)',
+              backgroundSize: '300% 100%',
               WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               zIndex: 20,
-              animation: 'shimmerSweep 2.8s infinite cubic-bezier(0.45, 0.05, 0.55, 0.95)'
+              animation: 'shimmerSweep 5s infinite linear'
             }}
-            className="filter brightness-125 saturate-150 pointer-events-none"
+            className="filter brightness-150 saturate-200 pointer-events-none"
           >
             {`${categoryName} Store`.split('').map((char, i) => (
               <span
@@ -1814,7 +1817,7 @@ export default function InMart() {
 
           {/* Fixed Main Category Sections matching User Request */}
           {!isLoading && apiData.allCategories && (
-            <div className="space-y-12">
+            <div className="space-y-8 mb-8">
               {[
                 { id: 'grocery', title: 'Grocery & Kitchen' },
                 { id: 'snacks', title: 'Snacks & Drinks' },
