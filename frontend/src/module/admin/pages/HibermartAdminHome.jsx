@@ -853,7 +853,12 @@ export default function HibermartAdminHome() {
 
         try {
             if (modalType === "banner") {
-                const bannerData = { name, image, link: formData.get("link"), isActive: true };
+                const bannerData = {
+                    title: name,
+                    image,
+                    type: formData.get("type"),
+                    isActive: true
+                };
                 if (editingItem) {
                     await inmartAPI.adminUpdateBanner(editingItem._id || editingItem.id, bannerData);
                 } else {
@@ -1316,6 +1321,22 @@ export default function HibermartAdminHome() {
                                             required
                                         />
                                     </div>
+
+                                    {modalType === "banner" && (
+                                        <>
+                                            <div>
+                                                <label className="text-[10px] font-black uppercase text-neutral-400 tracking-widest block mb-2">BANNER TYPE</label>
+                                                <select
+                                                    name="type"
+                                                    defaultValue={editingItem?.type || "Hero"}
+                                                    className="w-full bg-white border border-neutral-200 rounded-3xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
+                                                >
+                                                    <option value="Hero">Hero Section</option>
+                                                    <option value="Category">Category Banner</option>
+                                                </select>
+                                            </div>
+                                        </>
+                                    )}
 
                                     {modalType === "product" && (
                                         <>

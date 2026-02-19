@@ -873,16 +873,37 @@ export default function InMart() {
   const [isLoading, setIsLoading] = useState(true)
   const [apiError, setApiError] = useState(null)
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0)
+  const [currentCategoryBannerIndex, setCurrentCategoryBannerIndex] = useState(0)
 
-  // Auto-scroll banners
+  // Filter banners by type
+  const heroBanners = useMemo(() =>
+    apiData.banners?.filter(b => b.type === 'Hero' || !b.type) || [],
+    [apiData.banners]
+  );
+
+  const categoryBanners = useMemo(() =>
+    apiData.banners?.filter(b => b.type === 'Category') || [],
+    [apiData.banners]
+  );
+
   useEffect(() => {
-    if (apiData.banners && apiData.banners.length > 1) {
+    if (heroBanners && heroBanners.length > 1) {
       const interval = setInterval(() => {
-        setCurrentBannerIndex((prev) => (prev + 1) % apiData.banners.length);
+        setCurrentBannerIndex((prev) => (prev + 1) % heroBanners.length);
       }, 5000);
       return () => clearInterval(interval);
     }
-  }, [apiData.banners]);
+  }, [heroBanners]);
+
+  // Auto-scroll category banners
+  useEffect(() => {
+    if (categoryBanners && categoryBanners.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentCategoryBannerIndex((prev) => (prev + 1) % categoryBanners.length);
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [categoryBanners]);
 
   // Fetch InMart data from API
   useEffect(() => {
@@ -1385,7 +1406,7 @@ export default function InMart() {
 
         {/* Banner Carousel or Inline Category Content */}
         {activeCategory === "All" ? (
-          apiData.banners && apiData.banners.length > 0 && (
+          heroBanners.length > 0 && (
             <section className="relative z-20 w-full px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6 overflow-hidden">
               <div className="max-w-7xl mx-auto relative group">
                 <div className="relative overflow-hidden rounded-2xl sm:rounded-[2.5rem] shadow-2xl border border-purple-100 dark:border-white/10 bg-[#F3E8FF] aspect-[21/9] sm:aspect-[24/10]">
@@ -1397,11 +1418,11 @@ export default function InMart() {
                       exit={{ opacity: 0, x: -50 }}
                       transition={{ duration: 0.6, ease: "easeInOut" }}
                       className="absolute inset-0 w-full h-full cursor-pointer"
-                      onClick={() => apiData.banners[currentBannerIndex].linkUrl && (window.location.href = apiData.banners[currentBannerIndex].linkUrl)}
+                      onClick={() => heroBanners[currentBannerIndex].linkUrl && (window.location.href = heroBanners[currentBannerIndex].linkUrl)}
                     >
                       <img
-                        src={apiData.banners[currentBannerIndex].imageUrl || apiData.banners[currentBannerIndex].image}
-                        alt={apiData.banners[currentBannerIndex].title || "Promo Banner"}
+                        src={heroBanners[currentBannerIndex].imageUrl || heroBanners[currentBannerIndex].image}
+                        alt={heroBanners[currentBannerIndex].title || "Promo Banner"}
                         className="w-full h-full object-cover block"
                       />
 
@@ -1411,9 +1432,9 @@ export default function InMart() {
                   </AnimatePresence>
 
                   {/* Indicators/Dots */}
-                  {apiData.banners.length > 1 && (
+                  {heroBanners.length > 1 && (
                     <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-30">
-                      {apiData.banners.map((_, idx) => (
+                      {heroBanners.map((_, idx) => (
                         <button
                           key={idx}
                           onClick={(e) => {
@@ -1814,6 +1835,54 @@ export default function InMart() {
             onSeeAll={() => { }}
             themeColor={activeCategoryData.themeColor}
           />
+
+          {/* Category Banner Section (Carousel Style) */}
+          {activeCategory === "All" && categoryBanners.length > 0 && (
+            <section className="relative z-20 w-full mb-8 overflow-hidden">
+              <div className="relative group">
+                <div className="relative overflow-hidden rounded-2xl sm:rounded-[2.5rem] shadow-2xl border border-neutral-100 dark:border-white/10 bg-neutral-50 aspect-[21/9] sm:aspect-[24/10]">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={currentCategoryBannerIndex}
+                      initial={{ opacity: 0, x: 50 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -50 }}
+                      transition={{ duration: 0.6, ease: "easeInOut" }}
+                      className="absolute inset-0 w-full h-full cursor-pointer"
+                      onClick={() => categoryBanners[currentCategoryBannerIndex].linkUrl && (window.location.href = categoryBanners[currentCategoryBannerIndex].linkUrl)}
+                    >
+                      <img
+                        src={categoryBanners[currentCategoryBannerIndex].imageUrl || categoryBanners[currentCategoryBannerIndex].image}
+                        alt={categoryBanners[currentCategoryBannerIndex].title || "Category Banner"}
+                        className="w-full h-full object-cover block"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+                    </motion.div>
+                  </AnimatePresence>
+
+                  {/* Indicators/Dots */}
+                  {categoryBanners.length > 1 && (
+                    <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-30">
+                      {categoryBanners.map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentCategoryBannerIndex(idx);
+                          }}
+                          className={`transition-all duration-300 rounded-full ${currentCategoryBannerIndex === idx
+                            ? "w-6 sm:w-8 h-1.5 sm:h-2 bg-white"
+                            : "w-1.5 sm:w-2 h-1.5 sm:h-2 bg-white/50 hover:bg-white/80"
+                            }`}
+                          aria-label={`Go to category banner ${idx + 1}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Fixed Main Category Sections matching User Request */}
           {!isLoading && apiData.allCategories && (

@@ -8,7 +8,7 @@ const inmartBannerSchema = new mongoose.Schema(
         },
         type: {
             type: String,
-            enum: ['Hero', 'Promo', 'Offer', 'Campaign'],
+            enum: ['Hero', 'Category'],
             default: 'Hero',
         },
         image: {
