@@ -482,18 +482,20 @@ const AnimatedCategoryHeader = ({ categoryName }) => {
 const VoiceSearchModal = ({ isOpen, onClose, onResult }) => {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
+  const [errorStatus, setErrorStatus] = useState(null);
 
   useEffect(() => {
     if (!isOpen) {
       setIsListening(false);
       setTranscript("");
+      setErrorStatus(null);
       return;
     }
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
+      setErrorStatus("Speech recognition not supported");
       console.error("Speech recognition is not supported in this browser.");
-      onClose();
       return;
     }
 
@@ -504,6 +506,7 @@ const VoiceSearchModal = ({ isOpen, onClose, onResult }) => {
 
     recognition.onstart = () => {
       setIsListening(true);
+      setErrorStatus(null);
     };
 
     recognition.onresult = (event) => {
@@ -514,7 +517,7 @@ const VoiceSearchModal = ({ isOpen, onClose, onResult }) => {
 
     recognition.onend = () => {
       setIsListening(false);
-      if (transcript) {
+      if (transcript && !errorStatus) {
         onResult(transcript);
         // Delay closing slightly so user can see what was captured
         setTimeout(onClose, 800);
@@ -524,15 +527,27 @@ const VoiceSearchModal = ({ isOpen, onClose, onResult }) => {
     recognition.onerror = (event) => {
       console.error("Speech recognition error", event.error);
       setIsListening(false);
-      onClose();
+
+      if (event.error === 'not-allowed') {
+        setErrorStatus("Microphone access denied. Please enable it in your browser settings.");
+      } else if (event.error === 'no-speech') {
+        setErrorStatus("No speech detected. Try again.");
+      } else {
+        setErrorStatus("An error occurred. Please try again.");
+      }
     };
 
-    recognition.start();
+    try {
+      recognition.start();
+    } catch (e) {
+      console.error("Failed to start recognition", e);
+      setErrorStatus("Failed to start voice search");
+    }
 
     return () => {
       recognition.stop();
     };
-  }, [isOpen, onClose, onResult, transcript]);
+  }, [isOpen, onClose, onResult, transcript, errorStatus]);
 
   return (
     <AnimatePresence>
@@ -567,7 +582,7 @@ const VoiceSearchModal = ({ isOpen, onClose, onResult }) => {
 
             <div className="relative mb-12">
               {/* Pulsing rings */}
-              {isListening && (
+              {isListening && !errorStatus && (
                 <>
                   <motion.div
                     animate={{ scale: [1, 2.2], opacity: [0.5, 0] }}
@@ -582,22 +597,35 @@ const VoiceSearchModal = ({ isOpen, onClose, onResult }) => {
                 </>
               )}
 
-              <div className="relative w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center shadow-lg shadow-blue-200">
+              <div className={`relative w-24 h-24 rounded-full flex items-center justify-center shadow-lg transition-colors ${errorStatus ? 'bg-red-400 shadow-red-100' : 'bg-blue-500 shadow-blue-200'}`}>
                 <Mic size={40} className="text-white" strokeWidth={2.5} />
               </div>
             </div>
 
-            <h2 className={`text-3xl font-semibold mb-3 text-center px-4 ${transcript ? 'text-gray-800' : 'text-gray-400'}`}>
-              {transcript || "Speak now"}
+            <h2 className={`text-2xl font-semibold mb-3 text-center px-4 ${errorStatus ? 'text-red-500' : (transcript ? 'text-gray-800' : 'text-gray-400')}`}>
+              {errorStatus || transcript || "Speak now"}
             </h2>
 
-            <p className="text-gray-400 text-lg mb-12 font-medium">English (United States)</p>
+            <p className="text-gray-400 text-lg mb-12 font-medium">
+              {errorStatus ? "Permission Required" : "English (United States)"}
+            </p>
 
             <div className="w-full bg-gray-50 rounded-3xl p-6 text-center border border-gray-100">
               <p className="text-gray-500 text-sm leading-relaxed font-medium">
-                Google Speech Services converts audio to text and shares the text with this app.
+                {errorStatus
+                  ? "To use voice search, please click the camera/mic icon in your address bar and allow microphone access."
+                  : "Google Speech Services converts audio to text and shares the text with this app."}
               </p>
             </div>
+
+            {errorStatus && (
+              <button
+                onClick={onClose}
+                className="mt-6 w-full py-4 bg-gray-900 text-white rounded-2xl font-bold hover:bg-gray-800 transition-colors"
+              >
+                Got it
+              </button>
+            )}
           </motion.div>
         </motion.div>
       )}
@@ -1648,6 +1676,17 @@ export default function InMart() {
                 <motion.h2
                   initial={{ scale: 0.8, opacity: 0 }}
                   whileInView={{ scale: 1, opacity: 1 }}
+                  animate={{
+                    scale: [1, 1.04, 1],
+                  }}
+                  transition={{
+                    scale: {
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    },
+                    opacity: { duration: 0.8 }
+                  }}
                   viewport={{ once: true }}
                   className="text-5xl sm:text-8xl md:text-9xl lg:text-[11rem] font-[1000] text-white italic tracking-tighter flex flex-col items-center select-none relative"
                   style={{
@@ -1664,11 +1703,50 @@ export default function InMart() {
                   `
                   }}
                 >
-                  <span className="relative z-10">BIG SALE</span>
-                  {/* Luxury Gold Flash Overlay */}
-                  <span className="absolute inset-0 easy-gold-flash pointer-events-none z-20">
-                    BIG SALE
-                  </span>
+                  <div className="flex items-center gap-x-[1px] sm:gap-x-1 relative">
+                    <span className="flex relative z-10">
+                      {"BIG SALE".split("").map((char, i) => (
+                        <motion.span
+                          key={i}
+                          animate={{
+                            y: [0, -20, 0],
+                          }}
+                          transition={{
+                            duration: 0.8,
+                            repeat: Infinity,
+                            repeatDelay: 6,
+                            delay: i * 0.1,
+                            ease: "easeInOut"
+                          }}
+                          style={{ display: 'inline-block', whiteSpace: char === ' ' ? 'pre' : 'normal' }}
+                        >
+                          {char}
+                        </motion.span>
+                      ))}
+                    </span>
+
+                    {/* Synchronized Gold Flash Layer */}
+                    <span className="absolute inset-0 easy-gold-flash pointer-events-none z-20 flex">
+                      {"BIG SALE".split("").map((char, i) => (
+                        <motion.span
+                          key={i}
+                          animate={{
+                            y: [0, -20, 0],
+                          }}
+                          transition={{
+                            duration: 0.8,
+                            repeat: Infinity,
+                            repeatDelay: 6,
+                            delay: i * 0.1,
+                            ease: "easeInOut"
+                          }}
+                          style={{ display: 'inline-block', whiteSpace: char === ' ' ? 'pre' : 'normal' }}
+                        >
+                          {char}
+                        </motion.span>
+                      ))}
+                    </span>
+                  </div>
                 </motion.h2>
               </div>
 
