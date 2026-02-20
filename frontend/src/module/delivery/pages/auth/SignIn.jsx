@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/select"
 import { deliveryAPI } from "@/lib/api"
 import { useCompanyName } from "@/lib/hooks/useCompanyName"
+import deliveryHeroImg from "@/assets/purple_delivery_boy.png"
 
 // Common country codes
 const countryCodes = [
@@ -131,17 +132,24 @@ export default function DeliverySignIn() {
   const isValid = !validatePhone(formData.phone, formData.countryCode)
 
   return (
-    <div className="max-h-screen h-screen bg-white flex flex-col">
-      {/* Top Section - Logo and Badge */}
+    <div className="max-h-screen h-screen bg-white flex flex-col overflow-y-auto">
+      {/* Hero Image at Top */}
+      <div className="w-full bg-white flex flex-col items-center justify-center p-4">
+        <img
+          src={deliveryHeroImg}
+          alt="Delivery Hero"
+          className="w-full max-h-[300px] object-contain"
+        />
+      </div>
+
+      {/* Top Section - Logo and Badge (Restored as previous) */}
       <div className="flex flex-col items-center pt-8 pb-6 px-6">
-        {/* Appzeto Logo */}
         <div>
           <h1 className="text-3xl text-black font-extrabold italic lowercase tracking-tight">
             {companyName.toLowerCase()}
           </h1>
         </div>
-        
-        {/* DELIVERY Badge */}
+
         <div className="bg-black px-6 py-2 rounded mt-2">
           <span className="text-white font-semibold text-sm uppercase tracking-wide">
             DELIVERY
@@ -149,10 +157,9 @@ export default function DeliverySignIn() {
         </div>
       </div>
 
-      {/* Main Content - Form Section */}
-      <div className="flex-1 flex flex-col px-6">
+      {/* Main Content - Form Section (Restored as previous) */}
+      <div className="flex-1 flex flex-col px-6 pb-8">
         <div className="w-full max-w-md mx-auto space-y-6">
-          {/* Sign In Heading */}
           <div className="space-y-2 text-center">
             <h2 className="text-2xl font-bold text-black">
               Sign in to your account
@@ -196,38 +203,30 @@ export default function DeliverySignIn() {
                 onChange={handlePhoneChange}
                 autoComplete="off"
                 autoFocus={false}
-                className={`flex-1 h-12 px-4 text-gray-900 placeholder-gray-400 focus:outline-none text-base border rounded-lg min-w-0 ${
-                  error ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`flex-1 h-12 px-4 text-gray-900 placeholder-gray-400 focus:outline-none text-base border rounded-lg min-w-0 ${error ? "border-red-500" : "border-gray-300"
+                  }`}
               />
             </div>
 
-            {/* Hint Text */}
             <p className="text-sm text-gray-500">
               Enter a valid 10 digit mobile number
             </p>
 
             {error && (
-              <p className="text-sm text-red-500">
+              <p className="text-sm text-red-500 text-center">
                 {error}
               </p>
             )}
           </div>
-        </div>
-      </div>
 
-      {/* Bottom Section - Continue Button and Terms */}
-      <div className="px-6 pb-8 pt-4">
-        <div className="w-full max-w-md mx-auto space-y-4">
-          {/* Continue Button */}
+          {/* Continue Button (Restored Green) */}
           <button
             onClick={handleSendOTP}
             disabled={!isValid || isSending}
-            className={`w-full py-4 rounded-lg font-bold text-base transition-colors ${
-              isValid && !isSending
-                ? "bg-[#00B761] hover:bg-[#00A055] active:bg-[#009049] text-white"
-                : "bg-gray-300 text-gray-500 cursor-not-allowed"
-            }`}
+            className={`w-full py-4 rounded-lg font-bold text-base transition-colors ${isValid && !isSending
+              ? "bg-[#00B761] hover:bg-[#00A055] active:bg-[#009049] text-white"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
           >
             {isSending ? "Sending OTP..." : "Continue"}
           </button>
@@ -244,4 +243,3 @@ export default function DeliverySignIn() {
     </div>
   )
 }
-

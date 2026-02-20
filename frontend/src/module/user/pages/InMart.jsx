@@ -1805,7 +1805,7 @@ export default function InMart() {
                     background: `linear-gradient(180deg, #ffffff 0%, ${activeCategoryData.themeColor}22 100%)`
                   }}
                   whileTap={{ scale: 0.99 }}
-                  onClick={() => { }}
+                  onClick={() => navigate('/in-mart/section/sale')}
                   className="w-full max-w-2xl mx-auto text-gray-900 dark:text-white font-bold py-4 sm:py-5 md:py-6 rounded-2xl md:rounded-3xl flex items-center justify-center gap-3 text-base sm:text-xl lg:text-2xl transition-all shadow-md border border-black/10"
                   style={{
                     background: `linear-gradient(180deg, #ffffff 0%, ${activeCategoryData.themeColor}11 100%)`
@@ -1824,7 +1824,7 @@ export default function InMart() {
           <ProductSection
             title="Newly Launched"
             products={apiData.collections?.find(c => c.slug === 'newly-launched')?.products || []}
-            onSeeAll={() => { }}
+            onSeeAll={() => navigate('/in-mart/section/newly-launched')}
             isNewlyLaunched={true}
             themeColor={activeCategoryData.themeColor}
           />
@@ -1832,7 +1832,7 @@ export default function InMart() {
           <ProductSection
             title="Best Sellers"
             products={apiData.collections?.find(c => c.slug === 'best-sellers')?.products || []}
-            onSeeAll={() => { }}
+            onSeeAll={() => navigate('/in-mart/section/best-sellers')}
             themeColor={activeCategoryData.themeColor}
           />
 
@@ -1955,7 +1955,7 @@ export default function InMart() {
           <ProductSection
             title="Trending Near You"
             products={apiData.collections?.find(c => c.slug === 'trending')?.products || []}
-            onSeeAll={() => { }}
+            onSeeAll={() => navigate('/in-mart/section/trending')}
             themeColor={activeCategoryData.themeColor}
           />
 
