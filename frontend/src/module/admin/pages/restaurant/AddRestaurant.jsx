@@ -1,11 +1,14 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { Building2, Info, Tag, Upload, Calendar, FileText, MapPin, CheckCircle2, X, Image as ImageIcon, Clock, Loader2 } from "lucide-react"
+import { Building2, Info, Tag, Upload, Calendar, FileText, MapPin, CheckCircle2, X, Image as ImageIcon, Clock, Loader2, Search, Navigation } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { adminAPI, uploadAPI } from "@/lib/api"
+import { adminAPI, uploadAPI, locationAPI } from "@/lib/api"
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import { toast } from "sonner"
 
 const cuisinesOptions = [
@@ -20,13 +23,52 @@ const cuisinesOptions = [
 
 const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
+// Fix Leaflet marker icon issue
+delete (L.Icon.Default.prototype)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+})
+
+// Map Events component
+function LocationPickerMarker({ position, setPosition }) {
+  useMapEvents({
+    click(e) {
+      setPosition(e.latlng)
+    },
+  })
+
+  return position ? (
+    <Marker
+      position={position}
+      draggable={true}
+      eventHandlers={{
+        dragend: (e) => {
+          setPosition(e.target.getLatLng())
+        },
+      }}
+    />
+  ) : null
+}
+
+function MapUpdater({ center }) {
+  const map = useMap()
+  useEffect(() => {
+    if (center) {
+      map.setView(center, 13)
+    }
+  }, [center, map])
+  return null
+}
+
 export default function AddRestaurant() {
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [formErrors, setFormErrors] = useState({})
-  
+
   // Step 1: Basic Info
   const [step1, setStep1] = useState({
     restaurantName: "",
@@ -42,6 +84,8 @@ export default function AddRestaurant() {
       state: "",
       pincode: "",
       landmark: "",
+      latitude: 20.5937,
+      longitude: 78.9629,
     },
   })
 
@@ -179,7 +223,7 @@ export default function AddRestaurant() {
   const handleNext = () => {
     setFormErrors({})
     let validationErrors = []
-    
+
     if (step === 1) {
       validationErrors = validateStep1()
     } else if (step === 2) {
@@ -191,14 +235,14 @@ export default function AddRestaurant() {
     } else if (step === 5) {
       validationErrors = validateAuth()
     }
-    
+
     if (validationErrors.length > 0) {
       validationErrors.forEach((error) => {
         toast.error(error)
       })
       return
     }
-    
+
     if (step < 5) {
       setStep(step + 1)
     } else {
@@ -209,7 +253,7 @@ export default function AddRestaurant() {
   const handleSubmit = async () => {
     setIsSubmitting(true)
     setFormErrors({})
-    
+
     try {
       // Upload all images first
       let profileImageData = null
@@ -295,7 +339,7 @@ export default function AddRestaurant() {
 
       // Call backend API
       const response = await adminAPI.createRestaurant(payload)
-      
+
       if (response.data.success) {
         toast.success("Restaurant created successfully!")
         setShowSuccessDialog(true)
@@ -421,6 +465,103 @@ export default function AddRestaurant() {
             className="bg-white text-sm"
             placeholder="Nearby landmark (optional)"
           />
+        </div>
+
+        <div className="space-y-3">
+          <Label className="text-sm font-semibold text-black flex items-center gap-2">
+            <Navigation className="w-4 h-4 text-blue-600" />
+            Pin Restaurant Location*
+          </Label>
+          <p className="text-xs text-slate-500">Search for an address or click on the map to pinpoint delivery location</p>
+
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Input
+                placeholder="Search address to pinpoint..."
+                className="pl-9 bg-white text-sm shadow-sm"
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    const query = e.target.value
+                    if (!query) return
+                    try {
+                      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in`)
+                      const data = await res.json()
+                      if (data && data.length > 0) {
+                        const { lat, lon } = data[0]
+                        setStep1(prev => ({
+                          ...prev,
+                          location: {
+                            ...prev.location,
+                            latitude: parseFloat(lat),
+                            longitude: parseFloat(lon)
+                          }
+                        }))
+                      } else {
+                        toast.error("Location not found")
+                      }
+                    } catch (err) {
+                      toast.error("Failed to search location")
+                    }
+                  }
+                }}
+              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="px-3"
+              onClick={() => {
+                if (navigator.geolocation) {
+                  navigator.geolocation.getCurrentPosition((pos) => {
+                    setStep1(prev => ({
+                      ...prev,
+                      location: {
+                        ...prev.location,
+                        latitude: pos.coords.latitude,
+                        longitude: pos.coords.longitude
+                      }
+                    }))
+                  })
+                }
+              }}
+            >
+              <MapPin className="w-4 h-4" />
+            </Button>
+          </div>
+
+          <div className="h-[300px] w-full rounded-lg overflow-hidden border border-slate-200 shadow-inner z-0">
+            <MapContainer
+              center={[step1.location.latitude || 20.5937, step1.location.longitude || 78.9629]}
+              zoom={13}
+              scrollWheelZoom={true}
+              style={{ h: '100%', w: '100%', height: '300px' }}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <MapUpdater center={[step1.location.latitude, step1.location.longitude]} />
+              <LocationPickerMarker
+                position={step1.location.latitude ? { lat: step1.location.latitude, lng: step1.location.longitude } : null}
+                setPosition={(latlng) => {
+                  setStep1(prev => ({
+                    ...prev,
+                    location: {
+                      ...prev.location,
+                      latitude: latlng.lat,
+                      longitude: latlng.lng
+                    }
+                  }))
+                }}
+              />
+            </MapContainer>
+          </div>
+          <div className="flex gap-4 text-[10px] text-slate-500 font-mono bg-slate-50 p-2 rounded border border-dashed border-slate-200">
+            <span>Lat: {step1.location.latitude?.toFixed(6)}</span>
+            <span>Lng: {step1.location.longitude?.toFixed(6)}</span>
+          </div>
         </div>
       </section>
     </div>

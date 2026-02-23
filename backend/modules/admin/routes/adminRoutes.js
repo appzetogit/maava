@@ -15,6 +15,7 @@ import {
   updateUserStatus,
   getRestaurants,
   createRestaurant,
+  updateRestaurant,
   updateRestaurantStatus,
   getRestaurantJoinRequests,
   approveRestaurant,
@@ -289,6 +290,7 @@ router.post('/restaurants/:id/approve', approveRestaurant);
 router.post('/restaurants/:id/reject', rejectRestaurant);
 router.post('/restaurants/:id/reverify', reverifyRestaurant);
 router.put('/restaurants/:id/status', updateRestaurantStatus);
+router.put('/restaurants/:id', updateRestaurant);
 router.delete('/restaurants/:id', deleteRestaurant);
 
 // Category Management
@@ -455,7 +457,7 @@ router.post('/orders/refund/:orderId', async (req, res, next) => {
     params: req.params,
     orderId: req.params.orderId
   });
-  
+
   // Call processRefund - it's already wrapped with asyncHandler
   return processRefund(req, res, next);
 });
@@ -482,7 +484,7 @@ router.post('/refund-requests/:orderId/process', async (req, res, next) => {
     route: req.route?.path,
     timestamp: new Date().toISOString()
   });
-  
+
   // Ensure orderId is passed correctly
   if (!req.params.orderId) {
     console.error('❌ [ROUTE] orderId parameter is missing!');
@@ -491,7 +493,7 @@ router.post('/refund-requests/:orderId/process', async (req, res, next) => {
       message: 'Order ID is required'
     });
   }
-  
+
   // Call processRefund - it's already wrapped with asyncHandler
   return processRefund(req, res, next);
 });

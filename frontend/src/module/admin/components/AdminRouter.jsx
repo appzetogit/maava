@@ -21,6 +21,7 @@ import AllZonesMap from "../pages/restaurant/AllZonesMap";
 import DeliveryBoyViewMap from "../pages/restaurant/DeliveryBoyViewMap";
 import RestaurantsList from "../pages/restaurant/RestaurantsList";
 import AddRestaurant from "../pages/restaurant/AddRestaurant";
+import EditRestaurant from "../pages/restaurant/EditRestaurant";
 import JoiningRequest from "../pages/restaurant/JoiningRequest";
 import RestaurantCommission from "../pages/restaurant/RestaurantCommission";
 import RestaurantComplaints from "../pages/restaurant/RestaurantComplaints";
@@ -173,6 +174,7 @@ export default function AdminRouter() {
         {/* Restaurants */}
         <Route path="restaurants" element={<RestaurantsList />} />
         <Route path="restaurants/add" element={<AddRestaurant />} />
+        <Route path="restaurants/edit/:id" element={<EditRestaurant />} />
         <Route path="restaurants/joining-request" element={<JoiningRequest />} />
         <Route path="restaurants/commission" element={<RestaurantCommission />} />
         <Route path="restaurants/complaints" element={<RestaurantComplaints />} />

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { Plus, Minus, ArrowLeft, ChevronRight, Clock, MapPin, Phone, FileText, Utensils, Tag, Percent, Truck, Leaf, Share2, ChevronUp, ChevronDown, X, Check, Settings, CreditCard, Wallet, Building2, Sparkles } from "lucide-react"
+import { Plus, Minus, ArrowLeft, ChevronRight, Clock, MapPin, Phone, FileText, Utensils, Tag, Percent, Share2, ChevronUp, ChevronDown, X, Check, Settings, CreditCard, Wallet, Building2, Sparkles } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import confetti from "canvas-confetti"
 
@@ -28,12 +28,12 @@ import { getCompanyNameAsync } from "@/lib/utils/businessSettings"
  */
 const formatFullAddress = (address) => {
   if (!address) return ""
-  
+
   // Priority 1: Use formattedAddress if available (for live location addresses)
   if (address.formattedAddress && address.formattedAddress !== "Select location") {
     return address.formattedAddress
   }
-  
+
   // Priority 2: Build address from parts
   const addressParts = []
   if (address.street) addressParts.push(address.street)
@@ -41,22 +41,22 @@ const formatFullAddress = (address) => {
   if (address.city) addressParts.push(address.city)
   if (address.state) addressParts.push(address.state)
   if (address.zipCode) addressParts.push(address.zipCode)
-  
+
   if (addressParts.length > 0) {
     return addressParts.join(', ')
   }
-  
+
   // Priority 3: Use address field if available
   if (address.address && address.address !== "Select location") {
     return address.address
   }
-  
+
   return ""
 }
 
 export default function Cart() {
   const navigate = useNavigate()
-  
+
   // Defensive check: Ensure CartProvider is available
   let cartContext;
   try {
@@ -81,21 +81,24 @@ export default function Cart() {
       </div>
     );
   }
-  
+
   const { cart, updateQuantity, addToCart, getCartCount, clearCart, cleanCartForRestaurant } = cartContext;
   const { getDefaultAddress, getDefaultPaymentMethod, addresses, paymentMethods, userProfile } = useProfile()
   const { createOrder } = useOrders()
   const { location: currentLocation } = useUserLocation() // Get live location address
   const { zoneId } = useZone(currentLocation) // Get user's zone
-  
+
   const [showCoupons, setShowCoupons] = useState(false)
   const [appliedCoupon, setAppliedCoupon] = useState(null)
   const [couponCode, setCouponCode] = useState("")
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("razorpay") // razorpay | cash | wallet
   const [walletBalance, setWalletBalance] = useState(0)
   const [isLoadingWallet, setIsLoadingWallet] = useState(false)
-  const [deliveryFleet, setDeliveryFleet] = useState("standard")
-  const [showFleetOptions, setShowFleetOptions] = useState(false)
+  // Tip state
+  const [tipAmount, setTipAmount] = useState(0)
+  const [selectedTip, setSelectedTip] = useState(null) // null | 20 | 30 | 50 | 'other'
+  const [showTipSection, setShowTipSection] = useState(false)
+  const [customTipInput, setCustomTipInput] = useState("")
   const [note, setNote] = useState("")
   const [showNoteInput, setShowNoteInput] = useState(false)
   const [sendCutlery, setSendCutlery] = useState(true)
@@ -105,21 +108,21 @@ export default function Cart() {
   const [orderProgress, setOrderProgress] = useState(0)
   const [showOrderSuccess, setShowOrderSuccess] = useState(false)
   const [placedOrderId, setPlacedOrderId] = useState(null)
-  
+
   // Restaurant and pricing state
   const [restaurantData, setRestaurantData] = useState(null)
   const [loadingRestaurant, setLoadingRestaurant] = useState(false)
   const [pricing, setPricing] = useState(null)
   const [loadingPricing, setLoadingPricing] = useState(false)
-  
+
   // Addons state
   const [addons, setAddons] = useState([])
   const [loadingAddons, setLoadingAddons] = useState(false)
-  
+
   // Coupons state - fetched from backend
   const [availableCoupons, setAvailableCoupons] = useState([])
   const [loadingCoupons, setLoadingCoupons] = useState(false)
-  
+
   // Fee settings from database (used as fallback if pricing not available)
   const [feeSettings, setFeeSettings] = useState({
     deliveryFee: 25,
@@ -127,32 +130,32 @@ export default function Cart() {
     platformFee: 5,
     gstRate: 5,
   })
-  
+
 
   const cartCount = getCartCount()
   const savedAddress = getDefaultAddress()
   // Priority: Use live location if available, otherwise use saved address
-  const defaultAddress = currentLocation?.formattedAddress && currentLocation.formattedAddress !== "Select location" 
+  const defaultAddress = currentLocation?.formattedAddress && currentLocation.formattedAddress !== "Select location"
     ? {
-        ...savedAddress,
-        formattedAddress: currentLocation.formattedAddress,
-        address: currentLocation.address || currentLocation.formattedAddress,
-        street: currentLocation.street || currentLocation.address,
-        city: currentLocation.city,
-        state: currentLocation.state,
-        zipCode: currentLocation.postalCode,
-        area: currentLocation.area,
-        location: currentLocation.latitude && currentLocation.longitude ? {
-          coordinates: [currentLocation.longitude, currentLocation.latitude]
-        } : savedAddress?.location
-      }
+      ...savedAddress,
+      formattedAddress: currentLocation.formattedAddress,
+      address: currentLocation.address || currentLocation.formattedAddress,
+      street: currentLocation.street || currentLocation.address,
+      city: currentLocation.city,
+      state: currentLocation.state,
+      zipCode: currentLocation.postalCode,
+      area: currentLocation.area,
+      location: currentLocation.latitude && currentLocation.longitude ? {
+        coordinates: [currentLocation.longitude, currentLocation.latitude]
+      } : savedAddress?.location
+    }
     : savedAddress
   const defaultPayment = getDefaultPaymentMethod()
-  
+
   // Get restaurant ID from cart or restaurant data
   // Priority: restaurantData > cart[0].restaurantId
   // DO NOT use cart[0].restaurant as slug fallback - it creates wrong slugs
-  const restaurantId = cart.length > 0 
+  const restaurantId = cart.length > 0
     ? (restaurantData?._id || restaurantData?.restaurantId || cart[0]?.restaurantId || null)
     : null
 
@@ -166,7 +169,7 @@ export default function Cart() {
     // If restaurantData is not loaded yet, return null to wait
     return null
   }, [restaurantData])
-  
+
 
 
   // Lock body scroll and scroll to top when any full-screen modal opens
@@ -177,7 +180,7 @@ export default function Cart() {
       document.body.style.position = 'fixed'
       document.body.style.width = '100%'
       document.body.style.top = `-${window.scrollY}px`
-      
+
       // Scroll window to top
       window.scrollTo({ top: 0, behavior: 'instant' })
     } else {
@@ -191,7 +194,7 @@ export default function Cart() {
         window.scrollTo(0, parseInt(scrollY || '0') * -1)
       }
     }
-    
+
     return () => {
       // Cleanup on unmount
       document.body.style.overflow = ''
@@ -221,27 +224,27 @@ export default function Cart() {
         try {
           const cartRestaurantId = cart[0].restaurantId;
           const cartRestaurantName = cart[0].restaurant;
-          
+
           console.log("🔄 Fetching restaurant data by restaurantId from cart:", cartRestaurantId)
           const response = await restaurantAPI.getRestaurantById(cartRestaurantId)
           const data = response?.data?.data?.restaurant || response?.data?.restaurant
-          
+
           if (data) {
             // CRITICAL: Validate that fetched restaurant matches cart items
             const fetchedRestaurantId = data.restaurantId || data._id?.toString();
             const fetchedRestaurantName = data.name;
-            
+
             // Check if restaurantId matches
-            const restaurantIdMatches = 
+            const restaurantIdMatches =
               fetchedRestaurantId === cartRestaurantId ||
               data._id?.toString() === cartRestaurantId ||
               data.restaurantId === cartRestaurantId;
-            
+
             // Check if restaurant name matches (if available in cart)
-            const restaurantNameMatches = 
-              !cartRestaurantName || 
+            const restaurantNameMatches =
+              !cartRestaurantName ||
               fetchedRestaurantName?.toLowerCase().trim() === cartRestaurantName.toLowerCase().trim();
-            
+
             if (!restaurantIdMatches) {
               console.error('❌ CRITICAL: Fetched restaurant ID does not match cart restaurantId!', {
                 cartRestaurantId: cartRestaurantId,
@@ -255,7 +258,7 @@ export default function Cart() {
               setLoadingRestaurant(false);
               return;
             }
-            
+
             if (!restaurantNameMatches) {
               console.warn('⚠️ WARNING: Restaurant name mismatch:', {
                 cartRestaurantName: cartRestaurantName,
@@ -263,7 +266,7 @@ export default function Cart() {
               });
               // Still proceed but log warning
             }
-            
+
             console.log("✅ Restaurant data loaded from cart restaurantId:", {
               _id: data._id,
               restaurantId: data.restaurantId,
@@ -287,26 +290,26 @@ export default function Cart() {
           const searchResponse = await restaurantAPI.getRestaurants({ limit: 100 })
           const restaurants = searchResponse?.data?.data?.restaurants || searchResponse?.data?.data || []
           console.log("📋 Fetched", restaurants.length, "restaurants for name search")
-          
+
           // Try exact match first
-          let matchingRestaurant = restaurants.find(r => 
+          let matchingRestaurant = restaurants.find(r =>
             r.name?.toLowerCase().trim() === cart[0].restaurant?.toLowerCase().trim()
           )
-          
+
           // If no exact match, try partial match
           if (!matchingRestaurant) {
             console.log("🔍 No exact match, trying partial match...")
-            matchingRestaurant = restaurants.find(r => 
+            matchingRestaurant = restaurants.find(r =>
               r.name?.toLowerCase().includes(cart[0].restaurant?.toLowerCase().trim()) ||
               cart[0].restaurant?.toLowerCase().trim().includes(r.name?.toLowerCase())
             )
           }
-          
+
           if (matchingRestaurant) {
             // CRITICAL: Validate that the found restaurant matches cart items
             const cartRestaurantName = cart[0]?.restaurant?.toLowerCase().trim();
             const foundRestaurantName = matchingRestaurant.name?.toLowerCase().trim();
-            
+
             if (cartRestaurantName && foundRestaurantName && cartRestaurantName !== foundRestaurantName) {
               console.error("❌ CRITICAL: Restaurant name mismatch!", {
                 cartRestaurantName: cart[0]?.restaurant,
@@ -318,7 +321,7 @@ export default function Cart() {
               setLoadingRestaurant(false);
               return;
             }
-            
+
             console.log("✅ Found restaurant by name:", {
               name: matchingRestaurant.name,
               _id: matchingRestaurant._id,
@@ -386,17 +389,17 @@ export default function Cart() {
           addons: response?.data?.data?.addons,
           directAddons: response?.data?.addons
         })
-        
+
         const data = response?.data?.data?.addons || response?.data?.addons || []
         console.log("📊 Fetched addons count:", data.length)
         console.log("📋 Fetched addons data:", JSON.stringify(data, null, 2))
-        
+
         if (data.length === 0) {
           console.warn("⚠️ No addons returned from API. Response:", response?.data)
         } else {
           console.log("✅ Successfully fetched", data.length, "addons:", data.map(a => a.name))
         }
-        
+
         setAddons(data)
       } catch (error) {
         // Log error for debugging
@@ -478,11 +481,11 @@ export default function Cart() {
         try {
           console.log(`[CART-COUPONS] Fetching coupons for itemId: ${cartItem.id}, name: ${cartItem.name}`)
           const response = await restaurantAPI.getCouponsByItemIdPublic(restaurantId, cartItem.id)
-          
+
           if (response?.data?.success && response?.data?.data?.coupons) {
             const coupons = response.data.data.coupons
             console.log(`[CART-COUPONS] Found ${coupons.length} coupons for item ${cartItem.id}`)
-            
+
             // Add coupons, avoiding duplicates
             coupons.forEach(coupon => {
               if (!uniqueCouponCodes.has(coupon.couponCode)) {
@@ -540,12 +543,12 @@ export default function Cart() {
           restaurantId: restaurantData?.restaurantId || restaurantData?._id || restaurantId || null,
           deliveryAddress: defaultAddress,
           couponCode: appliedCoupon?.code || couponCode || null,
-          deliveryFleet: deliveryFleet || 'standard'
+          deliveryFleet: 'standard'
         })
 
         if (response?.data?.success && response?.data?.data?.pricing) {
           setPricing(response.data.data.pricing)
-          
+
           // Update applied coupon if backend returns one
           if (response.data.data.pricing.appliedCoupon && !appliedCoupon) {
             const coupon = availableCoupons.find(c => c.code === response.data.data.pricing.appliedCoupon.code)
@@ -567,7 +570,7 @@ export default function Cart() {
     }
 
     calculatePricing()
-  }, [cart, defaultAddress, appliedCoupon, couponCode, deliveryFleet, restaurantId])
+  }, [cart, defaultAddress, appliedCoupon, couponCode, restaurantId])
 
   // Fetch wallet balance
   useEffect(() => {
@@ -616,9 +619,9 @@ export default function Cart() {
   const gstCharges = pricing?.tax || Math.round(subtotal * (feeSettings.gstRate / 100))
   const discount = pricing?.discount || (appliedCoupon ? Math.min(appliedCoupon.discount, subtotal * 0.5) : 0)
   const totalBeforeDiscount = subtotal + deliveryFee + platformFee + gstCharges
-  const total = pricing?.total || (totalBeforeDiscount - discount)
+  const total = (pricing?.total || (totalBeforeDiscount - discount)) + tipAmount
   const savings = pricing?.savings || (discount + (subtotal > 500 ? 32 : 0))
-  
+
   // Restaurant name from data or cart
   const restaurantName = restaurantData?.name || cart[0]?.restaurant || "Restaurant"
 
@@ -627,7 +630,7 @@ export default function Cart() {
     try {
       // Find address with matching label
       const address = addresses.find(addr => addr.label === label)
-      
+
       if (!address) {
         toast.error(`No ${label} address found. Please add an address first.`)
         return
@@ -651,7 +654,7 @@ export default function Cart() {
         city: address.city,
         state: address.state,
         area: address.additionalDetails || "",
-        formattedAddress: address.additionalDetails 
+        formattedAddress: address.additionalDetails
           ? `${address.additionalDetails}, ${address.street}, ${address.city}, ${address.state}${address.zipCode ? ` ${address.zipCode}` : ''}`
           : `${address.street}, ${address.city}, ${address.state}${address.zipCode ? ` ${address.zipCode}` : ''}`
       })
@@ -665,14 +668,14 @@ export default function Cart() {
         zipCode: address.zipCode,
         latitude,
         longitude,
-        formattedAddress: address.additionalDetails 
+        formattedAddress: address.additionalDetails
           ? `${address.additionalDetails}, ${address.street}, ${address.city}, ${address.state}${address.zipCode ? ` ${address.zipCode}` : ''}`
           : `${address.street}, ${address.city}, ${address.state}${address.zipCode ? ` ${address.zipCode}` : ''}`
       }
       localStorage.setItem("userLocation", JSON.stringify(locationData))
-      
+
       toast.success(`${label} address selected!`)
-      
+
       // Force page reload to update location
       window.location.reload()
     } catch (error) {
@@ -686,7 +689,7 @@ export default function Cart() {
       setAppliedCoupon(coupon)
       setCouponCode(coupon.code)
       setShowCoupons(false)
-      
+
       // Recalculate pricing with new coupon
       if (cart.length > 0 && defaultAddress) {
         try {
@@ -722,7 +725,7 @@ export default function Cart() {
   const handleRemoveCoupon = async () => {
     setAppliedCoupon(null)
     setCouponCode("")
-    
+
     // Recalculate pricing without coupon
     if (cart.length > 0 && defaultAddress) {
       try {
@@ -736,13 +739,13 @@ export default function Cart() {
           isVeg: item.isVeg !== false
         }))
 
-          const response = await orderAPI.calculateOrder({
-            items,
-            restaurantId: restaurantData?.restaurantId || restaurantData?._id || restaurantId || null,
-            deliveryAddress: defaultAddress,
-            couponCode: null,
-            deliveryFleet: deliveryFleet || 'standard'
-          })
+        const response = await orderAPI.calculateOrder({
+          items,
+          restaurantId: restaurantData?.restaurantId || restaurantData?._id || restaurantId || null,
+          deliveryAddress: defaultAddress,
+          couponCode: null,
+          deliveryFleet: deliveryFleet || 'standard'
+        })
 
         if (response?.data?.success && response?.data?.data?.pricing) {
           setPricing(response.data.data.pricing)
@@ -774,7 +777,7 @@ export default function Cart() {
       console.log("📦 Cart items:", cart.map(item => ({ id: item.id, name: item.name, quantity: item.quantity, price: item.price })))
       console.log("💰 Applied coupon:", appliedCoupon?.code || "None")
       console.log("📍 Delivery address:", defaultAddress?.label || defaultAddress?.city)
-      
+
       // Ensure couponCode is included in pricing
       const orderPricing = pricing || {
         subtotal,
@@ -785,7 +788,7 @@ export default function Cart() {
         total,
         couponCode: appliedCoupon?.code || null
       };
-      
+
       // Add couponCode if not present but coupon is applied
       if (!orderPricing.couponCode && appliedCoupon?.code) {
         orderPricing.couponCode = appliedCoupon.code;
@@ -794,13 +797,13 @@ export default function Cart() {
       // Include all cart items (main items + addons)
       // Note: Addons are added as separate cart items when user clicks the + button
       const orderItems = cart.map(item => ({
-          itemId: item.id,
-          name: item.name,
-          price: item.price,
+        itemId: item.id,
+        name: item.name,
+        price: item.price,
         quantity: item.quantity || 1,
         image: item.image || "",
         description: item.description || "",
-          isVeg: item.isVeg !== false
+        isVeg: item.isVeg !== false
       }))
 
       console.log("📋 Order items to send:", orderItems)
@@ -810,12 +813,12 @@ export default function Cart() {
       const fullUrl = `${API_BASE_URL}${API_ENDPOINTS.ORDER.CREATE}`;
       console.log("🌐 Making request to:", fullUrl)
       console.log("🔑 Authentication token present:", !!localStorage.getItem('accessToken') || !!localStorage.getItem('user_accessToken'))
-      
+
       // CRITICAL: Validate restaurant ID before placing order
       // Ensure we're using the correct restaurant from restaurantData (most reliable)
       const finalRestaurantId = restaurantData?.restaurantId || restaurantData?._id || null;
       const finalRestaurantName = restaurantData?.name || null;
-      
+
       if (!finalRestaurantId) {
         console.error('❌ CRITICAL: Cannot place order - Restaurant ID is missing!');
         console.error('📋 Debug info:', {
@@ -837,22 +840,22 @@ export default function Cart() {
         setIsPlacingOrder(false);
         return;
       }
-      
+
       // CRITICAL: Validate that ALL cart items belong to the SAME restaurant
       const cartRestaurantIds = cart
         .map(item => item.restaurantId)
         .filter(Boolean)
         .map(id => String(id).trim()); // Normalize to string and trim
-      
+
       const cartRestaurantNames = cart
         .map(item => item.restaurant)
         .filter(Boolean)
         .map(name => name.trim().toLowerCase()); // Normalize names
-      
+
       // Get unique values (after normalization)
       const uniqueRestaurantIds = [...new Set(cartRestaurantIds)];
       const uniqueRestaurantNames = [...new Set(cartRestaurantNames)];
-      
+
       // Check if cart has items from multiple restaurants
       // Note: If restaurant names match, allow even if IDs differ (same restaurant, different ID format)
       if (uniqueRestaurantNames.length > 1) {
@@ -867,7 +870,7 @@ export default function Cart() {
             restaurantId: item.restaurantId
           }))
         });
-        
+
         // Automatically clean cart to keep items from the restaurant matching restaurantData
         if (finalRestaurantId && finalRestaurantName) {
           console.log('🧹 Auto-cleaning cart to keep items from:', finalRestaurantName);
@@ -885,11 +888,11 @@ export default function Cart() {
             toast.error('Cart contains items from different restaurants. Please clear cart and try again.');
           }
         }
-        
+
         setIsPlacingOrder(false);
         return;
       }
-      
+
       // If restaurant names match but IDs differ, that's OK (same restaurant, different ID format)
       // But log a warning in development
       if (uniqueRestaurantIds.length > 1 && uniqueRestaurantNames.length === 1) {
@@ -900,17 +903,17 @@ export default function Cart() {
           });
         }
       }
-      
+
       // Validate that cart items' restaurantId matches the restaurantData
       if (cartRestaurantIds.length > 0) {
         const cartRestaurantId = cartRestaurantIds[0];
-        
+
         // Check if cart restaurantId matches restaurantData
-        const restaurantIdMatches = 
+        const restaurantIdMatches =
           cartRestaurantId === finalRestaurantId ||
           cartRestaurantId === restaurantData?._id?.toString() ||
           cartRestaurantId === restaurantData?.restaurantId;
-        
+
         if (!restaurantIdMatches) {
           console.error('❌ CRITICAL ERROR: Cart restaurantId does not match restaurantData!', {
             cartRestaurantId: cartRestaurantId,
@@ -925,7 +928,7 @@ export default function Cart() {
           return;
         }
       }
-      
+
       // Validate restaurant name matches
       if (cartRestaurantNames.length > 0 && finalRestaurantName) {
         const cartRestaurantName = cartRestaurantNames[0];
@@ -939,7 +942,7 @@ export default function Cart() {
           return;
         }
       }
-      
+
       // Log order details for debugging
       console.log('✅ Order validation passed - Placing order with restaurant:', {
         restaurantId: finalRestaurantId,
@@ -950,12 +953,12 @@ export default function Cart() {
         cartRestaurantName: cartRestaurantNames[0],
         cartItemCount: cart.length
       });
-      
+
       // FINAL VALIDATION: Double-check restaurantId before sending to backend
       const cartRestaurantId = cart[0]?.restaurantId;
-      if (cartRestaurantId && cartRestaurantId !== finalRestaurantId && 
-          cartRestaurantId !== restaurantData?._id?.toString() && 
-          cartRestaurantId !== restaurantData?.restaurantId) {
+      if (cartRestaurantId && cartRestaurantId !== finalRestaurantId &&
+        cartRestaurantId !== restaurantData?._id?.toString() &&
+        cartRestaurantId !== restaurantData?.restaurantId) {
         console.error('❌ CRITICAL: Final validation failed - restaurantId mismatch!', {
           cartRestaurantId: cartRestaurantId,
           finalRestaurantId: finalRestaurantId,
@@ -968,14 +971,14 @@ export default function Cart() {
         setIsPlacingOrder(false);
         return;
       }
-      
+
       const orderPayload = {
         items: orderItems,
         address: defaultAddress,
         restaurantId: finalRestaurantId,
         restaurantName: finalRestaurantName,
         pricing: orderPricing,
-        deliveryFleet: deliveryFleet || 'standard',
+        deliveryFleet: 'standard',
         note: note || "",
         sendCutlery: sendCutlery !== false,
         paymentMethod: selectedPaymentMethod,
@@ -1062,7 +1065,7 @@ export default function Cart() {
 
       // Get company name for Razorpay
       const companyName = await getCompanyNameAsync()
-      
+
       // Initialize Razorpay payment
       await initRazorpayPayment({
         key: razorpay.key,
@@ -1134,9 +1137,9 @@ export default function Cart() {
       })
     } catch (error) {
       console.error("❌ Order creation error:", error)
-      
+
       let errorMessage = "Failed to create order. Please try again."
-      
+
       // Handle network errors
       if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
         const backendUrl = API_BASE_URL.replace('/api', '');
@@ -1148,7 +1151,7 @@ export default function Cart() {
           `3. Check browser console (F12) for more details\n\n` +
           `If backend is not running, start it with:\n` +
           `cd appzetofood/backend && npm start`
-        
+
         console.error("🔴 Network Error Details:", {
           code: error.code,
           message: error.message,
@@ -1161,7 +1164,7 @@ export default function Cart() {
           backendUrl: backendUrl,
           apiBaseUrl: API_BASE_URL
         })
-        
+
         // Try to test backend connectivity
         try {
           fetch(backendUrl + '/health', { method: 'GET', signal: AbortSignal.timeout(5000) })
@@ -1179,7 +1182,7 @@ export default function Cart() {
         } catch (fetchTestError) {
           console.error("❌ Could not test backend connectivity:", fetchTestError.message)
         }
-      } 
+      }
       // Handle timeout errors
       else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
         errorMessage = "Request timed out. The server is taking too long to respond. Please try again."
@@ -1193,7 +1196,7 @@ export default function Cart() {
       else if (error.message) {
         errorMessage = error.message
       }
-      
+
       alert(errorMessage)
       setIsPlacingOrder(false)
     }
@@ -1285,7 +1288,7 @@ export default function Cart() {
                       <div className={`w-4 h-4 md:w-5 md:h-5 border-2 ${item.isVeg !== false ? 'border-green-600' : 'border-red-600'} flex items-center justify-center mt-1 flex-shrink-0`}>
                         <div className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${item.isVeg !== false ? 'bg-green-600' : 'bg-red-600'}`} />
                       </div>
-                      
+
                       <div className="flex-1 min-w-0">
                         <p className="text-sm md:text-base font-medium text-gray-800 dark:text-gray-200 leading-tight">{item.name}</p>
                         <button className="text-xs md:text-sm text-blue-600 dark:text-blue-400 font-medium flex items-center gap-0.5 mt-0.5">
@@ -1296,7 +1299,7 @@ export default function Cart() {
                       <div className="flex items-center gap-3 md:gap-4">
                         {/* Quantity controls */}
                         <div className="flex items-center border border-red-600 dark:border-red-500 rounded">
-                          <button 
+                          <button
                             className="px-2 md:px-3 py-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
                           >
@@ -1305,14 +1308,14 @@ export default function Cart() {
                           <span className="px-2 md:px-3 text-sm md:text-base font-semibold text-red-600 dark:text-red-400 min-w-[20px] md:min-w-[24px] text-center">
                             {item.quantity}
                           </span>
-                          <button 
+                          <button
                             className="px-2 md:px-3 py-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
                           >
                             <Plus className="h-3 w-3 md:h-4 md:w-4" />
                           </button>
                         </div>
-                        
+
                         <p className="text-sm md:text-base font-medium text-gray-800 dark:text-gray-200 min-w-[50px] md:min-w-[70px] text-right">
                           ₹{((item.price || 0) * (item.quantity || 1)).toFixed(0)}
                         </p>
@@ -1322,7 +1325,7 @@ export default function Cart() {
                 </div>
 
                 {/* Add more items */}
-                <button 
+                <button
                   onClick={() => navigate(-1)}
                   className="flex items-center gap-2 mt-4 md:mt-6 text-red-600 dark:text-red-400"
                 >
@@ -1334,14 +1337,14 @@ export default function Cart() {
 
               {/* Note & Cutlery */}
               <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl flex flex-col sm:flex-row gap-2 md:gap-3">
-                <button 
+                <button
                   onClick={() => setShowNoteInput(!showNoteInput)}
                   className="flex-1 flex items-center gap-2 px-3 md:px-4 py-2 md:py-3 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl text-sm md:text-base text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
                   <FileText className="h-4 w-4 md:h-5 md:w-5" />
                   <span className="truncate">{note || "Add a note for the restaurant"}</span>
                 </button>
-                <button 
+                <button
                   onClick={() => setSendCutlery(!sendCutlery)}
                   className={`flex items-center gap-2 px-3 md:px-4 py-2 md:py-3 border rounded-lg md:rounded-xl text-sm md:text-base ${sendCutlery ? 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300' : 'border-red-600 dark:border-red-500 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'}`}
                 >
@@ -1386,8 +1389,8 @@ export default function Cart() {
                       {addons.map((addon) => (
                         <div key={addon.id} className="flex-shrink-0 w-28 md:w-36">
                           <div className="relative bg-gray-100 dark:bg-gray-800 rounded-lg md:rounded-xl overflow-hidden">
-                            <img 
-                              src={addon.image || (addon.images && addon.images[0]) || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop"} 
+                            <img
+                              src={addon.image || (addon.images && addon.images[0]) || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop"}
                               alt={addon.name}
                               className="w-full h-28 md:h-36 object-cover rounded-lg md:rounded-xl"
                               onError={(e) => {
@@ -1400,12 +1403,12 @@ export default function Cart() {
                                 <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-green-600" />
                               </div>
                             </div>
-                            <button 
+                            <button
                               onClick={() => {
                                 // Use restaurant info from existing cart items to ensure format consistency
                                 const cartRestaurantId = cart[0]?.restaurantId || restaurantId;
                                 const cartRestaurantName = cart[0]?.restaurant || restaurantName;
-                                
+
                                 if (!cartRestaurantId || !cartRestaurantName) {
                                   console.error('❌ Cannot add addon: Missing restaurant information', {
                                     cartRestaurantId,
@@ -1417,11 +1420,11 @@ export default function Cart() {
                                   toast.error('Restaurant information is missing. Please refresh the page.');
                                   return;
                                 }
-                                
-                                addToCart({ 
-                                  id: addon.id, 
-                                  name: addon.name, 
-                                  price: addon.price, 
+
+                                addToCart({
+                                  id: addon.id,
+                                  name: addon.name,
+                                  price: addon.price,
                                   image: addon.image || (addon.images && addon.images[0]) || "",
                                   description: addon.description || "",
                                   isVeg: true,
@@ -1480,9 +1483,9 @@ export default function Cart() {
                           )}
                         </div>
                       </div>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
+                      <Button
+                        size="sm"
+                        variant="outline"
                         className="h-7 md:h-8 text-xs md:text-sm border-red-600 dark:border-red-500 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                         onClick={() => handleApplyCoupon(availableCoupons[0])}
                         disabled={subtotal < availableCoupons[0].minOrder}
@@ -1497,7 +1500,7 @@ export default function Cart() {
                     <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">No coupons available</p>
                   </div>
                 )}
-                
+
                 {/* Coupons List */}
                 {showCoupons && !appliedCoupon && availableCoupons.length > 0 && (
                   <div className="mt-3 md:mt-4 space-y-2 md:space-y-3 border-t dark:border-gray-700 pt-3 md:pt-4">
@@ -1507,8 +1510,8 @@ export default function Cart() {
                           <p className="text-sm md:text-base font-medium text-gray-800 dark:text-gray-200">{coupon.code}</p>
                           <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{coupon.description}</p>
                         </div>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="outline"
                           className="h-6 md:h-7 text-xs md:text-sm border-red-600 dark:border-red-500 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                           onClick={() => handleApplyCoupon(coupon)}
@@ -1532,52 +1535,125 @@ export default function Cart() {
                 </div>
               </div>
 
-              {/* Delivery Fleet Type */}
+              {/* Tip for Delivery Partner */}
               <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl">
-                <button 
-                  onClick={() => setShowFleetOptions(!showFleetOptions)}
+                <button
+                  onClick={() => setShowTipSection(!showTipSection)}
                   className="flex items-center justify-between w-full"
                 >
                   <div className="flex items-center gap-3 md:gap-4">
-                    <Truck className="h-4 w-4 md:h-5 md:w-5 text-gray-500 dark:text-gray-400" />
-                    <span className="text-sm md:text-base text-gray-800 dark:text-gray-200">Choose delivery fleet type</span>
+                    <span className="text-lg">🙏</span>
+                    <div>
+                      <span className="text-sm md:text-base text-gray-800 dark:text-gray-200 font-medium">Tip your delivery partner</span>
+                      {tipAmount > 0 && (
+                        <span className="ml-2 text-xs font-semibold text-green-600 dark:text-green-400">₹{tipAmount} added</span>
+                      )}
+                    </div>
                   </div>
-                  {showFleetOptions ? <ChevronUp className="h-4 w-4 md:h-5 md:w-5 text-gray-400" /> : <ChevronDown className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />}
+                  {showTipSection
+                    ? <ChevronUp className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
+                    : <ChevronDown className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />}
                 </button>
-                
-                {showFleetOptions && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mt-3 md:mt-4">
-                    <button
-                      onClick={() => setDeliveryFleet("standard")}
-                      className={`p-3 md:p-4 rounded-lg md:rounded-xl border-2 text-left transition-colors ${deliveryFleet === "standard" ? "border-red-600 dark:border-red-500 bg-red-50 dark:bg-red-900/20" : "border-gray-200 dark:border-gray-700"}`}
+
+                <AnimatePresence>
+                  {showTipSection && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
                     >
-                      <div className="flex items-center justify-between mb-1 md:mb-2">
-                        <span className="text-sm md:text-base font-semibold text-gray-800 dark:text-gray-200">Standard Fleet</span>
-                        <div className="w-8 h-8 md:w-10 md:h-10 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center">
-                          <Truck className="h-4 w-4 md:h-5 md:w-5 text-orange-600 dark:text-orange-400" />
-                        </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 mb-3">
+                        Your kindness goes a long way! 100% of the tip goes to your delivery partner.
+                      </p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {[20, 30, 50].map((amount) => (
+                          <button
+                            key={amount}
+                            onClick={() => {
+                              if (selectedTip === amount) {
+                                setSelectedTip(null)
+                                setTipAmount(0)
+                              } else {
+                                setSelectedTip(amount)
+                                setTipAmount(amount)
+                                setCustomTipInput("")
+                              }
+                            }}
+                            className={`relative px-4 py-2 rounded-full border-2 text-sm font-semibold transition-all ${selectedTip === amount
+                              ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400'
+                              : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400'
+                              }`}
+                          >
+                            ₹{amount}
+                            {amount === 30 && (
+                              <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[9px] bg-orange-500 text-white px-1.5 py-0.5 rounded-full whitespace-nowrap font-bold">
+                                Most Tipped
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                        <button
+                          onClick={() => {
+                            if (selectedTip === 'other') {
+                              setSelectedTip(null)
+                              setTipAmount(0)
+                              setCustomTipInput("")
+                            } else {
+                              setSelectedTip('other')
+                              setTipAmount(0)
+                              setCustomTipInput("")
+                            }
+                          }}
+                          className={`flex items-center gap-1 px-4 py-2 rounded-full border-2 text-sm font-semibold transition-all ${selectedTip === 'other'
+                            ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400'
+                            : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400'
+                            }`}
+                        >
+                          Other
+                          {selectedTip === 'other' && (
+                            <span
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setSelectedTip(null)
+                                setTipAmount(0)
+                                setCustomTipInput("")
+                              }}
+                              className="ml-1 text-orange-500 hover:text-orange-700"
+                            >
+                              <X className="h-3 w-3" />
+                            </span>
+                          )}
+                        </button>
                       </div>
-                      <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">Our standard food delivery experience</p>
-                    </button>
-                    <button
-                      onClick={() => setDeliveryFleet("veg")}
-                      className={`p-3 md:p-4 rounded-lg md:rounded-xl border-2 text-left transition-colors ${deliveryFleet === "veg" ? "border-red-600 dark:border-red-500 bg-red-50 dark:bg-red-900/20" : "border-gray-200 dark:border-gray-700"}`}
-                    >
-                      <div className="flex items-center justify-between mb-1 md:mb-2">
-                        <span className="text-sm md:text-base font-semibold text-gray-800 dark:text-gray-200">Special Veg-only Fleet</span>
-                        <div className="w-8 h-8 md:w-10 md:h-10 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
-                          <Leaf className="h-4 w-4 md:h-5 md:w-5 text-green-600 dark:text-green-400" />
+
+                      {selectedTip === 'other' && (
+                        <div className="mt-3 flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2">
+                          <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">₹</span>
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Enter Tip Amount"
+                            value={customTipInput}
+                            onChange={(e) => {
+                              const val = e.target.value
+                              setCustomTipInput(val)
+                              const num = parseFloat(val)
+                              setTipAmount(!isNaN(num) && num > 0 ? num : 0)
+                            }}
+                            className="flex-1 bg-transparent outline-none text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400"
+                          />
                         </div>
-                      </div>
-                      <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">Fleet delivering only from Pure Veg restaurants</p>
-                    </button>
-                  </div>
-                )}
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Delivery Address */}
               <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl">
-                <Link  className="flex items-center justify-between">
+                <Link className="flex items-center justify-between">
                   <div className="flex items-center gap-3 md:gap-4">
                     <MapPin className="h-4 w-4 md:h-5 md:w-5 text-gray-500 dark:text-gray-400" />
                     <div className="flex-1">
@@ -1600,11 +1676,10 @@ export default function Cart() {
                                 handleSelectAddressByLabel(label)
                               }}
                               disabled={!addressExists}
-                              className={`text-xs md:text-sm px-2 md:px-3 py-1 md:py-1.5 rounded-md border transition-colors ${
-                                addressExists
-                                  ? 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 bg-white dark:bg-[#1a1a1a]'
-                                  : 'border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-50'
-                              }`}
+                              className={`text-xs md:text-sm px-2 md:px-3 py-1 md:py-1.5 rounded-md border transition-colors ${addressExists
+                                ? 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 bg-white dark:bg-[#1a1a1a]'
+                                : 'border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-50'
+                                }`}
                             >
                               {label}
                             </button>
@@ -1632,7 +1707,7 @@ export default function Cart() {
 
               {/* Bill Details */}
               <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl">
-                <button 
+                <button
                   onClick={() => setShowBillDetails(!showBillDetails)}
                   className="flex items-center justify-between w-full"
                 >
@@ -1720,6 +1795,12 @@ export default function Cart() {
                         <span>-₹{discount}</span>
                       </div>
                     )}
+                    {tipAmount > 0 && (
+                      <div className="flex justify-between text-sm md:text-base text-green-600 dark:text-green-500">
+                        <span>🙏 Delivery Partner Tip</span>
+                        <span>+₹{tipAmount}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-base md:text-lg font-bold pt-3 md:pt-4 border-t dark:border-gray-700">
                       <span>Total</span>
                       <span className="text-green-600 dark:text-green-400">₹{total.toFixed(0)}</span>
@@ -1746,11 +1827,11 @@ export default function Cart() {
                       PAY USING
                     </p>
                     <p className="text-sm md:text-base font-medium text-gray-800 dark:text-gray-200">
-                      {selectedPaymentMethod === "razorpay" 
-                        ? "Razorpay" 
+                      {selectedPaymentMethod === "razorpay"
+                        ? "Razorpay"
                         : selectedPaymentMethod === "wallet"
-                        ? "Wallet"
-                        : "Cash on Delivery"}
+                          ? "Wallet"
+                          : "Cash on Delivery"}
                     </p>
                   </div>
                 </div>
@@ -1787,10 +1868,10 @@ export default function Cart() {
                     : selectedPaymentMethod === "razorpay"
                       ? "Select Payment"
                       : selectedPaymentMethod === "wallet"
-                      ? walletBalance >= total
-                        ? "Place Order"
-                        : "Insufficient Balance"
-                      : "Place Order"}
+                        ? walletBalance >= total
+                          ? "Place Order"
+                          : "Insufficient Balance"
+                        : "Place Order"}
                 </span>
                 <ChevronRight className="h-5 w-5 md:h-6 md:w-6 ml-2" />
               </Button>
@@ -1804,16 +1885,16 @@ export default function Cart() {
         <div className="fixed inset-0 z-[60] h-screen w-screen overflow-hidden">
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          
+
           {/* Modal Sheet */}
-          <div 
+          <div
             className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl overflow-hidden"
             style={{ animation: 'slideUpModal 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}
           >
             <div className="px-6 py-8">
               {/* Title */}
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Placing your order</h2>
-              
+
               {/* Payment Info */}
               <div className="flex items-center gap-4 mb-5">
                 <div className="w-14 h-14 rounded-xl border border-gray-200 flex items-center justify-center bg-white shadow-sm">
@@ -1824,12 +1905,12 @@ export default function Cart() {
                     {selectedPaymentMethod === "razorpay"
                       ? `Pay ₹${total.toFixed(2)} online (Razorpay)`
                       : selectedPaymentMethod === "wallet"
-                      ? `Pay ₹${total.toFixed(2)} from Wallet`
-                      : `Pay on delivery (COD)`}
+                        ? `Pay ₹${total.toFixed(2)} from Wallet`
+                        : `Pay on delivery (COD)`}
                   </p>
                 </div>
               </div>
-              
+
               {/* Delivery Address */}
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-14 h-14 rounded-xl border border-gray-200 flex items-center justify-center bg-gray-50">
@@ -1848,20 +1929,20 @@ export default function Cart() {
                   </p>
                 </div>
               </div>
-              
+
               {/* Progress Bar */}
               <div className="relative mb-6">
                 <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-gradient-to-r from-green-500 to-green-600 rounded-full transition-all duration-100 ease-linear"
-                    style={{ 
+                    style={{
                       width: `${orderProgress}%`,
                       boxShadow: '0 0 10px rgba(34, 197, 94, 0.5)'
                     }}
                   />
                 </div>
                 {/* Animated shimmer effect */}
-                <div 
+                <div
                   className="absolute inset-0 h-2.5 rounded-full overflow-hidden pointer-events-none"
                   style={{
                     background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
@@ -1870,9 +1951,9 @@ export default function Cart() {
                   }}
                 />
               </div>
-              
+
               {/* Cancel Button */}
-              <button 
+              <button
                 onClick={() => {
                   setShowPlacingOrder(false)
                   setIsPlacingOrder(false)
@@ -1890,7 +1971,7 @@ export default function Cart() {
 
       {/* Order Success Celebration Page */}
       {showOrderSuccess && (
-        <div 
+        <div
           className="fixed inset-0 z-[70] bg-white flex flex-col items-center justify-center h-screen w-screen overflow-hidden"
           style={{ animation: 'fadeIn 0.3s ease-out' }}
         >
@@ -1915,25 +1996,25 @@ export default function Cart() {
           {/* Success Content */}
           <div className="relative z-10 flex flex-col items-center px-6">
             {/* Success Tick Circle */}
-            <div 
+            <div
               className="relative mb-8"
               style={{ animation: 'scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both' }}
             >
               {/* Outer ring animation */}
-              <div 
+              <div
                 className="absolute inset-0 w-32 h-32 rounded-full border-4 border-green-500"
-                style={{ 
+                style={{
                   animation: 'ringPulse 1.5s ease-out infinite',
                   opacity: 0.3
                 }}
               />
               {/* Main circle */}
               <div className="w-32 h-32 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-2xl">
-                <svg 
+                <svg
                   className="w-16 h-16 text-white"
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
                   strokeWidth="3"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -1958,14 +2039,14 @@ export default function Cart() {
             </div>
 
             {/* Location Info */}
-            <div 
+            <div
               className="text-center"
               style={{ animation: 'slideUp 0.5s ease-out 0.6s both' }}
             >
               <div className="flex items-center justify-center gap-2 mb-2">
                 <div className="w-5 h-5 text-red-500">
                   <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
                   </svg>
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900">
@@ -1978,7 +2059,7 @@ export default function Cart() {
             </div>
 
             {/* Order Placed Message */}
-            <div 
+            <div
               className="mt-12 text-center"
               style={{ animation: 'slideUp 0.5s ease-out 0.8s both' }}
             >
