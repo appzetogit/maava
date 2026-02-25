@@ -29,7 +29,7 @@ export async function getEnvVar(key, defaultValue = '') {
   try {
     const envVars = await getAllEnvVars();
     let value = envVars[key] || process.env[key] || defaultValue;
-    
+
     // Decrypt if encrypted (for direct access, toEnvObject already decrypts, but this is a safety check)
     if (value && isEncrypted(value)) {
       try {
@@ -39,7 +39,7 @@ export async function getEnvVar(key, defaultValue = '') {
         return defaultValue;
       }
     }
-    
+
     return value;
   } catch (error) {
     logger.warn(`Error fetching env var ${key} from database, using process.env: ${error.message}`);
@@ -63,11 +63,11 @@ export async function getAllEnvVars() {
     // Fetch from database
     const envVars = await EnvironmentVariable.getOrCreate();
     const envData = envVars.toEnvObject();
-    
+
     // Update cache
     envCache = envData;
     cacheTimestamp = now;
-    
+
     return envData;
   } catch (error) {
     logger.error(`Error fetching environment variables from database: ${error.message}`);
@@ -93,11 +93,17 @@ export function clearEnvCache() {
 export async function getRazorpayCredentials() {
   const apiKey = await getEnvVar('RAZORPAY_API_KEY');
   const secretKey = await getEnvVar('RAZORPAY_SECRET_KEY');
-  
+
   // Fallback to old env var names
+  const rawKeyId = apiKey || process.env.RAZORPAY_KEY_ID || '';
+  const rawKeySecret = secretKey || process.env.RAZORPAY_KEY_SECRET || '';
+
+  // Treat common placeholder strings as missing (avoids bad 500s)
+  const isPlaceholder = (v) => !v || v.startsWith('REPLACE_') || v.startsWith('YOUR_') || v === 'your-secret' || v === 'undefined';
+
   return {
-    keyId: apiKey || process.env.RAZORPAY_KEY_ID || '',
-    keySecret: secretKey || process.env.RAZORPAY_KEY_SECRET || ''
+    keyId: isPlaceholder(rawKeyId) ? '' : rawKeyId,
+    keySecret: isPlaceholder(rawKeySecret) ? '' : rawKeySecret
   };
 }
 

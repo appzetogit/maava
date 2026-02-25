@@ -1,8 +1,19 @@
 import { useState, useEffect, useRef, useMemo } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { Plus, Minus, ArrowLeft, ChevronRight, Clock, MapPin, Phone, FileText, Utensils, Tag, Percent, Share2, ChevronUp, ChevronDown, X, Check, Settings, CreditCard, Wallet, Building2, Sparkles } from "lucide-react"
+import { Plus, Minus, ArrowLeft, ChevronRight, Clock, MapPin, Phone, FileText, Utensils, Tag, Percent, Share2, ChevronUp, ChevronDown, X, Check, Settings, CreditCard, Wallet, Building2, Sparkles, Navigation, Search, Image as ImageIcon, Briefcase, User as UserIcon } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-leaflet"
+import "leaflet/dist/leaflet.css"
+import L from "leaflet"
 import confetti from "canvas-confetti"
+
+// Fix for default marker icon in Leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 import AnimatedPage from "../../components/AnimatedPage"
 import { Button } from "@/components/ui/button"
@@ -108,6 +119,34 @@ export default function Cart() {
   const [orderProgress, setOrderProgress] = useState(0)
   const [showOrderSuccess, setShowOrderSuccess] = useState(false)
   const [placedOrderId, setPlacedOrderId] = useState(null)
+  const [wasHibermartOrder, setWasHibermartOrder] = useState(false)
+
+  // New Address / Checkout Flow State
+  const [checkoutStage, setCheckoutStage] = useState('cart') // cart, address_selection, map_picker, address_details, confirm_details, payment
+  const [isAddressConfirmed, setIsAddressConfirmed] = useState(false)
+  const [selectedAddressForOrder, setSelectedAddressForOrder] = useState(null)
+  const [tempMapCoords, setTempMapCoords] = useState(null)
+  const [tempAddressInfo, setTempAddressInfo] = useState({
+    area: '',
+    city: '',
+    formattedAddress: ''
+  })
+  const [receiverDetails, setReceiverDetails] = useState({
+    useAccountDetails: true,
+    name: userProfile?.name || '',
+    phone: userProfile?.phone || '',
+    houseNo: '',
+    buildingName: '',
+    landmark: '',
+    saveAs: 'House', // House, Office, Other
+    instructions: ''
+  })
+
+  // Payment UI State
+  const [showPaymentOptions, setShowPaymentOptions] = useState(false)
+  const [showCashConfirm, setShowCashConfirm] = useState(false)
+  const [selectedUpiApp, setSelectedUpiApp] = useState(null) // null | 'google_pay' | 'paytm' | 'phonepe'
+
 
   // Restaurant and pricing state
   const [restaurantData, setRestaurantData] = useState(null)
@@ -133,6 +172,7 @@ export default function Cart() {
 
 
   const cartCount = getCartCount()
+  const isHibermartCart = cart[0]?.restaurantId === 'hibermart-id' || cart[0]?.restaurant === 'Hibermart'
   const savedAddress = getDefaultAddress()
   // Priority: Use live location if available, otherwise use saved address
   const defaultAddress = currentLocation?.formattedAddress && currentLocation.formattedAddress !== "Select location"
@@ -676,8 +716,10 @@ export default function Cart() {
 
       toast.success(`${label} address selected!`)
 
-      // Force page reload to update location
-      window.location.reload()
+      // Select for order flow
+      setSelectedAddressForOrder(address)
+      setIsAddressConfirmed(true)
+      setCheckoutStage('payment')
     } catch (error) {
       console.error(`Error selecting ${label} address:`, error)
       toast.error(`Failed to select ${label} address. Please try again.`)
@@ -816,10 +858,14 @@ export default function Cart() {
 
       // CRITICAL: Validate restaurant ID before placing order
       // Ensure we're using the correct restaurant from restaurantData (most reliable)
-      const finalRestaurantId = restaurantData?.restaurantId || restaurantData?._id || null;
-      const finalRestaurantName = restaurantData?.name || null;
+      const finalRestaurantId = isHibermartCart
+        ? 'hibermart-id'
+        : (restaurantData?.restaurantId || restaurantData?._id || null);
+      const finalRestaurantName = isHibermartCart
+        ? 'Hibermart'
+        : (restaurantData?.name || null);
 
-      if (!finalRestaurantId) {
+      if (!finalRestaurantId && !isHibermartCart) {
         console.error('❌ CRITICAL: Cannot place order - Restaurant ID is missing!');
         console.error('📋 Debug info:', {
           restaurantData: restaurantData ? {
@@ -858,7 +904,7 @@ export default function Cart() {
 
       // Check if cart has items from multiple restaurants
       // Note: If restaurant names match, allow even if IDs differ (same restaurant, different ID format)
-      if (uniqueRestaurantNames.length > 1) {
+      if (!isHibermartCart && uniqueRestaurantNames.length > 1) {
         // Different restaurant names = definitely different restaurants
         console.error('❌ CRITICAL ERROR: Cart contains items from multiple restaurants!', {
           restaurantIds: uniqueRestaurantIds,
@@ -895,7 +941,7 @@ export default function Cart() {
 
       // If restaurant names match but IDs differ, that's OK (same restaurant, different ID format)
       // But log a warning in development
-      if (uniqueRestaurantIds.length > 1 && uniqueRestaurantNames.length === 1) {
+      if (!isHibermartCart && uniqueRestaurantIds.length > 1 && uniqueRestaurantNames.length === 1) {
         if (process.env.NODE_ENV === 'development') {
           console.warn('⚠️ Cart items have different restaurant IDs but same name. This is OK if IDs are in different formats.', {
             restaurantIds: uniqueRestaurantIds,
@@ -905,7 +951,7 @@ export default function Cart() {
       }
 
       // Validate that cart items' restaurantId matches the restaurantData
-      if (cartRestaurantIds.length > 0) {
+      if (!isHibermartCart && cartRestaurantIds.length > 0) {
         const cartRestaurantId = cartRestaurantIds[0];
 
         // Check if cart restaurantId matches restaurantData
@@ -930,7 +976,7 @@ export default function Cart() {
       }
 
       // Validate restaurant name matches
-      if (cartRestaurantNames.length > 0 && finalRestaurantName) {
+      if (!isHibermartCart && cartRestaurantNames.length > 0 && finalRestaurantName) {
         const cartRestaurantName = cartRestaurantNames[0];
         if (cartRestaurantName.toLowerCase().trim() !== finalRestaurantName.toLowerCase().trim()) {
           console.error('❌ CRITICAL ERROR: Restaurant name mismatch!', {
@@ -956,7 +1002,7 @@ export default function Cart() {
 
       // FINAL VALIDATION: Double-check restaurantId before sending to backend
       const cartRestaurantId = cart[0]?.restaurantId;
-      if (cartRestaurantId && cartRestaurantId !== finalRestaurantId &&
+      if (!isHibermartCart && cartRestaurantId && cartRestaurantId !== finalRestaurantId &&
         cartRestaurantId !== restaurantData?._id?.toString() &&
         cartRestaurantId !== restaurantData?.restaurantId) {
         console.error('❌ CRITICAL: Final validation failed - restaurantId mismatch!', {
@@ -974,7 +1020,7 @@ export default function Cart() {
 
       const orderPayload = {
         items: orderItems,
-        address: defaultAddress,
+        address: selectedAddressForOrder || defaultAddress,
         restaurantId: finalRestaurantId,
         restaurantName: finalRestaurantName,
         pricing: orderPricing,
@@ -982,6 +1028,7 @@ export default function Cart() {
         note: note || "",
         sendCutlery: sendCutlery !== false,
         paymentMethod: selectedPaymentMethod,
+        isHibermartOrder: isHibermartCart,
         zoneId: zoneId // CRITICAL: Pass zoneId for strict zone validation
       };
       // Log final order details (including paymentMethod for COD debugging)
@@ -1011,6 +1058,7 @@ export default function Cart() {
       if (selectedPaymentMethod === "cash") {
         toast.success("Order placed with Cash on Delivery")
         setPlacedOrderId(order?.orderId || order?.id || null)
+        setWasHibermartOrder(isHibermartCart)
         setShowOrderSuccess(true)
         clearCart()
         setIsPlacingOrder(false)
@@ -1021,6 +1069,7 @@ export default function Cart() {
       if (selectedPaymentMethod === "wallet") {
         toast.success("Order placed with Wallet payment")
         setPlacedOrderId(order?.orderId || order?.id || null)
+        setWasHibermartOrder(isHibermartCart)
         setShowOrderSuccess(true)
         clearCart()
         setIsPlacingOrder(false)
@@ -1074,6 +1123,7 @@ export default function Cart() {
         order_id: razorpay.orderId,
         name: companyName,
         description: `Order ${order.orderId} - ₹${(razorpay.amount / 100).toFixed(2)}`,
+        upiApp: selectedUpiApp, // null = generic, 'google_pay' | 'paytm' | 'phonepe' = jump to that app
         prefill: {
           name: userName,
           email: userEmail,
@@ -1085,6 +1135,7 @@ export default function Cart() {
           restaurantId: restaurantId || "unknown"
         },
         handler: async (response) => {
+
           try {
             console.log("✅ Payment successful, verifying...", {
               razorpay_order_id: response.razorpay_order_id,
@@ -1108,6 +1159,7 @@ export default function Cart() {
                 paymentId: verifyResponse.data.data?.payment?.paymentId
               })
               setPlacedOrderId(order.orderId)
+              setWasHibermartOrder(isHibermartCart)
               setShowOrderSuccess(true)
               clearCart()
               setIsPlacingOrder(false)
@@ -1143,14 +1195,7 @@ export default function Cart() {
       // Handle network errors
       if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
         const backendUrl = API_BASE_URL.replace('/api', '');
-        errorMessage = `Network Error: Cannot connect to backend server.\n\n` +
-          `Expected backend URL: ${backendUrl}\n\n` +
-          `Please check:\n` +
-          `1. Backend server is running\n` +
-          `2. Backend is accessible at ${backendUrl}\n` +
-          `3. Check browser console (F12) for more details\n\n` +
-          `If backend is not running, start it with:\n` +
-          `cd appzetofood/backend && npm start`
+        errorMessage = `Cannot connect to the server. Please make sure the backend is running at ${backendUrl}`
 
         console.error("🔴 Network Error Details:", {
           code: error.code,
@@ -1187,19 +1232,33 @@ export default function Cart() {
       else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
         errorMessage = "Request timed out. The server is taking too long to respond. Please try again."
       }
+      // Handle payment gateway not configured (402)
+      else if (error.response?.status === 402 || error.response?.data?.error === 'RAZORPAY_NOT_CONFIGURED') {
+        errorMessage = "💳 Payment gateway not configured yet. To accept online payments, add your Razorpay API keys from the Admin Panel → Environment Variables."
+      }
       // Handle other axios errors
       else if (error.response) {
         // Server responded with error status
-        errorMessage = error.response.data?.message || `Server error: ${error.response.status}`
+        const serverMsg = error.response.data?.message || `Server error: ${error.response.status}`;
+        const serverDetail = error.response.data?.error || '';
+        const serverFields = Array.isArray(error.response.data?.details) ? error.response.data.details.join(', ') : '';
+        errorMessage = serverFields
+          ? `${serverMsg}: ${serverFields}`
+          : serverDetail
+            ? `${serverMsg} — ${serverDetail}`
+            : serverMsg;
+        // Always log full details in console
+        console.error('🔴 Server error details:', error.response.data);
       }
       // Handle other errors
       else if (error.message) {
         errorMessage = error.message
       }
 
-      alert(errorMessage)
+      toast.error(errorMessage, { duration: 6000 })
       setIsPlacingOrder(false)
     }
+
   }
 
   const handleGoToOrders = () => {
@@ -1263,7 +1322,7 @@ export default function Cart() {
       </div>
 
       {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden pb-24 md:pb-32">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden pb-52 md:pb-36">
         {/* Savings Banner */}
         {savings > 0 && (
           <div className="bg-blue-100 dark:bg-blue-900/20 px-4 md:px-6 py-2 md:py-3 flex-shrink-0">
@@ -1813,72 +1872,728 @@ export default function Cart() {
         </div>
       </div>
 
-      {/* Bottom Sticky - Place Order */}
-      <div className="bg-white dark:bg-[#1a1a1a] border-t dark:border-gray-800 shadow-lg z-30 flex-shrink-0 fixed bottom-0 left-0 right-0">
-        <div className="max-w-7xl mx-auto">
-          <div className="px-4 md:px-6 py-3 md:py-4">
-            <div className="w-full max-w-md md:max-w-lg mx-auto">
-              {/* Pay Using */}
-              <div className="flex items-center justify-between mb-2 md:mb-3">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="h-4 w-4 text-gray-600 dark:text-gray-300" />
-                  <div className="leading-tight">
-                    <p className="text-[11px] md:text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      PAY USING
-                    </p>
-                    <p className="text-sm md:text-base font-medium text-gray-800 dark:text-gray-200">
-                      {selectedPaymentMethod === "razorpay"
-                        ? "Razorpay"
-                        : selectedPaymentMethod === "wallet"
-                          ? "Wallet"
-                          : "Cash on Delivery"}
-                    </p>
+      {/* --- Multi-Step Address Flow Components --- */}
+
+      {/* 1. Choose a delivery address Bottom Sheet */}
+      <AnimatePresence>
+        {checkoutStage === 'address_selection' && (
+          <div className="fixed inset-0 z-50 overflow-hidden">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setCheckoutStage('cart')}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#1a1a1a] rounded-t-[2.5rem] p-6 pb-12 shadow-2xl max-h-[85vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Choose a delivery address</h2>
+                <button onClick={() => setCheckoutStage('cart')} className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full">
+                  <X className="h-5 w-5 text-gray-500" />
+                </button>
+              </div>
+
+              <button
+                onClick={() => {
+                  if (currentLocation?.latitude) {
+                    setTempMapCoords({ lat: currentLocation.latitude, lng: currentLocation.longitude })
+                  } else {
+                    setTempMapCoords({ lat: 17.3850, lng: 78.4867 }) // Hyderabad default
+                  }
+                  setCheckoutStage('map_picker')
+                }}
+                className="w-full flex items-center gap-4 p-4 border-2 border-dashed border-orange-500 rounded-2xl mb-6 hover:bg-orange-50 dark:hover:bg-orange-900/10 transition-colors group"
+              >
+                <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-xl flex items-center justify-center">
+                  <Plus className="h-6 w-6 text-orange-500" />
+                </div>
+                <span className="text-lg font-bold text-orange-500">Add new Address</span>
+              </button>
+
+              <div className="space-y-4">
+                {addresses.map((addr) => (
+                  <button
+                    key={addr._id}
+                    onClick={() => {
+                      setSelectedAddressForOrder(addr)
+                      setIsAddressConfirmed(true)
+                      setCheckoutStage('payment')
+                    }}
+                    className="w-full flex items-start gap-4 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-left group"
+                  >
+                    <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                      {addr.label === 'Home' ? <MapPin className="h-6 w-6 text-gray-500" /> : <Navigation className="h-6 w-6 text-gray-500" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-gray-900 dark:text-white capitalize">{addr.label || 'Other'}</p>
+                      <p className="text-sm text-gray-500 line-clamp-2 mt-1">{formatFullAddress(addr)}</p>
+                    </div>
+                  </button>
+                ))}
+                {addresses.length === 0 && (
+                  <div className="py-10 text-center">
+                    <MapPin className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500 font-medium">No saved addresses found</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 2. Map Picker Step */}
+      <AnimatePresence>
+        {checkoutStage === 'map_picker' && (
+          <div className="fixed inset-0 z-[60] bg-white flex flex-col">
+            <div className="absolute top-4 left-4 z-[1001] flex items-center gap-2">
+              <button onClick={() => setCheckoutStage('address_selection')} className="p-3 bg-white shadow-lg rounded-full">
+                <ArrowLeft className="h-6 w-6 text-gray-800" />
+              </button>
+              <div className="bg-white px-4 py-2 rounded-full shadow-lg border border-gray-100 flex items-center gap-2">
+                <Search className="h-4 w-4 text-gray-400" />
+                <input placeholder="Search an area or address" className="outline-none text-sm w-48 md:w-64" />
+              </div>
+            </div>
+
+            <div className="flex-1 relative">
+              <MapContainer
+                center={tempMapCoords ? [tempMapCoords.lat, tempMapCoords.lng] : [17.3850, 78.4867]}
+                zoom={16}
+                style={{ height: '100%', width: '100%' }}
+                zoomControl={false}
+              >
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <MapEventsHandler setCoords={setTempMapCoords} setAddressInfo={setTempAddressInfo} />
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1000]">
+                  <div className="relative -top-8 flex flex-col items-center">
+                    <div className="bg-orange-500 w-12 h-12 rounded-full flex items-center justify-center border-4 border-white shadow-xl">
+                      <MapPin className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="w-1 h-8 bg-orange-500" />
                   </div>
                 </div>
+              </MapContainer>
 
-                <div className="relative">
-                  <select
-                    value={selectedPaymentMethod}
-                    onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                    className="appearance-none bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 rounded-lg px-3 py-2 pr-9 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-green-500/40"
+              <button
+                onClick={() => {
+                  if (currentLocation?.latitude) {
+                    setTempMapCoords({ lat: currentLocation.latitude, lng: currentLocation.longitude })
+                  }
+                }}
+                className="absolute bottom-52 right-4 z-[1001] p-3 bg-white shadow-lg rounded-full flex items-center gap-2 border border-orange-100"
+              >
+                <Navigation className="h-5 w-5 text-orange-500 fill-orange-500" />
+                <span className="text-sm font-bold text-gray-800">Current location</span>
+              </button>
+
+              <div className="absolute bottom-0 left-0 right-0 z-[1001] p-4">
+                <motion.div
+                  initial={{ y: 50, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  className="bg-white rounded-3xl p-6 shadow-2xl border border-gray-100"
+                >
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Place the pin at exact delivery location</p>
+                  <p className="text-sm text-gray-500 mb-4 font-medium italic">Order will be delivered here</p>
+
+                  <div className="flex items-start gap-4 mb-8">
+                    <div className="w-10 h-10 bg-orange-50 dark:bg-orange-900/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <MapPin className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <p className="font-black text-xl text-gray-900 leading-tight mb-1">{tempAddressInfo.area || 'Locating...'}</p>
+                      <p className="text-sm text-gray-500">{tempAddressInfo.formattedAddress || 'Fetching address details...'}</p>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={() => setCheckoutStage('address_details')}
+                    disabled={!tempAddressInfo.formattedAddress}
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white h-14 rounded-2xl text-lg font-black shadow-xl shadow-orange-200 transition-all hover:scale-[1.02]"
                   >
-                    <option value="razorpay">Razorpay</option>
-                    <option value="wallet">Wallet {walletBalance > 0 ? `(₹${walletBalance.toFixed(0)})` : ''}</option>
-                    <option value="cash">COD</option>
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    Confirm & proceed
+                  </Button>
+                </motion.div>
+              </div>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 3. Address Details Form Step */}
+      <AnimatePresence>
+        {checkoutStage === 'address_details' && (
+          <div className="fixed inset-0 z-[60] bg-white dark:bg-[#0a0a0a] flex flex-col overflow-y-auto">
+            <div className="p-4 flex items-center gap-4 sticky top-0 bg-white dark:bg-[#0a0a0a] border-b dark:border-gray-800 z-10">
+              <button onClick={() => setCheckoutStage('map_picker')} className="p-2">
+                <ArrowLeft className="h-6 w-6 text-gray-800 dark:text-gray-200" />
+              </button>
+              <div className="min-w-0">
+                <p className="font-black text-lg text-gray-900 dark:text-white truncate">{tempAddressInfo.area || 'Pinned Location'}</p>
+                <p className="text-xs text-gray-500 truncate">{tempAddressInfo.formattedAddress}</p>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-8 max-w-xl mx-auto w-full">
+              {/* Receiver Details */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-black text-gray-900 dark:text-white">Receiver Details</h3>
+                <div className="flex items-center gap-2 mb-4">
+                  <input
+                    type="checkbox"
+                    id="useAcc"
+                    checked={receiverDetails.useAccountDetails}
+                    onChange={(e) => setReceiverDetails({ ...receiverDetails, useAccountDetails: e.target.checked })}
+                    className="w-5 h-5 accent-orange-500"
+                  />
+                  <label htmlFor="useAcc" className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                    Use my account details <span className="text-gray-400 font-medium ml-1">{userProfile?.name}, {userProfile?.phone}</span>
+                  </label>
+                </div>
+                {!receiverDetails.useAccountDetails && (
+                  <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-gray-400">Name</label>
+                      <input
+                        value={receiverDetails.name}
+                        onChange={e => setReceiverDetails({ ...receiverDetails, name: e.target.value })}
+                        className="w-full p-3 bg-gray-50 dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-orange-500"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-gray-400">Phone</label>
+                      <input
+                        value={receiverDetails.phone}
+                        onChange={e => setReceiverDetails({ ...receiverDetails, phone: e.target.value })}
+                        className="w-full p-3 bg-gray-50 dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-orange-500"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Location Details */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-black text-gray-900 dark:text-white">Location Details</h3>
+                <div className="flex gap-2">
+                  {['House', 'Office', 'Other'].map(type => (
+                    <button
+                      key={type}
+                      onClick={() => setReceiverDetails({ ...receiverDetails, saveAs: type })}
+                      className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border-2 font-bold transition-all ${receiverDetails.saveAs === type ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-100 text-gray-500 hover:border-gray-200'}`}
+                    >
+                      {type === 'House' && <MapPin className="w-4 h-4" />}
+                      {type === 'Office' && <Briefcase className="w-4 h-4" />}
+                      {type === 'Other' && <Navigation className="w-4 h-4" />}
+                      {type}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="space-y-4">
+                  <input
+                    placeholder="House / Flat / Floor *"
+                    value={receiverDetails.houseNo}
+                    onChange={e => setReceiverDetails({ ...receiverDetails, houseNo: e.target.value })}
+                    className="w-full p-4 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-orange-500 shadow-sm"
+                  />
+                  <input
+                    placeholder="Building / Street (Recommended)"
+                    value={receiverDetails.buildingName}
+                    onChange={e => setReceiverDetails({ ...receiverDetails, buildingName: e.target.value })}
+                    className="w-full p-4 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-orange-500 shadow-sm"
+                  />
+
+                  <div className="p-4 border-2 border-gray-100 dark:border-gray-700 rounded-2xl bg-gray-50/50 dark:bg-gray-800/50 flex gap-4">
+                    <div className="flex-1">
+                      <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Area/Locality</p>
+                      <p className="text-sm font-bold text-gray-800 dark:text-gray-200">{tempAddressInfo.formattedAddress}</p>
+                    </div>
+                    <button onClick={() => setCheckoutStage('map_picker')} className="flex flex-col items-center gap-1">
+                      <div className="w-10 h-10 bg-white dark:bg-gray-700 rounded-xl shadow-md border border-gray-50 dark:border-gray-600 flex items-center justify-center">
+                        <MapPin className="h-5 w-5 text-orange-500" />
+                      </div>
+                      <span className="text-[10px] font-black text-orange-500 uppercase tracking-tighter">Change</span>
+                    </button>
+                  </div>
+
+                  <input
+                    placeholder="Save address as *"
+                    value={receiverDetails.landmark}
+                    onChange={e => setReceiverDetails({ ...receiverDetails, landmark: e.target.value })}
+                    className="w-full p-4 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-orange-500 shadow-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Delivery Instructions */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-black text-gray-900 dark:text-white">Delivery Instructions</h3>
+                <div className="relative">
+                  <textarea
+                    placeholder="Instructions to reach location"
+                    value={receiverDetails.instructions}
+                    onChange={e => setReceiverDetails({ ...receiverDetails, instructions: e.target.value })}
+                    className="w-full p-4 py-6 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-2xl outline-none focus:border-orange-500 shadow-sm min-h-[80px]"
+                  />
+                  <button className="absolute right-4 top-1/2 -translate-y-1/2 text-orange-500 font-bold">Add</button>
                 </div>
               </div>
 
               <Button
-                size="lg"
-                onClick={handlePlaceOrder}
-                disabled={isPlacingOrder || (selectedPaymentMethod === "wallet" && walletBalance < total)}
-                className="w-full bg-green-700 hover:bg-green-800 dark:bg-green-600 dark:hover:bg-green-700 text-white px-6 md:px-10 h-14 md:h-16 rounded-lg md:rounded-xl text-base md:text-lg font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => setCheckoutStage('confirm_details')}
+                className="w-full py-8 rounded-2xl bg-gray-200 dark:bg-gray-800 hover:bg-orange-500 hover:text-white text-gray-400 font-black text-xl transition-all shadow-lg"
               >
-                {(selectedPaymentMethod === "razorpay" || selectedPaymentMethod === "wallet") && (
-                  <div className="text-left mr-3 md:mr-4">
-                    <p className="text-sm md:text-base opacity-90">₹{total.toFixed(0)}</p>
-                    <p className="text-xs md:text-sm opacity-75">TOTAL</p>
-                  </div>
-                )}
-                <span className="font-bold text-base md:text-lg">
-                  {isPlacingOrder
-                    ? "Processing..."
-                    : selectedPaymentMethod === "razorpay"
-                      ? "Select Payment"
-                      : selectedPaymentMethod === "wallet"
-                        ? walletBalance >= total
-                          ? "Place Order"
-                          : "Insufficient Balance"
-                        : "Place Order"}
-                </span>
-                <ChevronRight className="h-5 w-5 md:h-6 md:w-6 ml-2" />
+                Save Address
               </Button>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 4. Confirm Details Small Popup */}
+      <AnimatePresence>
+        {checkoutStage === 'confirm_details' && (
+          <div className="fixed inset-0 z-50 overflow-hidden">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-md"
+            />
+            <div className="absolute inset-0 flex items-center justify-center p-6">
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 50 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 50 }}
+                className="bg-white dark:bg-[#1a1a1a] rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl overflow-hidden relative"
+              >
+                <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-8 border-b dark:border-gray-800 pb-4">Confirm Details</h2>
+
+                <div className="space-y-6">
+                  <div className="flex gap-4">
+                    <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <MapPin className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <p className="font-black text-lg text-gray-900 dark:text-white leading-tight mb-2">
+                        {receiverDetails.saveAs || 'Default'}
+                      </p>
+                      <p className="text-sm text-gray-500 leading-snug">
+                        {receiverDetails.houseNo ? `${receiverDetails.houseNo}, ` : ''}
+                        {receiverDetails.buildingName ? `${receiverDetails.buildingName}, ` : ''}
+                        {tempAddressInfo.formattedAddress}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <UserIcon className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900 dark:text-white">
+                        {receiverDetails.useAccountDetails ? userProfile?.name : receiverDetails.name}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {receiverDetails.useAccountDetails ? userProfile?.phone : receiverDetails.phone}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 mt-12">
+                  <button
+                    onClick={() => setCheckoutStage('address_details')}
+                    className="flex-1 py-4 bg-orange-50 dark:bg-orange-900/10 text-orange-600 font-bold rounded-2xl border border-orange-100 dark:border-orange-900/20 hover:bg-orange-100 transition-colors"
+                  >
+                    Edit details
+                  </button>
+                  <button
+                    onClick={() => {
+                      // Create temporary selected address object
+                      setSelectedAddressForOrder({
+                        label: receiverDetails.saveAs,
+                        street: receiverDetails.buildingName || tempAddressInfo.area,
+                        additionalDetails: receiverDetails.houseNo,
+                        city: tempAddressInfo.city,
+                        formattedAddress: tempAddressInfo.formattedAddress,
+                        location: { coordinates: [tempMapCoords.lng, tempMapCoords.lat] }
+                      })
+                      setIsAddressConfirmed(true)
+                      setCheckoutStage('payment')
+                    }}
+                    className="flex-1 py-4 bg-orange-500 text-white font-bold rounded-2xl shadow-lg shadow-orange-200 transition-transform active:scale-95"
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Bottom Sticky - CTA Area */}
+      <div className="bg-white dark:bg-[#1a1a1a] border-t dark:border-gray-800 shadow-lg z-30 flex-shrink-0 fixed bottom-0 left-0 right-0">
+        <div className="max-w-7xl mx-auto">
+          <div className="px-4 md:px-6 py-3 md:py-4">
+            <div className="w-full max-w-md md:max-w-lg mx-auto">
+              {!isAddressConfirmed ? (
+                /* Address Prompt Flow */
+                <div className="flex flex-col items-center gap-4 py-4 md:py-6 animate-in fade-in slide-in-from-bottom-4">
+                  <div className="flex items-center gap-3">
+                    <Navigation className="h-6 w-6 text-orange-500 fill-orange-500" />
+                    <p className="text-xl md:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+                      Where would you like us to deliver this order?
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setCheckoutStage('address_selection')}
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-3xl h-14 md:h-16 text-lg md:text-xl font-black shadow-xl shadow-orange-100 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    Add or Select address
+                  </Button>
+                </div>
+              ) : (
+                /* Swiggy-Style Payment Bottom Bar */
+                <div className="flex items-center gap-3">
+                  {/* Left: PAY USING - tappable to open payment options */}
+                  <button
+                    onClick={() => setShowPaymentOptions(true)}
+                    className="flex-1 flex items-center gap-2 bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors min-w-0"
+                  >
+                    <div className="min-w-0 flex-1 text-left">
+                      <p className="text-[10px] font-extrabold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center gap-1">
+                        PAY USING <ChevronUp className="h-3 w-3" />
+                      </p>
+                      <p className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate mt-0.5">
+                        {selectedPaymentMethod === "razorpay"
+                          ? "Razorpay (Online)"
+                          : selectedPaymentMethod === "wallet"
+                            ? `Wallet (₹${walletBalance.toFixed(0)})`
+                            : "Pay on Delivery (Cash/UPI)"}
+                      </p>
+                      {selectedPaymentMethod === "cash" && (
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">Pay cash or ask for QR code</p>
+                      )}
+                    </div>
+                  </button>
+
+                  {/* Right: Pay Button */}
+                  <button
+                    onClick={() => {
+                      if (selectedPaymentMethod === "cash") {
+                        setShowCashConfirm(true)
+                      } else {
+                        handlePlaceOrder()
+                      }
+                    }}
+                    disabled={isPlacingOrder || (selectedPaymentMethod === "wallet" && walletBalance < total)}
+                    className="flex-shrink-0 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-black text-base px-6 py-3.5 rounded-xl shadow-lg shadow-green-200 dark:shadow-green-900/30 transition-all active:scale-95 disabled:cursor-not-allowed"
+                  >
+                    {isPlacingOrder ? "..." : `Pay ₹${total.toFixed(0)}`}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* ===== Payment Options Sheet ===== */}
+      <AnimatePresence>
+        {showPaymentOptions && (
+          <div className="fixed inset-0 z-50 overflow-hidden">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowPaymentOptions(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 260 }}
+              className="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#111] rounded-t-3xl shadow-2xl max-h-[90vh] overflow-y-auto"
+            >
+              {/* Header */}
+              <div className="sticky top-0 bg-white dark:bg-[#111] px-5 pt-5 pb-4 border-b dark:border-gray-800 z-10">
+                <div className="flex items-center gap-3 mb-1">
+                  <button onClick={() => setShowPaymentOptions(false)} className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-full">
+                    <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                  </button>
+                  <h2 className="text-lg font-black text-gray-900 dark:text-white">Payment Options</h2>
+                </div>
+                <div className="ml-10 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                  <span className="font-semibold">{cart.length} item{cart.length !== 1 ? 's' : ''}</span>
+                  <span>·</span>
+                  <span>Total: <span className="font-bold text-gray-800 dark:text-gray-200">₹{total.toFixed(0)}</span></span>
+                  {discount > 0 && <><span>·</span><span className="text-green-600 font-bold">Savings of ₹{discount}</span></>}
+                </div>
+              </div>
+
+              <div className="p-5 space-y-6">
+                {/* Pay on Delivery */}
+                <div>
+                  <p className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Pay on Delivery</p>
+                  <button
+                    onClick={() => { setSelectedPaymentMethod('cash'); setSelectedUpiApp(null); setShowPaymentOptions(false); }}
+                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${selectedPaymentMethod === 'cash' ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                  >
+                    <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <span className="text-xl">💵</span>
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-bold text-gray-900 dark:text-white text-sm">Pay on Delivery (Cash/UPI)</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Pay cash or ask for QR code</p>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selectedPaymentMethod === 'cash' ? 'border-green-500 bg-green-500' : 'border-gray-300 dark:border-gray-600'}`}>
+                      {selectedPaymentMethod === 'cash' && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                    </div>
+                  </button>
+                </div>
+
+                {/* Wallet */}
+                <div>
+                  <p className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Wallet</p>
+                  <button
+                    onClick={() => { setSelectedPaymentMethod('wallet'); setSelectedUpiApp(null); setShowPaymentOptions(false); }}
+                    disabled={walletBalance < total}
+                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all disabled:opacity-50 ${selectedPaymentMethod === 'wallet' ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                  >
+                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Wallet className="h-6 w-6 text-purple-600" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-bold text-gray-900 dark:text-white text-sm">App Wallet</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        Balance: ₹{walletBalance.toFixed(0)} {walletBalance < total ? '— Insufficient balance' : ''}
+                      </p>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selectedPaymentMethod === 'wallet' ? 'border-green-500 bg-green-500' : 'border-gray-300 dark:border-gray-600'}`}>
+                      {selectedPaymentMethod === 'wallet' && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                    </div>
+                  </button>
+                </div>
+
+                {/* Pay by UPI App */}
+                <div>
+                  <p className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Pay by any UPI App</p>
+                  <div className="space-y-2">
+                    {/* Google Pay */}
+                    <button
+                      onClick={() => { setSelectedPaymentMethod('razorpay'); setSelectedUpiApp('google_pay'); setShowPaymentOptions(false); }}
+                      className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${selectedPaymentMethod === 'razorpay' && selectedUpiApp === 'google_pay'
+                        ? 'border-green-500 bg-green-50 dark:bg-green-900/10'
+                        : 'border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        }`}
+                    >
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden bg-white border border-gray-100 dark:border-gray-700 shadow-sm">
+                        <svg viewBox="0 0 48 48" className="w-8 h-8">
+                          <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z" />
+                          <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.32-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z" />
+                          <path fill="#FBBC05" d="M11.68 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.68-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24c0 3.55.85 6.91 2.34 9.88l7.34-5.7z" />
+                          <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.34 5.7c1.74-5.2 6.59-9.07 12.32-9.07z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="font-bold text-gray-900 dark:text-white text-sm">Google Pay</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Pay via Google Pay UPI</p>
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selectedPaymentMethod === 'razorpay' && selectedUpiApp === 'google_pay' ? 'border-green-500 bg-green-500' : 'border-gray-300 dark:border-gray-600'
+                        }`}>
+                        {selectedPaymentMethod === 'razorpay' && selectedUpiApp === 'google_pay' && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                      </div>
+                    </button>
+
+                    {/* Paytm UPI */}
+                    <button
+                      onClick={() => { setSelectedPaymentMethod('razorpay'); setSelectedUpiApp('paytm'); setShowPaymentOptions(false); }}
+                      className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${selectedPaymentMethod === 'razorpay' && selectedUpiApp === 'paytm'
+                        ? 'border-green-500 bg-green-50 dark:bg-green-900/10'
+                        : 'border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        }`}
+                    >
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden bg-[#00BAF2] shadow-sm">
+                        <span className="text-white font-black text-lg tracking-tighter">Pay</span>
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="font-bold text-gray-900 dark:text-white text-sm">Paytm UPI</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Pay via Paytm UPI ID</p>
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selectedPaymentMethod === 'razorpay' && selectedUpiApp === 'paytm' ? 'border-green-500 bg-green-500' : 'border-gray-300 dark:border-gray-600'
+                        }`}>
+                        {selectedPaymentMethod === 'razorpay' && selectedUpiApp === 'paytm' && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                      </div>
+                    </button>
+
+                    {/* PhonePe */}
+                    <button
+                      onClick={() => { setSelectedPaymentMethod('razorpay'); setSelectedUpiApp('phonepe'); setShowPaymentOptions(false); }}
+                      className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${selectedPaymentMethod === 'razorpay' && selectedUpiApp === 'phonepe'
+                        ? 'border-green-500 bg-green-50 dark:bg-green-900/10'
+                        : 'border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        }`}
+                    >
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden bg-[#5F259F] shadow-sm">
+                        <svg viewBox="0 0 48 48" className="w-8 h-8" fill="white">
+                          <path d="M24 6C14.06 6 6 14.06 6 24s8.06 18 18 18 18-8.06 18-18S33.94 6 24 6zm6.5 26.5h-4v-5.5h-5v5.5h-4v-13h4v4h5v-4h4v13z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="font-bold text-gray-900 dark:text-white text-sm">PhonePe</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Pay via PhonePe UPI</p>
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selectedPaymentMethod === 'razorpay' && selectedUpiApp === 'phonepe' ? 'border-green-500 bg-green-500' : 'border-gray-300 dark:border-gray-600'
+                        }`}>
+                        {selectedPaymentMethod === 'razorpay' && selectedUpiApp === 'phonepe' && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                      </div>
+                    </button>
+
+                    {/* Add New UPI ID */}
+                    <button
+                      onClick={() => { setSelectedPaymentMethod('razorpay'); setSelectedUpiApp(null); setShowPaymentOptions(false); }}
+                      className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+                    >
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-gray-100 dark:bg-gray-800">
+                        <Plus className="h-5 w-5 text-gray-500" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="font-bold text-gray-700 dark:text-gray-300 text-sm">Add New UPI ID</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">You need to have a registered UPI ID</p>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Credit & Debit Cards */}
+                <div>
+                  <p className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Credit & Debit Cards</p>
+                  <button
+                    onClick={() => { setSelectedPaymentMethod('razorpay'); setShowPaymentOptions(false); }}
+                    className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+                  >
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-gray-100 dark:bg-gray-800">
+                      <Plus className="h-5 w-5 text-gray-500" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-bold text-gray-700 dark:text-gray-300 text-sm">Add New Card</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Save and Pay via Cards.</p>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                  </button>
+                </div>
+
+                {/* More Payment Options */}
+                <div>
+                  <p className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">More Payment Options</p>
+                  <div className="space-y-2">
+                    {[
+                      { label: 'Wallets', sub: 'PhonePe, Amazon Pay & more', icon: '👛' },
+                      { label: 'Netbanking', sub: 'Select from a list of banks', icon: '🏦' },
+                      { label: 'CRED Pay', sub: 'Pay via CRED coins or CRED cash', icon: '💳' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.label}
+                        onClick={() => { setSelectedPaymentMethod('razorpay'); setShowPaymentOptions(false); }}
+                        className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+                      >
+                        <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center flex-shrink-0 text-xl">
+                          {opt.icon}
+                        </div>
+                        <div className="flex-1 text-left">
+                          <p className="font-bold text-gray-900 dark:text-white text-sm">{opt.label}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{opt.sub}</p>
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Bottom Confirm */}
+                <div className="pb-safe">
+                  <button
+                    onClick={() => {
+                      setShowPaymentOptions(false)
+                      if (selectedPaymentMethod === 'cash') {
+                        setShowCashConfirm(true)
+                      } else {
+                        handlePlaceOrder()
+                      }
+                    }}
+                    disabled={isPlacingOrder}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-black text-lg py-5 rounded-2xl shadow-xl shadow-green-200 dark:shadow-green-900/20 transition-all active:scale-[0.98] disabled:opacity-60"
+                  >
+                    Pay ₹{total.toFixed(0)}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ===== Cash Order Confirmation Dialog ===== */}
+      <AnimatePresence>
+        {showCashConfirm && (
+          <div className="fixed inset-0 z-[70] overflow-hidden flex items-end justify-center">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowCashConfirm(false)}
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+              className="relative w-full max-w-sm bg-white dark:bg-[#1a1a1a] rounded-t-3xl px-6 pt-8 pb-10 shadow-2xl mx-auto text-center"
+            >
+              {/* Rupee Icon */}
+              <div className="w-20 h-20 bg-green-50 dark:bg-green-900/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <span className="text-4xl">💵</span>
+              </div>
+
+              <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-3">Placing cash order</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed mb-8">
+                Give cash or ask delivery partner for QR code when your order is delivered!
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowCashConfirm(false)}
+                  className="flex-1 py-4 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCashConfirm(false)
+                    handlePlaceOrder()
+                  }}
+                  disabled={isPlacingOrder}
+                  className="flex-1 py-4 bg-green-600 hover:bg-green-700 text-white font-black rounded-2xl shadow-lg shadow-green-200 dark:shadow-green-900/30 transition-all active:scale-95 disabled:opacity-60"
+                >
+                  Yes! Place Order
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Placing Order Modal */}
       {showPlacingOrder && (
@@ -2063,8 +2778,14 @@ export default function Cart() {
               className="mt-12 text-center"
               style={{ animation: 'slideUp 0.5s ease-out 0.8s both' }}
             >
-              <h3 className="text-3xl font-bold text-green-600 mb-2">Order Placed!</h3>
-              <p className="text-gray-600">Your delicious food is on its way</p>
+              <h3 className="text-3xl font-bold text-green-600 mb-2">
+                {wasHibermartOrder ? "Order Submitted!" : "Order Placed!"}
+              </h3>
+              <p className="text-gray-600">
+                {wasHibermartOrder
+                  ? "Waiting for admin approval before assigning a delivery partner"
+                  : "Your delicious food is on its way"}
+              </p>
             </div>
 
             {/* Action Button */}
@@ -2073,7 +2794,7 @@ export default function Cart() {
               className="mt-10 bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-12 rounded-xl shadow-lg transition-all hover:shadow-xl hover:scale-105"
               style={{ animation: 'slideUp 0.5s ease-out 1s both' }}
             >
-              Track Your Order
+              {wasHibermartOrder ? "View Order Status" : "Track Your Order"}
             </button>
           </div>
         </div>
@@ -2267,4 +2988,37 @@ export default function Cart() {
       `}</style>
     </div>
   )
+}
+
+// Helper components for Leaflet
+function MapEventsHandler({ setCoords, setAddressInfo }) {
+  const map = useMap()
+
+  useMapEvents({
+    moveend: async () => {
+      const center = map.getCenter()
+      setCoords({ lat: center.lat, lng: center.lng })
+
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/geocode/reverse?lat=${center.lat}&lon=${center.lng}`
+        )
+        const result = await response.json()
+        const data = result?.data || result
+        if (data && data.address) {
+          const area = data.address.suburb || data.address.neighbourhood || data.address.residential || data.address.road || 'Unknown Area'
+          const city = data.address.city || data.address.town || data.address.village || 'Unknown City'
+          setAddressInfo({
+            area,
+            city,
+            formattedAddress: data.display_name
+          })
+        }
+      } catch (error) {
+        console.error("Error fetching address details:", error)
+      }
+    }
+  })
+
+  return null
 }

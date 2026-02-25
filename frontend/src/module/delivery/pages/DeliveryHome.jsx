@@ -60,7 +60,7 @@ import referralBonusBg from "../../../assets/referralbonuscardbg.png"
 // import dropLocationBanner from "../../../assets/droplocationbanner.png" // File not found - commented out
 import alertSound from "../../../assets/audio/alert.mp3"
 import originalSound from "../../../assets/audio/original.mp3"
-import bikeLogo from "../../../assets/bikelogo.png"
+import bikeLogo from "../../../assets/purple_delivery_boy.png"
 
 // Ola Maps API Key removed
 
@@ -2302,49 +2302,58 @@ export default function DeliveryHome() {
                     : (restaurantId._id || restaurantId.id || restaurantId.toString())
 
                   if (restaurantIdString) {
-                    try {
-                      console.log('🔄 Fetching restaurant address by ID:', restaurantIdString)
-                      const restaurantResponse = await restaurantAPI.getRestaurantById(restaurantIdString)
-                      if (restaurantResponse.data?.success && restaurantResponse.data.data) {
-                        const restaurant = restaurantResponse.data.data.restaurant || restaurantResponse.data.data
-                        const restLocation = restaurant.location
-                        console.log('✅ Fetched restaurant data:', { restaurant, restLocation })
-
-                        // Priority: location.formattedAddress (this is what user wants)
-                        if (restLocation?.formattedAddress) {
-                          restaurantAddress = restLocation.formattedAddress
-                          console.log('✅ Fetched restaurant.location.formattedAddress:', restaurantAddress)
-                        } else if (restaurant.address) {
-                          restaurantAddress = restaurant.address
-                          console.log('✅ Fetched restaurant.address:', restaurantAddress)
-                        } else if (restLocation?.address) {
-                          restaurantAddress = restLocation.address
-                          console.log('✅ Fetched restaurant.location.address:', restaurantAddress)
-                        } else if (restLocation?.addressLine1) {
-                          const addressParts = [
-                            restLocation.addressLine1,
-                            restLocation.addressLine2,
-                            restLocation.area, // Zone
-                            restLocation.city,
-                            restLocation.state,
-                            restLocation.pincode || restLocation.zipCode || restLocation.postalCode
-                          ].filter(Boolean)
-                          restaurantAddress = addressParts.join(', ')
-                          console.log('✅ Built address from restaurant location addressLine1 with zone and pin:', restaurantAddress)
-                        } else if (restLocation?.street) {
-                          const addressParts = [
-                            restLocation.street,
-                            restLocation.area, // Zone
-                            restLocation.city,
-                            restLocation.state,
-                            restLocation.pincode || restLocation.zipCode || restLocation.postalCode
-                          ].filter(Boolean)
-                          restaurantAddress = addressParts.join(', ')
-                          console.log('✅ Built address from restaurant location components with zone and pin:', restaurantAddress)
-                        }
+                    const isHibermart = restaurantIdString === 'hibermart-id' || order.restaurantName?.toLowerCase?.() === 'hibermart'
+                    if (isHibermart) {
+                      const storeAddr = order.restaurantLocation?.formattedAddress || order.restaurantLocation?.address
+                      if (storeAddr) {
+                        restaurantAddress = storeAddr
+                        console.log('✅ Using Hibermart store address from order.restaurantLocation:', restaurantAddress)
                       }
-                    } catch (restaurantError) {
-                      console.error('❌ Error fetching restaurant address:', restaurantError)
+                    } else {
+                      try {
+                        console.log('🔄 Fetching restaurant address by ID:', restaurantIdString)
+                        const restaurantResponse = await restaurantAPI.getRestaurantById(restaurantIdString)
+                        if (restaurantResponse.data?.success && restaurantResponse.data.data) {
+                          const restaurant = restaurantResponse.data.data.restaurant || restaurantResponse.data.data
+                          const restLocation = restaurant.location
+                          console.log('✅ Fetched restaurant data:', { restaurant, restLocation })
+
+                          // Priority: location.formattedAddress (this is what user wants)
+                          if (restLocation?.formattedAddress) {
+                            restaurantAddress = restLocation.formattedAddress
+                            console.log('✅ Fetched restaurant.location.formattedAddress:', restaurantAddress)
+                          } else if (restaurant.address) {
+                            restaurantAddress = restaurant.address
+                            console.log('✅ Fetched restaurant.address:', restaurantAddress)
+                          } else if (restLocation?.address) {
+                            restaurantAddress = restLocation.address
+                            console.log('✅ Fetched restaurant.location.address:', restaurantAddress)
+                          } else if (restLocation?.addressLine1) {
+                            const addressParts = [
+                              restLocation.addressLine1,
+                              restLocation.addressLine2,
+                              restLocation.area, // Zone
+                              restLocation.city,
+                              restLocation.state,
+                              restLocation.pincode || restLocation.zipCode || restLocation.postalCode
+                            ].filter(Boolean)
+                            restaurantAddress = addressParts.join(', ')
+                            console.log('✅ Built address from restaurant location addressLine1 with zone and pin:', restaurantAddress)
+                          } else if (restLocation?.street) {
+                            const addressParts = [
+                              restLocation.street,
+                              restLocation.area, // Zone
+                              restLocation.city,
+                              restLocation.state,
+                              restLocation.pincode || restLocation.zipCode || restLocation.postalCode
+                            ].filter(Boolean)
+                            restaurantAddress = addressParts.join(', ')
+                            console.log('✅ Built address from restaurant location components with zone and pin:', restaurantAddress)
+                          }
+                        }
+                      } catch (restaurantError) {
+                        console.error('❌ Error fetching restaurant address:', restaurantError)
+                      }
                     }
                   }
                 }
@@ -5966,8 +5975,8 @@ export default function DeliveryHome() {
               map: map,
               icon: {
                 url: bikeLogo,
-                scaledSize: new window.google.maps.Size(50, 50),
-                anchor: new window.google.maps.Point(25, 25)
+                scaledSize: new window.google.maps.Size(34, 34),
+                anchor: new window.google.maps.Point(17, 17)
               },
               title: 'Your Location',
               zIndex: 100 // Bike marker should be on top
@@ -6882,6 +6891,17 @@ export default function DeliveryHome() {
               const restaurantIdString = typeof restaurantId === 'string' ? restaurantId : (restaurantId._id || restaurantId.id || restaurantId.toString())
               console.log('🔄 Address not found in order, fetching restaurant details by ID:', restaurantIdString)
 
+              const isHibermart = restaurantIdString === 'hibermart-id' || order.restaurantName?.toLowerCase?.() === 'hibermart'
+              if (isHibermart) {
+                const storeAddr = order.restaurantLocation?.formattedAddress || order.restaurantLocation?.address
+                if (storeAddr) {
+                  const updates = { address: storeAddr }
+                  setSelectedRestaurant(prev => ({ ...prev, ...updates }))
+                  console.log('✅ Using Hibermart store address from order.restaurantLocation:', storeAddr)
+                  return
+                }
+              }
+
               try {
                 const restaurantResponse = await restaurantAPI.getRestaurantById(restaurantIdString)
                 if (restaurantResponse.data?.success && restaurantResponse.data.data) {
@@ -7457,7 +7477,7 @@ export default function DeliveryHome() {
       img.onload = () => {
         try {
           const canvas = document.createElement('canvas');
-          const size = 60; // Icon size
+          const size = 34; // Icon size
           canvas.width = size;
           canvas.height = size;
           const ctx = canvas.getContext('2d');
@@ -7515,8 +7535,8 @@ export default function DeliveryHome() {
       // Create bike marker with rotated icon - exact position
       const bikeIcon = {
         url: rotatedIconUrl,
-        scaledSize: new window.google.maps.Size(60, 60), // Larger size for better visibility
-        anchor: new window.google.maps.Point(30, 30) // Center point
+        scaledSize: new window.google.maps.Size(34, 34), // Small icon size
+        anchor: new window.google.maps.Point(17, 17) // Center point
       };
 
       bikeMarkerRef.current = new window.google.maps.Marker({
@@ -7589,8 +7609,8 @@ export default function DeliveryHome() {
       const rotatedIconUrl = await getRotatedBikeIcon(currentHeading);
       const bikeIcon = {
         url: rotatedIconUrl,
-        scaledSize: new window.google.maps.Size(60, 60),
-        anchor: new window.google.maps.Point(30, 30)
+        scaledSize: new window.google.maps.Size(34, 34),
+        anchor: new window.google.maps.Point(17, 17)
       };
       bikeMarkerRef.current.setIcon(bikeIcon);
 
@@ -9728,19 +9748,22 @@ export default function DeliveryHome() {
 
                         if (restaurantId) {
                           try {
-                            console.log('📞 [CALL] Trying restaurant API directly with ID:', restaurantId)
-                            const restaurantResponse = await restaurantAPI.getRestaurantById(restaurantId)
-                            if (restaurantResponse.data?.success && restaurantResponse.data.data) {
-                              const restaurant = restaurantResponse.data.data.restaurant || restaurantResponse.data.data
-                              restaurantPhone = restaurant.phone || restaurant.ownerPhone || restaurant.primaryContactNumber
+                            const isHibermart = restaurantId === 'hibermart-id' || order.restaurantName?.toLowerCase?.() === 'hibermart'
+                            if (!isHibermart) {
+                              console.log('📞 [CALL] Trying restaurant API directly with ID:', restaurantId)
+                              const restaurantResponse = await restaurantAPI.getRestaurantById(restaurantId)
+                              if (restaurantResponse.data?.success && restaurantResponse.data.data) {
+                                const restaurant = restaurantResponse.data.data.restaurant || restaurantResponse.data.data
+                                restaurantPhone = restaurant.phone || restaurant.ownerPhone || restaurant.primaryContactNumber
 
-                              if (restaurantPhone) {
-                                setSelectedRestaurant({
-                                  ...selectedRestaurant,
-                                  phone: restaurantPhone,
-                                  ownerPhone: restaurant.ownerPhone || restaurantPhone
-                                })
-                                console.log('✅ [CALL] Updated selectedRestaurant with phone from restaurant API:', restaurantPhone)
+                                if (restaurantPhone) {
+                                  setSelectedRestaurant({
+                                    ...selectedRestaurant,
+                                    phone: restaurantPhone,
+                                    ownerPhone: restaurant.ownerPhone || restaurantPhone
+                                  })
+                                  console.log('✅ [CALL] Updated selectedRestaurant with phone from restaurant API:', restaurantPhone)
+                                }
                               }
                             }
                           } catch (restaurantError) {

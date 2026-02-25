@@ -32,7 +32,7 @@ const logger = winston.createLogger({
 export const createOrder = async (req, res) => {
   try {
     const userId = req.user.id;
-    const {
+    let {
       items,
       address,
       restaurantId,
@@ -77,8 +77,13 @@ export const createOrder = async (req, res) => {
       });
     }
 
+    const isHibermartRequest =
+      req.body?.isHibermartOrder === true ||
+      restaurantId === 'hibermart-id' ||
+      String(restaurantName || '').toLowerCase().trim() === 'hibermart';
+
     // Validate and assign restaurant - order goes to the restaurant whose food was ordered
-    if (!restaurantId || restaurantId === 'unknown') {
+    if (!isHibermartRequest && (!restaurantId || restaurantId === 'unknown')) {
       return res.status(400).json({
         success: false,
         message: 'Restaurant ID is required. Please select a restaurant.'
@@ -87,6 +92,11 @@ export const createOrder = async (req, res) => {
 
     let assignedRestaurantId = restaurantId;
     let assignedRestaurantName = restaurantName;
+
+    if (isHibermartRequest) {
+      assignedRestaurantId = restaurantId || 'hibermart-id';
+      assignedRestaurantName = restaurantName || 'Hibermart';
+    }
 
     // Log incoming restaurant data for debugging
     logger.info('🔍 Order creation - Restaurant lookup:', {
@@ -98,6 +108,10 @@ export const createOrder = async (req, res) => {
 
     // Find and validate the restaurant
     let restaurant = null;
+    if (isHibermartRequest) {
+      // Skip restaurant lookup for Hibermart orders
+      restaurant = null;
+    } else {
     // Try to find restaurant by restaurantId, _id, or slug
     if (mongoose.Types.ObjectId.isValid(restaurantId) && restaurantId.length === 24) {
       restaurant = await Restaurant.findById(restaurantId);
@@ -122,8 +136,9 @@ export const createOrder = async (req, res) => {
         restaurant__id: restaurant?._id?.toString()
       });
     }
+    }
 
-    if (!restaurant) {
+    if (!restaurant && !isHibermartRequest) {
       logger.error('❌ Restaurant not found:', {
         searchedRestaurantId: restaurantId,
         searchedRestaurantName: restaurantName
@@ -135,7 +150,7 @@ export const createOrder = async (req, res) => {
     }
 
     // CRITICAL: Validate restaurant name matches
-    if (restaurantName && restaurant.name !== restaurantName) {
+    if (!isHibermartRequest && restaurantName && restaurant.name !== restaurantName) {
       logger.warn('⚠️ Restaurant name mismatch:', {
         incomingName: restaurantName,
         foundRestaurantName: restaurant.name,
@@ -158,7 +173,7 @@ export const createOrder = async (req, res) => {
     //   });
     // }
 
-    if (!restaurant.isActive) {
+    if (!isHibermartRequest && !restaurant.isActive) {
       logger.warn('⚠️ Restaurant is inactive:', {
         restaurantId: restaurant._id?.toString() || restaurant.restaurantId,
         restaurantName: restaurant.name
@@ -170,10 +185,10 @@ export const createOrder = async (req, res) => {
     }
 
     // CRITICAL: Validate that restaurant's location (pin) is within an active zone
-    const restaurantLat = restaurant.location?.latitude || restaurant.location?.coordinates?.[1] || restaurant.onboarding?.step1?.location?.latitude;
-    const restaurantLng = restaurant.location?.longitude || restaurant.location?.coordinates?.[0] || restaurant.onboarding?.step1?.location?.longitude;
+    const restaurantLat = restaurant?.location?.latitude || restaurant?.location?.coordinates?.[1] || restaurant?.onboarding?.step1?.location?.latitude;
+    const restaurantLng = restaurant?.location?.longitude || restaurant?.location?.coordinates?.[0] || restaurant?.onboarding?.step1?.location?.longitude;
 
-    if (!restaurantLat || !restaurantLng) {
+    if (!isHibermartRequest && (!restaurantLat || !restaurantLng)) {
       logger.error('❌ Restaurant location not found during order creation:', {
         restaurantId: restaurant._id?.toString() || restaurant.restaurantId,
         restaurantName: restaurant.name,
@@ -186,15 +201,17 @@ export const createOrder = async (req, res) => {
       });
     }
 
-    logger.info('📍 Restaurant location verified:', {
-      restaurantName: restaurant.name,
-      lat: restaurantLat,
-      lng: restaurantLng
-    });
+    if (!isHibermartRequest) {
+      logger.info('📍 Restaurant location verified:', {
+        restaurantName: restaurant.name,
+        lat: restaurantLat,
+        lng: restaurantLng
+      });
+    }
 
     // Check if restaurant is within any active zone
-    const activeZones = await Zone.find({ isActive: true }).lean();
-    let restaurantInZone = false;
+    const activeZones = !isHibermartRequest ? await Zone.find({ isActive: true }).lean() : [];
+    let restaurantInZone = isHibermartRequest ? true : false;
     let restaurantZone = null;
 
     for (const zone of activeZones) {
@@ -230,7 +247,7 @@ export const createOrder = async (req, res) => {
       }
     }
 
-    if (!restaurantInZone) {
+    if (!isHibermartRequest && !restaurantInZone) {
       logger.warn('⚠️ Restaurant location is not within any active zone:', {
         restaurantId: restaurant._id?.toString() || restaurant.restaurantId,
         restaurantName: restaurant.name,
@@ -243,17 +260,19 @@ export const createOrder = async (req, res) => {
       });
     }
 
-    logger.info('✅ Restaurant validated - location is within active zone:', {
-      restaurantId: restaurant._id?.toString() || restaurant.restaurantId,
-      restaurantName: restaurant.name,
-      zoneId: restaurantZone?._id?.toString(),
-      zoneName: restaurantZone?.name || restaurantZone?.zoneName
-    });
+    if (!isHibermartRequest) {
+      logger.info('✅ Restaurant validated - location is within active zone:', {
+        restaurantId: restaurant._id?.toString() || restaurant.restaurantId,
+        restaurantName: restaurant.name,
+        zoneId: restaurantZone?._id?.toString(),
+        zoneName: restaurantZone?.name || restaurantZone?.zoneName
+      });
+    }
 
     // CRITICAL: Validate user's zone matches restaurant's zone (strict zone matching)
     const { zoneId: userZoneId } = req.body; // User's zone ID from frontend
 
-    if (userZoneId) {
+    if (!isHibermartRequest && userZoneId) {
       const restaurantZoneId = restaurantZone._id.toString();
 
       if (restaurantZoneId !== userZoneId) {
@@ -274,18 +293,28 @@ export const createOrder = async (req, res) => {
         restaurantId: restaurant._id?.toString() || restaurant.restaurantId
       });
     } else {
-      logger.warn('⚠️ User zoneId not provided in order request - zone validation skipped');
+      if (!isHibermartRequest) {
+        logger.warn('⚠️ User zoneId not provided in order request - zone validation skipped');
+      }
     }
 
-    assignedRestaurantId = restaurant._id?.toString() || restaurant.restaurantId;
-    assignedRestaurantName = restaurant.name;
+    if (!isHibermartRequest) {
+      assignedRestaurantId = restaurant._id?.toString() || restaurant.restaurantId;
+      assignedRestaurantName = restaurant.name;
+    }
+
+    const isHibermartOrder = (
+      assignedRestaurantId === 'hibermart-id' ||
+      assignedRestaurantName?.toLowerCase() === 'hibermart' ||
+      restaurant?.slug?.toLowerCase?.() === 'hibermart'
+    );
 
     // Log restaurant assignment for debugging
     logger.info('✅ Restaurant assigned to order:', {
       assignedRestaurantId: assignedRestaurantId,
       assignedRestaurantName: assignedRestaurantName,
-      restaurant_id: restaurant._id?.toString(),
-      restaurant_restaurantId: restaurant.restaurantId,
+      restaurant_id: restaurant?._id?.toString(),
+      restaurant_restaurantId: restaurant?.restaurantId,
       incomingRestaurantId: restaurantId,
       incomingRestaurantName: restaurantName
     });
@@ -300,6 +329,27 @@ export const createOrder = async (req, res) => {
       pricing.couponCode = pricing.appliedCoupon.code;
     }
 
+    // Defensive: ensure all pricing fields are valid numbers (avoid schema validation crash)
+    const safePricing = {
+      subtotal: Number(pricing?.subtotal ?? pricing?.subTotal ?? 0) || 0,
+      deliveryFee: Number(pricing?.deliveryFee ?? 0) || 0,
+      platformFee: Number(pricing?.platformFee ?? 0) || 0,
+      tax: Number(pricing?.tax ?? pricing?.gstCharges ?? 0) || 0,
+      discount: Number(pricing?.discount ?? 0) || 0,
+      total: Number(pricing?.total ?? 0) || 0,
+      couponCode: pricing?.couponCode || null
+    };
+
+    logger.info('📋 Safe pricing for order:', safePricing);
+
+    // Normalize address label — map any variant to allowed enum values
+    const VALID_LABELS = ['Home', 'Office', 'Other', 'House', 'Work', 'Hotel', 'Apartment', 'Friends & Family'];
+    const LABEL_MAP = { house: 'House', home: 'Home', work: 'Work', office: 'Office', hotel: 'Hotel', apartment: 'Apartment', 'friends & family': 'Friends & Family', friend: 'Friends & Family' };
+    if (address?.label) {
+      const normalized = LABEL_MAP[address.label.toLowerCase()] || (VALID_LABELS.includes(address.label) ? address.label : 'Other');
+      address = { ...address, label: normalized };
+    }
+
     // Create order in database with pending status
     const order = new Order({
       orderId: generatedOrderId,
@@ -308,14 +358,14 @@ export const createOrder = async (req, res) => {
       restaurantName: assignedRestaurantName,
       items,
       address,
-      pricing: {
-        ...pricing,
-        couponCode: pricing.couponCode || null
-      },
+      pricing: safePricing,
       deliveryFleet: deliveryFleet || 'standard',
       note: note || '',
       sendCutlery: sendCutlery !== false,
       status: 'pending',
+      isHibermartOrder,
+      adminApproval: isHibermartOrder ? { status: 'pending' } : undefined,
+      assignmentInfo: userZoneId ? { zoneId: userZoneId } : undefined,
       payment: {
         method: normalizedPaymentMethod,
         status: 'pending'
@@ -347,62 +397,66 @@ export const createOrder = async (req, res) => {
 
     // Calculate initial ETA
     try {
-      const restaurantLocation = restaurant.location
-        ? {
-          latitude: restaurant.location.latitude,
-          longitude: restaurant.location.longitude
-        }
-        : null;
-
-      const userLocation = address.location?.coordinates
-        ? {
-          latitude: address.location.coordinates[1],
-          longitude: address.location.coordinates[0]
-        }
-        : null;
-
-      if (restaurantLocation && userLocation) {
-        const etaResult = await etaCalculationService.calculateInitialETA({
-          restaurantId: assignedRestaurantId,
-          restaurantLocation,
-          userLocation
-        });
-
-        // Add preparation time to ETA (use max preparation time)
-        const finalMinETA = etaResult.minETA + maxPreparationTime;
-        const finalMaxETA = etaResult.maxETA + maxPreparationTime;
-
-        // Update order with ETA (including preparation time)
-        order.eta = {
-          min: finalMinETA,
-          max: finalMaxETA,
-          lastUpdated: new Date(),
-          additionalTime: 0 // Will be updated when restaurant adds time
-        };
-        order.estimatedDeliveryTime = Math.ceil((finalMinETA + finalMaxETA) / 2);
-
-        // Create order created event
-        await OrderEvent.create({
-          orderId: order._id,
-          eventType: 'ORDER_CREATED',
-          data: {
-            initialETA: {
-              min: finalMinETA,
-              max: finalMaxETA
-            },
-            preparationTime: maxPreparationTime
-          },
-          timestamp: new Date()
-        });
-
-        logger.info('✅ ETA calculated for order:', {
-          orderId: order.orderId,
-          eta: `${finalMinETA}-${finalMaxETA} mins`,
-          preparationTime: maxPreparationTime,
-          baseETA: `${etaResult.minETA}-${etaResult.maxETA} mins`
-        });
+      if (!restaurant) {
+        logger.warn('⚠️ Skipping ETA calculation - restaurant not loaded');
       } else {
-        logger.warn('⚠️ Could not calculate ETA - missing location data');
+        const restaurantLocation = restaurant.location
+          ? {
+            latitude: restaurant.location.latitude,
+            longitude: restaurant.location.longitude
+          }
+          : null;
+
+        const userLocation = address.location?.coordinates
+          ? {
+            latitude: address.location.coordinates[1],
+            longitude: address.location.coordinates[0]
+          }
+          : null;
+
+        if (restaurantLocation && userLocation) {
+          const etaResult = await etaCalculationService.calculateInitialETA({
+            restaurantId: assignedRestaurantId,
+            restaurantLocation,
+            userLocation
+          });
+
+          // Add preparation time to ETA (use max preparation time)
+          const finalMinETA = etaResult.minETA + maxPreparationTime;
+          const finalMaxETA = etaResult.maxETA + maxPreparationTime;
+
+          // Update order with ETA (including preparation time)
+          order.eta = {
+            min: finalMinETA,
+            max: finalMaxETA,
+            lastUpdated: new Date(),
+            additionalTime: 0 // Will be updated when restaurant adds time
+          };
+          order.estimatedDeliveryTime = Math.ceil((finalMinETA + finalMaxETA) / 2);
+
+          // Create order created event
+          await OrderEvent.create({
+            orderId: order._id,
+            eventType: 'ORDER_CREATED',
+            data: {
+              initialETA: {
+                min: finalMinETA,
+                max: finalMaxETA
+              },
+              preparationTime: maxPreparationTime
+            },
+            timestamp: new Date()
+          });
+
+          logger.info('✅ ETA calculated for order:', {
+            orderId: order.orderId,
+            eta: `${finalMinETA}-${finalMaxETA} mins`,
+            preparationTime: maxPreparationTime,
+            baseETA: `${etaResult.minETA}-${etaResult.maxETA} mins`
+          });
+        } else {
+          logger.warn('⚠️ Could not calculate ETA - missing location data');
+        }
       }
     } catch (etaError) {
       logger.error('❌ Error calculating ETA:', etaError);
@@ -505,26 +559,30 @@ export const createOrder = async (req, res) => {
           logger.error('❌ Error creating wallet payment record:', paymentError);
         }
 
-        // Mark order as confirmed and payment as completed
+        // Mark payment as completed (order confirmation depends on hibermart approval)
         order.payment.method = 'wallet';
         order.payment.status = 'completed';
-        order.status = 'confirmed';
-        order.tracking.confirmed = {
-          status: true,
-          timestamp: new Date()
-        };
+        if (!isHibermartOrder) {
+          order.status = 'confirmed';
+          order.tracking.confirmed = {
+            status: true,
+            timestamp: new Date()
+          };
+        }
         await order.save();
 
-        // Notify restaurant about new wallet payment order
-        try {
-          const notifyRestaurantResult = await notifyRestaurantNewOrder(order, assignedRestaurantId, 'wallet');
-          logger.info('✅ Wallet payment order notification sent to restaurant', {
-            orderId: order.orderId,
-            restaurantId: assignedRestaurantId,
-            notifyRestaurantResult
-          });
-        } catch (notifyError) {
-          logger.error('❌ Error notifying restaurant about wallet payment order:', notifyError);
+        // Notify restaurant about new wallet payment order (skip for Hibermart)
+        if (!isHibermartOrder) {
+          try {
+            const notifyRestaurantResult = await notifyRestaurantNewOrder(order, assignedRestaurantId, 'wallet');
+            logger.info('✅ Wallet payment order notification sent to restaurant', {
+              orderId: order.orderId,
+              restaurantId: assignedRestaurantId,
+              notifyRestaurantResult
+            });
+          } catch (notifyError) {
+            logger.error('❌ Error notifying restaurant about wallet payment order:', notifyError);
+          }
         }
 
         // Respond to client
@@ -582,6 +640,29 @@ export const createOrder = async (req, res) => {
         logger.error('❌ Error creating COD payment record (continuing without blocking order):', {
           error: paymentError.message,
           stack: paymentError.stack
+        });
+      }
+
+      if (isHibermartOrder) {
+        order.payment.method = 'cash';
+        order.payment.status = 'pending';
+        order.status = 'pending';
+        if (!order.adminApproval?.status) {
+          order.adminApproval = { status: 'pending' };
+        }
+        await order.save();
+
+        return res.status(201).json({
+          success: true,
+          data: {
+            order: {
+              id: order._id.toString(),
+              orderId: order.orderId,
+              status: order.status,
+              total: pricing.total
+            },
+            razorpay: null
+          }
         });
       }
 
@@ -649,10 +730,35 @@ export const createOrder = async (req, res) => {
         await order.save();
       } catch (razorpayError) {
         logger.error(`Error creating Razorpay order: ${razorpayError.message}`);
-        // Continue with order creation even if Razorpay fails
-        // Payment can be handled later
+
+        // Distinguish between "not configured" and other errors
+        const isNotConfigured =
+          razorpayError.message.includes('not initialized') ||
+          razorpayError.message.includes('credentials') ||
+          razorpayError.message.includes('Unauthorized') ||
+          razorpayError.message.includes('401') ||
+          razorpayError.message.includes('Authentication');
+
+        if (isNotConfigured) {
+          // Clean up the pending order and inform the client
+          try { await order.deleteOne(); } catch (_) { }
+          return res.status(402).json({
+            success: false,
+            message: 'Payment gateway is not configured. Please add valid Razorpay API keys in the Admin Panel → Settings → Environment Variables.',
+            error: 'RAZORPAY_NOT_CONFIGURED'
+          });
+        }
+
+        // For other Razorpay errors, still fail cleanly
+        try { await order.deleteOne(); } catch (_) { }
+        return res.status(502).json({
+          success: false,
+          message: `Payment gateway error: ${razorpayError.message}`,
+          error: 'RAZORPAY_API_ERROR'
+        });
       }
     }
+
 
     logger.info(`Order created: ${order.orderId}`, {
       orderId: order.orderId,
@@ -691,14 +797,20 @@ export const createOrder = async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error(`Error creating order: ${error.message}`, {
+    logger.error(`❌ CRITICAL Error creating order: ${error.message}`, {
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
+      name: error.name,
+      // Log validation errors in detail
+      validationErrors: error.errors ? Object.entries(error.errors).map(([k, v]) => ({ field: k, message: v.message })) : undefined
     });
     res.status(500).json({
       success: false,
       message: 'Failed to create order',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      // Always send full error in dev for fast debugging
+      error: error.message,
+      details: error.errors ? Object.entries(error.errors).map(([k, v]) => `${k}: ${v.message}`) : undefined,
+      stack: process.env.NODE_ENV === 'development' ? error.stack?.split('\n').slice(0, 5) : undefined
     });
   }
 };
@@ -804,8 +916,12 @@ export const verifyOrderPayment = async (req, res) => {
     order.payment.razorpayPaymentId = razorpayPaymentId;
     order.payment.razorpaySignature = razorpaySignature;
     order.payment.transactionId = razorpayPaymentId;
-    order.status = 'confirmed';
-    order.tracking.confirmed = { status: true, timestamp: new Date() };
+    if (!order.isHibermartOrder) {
+      order.status = 'confirmed';
+      order.tracking.confirmed = { status: true, timestamp: new Date() };
+    } else if (!order.adminApproval?.status) {
+      order.adminApproval = { status: 'pending' };
+    }
     await order.save();
 
     // Calculate order settlement and hold escrow
@@ -823,67 +939,69 @@ export const verifyOrderPayment = async (req, res) => {
       // But log it for investigation
     }
 
-    // Notify restaurant about confirmed order (payment verified)
-    try {
-      const restaurantId = order.restaurantId?.toString() || order.restaurantId;
-      const restaurantName = order.restaurantName;
+    // Notify restaurant about confirmed order (payment verified) - skip Hibermart
+    if (!order.isHibermartOrder) {
+      try {
+        const restaurantId = order.restaurantId?.toString() || order.restaurantId;
+        const restaurantName = order.restaurantName;
 
-      // CRITICAL: Log detailed info before notification
-      logger.info('🔔 CRITICAL: Attempting to notify restaurant about confirmed order:', {
-        orderId: order.orderId,
-        orderMongoId: order._id.toString(),
-        restaurantId: restaurantId,
-        restaurantName: restaurantName,
-        restaurantIdType: typeof restaurantId,
-        orderRestaurantId: order.restaurantId,
-        orderRestaurantIdType: typeof order.restaurantId,
-        orderStatus: order.status,
-        orderCreatedAt: order.createdAt,
-        orderItems: order.items.map(item => ({ name: item.name, quantity: item.quantity }))
-      });
-
-      // Verify order has restaurantId before notifying
-      if (!restaurantId) {
-        logger.error('❌ CRITICAL: Cannot notify restaurant - order.restaurantId is missing!', {
+        // CRITICAL: Log detailed info before notification
+        logger.info('🔔 CRITICAL: Attempting to notify restaurant about confirmed order:', {
           orderId: order.orderId,
-          order: {
-            _id: order._id?.toString(),
-            restaurantId: order.restaurantId,
-            restaurantName: order.restaurantName
-          }
+          orderMongoId: order._id.toString(),
+          restaurantId: restaurantId,
+          restaurantName: restaurantName,
+          restaurantIdType: typeof restaurantId,
+          orderRestaurantId: order.restaurantId,
+          orderRestaurantIdType: typeof order.restaurantId,
+          orderStatus: order.status,
+          orderCreatedAt: order.createdAt,
+          orderItems: order.items.map(item => ({ name: item.name, quantity: item.quantity }))
         });
-        throw new Error('Order restaurantId is missing');
-      }
 
-      // Verify order has restaurantName before notifying
-      if (!restaurantName) {
-        logger.warn('⚠️ Order restaurantName is missing:', {
+        // Verify order has restaurantId before notifying
+        if (!restaurantId) {
+          logger.error('❌ CRITICAL: Cannot notify restaurant - order.restaurantId is missing!', {
+            orderId: order.orderId,
+            order: {
+              _id: order._id?.toString(),
+              restaurantId: order.restaurantId,
+              restaurantName: order.restaurantName
+            }
+          });
+          throw new Error('Order restaurantId is missing');
+        }
+
+        // Verify order has restaurantName before notifying
+        if (!restaurantName) {
+          logger.warn('⚠️ Order restaurantName is missing:', {
+            orderId: order.orderId,
+            restaurantId: restaurantId
+          });
+        }
+
+        const notificationResult = await notifyRestaurantNewOrder(order, restaurantId);
+
+        logger.info(`✅ Successfully notified restaurant about confirmed order:`, {
           orderId: order.orderId,
-          restaurantId: restaurantId
+          restaurantId: restaurantId,
+          restaurantName: restaurantName,
+          notificationResult: notificationResult
         });
+      } catch (notificationError) {
+        logger.error(`❌ CRITICAL: Error notifying restaurant after payment verification:`, {
+          error: notificationError.message,
+          stack: notificationError.stack,
+          orderId: order.orderId,
+          orderMongoId: order._id?.toString(),
+          restaurantId: order.restaurantId,
+          restaurantName: order.restaurantName,
+          orderStatus: order.status
+        });
+        // Don't fail payment verification if notification fails
+        // Order is still saved and restaurant can fetch it via API
+        // But log it as critical for debugging
       }
-
-      const notificationResult = await notifyRestaurantNewOrder(order, restaurantId);
-
-      logger.info(`✅ Successfully notified restaurant about confirmed order:`, {
-        orderId: order.orderId,
-        restaurantId: restaurantId,
-        restaurantName: restaurantName,
-        notificationResult: notificationResult
-      });
-    } catch (notificationError) {
-      logger.error(`❌ CRITICAL: Error notifying restaurant after payment verification:`, {
-        error: notificationError.message,
-        stack: notificationError.stack,
-        orderId: order.orderId,
-        orderMongoId: order._id?.toString(),
-        restaurantId: order.restaurantId,
-        restaurantName: order.restaurantName,
-        orderStatus: order.status
-      });
-      // Don't fail payment verification if notification fails
-      // Order is still saved and restaurant can fetch it via API
-      // But log it as critical for debugging
     }
 
     logger.info(`Order payment verified: ${order.orderId}`, {
@@ -1219,4 +1337,3 @@ export const calculateOrder = async (req, res) => {
     });
   }
 };
-

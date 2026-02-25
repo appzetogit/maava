@@ -68,6 +68,25 @@ export const sidebarMenuData = [
 
   {
     type: "section",
+    label: "HIBERMART MANAGEMENT",
+    items: [
+      {
+        type: "link",
+        label: "HiberMart Zone Setup",
+        path: "/admin/hibermart-zone-setup",
+        icon: "ShoppingBag",
+      },
+      {
+        type: "link",
+        label: "Hibermart Order Approval",
+        path: "/admin/hibermart/orders",
+        icon: "CheckCircle2",
+      },
+    ],
+  },
+
+  {
+    type: "section",
     label: "ORDER MANAGEMENT",
     items: [
       {
@@ -322,4 +341,3 @@ export const sidebarMenuData = [
     ],
   },
 ]
-

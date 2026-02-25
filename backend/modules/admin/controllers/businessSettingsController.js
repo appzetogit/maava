@@ -202,4 +202,3 @@ export const updateBusinessSettings = asyncHandler(async (req, res) => {
     return errorResponse(res, 500, 'Failed to update business settings');
   }
 });
-

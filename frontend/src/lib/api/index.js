@@ -1233,6 +1233,32 @@ export const adminAPI = {
     return apiClient.patch(API_ENDPOINTS.ADMIN.ZONE_STATUS.replace(':id', id));
   },
 
+  // HiberMart Zone Management (separate collection)
+  getHibermartZones: (params = {}) => {
+    return apiClient.get(API_ENDPOINTS.ADMIN.HIBERMART_ZONES, { params });
+  },
+
+  getHibermartZoneById: (id) => {
+    return apiClient.get(API_ENDPOINTS.ADMIN.HIBERMART_ZONE_BY_ID.replace(':id', id));
+  },
+
+  createHibermartZone: (data) => {
+    return apiClient.post(API_ENDPOINTS.ADMIN.HIBERMART_ZONES, data);
+  },
+
+  updateHibermartZone: (id, data) => {
+    return apiClient.put(API_ENDPOINTS.ADMIN.HIBERMART_ZONE_BY_ID.replace(':id', id), data);
+  },
+
+  deleteHibermartZone: (id) => {
+    return apiClient.delete(API_ENDPOINTS.ADMIN.HIBERMART_ZONE_BY_ID.replace(':id', id));
+  },
+
+  toggleHibermartZoneStatus: (id) => {
+    return apiClient.patch(API_ENDPOINTS.ADMIN.HIBERMART_ZONE_STATUS.replace(':id', id));
+  },
+
+
   // Earning Addon Management
   createEarningAddon: (data) => {
     return apiClient.post(API_ENDPOINTS.ADMIN.EARNING_ADDON, data);
@@ -1406,6 +1432,27 @@ export const adminAPI = {
     return apiClient.post(API_ENDPOINTS.ADMIN.FOOD_APPROVAL_REJECT.replace(':id', id), { reason });
   },
 
+  // Hibermart Order Approval
+  getPendingHibermartOrders: (params = {}) => {
+    return apiClient.get(API_ENDPOINTS.ADMIN.HIBERMART_ORDERS_PENDING, { params });
+  },
+
+  approveHibermartOrder: (id) => {
+    return apiClient.post(API_ENDPOINTS.ADMIN.HIBERMART_ORDER_APPROVE.replace(':id', id));
+  },
+
+  rejectHibermartOrder: (id, reason) => {
+    return apiClient.post(API_ENDPOINTS.ADMIN.HIBERMART_ORDER_REJECT.replace(':id', id), { reason });
+  },
+
+  // Hibermart Store Location
+  getHibermartStoreLocation: () => {
+    return apiClient.get(API_ENDPOINTS.ADMIN.HIBERMART_STORE_LOCATION);
+  },
+  updateHibermartStoreLocation: (data) => {
+    return apiClient.put(API_ENDPOINTS.ADMIN.HIBERMART_STORE_LOCATION, data);
+  },
+
   // Feedback Experience Management
   createFeedbackExperience: (data) => {
     return apiClient.post(API_ENDPOINTS.ADMIN.FEEDBACK_EXPERIENCE, data);
@@ -1545,4 +1592,3 @@ export const heroBannerAPI = {
     return apiClient.get(API_ENDPOINTS.HERO_BANNER.GOURMET_PUBLIC);
   },
 };
-

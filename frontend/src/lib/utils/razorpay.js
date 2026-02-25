@@ -72,28 +72,49 @@ export const initRazorpayPayment = async (options) => {
       prefill: {
         name: options.prefill?.name || '',
         email: options.prefill?.email || '',
-        contact: options.prefill?.contact || ''
+        contact: options.prefill?.contact || '',
+        // If a specific UPI app is selected, pre-select UPI method
+        ...(options.upiApp ? { method: 'upi' } : {})
       },
       notes: options.notes || {},
       theme: {
         color: '#E23744'
       },
-      handler: function(response) {
+      // Razorpay config to control UI behaviour
+      config: options.upiApp ? {
+        display: {
+          // Jump straight to the UPI block and show the selected app first
+          sequence: ['block.upiBlock'],
+          preferences: { show_default_blocks: false }
+        },
+        blocks: {
+          upiBlock: {
+            name: 'Pay via UPI',
+            instruments: [
+              // Primary: the UPI app the user tapped
+              ...(options.upiApp === 'google_pay' ? [{ method: 'upi', apps: ['google_pay'] }] : []),
+              ...(options.upiApp === 'paytm' ? [{ method: 'upi', apps: ['paytm'] }] : []),
+              ...(options.upiApp === 'phonepe' ? [{ method: 'upi', apps: ['phonepe'] }] : []),
+              // Fallback slot for manual UPI ID entry
+              { method: 'upi', flow: 'collect' }
+            ]
+          }
+        }
+      } : undefined,
+      handler: function (response) {
         if (options.handler) {
           options.handler(response);
         }
       },
       modal: {
-        ondismiss: function() {
+        ondismiss: function () {
           if (options.onClose) {
             options.onClose();
           }
         },
-        // Ensure modal is clickable
         escape: true,
         animation: true
       },
-      // Ensure proper z-index
       retry: {
         enabled: true,
         max_count: 3
@@ -101,9 +122,9 @@ export const initRazorpayPayment = async (options) => {
     };
 
     const razorpay = new window.Razorpay(razorpayOptions);
-    
+
     // Handle payment failures
-    razorpay.on('payment.failed', function(response) {
+    razorpay.on('payment.failed', function (response) {
       console.error('Razorpay payment failed:', response);
       if (options.onError) {
         options.onError(response.error || { description: 'Payment failed. Please try again.' });
@@ -111,7 +132,7 @@ export const initRazorpayPayment = async (options) => {
     });
 
     // Handle payment method selection failures
-    razorpay.on('payment.method_selection_failed', function(response) {
+    razorpay.on('payment.method_selection_failed', function (response) {
       console.error('Razorpay payment method selection failed:', response);
       if (options.onError) {
         options.onError(response.error || { description: 'Please select another payment method.' });
@@ -120,7 +141,7 @@ export const initRazorpayPayment = async (options) => {
 
     // Open Razorpay modal
     razorpay.open();
-    
+
     console.log('✅ Razorpay checkout opened successfully');
     console.log('Razorpay options:', {
       key: razorpayOptions.key ? 'Present' : 'Missing',

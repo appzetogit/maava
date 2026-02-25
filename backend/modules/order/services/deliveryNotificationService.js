@@ -128,27 +128,45 @@ export async function notifyDeliveryBoyNewOrder(order, deliveryPartnerId) {
       console.log(`✅ Delivery partner ${deliveryPartnerId} is connected via socket in room: ${connectionStatus.room}`);
     }
 
-    // Get restaurant details for pickup location
+    // Get restaurant details for pickup location (allow override for Hibermart/admin pickup)
     let restaurant = null;
-    if (mongoose.Types.ObjectId.isValid(order.restaurantId)) {
-      restaurant = await Restaurant.findById(order.restaurantId).lean();
+    let restaurantLocationOverride = null;
+    let restaurantNameOverride = null;
+    let restaurantAddressOverride = null;
+
+    if (order?.restaurantLocation) {
+      restaurantLocationOverride = order.restaurantLocation;
+      if (!restaurantLocationOverride.coordinates && restaurantLocationOverride.latitude && restaurantLocationOverride.longitude) {
+        restaurantLocationOverride.coordinates = [restaurantLocationOverride.longitude, restaurantLocationOverride.latitude];
+      }
+    } else if (order?.restaurantId && typeof order.restaurantId === 'object' && order.restaurantId?.location) {
+      restaurantLocationOverride = order.restaurantId.location;
+      restaurantNameOverride = order.restaurantId.name;
+      restaurantAddressOverride = order.restaurantId.address || order.restaurantId.location?.formattedAddress;
     }
-    if (!restaurant) {
-      restaurant = await Restaurant.findOne({
-        $or: [
-          { restaurantId: order.restaurantId },
-          { _id: order.restaurantId }
-        ]
-      }).lean();
+
+    if (!restaurantLocationOverride) {
+      if (mongoose.Types.ObjectId.isValid(order.restaurantId)) {
+        restaurant = await Restaurant.findById(order.restaurantId).lean();
+      }
+      if (!restaurant) {
+        restaurant = await Restaurant.findOne({
+          $or: [
+            { restaurantId: order.restaurantId },
+            { _id: order.restaurantId }
+          ]
+        }).lean();
+      }
     }
 
     // Calculate distances
     let pickupDistance = null;
     let deliveryDistance = null;
     
-    if (deliveryPartner.availability?.currentLocation?.coordinates && restaurant?.location?.coordinates) {
+    const resolvedRestaurantCoords = restaurantLocationOverride?.coordinates || restaurant?.location?.coordinates;
+    if (deliveryPartner.availability?.currentLocation?.coordinates && resolvedRestaurantCoords) {
       const [deliveryLng, deliveryLat] = deliveryPartner.availability.currentLocation.coordinates;
-      const [restaurantLng, restaurantLat] = restaurant.location.coordinates;
+      const [restaurantLng, restaurantLat] = resolvedRestaurantCoords;
       const [customerLng, customerLat] = order.address.location.coordinates;
 
       // Calculate pickup distance (delivery boy to restaurant)
@@ -169,15 +187,24 @@ export async function notifyDeliveryBoyNewOrder(order, deliveryPartnerId) {
     }
 
     // Prepare order notification data
+    const resolvedRestaurantAddress =
+      restaurantAddressOverride ||
+      restaurantLocationOverride?.formattedAddress ||
+      restaurantLocationOverride?.address ||
+      restaurant?.location?.formattedAddress ||
+      restaurant?.address ||
+      'Restaurant address';
+
     const orderNotification = {
       orderId: order.orderId,
       orderMongoId: order._id.toString(),
       restaurantId: order.restaurantId,
-      restaurantName: order.restaurantName,
-      restaurantLocation: restaurant?.location ? {
-        latitude: restaurant.location.coordinates[1],
-        longitude: restaurant.location.coordinates[0],
-        address: restaurant.location.formattedAddress || restaurant.address || 'Restaurant address'
+      restaurantName: restaurantNameOverride || order.restaurantName || restaurant?.name,
+      restaurantLocation: (restaurantLocationOverride || restaurant?.location) ? {
+        latitude: (restaurantLocationOverride?.coordinates || restaurant?.location?.coordinates)?.[1],
+        longitude: (restaurantLocationOverride?.coordinates || restaurant?.location?.coordinates)?.[0],
+        address: resolvedRestaurantAddress,
+        formattedAddress: resolvedRestaurantAddress
       } : null,
       customerLocation: {
         latitude: order.address.location.coordinates[1],
@@ -359,11 +386,19 @@ export async function notifyMultipleDeliveryBoys(order, deliveryPartnerIds, phas
         .lean();
     }
 
-    // Get restaurant details for complete address
+    // Get restaurant details for complete address (allow override for Hibermart/admin pickup)
     let restaurantAddress = 'Restaurant address';
     let restaurantLocation = null;
-    
-    if (orderWithUser.restaurantId) {
+
+    if (orderWithUser?.restaurantLocation) {
+      restaurantLocation = orderWithUser.restaurantLocation;
+      if (!restaurantLocation.coordinates && restaurantLocation.latitude && restaurantLocation.longitude) {
+        restaurantLocation.coordinates = [restaurantLocation.longitude, restaurantLocation.latitude];
+      }
+      restaurantAddress = orderWithUser.restaurantLocation.formattedAddress ||
+        orderWithUser.restaurantLocation.address ||
+        restaurantAddress;
+    } else if (orderWithUser.restaurantId) {
       // If restaurantId is populated, use it directly
       if (typeof orderWithUser.restaurantId === 'object') {
         restaurantAddress = orderWithUser.restaurantId.address || 
@@ -533,6 +568,7 @@ export async function notifyMultipleDeliveryBoys(order, deliveryPartnerIds, phas
           const sockets = await deliveryNamespace.in(room).fetchSockets();
           if (sockets.length > 0) {
             deliveryNamespace.to(room).emit('new_order_available', orderNotification);
+            deliveryNamespace.to(room).emit('new_order', orderNotification);
             deliveryNamespace.to(room).emit('play_notification_sound', {
               type: 'new_order_available',
               orderId: order.orderId,
@@ -551,6 +587,7 @@ export async function notifyMultipleDeliveryBoys(order, deliveryPartnerIds, phas
           // Still emit to room for when they connect
           roomVariations.forEach(room => {
             deliveryNamespace.to(room).emit('new_order_available', orderNotification);
+            deliveryNamespace.to(room).emit('new_order', orderNotification);
           });
           notifiedCount++;
         }
@@ -727,4 +764,3 @@ async function calculateEstimatedEarnings(deliveryDistance) {
     };
   }
 }
-

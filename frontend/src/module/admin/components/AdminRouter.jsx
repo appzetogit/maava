@@ -19,6 +19,12 @@ import AddZone from "../pages/restaurant/AddZone";
 import ViewZone from "../pages/restaurant/ViewZone";
 import AllZonesMap from "../pages/restaurant/AllZonesMap";
 import DeliveryBoyViewMap from "../pages/restaurant/DeliveryBoyViewMap";
+// HiberMart Zone Management
+import HibermartZoneSetup from "../pages/inmart/HibermartZoneSetup";
+import AddHibermartZone from "../pages/inmart/AddHibermartZone";
+import ViewHibermartZone from "../pages/inmart/ViewHibermartZone";
+import HibermartOrderApproval from "../pages/inmart/HibermartOrderApproval";
+import HibermartStoreLocation from "../pages/inmart/HibermartStoreLocation";
 import RestaurantsList from "../pages/restaurant/RestaurantsList";
 import AddRestaurant from "../pages/restaurant/AddRestaurant";
 import EditRestaurant from "../pages/restaurant/EditRestaurant";
@@ -170,6 +176,13 @@ export default function AdminRouter() {
         <Route path="zone-setup/add" element={<AddZone />} />
         <Route path="zone-setup/edit/:id" element={<AddZone />} />
         <Route path="zone-setup/view/:id" element={<ViewZone />} />
+        {/* HIBERMART ZONE MANAGEMENT */}
+        <Route path="hibermart-zone-setup" element={<HibermartZoneSetup />} />
+        <Route path="hibermart-zone-setup/add" element={<AddHibermartZone />} />
+        <Route path="hibermart-zone-setup/edit/:id" element={<AddHibermartZone />} />
+        <Route path="hibermart-zone-setup/view/:id" element={<ViewHibermartZone />} />
+        <Route path="hibermart/store-location" element={<HibermartStoreLocation />} />
+        <Route path="hibermart/orders" element={<HibermartOrderApproval />} />
         <Route path="food-approval" element={<FoodApproval />} />
         {/* Restaurants */}
         <Route path="restaurants" element={<RestaurantsList />} />

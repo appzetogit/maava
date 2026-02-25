@@ -347,10 +347,23 @@ export const API_ENDPOINTS = {
     FOOD_APPROVALS: '/admin/food-approvals',
     FOOD_APPROVAL_APPROVE: '/admin/food-approvals/:id/approve',
     FOOD_APPROVAL_REJECT: '/admin/food-approvals/:id/reject',
+    HIBERMART_ORDERS_PENDING: '/admin/hibermart-orders/pending',
+    HIBERMART_ORDER_APPROVE: '/admin/hibermart-orders/:id/approve',
+    HIBERMART_ORDER_REJECT: '/admin/hibermart-orders/:id/reject',
+    HIBERMART_STORE_LOCATION: '/admin/hibermart-store-location',
     OFFERS: '/admin/offers',
     ZONES: '/admin/zones',
     ZONE_BY_ID: '/admin/zones/:id',
     ZONE_STATUS: '/admin/zones/:id/status',
+    // HiberMart Zone endpoints (separate collection)
+    HIBERMART_ZONES: '/admin/inmart/zones',
+    HIBERMART_ZONE_BY_ID: '/admin/inmart/zones/:id',
+    HIBERMART_ZONE_STATUS: '/admin/inmart/zones/:id/status',
+  },
+  // HiberMart public endpoints
+  HIBERMART: {
+    ZONE_DETECT: '/hibermart/zones/detect',
+    ZONES_PUBLIC: '/hibermart/zones/public',
   },
   // Order endpoints
   ORDER: {
@@ -406,4 +419,3 @@ export default {
   API_BASE_URL,
   API_ENDPOINTS,
 };
-

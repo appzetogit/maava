@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import cors from 'cors';
+import axios from 'axios';
 import cookieParser from 'cookie-parser';
 import mongoSanitize from 'express-mongo-sanitize';
 import rateLimit from 'express-rate-limit';
@@ -54,6 +55,8 @@ import diningRoutes from './modules/dining/index.js';
 import diningAdminRoutes from './modules/dining/routes/diningAdminRoutes.js';
 import inmartRoutes from './modules/inmart/routes/inmartRoutes.js';
 import inmartAdminRoutes from './modules/inmart/routes/inmartAdminRoutes.js';
+import hibermartZoneRoutes from './modules/inmart/routes/hibermartZoneRoutes.js';
+
 
 
 // Validate required environment variables
@@ -382,6 +385,32 @@ app.use('/api', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/restaurant', restaurantRoutes);
 app.use('/api/delivery', deliveryRoutes);
+
+// Simple reverse geocode proxy to avoid CORS issues in browser
+app.get('/api/geocode/reverse', async (req, res) => {
+  try {
+    const { lat, lon } = req.query;
+    if (!lat || !lon) {
+      return res.status(400).json({ success: false, message: 'lat and lon are required' });
+    }
+    const response = await axios.get('https://nominatim.openstreetmap.org/reverse', {
+      params: {
+        format: 'json',
+        lat,
+        lon,
+        addressdetails: 1
+      },
+      headers: {
+        'User-Agent': 'Maava-App/1.0 (local-dev)'
+      },
+      timeout: 10000
+    });
+    return res.json({ success: true, data: response.data });
+  } catch (error) {
+    console.error('Reverse geocode proxy error:', error?.message || error);
+    return res.status(502).json({ success: false, message: 'Reverse geocode failed' });
+  }
+});
 app.use('/api/order', orderRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/menu', menuRoutes);
@@ -411,6 +440,10 @@ app.use('/api/dining', diningRoutes);
 app.use('/api/admin/dining', diningAdminRoutes);
 app.use('/api/inmart', inmartRoutes);
 app.use('/api/admin/inmart', inmartAdminRoutes);
+// HiberMart Zone Management (separate collection from restaurant zones)
+app.use('/api/admin/inmart/zones', hibermartZoneRoutes);
+app.use('/api/hibermart/zones', hibermartZoneRoutes); // public detect + list endpoint
+
 
 // 404 handler - but skip Socket.IO paths
 app.use((req, res, next) => {
@@ -662,4 +695,3 @@ process.on('unhandledRejection', (err) => {
 });
 
 export default app;
-

@@ -12,7 +12,8 @@ import {
     Zap,
     Heart,
     Coffee,
-    Compass
+    Compass,
+    MapPin
 } from "lucide-react"
 
 export const hibermartSidebarMenuData = [
@@ -109,6 +110,18 @@ export const hibermartSidebarMenuData = [
                 label: "Orders to Process",
                 path: "/admin/hibermart/orders",
                 icon: "Truck",
+            },
+            {
+                type: "link",
+                label: "Zone Setup",
+                path: "/admin/hibermart-zone-setup",
+                icon: "MapPin",
+            },
+            {
+                type: "link",
+                label: "Store Location",
+                path: "/admin/hibermart/store-location",
+                icon: "MapPin",
             },
         ],
     },

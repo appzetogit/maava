@@ -73,6 +73,23 @@ export function CartProvider({ children }) {
         const firstRestaurantNameNormalized = normalizeName(firstItemRestaurantName);
         const newRestaurantNameNormalized = normalizeName(newItemRestaurantName);
 
+        const isHibermartItem =
+          newItemRestaurantId === 'hibermart-id' ||
+          newRestaurantNameNormalized === 'hibermart';
+        const isExistingHibermart =
+          firstItemRestaurantId === 'hibermart-id' ||
+          firstRestaurantNameNormalized === 'hibermart';
+
+        // If switching between Hibermart and Restaurant carts, auto-reset cart
+        if (isHibermartItem !== isExistingHibermart) {
+          console.warn('🧹 Switching cart between Hibermart and Restaurant. Resetting cart.', {
+            from: firstItemRestaurantName,
+            to: newItemRestaurantName
+          });
+          const newItem = { ...item, quantity: 1 };
+          return [newItem];
+        }
+
         // Check restaurant name first (more reliable than IDs which can have different formats)
         // If names match, allow it even if IDs differ (same restaurant, different ID format)
         if (firstRestaurantNameNormalized && newRestaurantNameNormalized) {

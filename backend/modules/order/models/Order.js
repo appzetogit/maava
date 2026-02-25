@@ -55,7 +55,7 @@ const orderSchema = new mongoose.Schema({
     type: [orderItemSchema],
     required: true,
     validate: {
-      validator: function(items) {
+      validator: function (items) {
         return items && items.length > 0;
       },
       message: 'Order must have at least one item'
@@ -64,7 +64,7 @@ const orderSchema = new mongoose.Schema({
   address: {
     label: {
       type: String,
-      enum: ['Home', 'Office', 'Other']
+      enum: ['Home', 'Office', 'Other', 'House', 'Work', 'Hotel', 'Apartment', 'Friends & Family']
     },
     street: String,
     additionalDetails: String,
@@ -148,6 +148,29 @@ const orderSchema = new mongoose.Schema({
     enum: ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered', 'cancelled'],
     default: 'pending',
     index: true
+  },
+  isHibermartOrder: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
+  adminApproval: {
+    status: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending'
+    },
+    approvedAt: Date,
+    approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Admin'
+    },
+    rejectedAt: Date,
+    rejectedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Admin'
+    },
+    rejectionReason: String
   },
   tracking: {
     confirmed: {
@@ -265,7 +288,12 @@ const orderSchema = new mongoose.Schema({
     zoneId: String,
     zoneName: String,
     deliveryPartnerId: String,
-    assignedAt: Date
+    assignedAt: Date,
+    priorityNotifiedAt: Date,
+    expandedNotifiedAt: Date,
+    notificationPhase: String,
+    priorityDeliveryPartnerIds: [String],
+    expandedDeliveryPartnerIds: [String]
   },
   deliveryState: {
     status: {
@@ -307,7 +335,7 @@ orderSchema.index({ status: 1, createdAt: -1 });
 orderSchema.index({ 'payment.razorpayOrderId': 1 });
 
 // Generate order ID before saving (fallback if not provided)
-orderSchema.pre('save', async function(next) {
+orderSchema.pre('save', async function (next) {
   if (!this.orderId) {
     const timestamp = Date.now();
     const random = Math.floor(Math.random() * 1000);
@@ -317,9 +345,9 @@ orderSchema.pre('save', async function(next) {
 });
 
 // Update tracking when status changes
-orderSchema.pre('save', function(next) {
+orderSchema.pre('save', function (next) {
   const now = new Date();
-  
+
   if (this.isModified('status')) {
     switch (this.status) {
       case 'confirmed':
@@ -355,9 +383,8 @@ orderSchema.pre('save', function(next) {
         break;
     }
   }
-  
+
   next();
 });
 
 export default mongoose.model('Order', orderSchema);
-

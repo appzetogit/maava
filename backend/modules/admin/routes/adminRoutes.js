@@ -128,6 +128,15 @@ import {
   rejectFoodItem
 } from '../controllers/foodApprovalController.js';
 import {
+  getPendingHibermartOrders,
+  approveHibermartOrder,
+  rejectHibermartOrder
+} from '../controllers/hibermartOrderApprovalController.js';
+import {
+  getHibermartStoreLocation,
+  updateHibermartStoreLocation
+} from '../../inmart/controllers/hibermartStoreLocationController.js';
+import {
   getAllComplaints,
   getComplaintDetails,
   updateComplaintStatus,
@@ -386,6 +395,13 @@ router.get('/food-approvals', getPendingFoodApprovals);
 router.post('/food-approvals/:id/approve', approveFoodItem);
 router.post('/food-approvals/:id/reject', rejectFoodItem);
 
+// Hibermart Order Approval Management
+router.get('/hibermart-orders/pending', getPendingHibermartOrders);
+router.post('/hibermart-orders/:id/approve', approveHibermartOrder);
+router.post('/hibermart-orders/:id/reject', rejectHibermartOrder);
+router.get('/hibermart-store-location', authenticateAdmin, getHibermartStoreLocation);
+router.put('/hibermart-store-location', authenticateAdmin, updateHibermartStoreLocation);
+
 // Offers Management
 router.get('/offers', getAllOffers);
 
@@ -541,4 +557,3 @@ router.post('/withdrawal/:id/approve', approveWithdrawalRequest);
 router.post('/withdrawal/:id/reject', rejectWithdrawalRequest);
 
 export default router;
-

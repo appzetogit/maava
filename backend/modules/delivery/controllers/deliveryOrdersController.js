@@ -4,6 +4,7 @@ import Delivery from '../models/Delivery.js';
 import Order from '../../order/models/Order.js';
 import Payment from '../../payment/models/Payment.js';
 import Restaurant from '../../restaurant/models/Restaurant.js';
+import HibermartStoreLocation from '../../inmart/models/HibermartStoreLocation.js';
 import DeliveryWallet from '../models/DeliveryWallet.js';
 import DeliveryBoyCommission from '../../admin/models/DeliveryBoyCommission.js';
 import RestaurantWallet from '../../restaurant/models/RestaurantWallet.js';
@@ -171,6 +172,32 @@ export const getOrderDetails = asyncHandler(async (req, res) => {
       // Order is assigned to another delivery partner
       console.warn(`⚠️ Order ${order.orderId} is assigned to ${orderDeliveryPartnerId}, but current delivery partner is ${currentDeliveryId}`);
       return errorResponse(res, 403, 'Order not found or not available for you');
+    }
+
+    // Hibermart: attach store location for pickup if missing
+    try {
+      const isHibermartOrder =
+        order.isHibermartOrder ||
+        order.restaurantId === 'hibermart-id' ||
+        order.restaurantName?.toLowerCase?.() === 'hibermart';
+      if (isHibermartOrder && !order.restaurantLocation) {
+        const storeDoc = await HibermartStoreLocation.getOrCreate();
+        const storeLoc = storeDoc?.location;
+        if (storeLoc) {
+          const lat = storeLoc.coordinates?.[1] || storeLoc.latitude;
+          const lng = storeLoc.coordinates?.[0] || storeLoc.longitude;
+          order.restaurantLocation = {
+            ...storeLoc,
+            latitude: lat,
+            longitude: lng,
+            coordinates: storeLoc.coordinates?.length ? storeLoc.coordinates : (lng != null && lat != null ? [lng, lat] : undefined),
+            address: storeLoc.formattedAddress || storeLoc.address || 'Hibermart Store Location',
+            formattedAddress: storeLoc.formattedAddress || storeLoc.address || 'Hibermart Store Location'
+          };
+        }
+      }
+    } catch (storeErr) {
+      console.warn('⚠️ Failed to attach Hibermart store location to order details:', storeErr?.message || storeErr);
     }
 
     // Resolve payment method for delivery boy (COD vs Online)
@@ -406,24 +433,43 @@ export const acceptOrder = asyncHandler(async (req, res) => {
         [restaurantLng, restaurantLat] = order.restaurantId.location.coordinates;
         console.log(`📍 Restaurant location from populated order: lat=${restaurantLat}, lng=${restaurantLng}`);
       } else {
-        // Try to fetch restaurant from database
-        console.log(`⚠️ Restaurant location not in populated order, fetching from database...`);
-        const restaurantId = order.restaurantId?._id || order.restaurantId;
-        console.log(`🔍 Fetching restaurant with ID: ${restaurantId}`);
-        
-        const restaurant = await Restaurant.findById(restaurantId);
-        if (restaurant && restaurant.location && restaurant.location.coordinates) {
-          [restaurantLng, restaurantLat] = restaurant.location.coordinates;
-          console.log(`📍 Restaurant location from database: lat=${restaurantLat}, lng=${restaurantLng}`);
+        // Hibermart fallback: use admin-set Hibermart store location
+        const isHibermartOrder =
+          order.isHibermartOrder ||
+          order.restaurantId === 'hibermart-id' ||
+          order.restaurantName?.toLowerCase?.() === 'hibermart';
+
+        if (isHibermartOrder) {
+          const storeDoc = await HibermartStoreLocation.getOrCreate();
+          const storeLoc = storeDoc?.location;
+          if (storeLoc?.coordinates?.length >= 2 || (storeLoc?.latitude && storeLoc?.longitude)) {
+            restaurantLat = storeLoc.coordinates?.[1] || storeLoc.latitude;
+            restaurantLng = storeLoc.coordinates?.[0] || storeLoc.longitude;
+            console.log(`📍 Hibermart store location: lat=${restaurantLat}, lng=${restaurantLng}`);
+          } else {
+            console.error(`❌ Hibermart store location not set`);
+            return errorResponse(res, 400, 'Hibermart store location not set');
+          }
         } else {
-          console.error(`❌ Restaurant location not found for restaurant ID: ${restaurantId}`);
-          console.error(`❌ Restaurant data:`, {
-            restaurantExists: !!restaurant,
-            hasLocation: !!(restaurant?.location),
-            hasCoordinates: !!(restaurant?.location?.coordinates),
-            locationType: typeof restaurant?.location
-          });
-          return errorResponse(res, 400, 'Restaurant location not found');
+          // Try to fetch restaurant from database
+          console.log(`⚠️ Restaurant location not in populated order, fetching from database...`);
+          const restaurantId = order.restaurantId?._id || order.restaurantId;
+          console.log(`🔍 Fetching restaurant with ID: ${restaurantId}`);
+          
+          const restaurant = await Restaurant.findById(restaurantId);
+          if (restaurant && restaurant.location && restaurant.location.coordinates) {
+            [restaurantLng, restaurantLat] = restaurant.location.coordinates;
+            console.log(`📍 Restaurant location from database: lat=${restaurantLat}, lng=${restaurantLng}`);
+          } else {
+            console.error(`❌ Restaurant location not found for restaurant ID: ${restaurantId}`);
+            console.error(`❌ Restaurant data:`, {
+              restaurantExists: !!restaurant,
+              hasLocation: !!(restaurant?.location),
+              hasCoordinates: !!(restaurant?.location?.coordinates),
+              locationType: typeof restaurant?.location
+            });
+            return errorResponse(res, 400, 'Restaurant location not found');
+          }
         }
       }
       
@@ -1920,4 +1966,3 @@ export const completeDelivery = asyncHandler(async (req, res) => {
     return errorResponse(res, 500, `Failed to complete delivery: ${error.message}`);
   }
 });
-

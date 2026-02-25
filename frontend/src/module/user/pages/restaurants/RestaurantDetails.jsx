@@ -346,10 +346,10 @@ export default function RestaurantDetails() {
               : (apiRestaurant?.cuisines && Array.isArray(apiRestaurant.cuisines) && apiRestaurant.cuisines.length > 0)
                 ? apiRestaurant.cuisines[0]
                 : (actualRestaurant?.cuisine || apiRestaurant?.cuisine || actualRestaurant?.category || apiRestaurant?.category || "Multi-cuisine"),
-            rating: actualRestaurant?.rating ?? apiRestaurant?.rating ?? actualRestaurant?.averageRating ?? apiRestaurant?.averageRating ?? 4.5,
+            rating: actualRestaurant?.rating ?? apiRestaurant?.rating ?? actualRestaurant?.averageRating ?? apiRestaurant?.averageRating ?? null,
             reviews: actualRestaurant?.totalRatings ?? apiRestaurant?.totalRatings ?? actualRestaurant?.reviewCount ?? apiRestaurant?.reviewCount ?? actualRestaurant?.reviews?.length ?? apiRestaurant?.reviews?.length ?? 0,
-            deliveryTime: actualRestaurant?.estimatedDeliveryTime || apiRestaurant?.estimatedDeliveryTime || actualRestaurant?.deliveryTime || apiRestaurant?.deliveryTime || actualRestaurant?.avgDeliveryTime || apiRestaurant?.avgDeliveryTime || "25-30 mins",
-            distance: calculatedDistance || actualRestaurant?.distance || apiRestaurant?.distance || actualRestaurant?.distanceFromUser || apiRestaurant?.distanceFromUser || "1.2 km",
+            deliveryTime: actualRestaurant?.estimatedDeliveryTime || apiRestaurant?.estimatedDeliveryTime || actualRestaurant?.deliveryTime || apiRestaurant?.deliveryTime || actualRestaurant?.avgDeliveryTime || apiRestaurant?.avgDeliveryTime || null,
+            distance: calculatedDistance || actualRestaurant?.distance || apiRestaurant?.distance || actualRestaurant?.distanceFromUser || apiRestaurant?.distanceFromUser || null,
             location: formattedAddress,
             locationObject: locationObj, // Store full location object for reference
             image: actualRestaurant?.profileImage?.url
@@ -365,17 +365,12 @@ export default function RestaurantDetails() {
               || actualRestaurant?.image
               || apiRestaurant?.image
               || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=600&fit=crop",
-            priceRange: apiRestaurant?.priceRange || "$$",
-            offers: Array.isArray(apiRestaurant?.offers) ? apiRestaurant.offers : [], // Will be populated from menu/offers API later
-            offerText: apiRestaurant?.offer || "FLAT 50% OFF",
+            priceRange: apiRestaurant?.priceRange || null,
+            offers: Array.isArray(apiRestaurant?.offers) ? apiRestaurant.offers : [],
+            offerText: apiRestaurant?.offer || null,
             offerCount: apiRestaurant?.offerCount ?? 0,
             restaurantOffers: {
-              goldOffer: {
-                title: apiRestaurant?.restaurantOffers?.goldOffer?.title || "Gold exclusive offer",
-                description: apiRestaurant?.restaurantOffers?.goldOffer?.description || "Free delivery above ₹99",
-                unlockText: apiRestaurant?.restaurantOffers?.goldOffer?.unlockText || "join Gold to unlock",
-                buttonText: apiRestaurant?.restaurantOffers?.goldOffer?.buttonText || "Add Gold - ₹1",
-              },
+              goldOffer: apiRestaurant?.restaurantOffers?.goldOffer || null,
               coupons: Array.isArray(apiRestaurant?.restaurantOffers?.coupons)
                 ? apiRestaurant.restaurantOffers.coupons
                 : [],
@@ -385,15 +380,10 @@ export default function RestaurantDetails() {
             menu: Array.isArray(apiRestaurant?.menu) ? apiRestaurant.menu : [],
             slug: apiRestaurant?.slug || apiRestaurant?.name?.toLowerCase().replace(/\s+/g, '-') || slug || "unknown",
             restaurantId: apiRestaurant?.restaurantId || apiRestaurant?._id || apiRestaurant?.id || null,
-            // Add other fields with defaults
-            featuredDish: apiRestaurant?.featuredDish || "Special Dish",
-            featuredPrice: apiRestaurant?.featuredPrice ?? 249,
-            // Additional safety fields
+            featuredDish: apiRestaurant?.featuredDish || null,
+            featuredPrice: apiRestaurant?.featuredPrice ?? null,
             openDays: Array.isArray(apiRestaurant?.openDays) ? apiRestaurant.openDays : [],
-            deliveryTimings: apiRestaurant?.deliveryTimings || {
-              openingTime: "09:00",
-              closingTime: "22:00",
-            },
+            deliveryTimings: apiRestaurant?.deliveryTimings || null,
             cuisines: Array.isArray(apiRestaurant?.cuisines) ? apiRestaurant.cuisines : [],
             profileImage: apiRestaurant?.profileImage || null,
             menuImages: Array.isArray(apiRestaurant?.menuImages) ? apiRestaurant.menuImages : [],
@@ -510,52 +500,21 @@ export default function RestaurantDetails() {
                   })) || []
                 })))
 
-                // Create high-quality mock items to match user's screenshot requirements
-                const mockThalis = [
-                  {
-                    id: "thali-01",
-                    name: "Mid Month Thali",
-                    price: 100,
-                    originalPrice: 242,
-                    foodType: "Veg",
-                    isRecommended: true,
-                    rating: 3.8,
-                    reviews: 2000,
-                    image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=800&auto=format&fit=crop",
-                    description: "A perfect balance of nutrition and taste for your mid-month cravings."
-                  },
-                  {
-                    id: "thali-02",
-                    name: "Salary day thali",
-                    price: 110,
-                    originalPrice: 279,
-                    foodType: "Veg",
-                    isRecommended: true,
-                    rating: 3.9,
-                    reviews: 3100,
-                    image: "https://images.unsplash.com/photo-1626777552726-4a6b547b4e5c?w=800&auto=format&fit=crop",
-                    description: "Celebrate your payday with our special lavish variety thali."
-                  }
-                ]
-
-                // Combine real recommended items with mock thalis for a rich demo
-                const combinedRecommended = [...mockThalis, ...recommendedItems]
-
-                // Always create recommended section (even if empty)
-                const thaliSection = { name: "Thali", items: mockThalis, subsections: [] }
-                const finalMenuSections = [
-                  { name: "Recommended for you", items: combinedRecommended, subsections: [] },
-                  thaliSection,
-                  ...menuSections
-                ]
+                // Build recommended section from real API data only
+                const finalMenuSections = recommendedItems.length > 0
+                  ? [
+                    { name: "Recommended for you", items: recommendedItems, subsections: [] },
+                    ...menuSections
+                  ]
+                  : menuSections
 
                 setRestaurant(prev => ({
                   ...prev,
                   menuSections: finalMenuSections,
                 }))
 
-                // Set first 3 sections (Recommended, Starters, Main Course) as expanded by default
-                const defaultExpandedSections = new Set([0, 1, 2]) // Index 0, 1, 2
+                // Expand first 2 sections by default
+                const defaultExpandedSections = new Set([0, 1])
                 setExpandedSections(defaultExpandedSections)
 
                 console.log('Fetched menu sections with recommended items:', finalMenuSections)
@@ -1235,9 +1194,8 @@ export default function RestaurantDetails() {
 
   // Highlight offers/texts for the blue offer line
   const highlightOffers = [
-    "Upto 50% OFF",
-    restaurant?.offerText || "",
-    ...(Array.isArray(restaurant?.offers) ? restaurant.offers.map((offer) => offer?.title || "") : []),
+    ...(restaurant?.offerText ? [restaurant.offerText] : []),
+    ...(Array.isArray(restaurant?.offers) ? restaurant.offers.map((offer) => offer?.title || "").filter(Boolean) : []),
   ]
 
   // Auto-rotate images every 3 seconds
@@ -1377,16 +1335,18 @@ export default function RestaurantDetails() {
             </Button>
           </div>
 
-          {/* Top Badges */}
+          {/* Top Badges - only show if data available */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 flex items-center justify-center">
-                <svg viewBox="0 0 24 24" className="w-4 h-4 text-emerald-600 fill-current">
-                  <path d="M12 2L4.5 20.29L5.21 21L12 18L18.79 21L19.5 20.29L12 2Z" />
-                </svg>
+            {restaurant?.isVeg && (
+              <div className="flex items-center gap-1.5">
+                <div className="w-5 h-5 flex items-center justify-center">
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 text-emerald-600 fill-current">
+                    <path d="M12 2L4.5 20.29L5.21 21L12 18L18.79 21L19.5 20.29L12 2Z" />
+                  </svg>
+                </div>
+                <span className="text-[11px] font-black text-emerald-600 uppercase tracking-tight">Pure Veg</span>
               </div>
-              <span className="text-[11px] font-black text-emerald-600 uppercase tracking-tight">Pure Veg</span>
-            </div>
+            )}
             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 rounded-md border border-blue-100">
               <Check className="w-3 h-3 text-blue-600" strokeWidth={4} />
               <span className="text-[10px] font-black text-blue-600 uppercase tracking-tight">Maava Seal</span>
@@ -1410,61 +1370,50 @@ export default function RestaurantDetails() {
                 className="flex items-center gap-1.5 text-[13px] font-bold text-gray-500 cursor-pointer group"
                 onClick={() => setShowLocationSheet(true)}
               >
-                <span>{restaurant?.deliveryTime || "25-30"} mins</span>
-                <span className="w-0.5 h-0.5 rounded-full bg-gray-300" />
+                {restaurant?.deliveryTime && (
+                  <><span>{restaurant.deliveryTime} mins</span>
+                    <span className="w-0.5 h-0.5 rounded-full bg-gray-300" /></>
+                )}
                 <span className="group-hover:text-gray-900 transition-colors">{restaurant?.location || "Location"}</span>
                 <ChevronDown className="h-4 w-4 text-gray-400 group-hover:text-gray-900" />
               </div>
             </div>
 
             <div className="flex flex-col items-center border-l border-gray-100 dark:border-gray-800 pl-4 h-full justify-center">
-              <div className="bg-neutral-800 text-white rounded-full px-3 py-1 flex items-center gap-1 shadow-sm min-w-[60px] justify-center">
-                <span className="text-sm font-black tracking-tighter">{restaurant?.rating || "4.4"}</span>
-                <Star className="h-3 w-3 fill-white text-white" />
-              </div>
-              <div className="mt-1 flex flex-col items-center">
-                <span className="text-[12px] font-black text-gray-900 dark:text-white leading-none">
-                  {restaurant?.reviews ? <span>{restaurant.reviews.toLocaleString()}+</span> : "1.2K+"}
-                </span>
-                <span className="text-[8px] font-bold text-gray-500 uppercase tracking-widest mt-0.5">ratings</span>
-              </div>
+              {restaurant?.rating != null && (
+                <div className="bg-neutral-800 text-white rounded-full px-3 py-1 flex items-center gap-1 shadow-sm min-w-[60px] justify-center">
+                  <span className="text-sm font-black tracking-tighter">{restaurant.rating}</span>
+                  <Star className="h-3 w-3 fill-white text-white" />
+                </div>
+              )}
+              {restaurant?.reviews > 0 && (
+                <div className="mt-1 flex flex-col items-center">
+                  <span className="text-[12px] font-black text-gray-900 dark:text-white leading-none">
+                    {restaurant.reviews.toLocaleString()}+
+                  </span>
+                  <span className="text-[8px] font-bold text-gray-500 uppercase tracking-widest mt-0.5">ratings</span>
+                </div>
+              )}
             </div>
           </div>
 
           <div className="h-px bg-gray-100 dark:bg-gray-800 mb-3" />
 
-          {/* Offers Display matching Screenshot 1 Style */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            <div className="border-2 border-dashed border-gray-200 rounded-2xl p-3 flex flex-col justify-center gap-0.5 bg-white shadow-sm relative overflow-hidden group hover:border-black transition-all">
-              <div className="absolute top-0 right-0 p-1 opacity-10">
-                <Percent className="w-8 h-8" />
-              </div>
-              <span className="text-xs font-black text-gray-900 uppercase">Upto ₹100</span>
-              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">NO CODE REQUIRED | ABOVE ₹399</span>
-            </div>
-
-            <div className="border border-gray-100 rounded-2xl p-3 flex items-center gap-3 bg-white shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-8 h-8 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center">
-                <div className="w-5 h-5 bg-rose-600 rounded-lg flex items-center justify-center">
-                  <span className="text-[10px] text-white font-black italic">A</span>
+          {/* Offers Display - only render if real offers exist */}
+          {Array.isArray(restaurant?.offers) && restaurant.offers.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {restaurant.offers.map((offer, idx) => (
+                <div key={idx} className="border border-gray-100 rounded-2xl p-3 flex items-center gap-3 bg-white shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black text-gray-900 uppercase">{offer.title || offer.name}</span>
+                    {offer.description && (
+                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">{offer.description}</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs font-black text-gray-900 uppercase">Flat ₹150</span>
-                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">USE AXISBANK | ABOVE ₹1000</span>
-              </div>
+              ))}
             </div>
-          </div>
-
-          {/* Bottom Membership Banner matching Screenshot 1 */}
-          <div className="mt-4 bg-[#281c1c] rounded-2xl p-3.5 flex items-center justify-between shadow-lg shadow-rose-900/10 border border-white/5">
-            <div className="flex items-center gap-2">
-              <span className="text-[13px] font-black text-white/90">Free Del + Extra 15% off above ₹400</span>
-            </div>
-            <div className="bg-rose-500 rounded-full px-2.5 py-1 flex items-center shadow-sm">
-              <span className="text-[10px] font-black text-white uppercase tracking-tighter">one</span>
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -1631,7 +1580,7 @@ export default function RestaurantDetails() {
                           const quantity = quantities[item.id] || 0
                           const isVeg = item.foodType === "Veg"
                           const finalPrice = getFinalPrice(item)
-                          const originalPrice = item.originalPrice || Math.round(finalPrice * 1.5) // Fallback for demo
+                          const originalPrice = item.originalPrice || null
 
                           return (
                             <div
@@ -1652,10 +1601,12 @@ export default function RestaurantDetails() {
                                       <div className="w-1.5 h-1.5 bg-rose-600 rounded-full"></div>
                                     </div>
                                   )}
-                                  <div className="flex items-center gap-1 px-1.5 py-0.5 bg-rose-50 rounded">
-                                    <Star className="w-2.5 h-2.5 text-rose-500 fill-current" />
-                                    <span className="text-[10px] font-black text-rose-600 uppercase">Bestseller</span>
-                                  </div>
+                                  {item.isBestseller && (
+                                    <div className="flex items-center gap-1 px-1.5 py-0.5 bg-rose-50 rounded">
+                                      <Star className="w-2.5 h-2.5 text-rose-500 fill-current" />
+                                      <span className="text-[10px] font-black text-rose-600 uppercase">Bestseller</span>
+                                    </div>
+                                  )}
                                 </div>
 
                                 <h3 className="font-black text-gray-900 dark:text-white text-base leading-tight">
@@ -1670,24 +1621,30 @@ export default function RestaurantDetails() {
                                   )}
                                 </div>
 
-                                {/* Custom Offer Chip matching Screenshot 2 */}
-                                <div className="inline-flex items-center gap-1 bg-rose-50 border border-rose-100 px-1.5 py-0.5 rounded-full">
-                                  <Lock className="w-2.5 h-2.5 text-rose-600 fill-current" />
-                                  <span className="text-[9px] font-black text-rose-600 uppercase tracking-tighter">
-                                    ₹{Math.round(finalPrice * 0.15)} Order above ₹400
-                                  </span>
-                                </div>
-
-                                {/* Rating Row matching Screenshot 2 */}
-                                <div className="flex items-center gap-1 mt-1">
-                                  <div className="flex items-center gap-0.5 bg-emerald-50 text-emerald-600 px-1 rounded-md">
-                                    <Star className="w-2.5 h-2.5 fill-current" />
-                                    <span className="text-[10px] font-black">{item.rating || "3.8"}</span>
+                                {/* Custom Offer Chip - only show if item has an offer */}
+                                {item.offerText && (
+                                  <div className="inline-flex items-center gap-1 bg-rose-50 border border-rose-100 px-1.5 py-0.5 rounded-full">
+                                    <Lock className="w-2.5 h-2.5 text-rose-600 fill-current" />
+                                    <span className="text-[9px] font-black text-rose-600 uppercase tracking-tighter">
+                                      {item.offerText}
+                                    </span>
                                   </div>
-                                  <span className="text-[10px] font-bold text-emerald-600">
-                                    ({(item.reviews || 2000).toLocaleString()}+)
-                                  </span>
-                                </div>
+                                )}
+
+                                {/* Rating Row - only show if item has real rating */}
+                                {item.rating != null && (
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <div className="flex items-center gap-0.5 bg-emerald-50 text-emerald-600 px-1 rounded-md">
+                                      <Star className="w-2.5 h-2.5 fill-current" />
+                                      <span className="text-[10px] font-black">{item.rating}</span>
+                                    </div>
+                                    {item.reviews > 0 && (
+                                      <span className="text-[10px] font-bold text-emerald-600">
+                                        ({item.reviews.toLocaleString()}+)
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
 
                                 {/* More Details Button */}
                                 <button className="mt-3 px-3 py-1 border border-neutral-200 rounded-full text-[10px] font-black text-neutral-400 uppercase tracking-widest hover:border-black hover:text-black transition-all">
