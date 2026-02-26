@@ -165,6 +165,7 @@ export default function Cart() {
   // Fee settings from database (used as fallback if pricing not available)
   const [feeSettings, setFeeSettings] = useState({
     deliveryFee: 25,
+    deliveryFeeRanges: [],
     freeDeliveryThreshold: 149,
     platformFee: 5,
     gstRate: 5,
@@ -557,6 +558,31 @@ export default function Cart() {
 
     fetchCouponsForCartItems()
   }, [cart, restaurantId])
+
+  // Fetch public fee settings (deliveryFeeRanges + freeDeliveryThreshold) from backend
+  useEffect(() => {
+    const fetchFeeSettings = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/fee-settings/public`)
+        if (!res.ok) return
+        const json = await res.json()
+        const data = json?.data?.feeSettings
+        if (data) {
+          setFeeSettings(prev => ({
+            ...prev,
+            deliveryFee: data.deliveryFee ?? prev.deliveryFee,
+            deliveryFeeRanges: Array.isArray(data.deliveryFeeRanges) ? data.deliveryFeeRanges : prev.deliveryFeeRanges,
+            freeDeliveryThreshold: data.freeDeliveryThreshold ?? prev.freeDeliveryThreshold,
+            platformFee: data.platformFee ?? prev.platformFee,
+            gstRate: data.gstRate ?? prev.gstRate,
+          }))
+        }
+      } catch (err) {
+        console.warn('[Cart] Failed to fetch fee settings:', err?.message)
+      }
+    }
+    fetchFeeSettings()
+  }, [])
 
   // Calculate pricing from backend whenever cart, address, or coupon changes
   useEffect(() => {
@@ -1287,7 +1313,7 @@ export default function Cart() {
           <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">Your cart is empty</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 text-center">Add items from a restaurant to start a new order</p>
           <Link>
-            <Button className="bg-primary-orange hover:opacity-90 text-white">Browse Restaurants</Button>
+            <Button className="bg-purple-600 hover:opacity-90 text-white">Browse Restaurants</Button>
           </Link>
         </div>
       </AnimatedPage>
@@ -1338,6 +1364,31 @@ export default function Cart() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 px-4 md:px-6 py-4 md:py-6">
             {/* Left Column - Cart Items and Details */}
             <div className="lg:col-span-2 space-y-2 md:space-y-4">
+
+              {/* ── Maava Gold Offers Card ── */}
+              <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#1a1200] via-[#2d2000] to-[#1a1200] border border-yellow-600/30 px-4 py-3 flex items-center gap-3 shadow-lg shadow-yellow-900/10 mb-2 md:mb-4">
+                {/* Shimmer stripe */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/5 to-transparent pointer-events-none" />
+                {/* Crown icon */}
+                <div className="flex-shrink-0 w-9 h-9 rounded-full bg-yellow-500/15 border border-yellow-500/30 flex items-center justify-center">
+                  <span className="text-[18px] leading-none" role="img" aria-label="crown">👑</span>
+                </div>
+                {/* Text */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-black text-yellow-400 uppercase tracking-wider leading-none mb-0.5">
+                    Maava Gold Offers
+                  </p>
+                  <p className="text-[12px] font-semibold text-yellow-200/80 leading-snug">
+                    Enjoy <span className="text-yellow-300 font-black">FREE delivery</span> above{' '}
+                    <span className="text-yellow-300 font-black">₹{feeSettings.freeDeliveryThreshold}</span>
+                  </p>
+                </div>
+                {/* Gold badge */}
+                <div className="flex-shrink-0 bg-yellow-500 text-black text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full">
+                  Gold
+                </div>
+              </div>
+
               {/* Cart Items */}
               <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl">
                 <div className="space-y-3 md:space-y-4">
@@ -1357,18 +1408,18 @@ export default function Cart() {
 
                       <div className="flex items-center gap-3 md:gap-4">
                         {/* Quantity controls */}
-                        <div className="flex items-center border border-red-600 dark:border-red-500 rounded">
+                        <div className="flex items-center border border-purple-600 dark:border-purple-500 rounded">
                           <button
-                            className="px-2 md:px-3 py-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            className="px-2 md:px-3 py-1 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
                           >
                             <Minus className="h-3 w-3 md:h-4 md:w-4" />
                           </button>
-                          <span className="px-2 md:px-3 text-sm md:text-base font-semibold text-red-600 dark:text-red-400 min-w-[20px] md:min-w-[24px] text-center">
+                          <span className="px-2 md:px-3 text-sm md:text-base font-semibold text-purple-600 dark:text-purple-400 min-w-[20px] md:min-w-[24px] text-center">
                             {item.quantity}
                           </span>
                           <button
-                            className="px-2 md:px-3 py-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            className="px-2 md:px-3 py-1 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
                           >
                             <Plus className="h-3 w-3 md:h-4 md:w-4" />
@@ -1386,7 +1437,7 @@ export default function Cart() {
                 {/* Add more items */}
                 <button
                   onClick={() => navigate(-1)}
-                  className="flex items-center gap-2 mt-4 md:mt-6 text-red-600 dark:text-red-400"
+                  className="flex items-center gap-2 mt-4 md:mt-6 text-purple-600 dark:text-purple-400"
                 >
                   <Plus className="h-4 w-4 md:h-5 md:w-5" />
                   <span className="text-sm md:text-base font-medium">Add more items</span>
@@ -1405,7 +1456,7 @@ export default function Cart() {
                 </button>
                 <button
                   onClick={() => setSendCutlery(!sendCutlery)}
-                  className={`flex items-center gap-2 px-3 md:px-4 py-2 md:py-3 border rounded-lg md:rounded-xl text-sm md:text-base ${sendCutlery ? 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300' : 'border-red-600 dark:border-red-500 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'}`}
+                  className={`flex items-center gap-2 px-3 md:px-4 py-2 md:py-3 border rounded-lg md:rounded-xl text-sm md:text-base ${sendCutlery ? 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300' : 'border-purple-600 dark:border-purple-500 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20'}`}
                 >
                   <Utensils className="h-4 w-4 md:h-5 md:w-5" />
                   <span className="whitespace-nowrap">{sendCutlery ? "Don't send cutlery" : "No cutlery"}</span>
@@ -1419,7 +1470,7 @@ export default function Cart() {
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     placeholder="Add cooking instructions, allergies, etc."
-                    className="w-full border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl p-3 md:p-4 text-sm md:text-base resize-none h-20 md:h-24 focus:outline-none focus:border-red-600 dark:focus:border-red-500 bg-white dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100"
+                    className="w-full border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl p-3 md:p-4 text-sm md:text-base resize-none h-20 md:h-24 focus:outline-none focus:border-purple-600 dark:focus:border-purple-500 bg-white dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100"
                   />
                 </div>
               )}
@@ -1491,9 +1542,9 @@ export default function Cart() {
                                   restaurantId: cartRestaurantId
                                 });
                               }}
-                              className="absolute bottom-1 md:bottom-2 right-1 md:right-2 w-6 h-6 md:w-7 md:h-7 bg-white border border-red-600 rounded flex items-center justify-center shadow-sm hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                              className="absolute bottom-1 md:bottom-2 right-1 md:right-2 w-6 h-6 md:w-7 md:h-7 bg-white border border-purple-600 rounded flex items-center justify-center shadow-sm hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
                             >
-                              <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 text-red-600" />
+                              <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 text-purple-600" />
                             </button>
                           </div>
                           <p className="text-xs md:text-sm font-medium text-gray-800 dark:text-gray-200 mt-1.5 md:mt-2 line-clamp-2 leading-tight">{addon.name}</p>
@@ -1511,12 +1562,12 @@ export default function Cart() {
               {/* Coupon Section */}
               <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl">
                 {appliedCoupon ? (
-                  <div className="flex items-center justify-between bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg md:rounded-xl p-3 md:p-4">
+                  <div className="flex items-center justify-between bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg md:rounded-xl p-3 md:p-4">
                     <div className="flex items-center gap-2 md:gap-3">
-                      <Tag className="h-4 w-4 md:h-5 md:w-5 text-red-600 dark:text-red-400" />
+                      <Tag className="h-4 w-4 md:h-5 md:w-5 text-purple-600 dark:text-purple-400" />
                       <div>
-                        <p className="text-sm md:text-base font-medium text-red-700 dark:text-red-300">'{appliedCoupon.code}' applied</p>
-                        <p className="text-xs md:text-sm text-red-600 dark:text-red-400">You saved ₹{discount}</p>
+                        <p className="text-sm md:text-base font-medium text-purple-700 dark:text-purple-300">'{appliedCoupon.code}' applied</p>
+                        <p className="text-xs md:text-sm text-purple-600 dark:text-purple-400">You saved ₹{discount}</p>
                       </div>
                     </div>
                     <button onClick={handleRemoveCoupon} className="text-gray-500 dark:text-gray-400 text-xs md:text-sm font-medium">Remove</button>
@@ -1545,7 +1596,7 @@ export default function Cart() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-7 md:h-8 text-xs md:text-sm border-red-600 dark:border-red-500 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        className="h-7 md:h-8 text-xs md:text-sm border-purple-600 dark:border-purple-500 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
                         onClick={() => handleApplyCoupon(availableCoupons[0])}
                         disabled={subtotal < availableCoupons[0].minOrder}
                       >
@@ -1572,7 +1623,7 @@ export default function Cart() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-6 md:h-7 text-xs md:text-sm border-red-600 dark:border-red-500 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          className="h-6 md:h-7 text-xs md:text-sm border-purple-600 dark:border-purple-500 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
                           onClick={() => handleApplyCoupon(coupon)}
                           disabled={subtotal < coupon.minOrder}
                         >
@@ -1596,118 +1647,98 @@ export default function Cart() {
 
               {/* Tip for Delivery Partner */}
               <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl">
-                <button
-                  onClick={() => setShowTipSection(!showTipSection)}
-                  className="flex items-center justify-between w-full"
-                >
-                  <div className="flex items-center gap-3 md:gap-4">
-                    <span className="text-lg">🙏</span>
-                    <div>
-                      <span className="text-sm md:text-base text-gray-800 dark:text-gray-200 font-medium">Tip your delivery partner</span>
-                      {tipAmount > 0 && (
-                        <span className="ml-2 text-xs font-semibold text-green-600 dark:text-green-400">₹{tipAmount} added</span>
-                      )}
-                    </div>
+                <div className="flex items-center gap-3 md:gap-4 mb-2">
+                  <span className="text-lg">🙏</span>
+                  <div>
+                    <span className="text-sm md:text-base text-gray-800 dark:text-gray-200 font-medium">Tip your delivery partner</span>
+                    {tipAmount > 0 && (
+                      <span className="ml-2 text-xs font-semibold text-green-600 dark:text-green-400">₹{tipAmount} added</span>
+                    )}
                   </div>
-                  {showTipSection
-                    ? <ChevronUp className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
-                    : <ChevronDown className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />}
-                </button>
+                </div>
 
-                <AnimatePresence>
-                  {showTipSection && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                  Your kindness goes a long way! 100% of the tip goes to your delivery partner.
+                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {[20, 30, 50].map((amount) => (
+                    <button
+                      key={amount}
+                      onClick={() => {
+                        if (selectedTip === amount) {
+                          setSelectedTip(null)
+                          setTipAmount(0)
+                        } else {
+                          setSelectedTip(amount)
+                          setTipAmount(amount)
+                          setCustomTipInput("")
+                        }
+                      }}
+                      className={`relative px-4 py-2 rounded-full border-2 text-sm font-semibold transition-all ${selectedTip === amount
+                        ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
+                        : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400'
+                        }`}
                     >
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 mb-3">
-                        Your kindness goes a long way! 100% of the tip goes to your delivery partner.
-                      </p>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {[20, 30, 50].map((amount) => (
-                          <button
-                            key={amount}
-                            onClick={() => {
-                              if (selectedTip === amount) {
-                                setSelectedTip(null)
-                                setTipAmount(0)
-                              } else {
-                                setSelectedTip(amount)
-                                setTipAmount(amount)
-                                setCustomTipInput("")
-                              }
-                            }}
-                            className={`relative px-4 py-2 rounded-full border-2 text-sm font-semibold transition-all ${selectedTip === amount
-                              ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400'
-                              : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400'
-                              }`}
-                          >
-                            ₹{amount}
-                            {amount === 30 && (
-                              <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[9px] bg-orange-500 text-white px-1.5 py-0.5 rounded-full whitespace-nowrap font-bold">
-                                Most Tipped
-                              </span>
-                            )}
-                          </button>
-                        ))}
-                        <button
-                          onClick={() => {
-                            if (selectedTip === 'other') {
-                              setSelectedTip(null)
-                              setTipAmount(0)
-                              setCustomTipInput("")
-                            } else {
-                              setSelectedTip('other')
-                              setTipAmount(0)
-                              setCustomTipInput("")
-                            }
-                          }}
-                          className={`flex items-center gap-1 px-4 py-2 rounded-full border-2 text-sm font-semibold transition-all ${selectedTip === 'other'
-                            ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400'
-                            : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400'
-                            }`}
-                        >
-                          Other
-                          {selectedTip === 'other' && (
-                            <span
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setSelectedTip(null)
-                                setTipAmount(0)
-                                setCustomTipInput("")
-                              }}
-                              className="ml-1 text-orange-500 hover:text-orange-700"
-                            >
-                              <X className="h-3 w-3" />
-                            </span>
-                          )}
-                        </button>
-                      </div>
-
-                      {selectedTip === 'other' && (
-                        <div className="mt-3 flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2">
-                          <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">₹</span>
-                          <input
-                            type="number"
-                            min="1"
-                            placeholder="Enter Tip Amount"
-                            value={customTipInput}
-                            onChange={(e) => {
-                              const val = e.target.value
-                              setCustomTipInput(val)
-                              const num = parseFloat(val)
-                              setTipAmount(!isNaN(num) && num > 0 ? num : 0)
-                            }}
-                            className="flex-1 bg-transparent outline-none text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400"
-                          />
-                        </div>
+                      ₹{amount}
+                      {amount === 30 && (
+                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[9px] bg-purple-600 text-white px-1.5 py-0.5 rounded-full whitespace-nowrap font-bold">
+                          Most Tipped
+                        </span>
                       )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => {
+                      if (selectedTip === 'other') {
+                        setSelectedTip(null)
+                        setTipAmount(0)
+                        setCustomTipInput("")
+                      } else {
+                        setSelectedTip('other')
+                        setTipAmount(0)
+                        setCustomTipInput("")
+                      }
+                    }}
+                    className={`flex items-center gap-1 px-4 py-2 rounded-full border-2 text-sm font-semibold transition-all ${selectedTip === 'other'
+                      ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
+                      : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400'
+                      }`}
+                  >
+                    Other
+                    {selectedTip === 'other' && (
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedTip(null)
+                          setTipAmount(0)
+                          setCustomTipInput("")
+                        }}
+                        className="ml-1 text-purple-600 hover:text-purple-800"
+                      >
+                        <X className="h-3 w-3" />
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {selectedTip === 'other' && (
+                  <div className="mt-3 flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2">
+                    <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">₹</span>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="Enter Tip Amount"
+                      value={customTipInput}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        setCustomTipInput(val)
+                        const num = parseFloat(val)
+                        setTipAmount(!isNaN(num) && num > 0 ? num : 0)
+                      }}
+                      className="flex-1 bg-transparent outline-none text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Delivery Address */}
@@ -1908,12 +1939,12 @@ export default function Cart() {
                   }
                   setCheckoutStage('map_picker')
                 }}
-                className="w-full flex items-center gap-4 p-4 border-2 border-dashed border-orange-500 rounded-2xl mb-6 hover:bg-orange-50 dark:hover:bg-orange-900/10 transition-colors group"
+                className="w-full flex items-center gap-4 p-4 border-2 border-dashed border-purple-500 rounded-2xl mb-6 hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-colors group"
               >
-                <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-xl flex items-center justify-center">
-                  <Plus className="h-6 w-6 text-orange-500" />
+                <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/20 rounded-xl flex items-center justify-center">
+                  <Plus className="h-6 w-6 text-purple-500" />
                 </div>
-                <span className="text-lg font-bold text-orange-500">Add new Address</span>
+                <span className="text-lg font-bold text-purple-500">Add new Address</span>
               </button>
 
               <div className="space-y-4">
@@ -1973,10 +2004,10 @@ export default function Cart() {
                 <MapEventsHandler setCoords={setTempMapCoords} setAddressInfo={setTempAddressInfo} />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1000]">
                   <div className="relative -top-8 flex flex-col items-center">
-                    <div className="bg-orange-500 w-12 h-12 rounded-full flex items-center justify-center border-4 border-white shadow-xl">
+                    <div className="bg-purple-600 w-12 h-12 rounded-full flex items-center justify-center border-4 border-white shadow-xl">
                       <MapPin className="h-6 w-6 text-white" />
                     </div>
-                    <div className="w-1 h-8 bg-orange-500" />
+                    <div className="w-1 h-8 bg-purple-600" />
                   </div>
                 </div>
               </MapContainer>
@@ -1987,9 +2018,9 @@ export default function Cart() {
                     setTempMapCoords({ lat: currentLocation.latitude, lng: currentLocation.longitude })
                   }
                 }}
-                className="absolute bottom-52 right-4 z-[1001] p-3 bg-white shadow-lg rounded-full flex items-center gap-2 border border-orange-100"
+                className="absolute bottom-52 right-4 z-[1001] p-3 bg-white shadow-lg rounded-full flex items-center gap-2 border border-purple-100"
               >
-                <Navigation className="h-5 w-5 text-orange-500 fill-orange-500" />
+                <Navigation className="h-5 w-5 text-purple-500 fill-purple-500" />
                 <span className="text-sm font-bold text-gray-800">Current location</span>
               </button>
 
@@ -2003,8 +2034,8 @@ export default function Cart() {
                   <p className="text-sm text-gray-500 mb-4 font-medium italic">Order will be delivered here</p>
 
                   <div className="flex items-start gap-4 mb-8">
-                    <div className="w-10 h-10 bg-orange-50 dark:bg-orange-900/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <MapPin className="h-6 w-6 text-orange-500" />
+                    <div className="w-10 h-10 bg-purple-50 dark:bg-purple-900/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <MapPin className="h-6 w-6 text-purple-500" />
                     </div>
                     <div>
                       <p className="font-black text-xl text-gray-900 leading-tight mb-1">{tempAddressInfo.area || 'Locating...'}</p>
@@ -2015,7 +2046,7 @@ export default function Cart() {
                   <Button
                     onClick={() => setCheckoutStage('address_details')}
                     disabled={!tempAddressInfo.formattedAddress}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white h-14 rounded-2xl text-lg font-black shadow-xl shadow-orange-200 transition-all hover:scale-[1.02]"
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white h-14 rounded-2xl text-lg font-black shadow-xl shadow-purple-200 dark:shadow-purple-900/30 transition-all hover:scale-[1.02]"
                   >
                     Confirm & proceed
                   </Button>
@@ -2050,7 +2081,7 @@ export default function Cart() {
                     id="useAcc"
                     checked={receiverDetails.useAccountDetails}
                     onChange={(e) => setReceiverDetails({ ...receiverDetails, useAccountDetails: e.target.checked })}
-                    className="w-5 h-5 accent-orange-500"
+                    className="w-5 h-5 accent-purple-600"
                   />
                   <label htmlFor="useAcc" className="text-sm font-bold text-gray-700 dark:text-gray-300">
                     Use my account details <span className="text-gray-400 font-medium ml-1">{userProfile?.name}, {userProfile?.phone}</span>
@@ -2063,7 +2094,7 @@ export default function Cart() {
                       <input
                         value={receiverDetails.name}
                         onChange={e => setReceiverDetails({ ...receiverDetails, name: e.target.value })}
-                        className="w-full p-3 bg-gray-50 dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-orange-500"
+                        className="w-full p-3 bg-gray-50 dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-purple-500"
                       />
                     </div>
                     <div className="space-y-1">
@@ -2071,7 +2102,7 @@ export default function Cart() {
                       <input
                         value={receiverDetails.phone}
                         onChange={e => setReceiverDetails({ ...receiverDetails, phone: e.target.value })}
-                        className="w-full p-3 bg-gray-50 dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-orange-500"
+                        className="w-full p-3 bg-gray-50 dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-purple-500"
                       />
                     </div>
                   </div>
@@ -2101,13 +2132,13 @@ export default function Cart() {
                     placeholder="House / Flat / Floor *"
                     value={receiverDetails.houseNo}
                     onChange={e => setReceiverDetails({ ...receiverDetails, houseNo: e.target.value })}
-                    className="w-full p-4 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-orange-500 shadow-sm"
+                    className="w-full p-4 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-purple-500 shadow-sm"
                   />
                   <input
                     placeholder="Building / Street (Recommended)"
                     value={receiverDetails.buildingName}
                     onChange={e => setReceiverDetails({ ...receiverDetails, buildingName: e.target.value })}
-                    className="w-full p-4 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-orange-500 shadow-sm"
+                    className="w-full p-4 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-purple-500 shadow-sm"
                   />
 
                   <div className="p-4 border-2 border-gray-100 dark:border-gray-700 rounded-2xl bg-gray-50/50 dark:bg-gray-800/50 flex gap-4">
@@ -2117,9 +2148,9 @@ export default function Cart() {
                     </div>
                     <button onClick={() => setCheckoutStage('map_picker')} className="flex flex-col items-center gap-1">
                       <div className="w-10 h-10 bg-white dark:bg-gray-700 rounded-xl shadow-md border border-gray-50 dark:border-gray-600 flex items-center justify-center">
-                        <MapPin className="h-5 w-5 text-orange-500" />
+                        <MapPin className="h-5 w-5 text-purple-500" />
                       </div>
-                      <span className="text-[10px] font-black text-orange-500 uppercase tracking-tighter">Change</span>
+                      <span className="text-[10px] font-black text-purple-500 uppercase tracking-tighter">Change</span>
                     </button>
                   </div>
 
@@ -2127,7 +2158,7 @@ export default function Cart() {
                     placeholder="Save address as *"
                     value={receiverDetails.landmark}
                     onChange={e => setReceiverDetails({ ...receiverDetails, landmark: e.target.value })}
-                    className="w-full p-4 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-orange-500 shadow-sm"
+                    className="w-full p-4 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-purple-500 shadow-sm"
                   />
                 </div>
               </div>
@@ -2140,15 +2171,15 @@ export default function Cart() {
                     placeholder="Instructions to reach location"
                     value={receiverDetails.instructions}
                     onChange={e => setReceiverDetails({ ...receiverDetails, instructions: e.target.value })}
-                    className="w-full p-4 py-6 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-2xl outline-none focus:border-orange-500 shadow-sm min-h-[80px]"
+                    className="w-full p-4 py-6 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-2xl outline-none focus:border-purple-500 shadow-sm min-h-[80px]"
                   />
-                  <button className="absolute right-4 top-1/2 -translate-y-1/2 text-orange-500 font-bold">Add</button>
+                  <button className="absolute right-4 top-1/2 -translate-y-1/2 text-purple-500 font-bold">Add</button>
                 </div>
               </div>
 
               <Button
                 onClick={() => setCheckoutStage('confirm_details')}
-                className="w-full py-8 rounded-2xl bg-gray-200 dark:bg-gray-800 hover:bg-orange-500 hover:text-white text-gray-400 font-black text-xl transition-all shadow-lg"
+                className="w-full py-8 rounded-2xl bg-gray-200 dark:bg-gray-800 hover:bg-purple-600 hover:text-white text-gray-400 font-black text-xl transition-all shadow-lg"
               >
                 Save Address
               </Button>
@@ -2178,8 +2209,8 @@ export default function Cart() {
 
                 <div className="space-y-6">
                   <div className="flex gap-4">
-                    <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <MapPin className="h-6 w-6 text-orange-500" />
+                    <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <MapPin className="h-6 w-6 text-purple-500" />
                     </div>
                     <div>
                       <p className="font-black text-lg text-gray-900 dark:text-white leading-tight mb-2">
@@ -2194,8 +2225,8 @@ export default function Cart() {
                   </div>
 
                   <div className="flex gap-4">
-                    <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <UserIcon className="h-6 w-6 text-orange-500" />
+                    <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <UserIcon className="h-6 w-6 text-purple-500" />
                     </div>
                     <div>
                       <p className="text-sm font-bold text-gray-900 dark:text-white">
@@ -2211,7 +2242,7 @@ export default function Cart() {
                 <div className="flex gap-4 mt-12">
                   <button
                     onClick={() => setCheckoutStage('address_details')}
-                    className="flex-1 py-4 bg-orange-50 dark:bg-orange-900/10 text-orange-600 font-bold rounded-2xl border border-orange-100 dark:border-orange-900/20 hover:bg-orange-100 transition-colors"
+                    className="flex-1 py-4 bg-purple-50 dark:bg-purple-900/10 text-purple-600 font-bold rounded-2xl border border-purple-100 dark:border-purple-900/20 hover:bg-purple-100 transition-colors"
                   >
                     Edit details
                   </button>
@@ -2229,7 +2260,7 @@ export default function Cart() {
                       setIsAddressConfirmed(true)
                       setCheckoutStage('payment')
                     }}
-                    className="flex-1 py-4 bg-orange-500 text-white font-bold rounded-2xl shadow-lg shadow-orange-200 transition-transform active:scale-95"
+                    className="flex-1 py-4 bg-purple-600 text-white font-bold rounded-2xl shadow-lg shadow-purple-200 dark:shadow-purple-900/30 transition-transform active:scale-95"
                   >
                     Confirm
                   </button>
@@ -2249,14 +2280,14 @@ export default function Cart() {
                 /* Address Prompt Flow */
                 <div className="flex flex-col items-center gap-4 py-4 md:py-6 animate-in fade-in slide-in-from-bottom-4">
                   <div className="flex items-center gap-3">
-                    <Navigation className="h-6 w-6 text-orange-500 fill-orange-500" />
+                    <Navigation className="h-6 w-6 text-purple-500 fill-purple-500" />
                     <p className="text-xl md:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
                       Where would you like us to deliver this order?
                     </p>
                   </div>
                   <Button
                     onClick={() => setCheckoutStage('address_selection')}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-3xl h-14 md:h-16 text-lg md:text-xl font-black shadow-xl shadow-orange-100 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-3xl h-14 md:h-16 text-lg md:text-xl font-black shadow-xl shadow-purple-200 dark:shadow-purple-900/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
                   >
                     Add or Select address
                   </Button>

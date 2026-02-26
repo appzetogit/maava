@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { User, Home, Wallet, History } from "lucide-react"
+import { User, Home, Banknote, History } from "lucide-react"
 import { deliveryAPI } from "@/lib/api"
 
 export default function BottomNavigation() {
@@ -65,7 +65,7 @@ export default function BottomNavigation() {
 
   const navItems = [
     { id: 'home', path: "/delivery", label: "Home", icon: Home },
-    { id: 'pocket', path: "/delivery/requests", label: "Pocket", icon: Wallet },
+    { id: 'pocket', path: "/delivery/requests", label: "Earnings", icon: Banknote },
     { id: 'history', path: "/delivery/trip-history", label: "History", icon: History },
     { id: 'profile', path: "/delivery/profile", label: "Profile", icon: User },
   ]

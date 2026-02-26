@@ -49,10 +49,16 @@ export default function FeeSettings() {
   const handleSaveFeeSettings = async () => {
     try {
       setSavingFeeSettings(true)
+
+      // Auto-sync freeDeliveryThreshold to the highest Max value from the ranges table
+      const maxRangeValue = feeSettings.deliveryFeeRanges.length > 0
+        ? Math.max(...feeSettings.deliveryFeeRanges.map(r => Number(r.max)))
+        : Number(feeSettings.freeDeliveryThreshold)
+
       const response = await adminAPI.createOrUpdateFeeSettings({
         deliveryFee: Number(feeSettings.deliveryFee),
         deliveryFeeRanges: feeSettings.deliveryFeeRanges,
-        freeDeliveryThreshold: Number(feeSettings.freeDeliveryThreshold),
+        freeDeliveryThreshold: maxRangeValue,
         platformFee: Number(feeSettings.platformFee),
         gstRate: Number(feeSettings.gstRate),
         isActive: true,
@@ -403,7 +409,7 @@ export default function FeeSettings() {
                   </p>
                 </div>
               </div>
-          </>
+            </>
           )}
         </div>
       </div>

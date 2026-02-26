@@ -8311,6 +8311,8 @@ export default function DeliveryHome() {
       )}
 
 
+
+
       {/* Conditional Content Based on Swipe Bar Position */}
       {!showHomeSections ? (
         <>
@@ -8777,128 +8779,6 @@ export default function DeliveryHome() {
                 </button>
               </motion.div>
 
-
-              {/* Earnings Guarantee Card */}
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.25 }}
-                className="w-full rounded-xl overflow-hidden shadow-lg bg-white"
-              >
-                {/* Header */}
-                <div className="border-b  border-gray-100">
-                  <div className="flex p-2 px-3 items-center justify-between bg-black">
-                    <div className="flex-1">
-                      <h2 className="text-lg font-bold text-white mb-1">Earnings Guarantee</h2>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-white">Valid till {weekEndDate}</span>
-                        {isOfferLive && (
-                          <div className="flex items-center gap-1">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span className="text-sm text-green-600 font-medium">Live</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    {/* Summary Box */}
-                    <div className="bg-black text-white px-4 py-3 rounded-lg text-center min-w-[80px]">
-                      <div className="text-2xl font-bold">₹{earningsGuaranteeTarget.toFixed(0)}</div>
-                      <div className="text-xs text-white/80 mt-1">{earningsGuaranteeOrdersTarget} orders</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Progress Circles */}
-                <div className="px-6 py-6">
-                  <div className="flex items-center justify-around gap-6">
-                    {/* Orders Progress Circle */}
-                    <motion.div
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ delay: 0.4, duration: 0.5, type: "spring" }}
-                      className="flex flex-col items-center"
-                    >
-                      <div className="relative w-32 h-32">
-                        <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
-                          {/* Background circle */}
-                          <circle
-                            cx="60"
-                            cy="60"
-                            r="50"
-                            fill="none"
-                            stroke="#e5e7eb"
-                            strokeWidth="8"
-                          />
-                          {/* Progress circle */}
-                          <motion.circle
-                            cx="60"
-                            cy="60"
-                            r="50"
-                            fill="none"
-                            stroke="#000000"
-                            strokeWidth="8"
-                            strokeLinecap="round"
-                            initial={{ pathLength: 0 }}
-                            animate={{ pathLength: ordersProgress }}
-                            transition={{ delay: 0.6, duration: 1, ease: "easeOut" }}
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-xl font-bold text-gray-900">{earningsGuaranteeCurrentOrders} of {earningsGuaranteeOrdersTarget || 0}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 mt-3">
-                        <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <span className="text-sm font-medium text-gray-700">Orders</span>
-                      </div>
-                    </motion.div>
-
-                    {/* Earnings Progress Circle */}
-                    <motion.div
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ delay: 0.5, duration: 0.5, type: "spring" }}
-                      className="flex flex-col items-center"
-                    >
-                      <div className="relative w-32 h-32">
-                        <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
-                          {/* Background circle */}
-                          <circle
-                            cx="60"
-                            cy="60"
-                            r="50"
-                            fill="none"
-                            stroke="#e5e7eb"
-                            strokeWidth="8"
-                          />
-                          {/* Progress circle */}
-                          <motion.circle
-                            cx="60"
-                            cy="60"
-                            r="50"
-                            fill="none"
-                            stroke="#000000"
-                            strokeWidth="8"
-                            strokeLinecap="round"
-                            initial={{ pathLength: 0 }}
-                            animate={{ pathLength: earningsProgress }}
-                            transition={{ delay: 0.7, duration: 1, ease: "easeOut" }}
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-lg font-bold text-gray-900">₹{earningsGuaranteeCurrentEarnings.toFixed(2)}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 mt-3">
-                        <IndianRupee className="w-5 h-5 text-gray-700" />
-                        <span className="text-sm font-medium text-gray-700">Earnings</span>
-                      </div>
-                    </motion.div>
-                  </div>
-                </div>
-              </motion.div>
 
               {/* Today's Progress Card */}
               <motion.div
@@ -9546,8 +9426,8 @@ export default function DeliveryHome() {
                         key={reason}
                         onClick={() => setRejectReason(reason)}
                         className={`w-full text-left p-4 rounded-lg border-2 transition-all ${rejectReason === reason
-                            ? "border-black bg-red-50"
-                            : "border-gray-200 bg-white hover:border-gray-300"
+                          ? "border-black bg-red-50"
+                          : "border-gray-200 bg-white hover:border-gray-300"
                           }`}
                       >
                         <div className="flex items-center justify-between">
@@ -9580,8 +9460,8 @@ export default function DeliveryHome() {
                     onClick={handleRejectConfirm}
                     disabled={!rejectReason}
                     className={`flex-1 py-3 rounded-lg font-semibold text-sm transition-colors ${rejectReason
-                        ? "!bg-black !text-white"
-                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      ? "!bg-black !text-white"
+                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
                       }`}
                   >
                     Confirm
@@ -9987,10 +9867,10 @@ export default function DeliveryHome() {
                   onClick={handleCameraCapture}
                   disabled={isUploadingBill}
                   className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg transition-colors ${isUploadingBill
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : billImageUploaded
-                        ? 'bg-green-600 hover:bg-green-700'
-                        : 'bg-blue-600 hover:bg-blue-700'
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : billImageUploaded
+                      ? 'bg-green-600 hover:bg-green-700'
+                      : 'bg-blue-600 hover:bg-blue-700'
                     } text-white font-medium`}
                 >
                   {isUploadingBill ? (
