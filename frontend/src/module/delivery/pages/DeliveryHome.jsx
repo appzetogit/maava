@@ -9053,7 +9053,7 @@ export default function DeliveryHome() {
 
       {/* New Order Popup with Countdown Timer - Custom Implementation */}
       <AnimatePresence>
-        {showNewOrderPopup && (newOrder || selectedRestaurant) && isOnline && (
+        {showNewOrderPopup && (newOrder || selectedRestaurant) && (
           <>
             {/* Backdrop */}
             {!isNewOrderPopupMinimized && (

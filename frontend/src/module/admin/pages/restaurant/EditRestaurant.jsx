@@ -127,6 +127,8 @@ export default function EditRestaurant() {
         featuredDish: "",
         featuredPrice: "249",
         offer: "",
+        rating: 0,
+        totalRatings: 0,
     })
 
     useEffect(() => {
@@ -169,6 +171,8 @@ export default function EditRestaurant() {
                         featuredDish: res.featuredDish || "",
                         featuredPrice: res.featuredPrice || "249",
                         offer: res.offer || "",
+                        rating: res.rating || 0,
+                        totalRatings: res.totalRatings || 0,
                     })
                 }
             } catch (error) {
@@ -250,7 +254,9 @@ export default function EditRestaurant() {
                 estimatedDeliveryTime: step4.estimatedDeliveryTime,
                 featuredDish: step4.featuredDish,
                 featuredPrice: parseFloat(step4.featuredPrice),
-                offer: step4.offer
+                offer: step4.offer,
+                rating: parseFloat(step4.rating),
+                totalRatings: parseInt(step4.totalRatings)
             }
 
             const response = await adminAPI.updateRestaurant(id, payload)
@@ -491,6 +497,14 @@ export default function EditRestaurant() {
                                 <div className="space-y-2">
                                     <Label className="text-xs uppercase tracking-wider text-gray-500 font-bold">Offer Text</Label>
                                     <Input placeholder="e.g. 20% OFF up to ₹100" value={step4.offer} onChange={e => setStep4({ ...step4, offer: e.target.value })} className="bg-gray-50/50" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs uppercase tracking-wider text-gray-500 font-bold">Rating (0-5)</Label>
+                                    <Input type="number" step="0.1" min="0" max="5" value={step4.rating} onChange={e => setStep4({ ...step4, rating: e.target.value })} className="bg-gray-50/50" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs uppercase tracking-wider text-gray-500 font-bold">Total Ratings Count</Label>
+                                    <Input type="number" min="0" value={step4.totalRatings} onChange={e => setStep4({ ...step4, totalRatings: e.target.value })} className="bg-gray-50/50" />
                                 </div>
                             </div>
                         </section>

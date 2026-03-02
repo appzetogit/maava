@@ -125,6 +125,8 @@ export default function AddRestaurant() {
     featuredDish: "",
     featuredPrice: "249",
     offer: "",
+    rating: 0,
+    totalRatings: 0,
   })
 
   // Authentication
@@ -331,6 +333,8 @@ export default function AddRestaurant() {
         featuredDish: step4.featuredDish,
         featuredPrice: parseFloat(step4.featuredPrice) || 249,
         offer: step4.offer,
+        rating: parseFloat(step4.rating) || 0,
+        totalRatings: parseInt(step4.totalRatings) || 0,
         // Auth
         email: auth.email || null,
         phone: auth.phone || null,
@@ -841,6 +845,16 @@ export default function AddRestaurant() {
         <div>
           <Label className="text-xs text-gray-700">Special Offer/Promotion*</Label>
           <Input value={step4.offer || ""} onChange={(e) => setStep4({ ...step4, offer: e.target.value })} className="mt-1 bg-white text-sm" placeholder="e.g., Flat ₹50 OFF above ₹199" />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label className="text-xs text-gray-700">Rating (0-5)</Label>
+            <Input type="number" step="0.1" min="0" max="5" value={step4.rating || ""} onChange={(e) => setStep4({ ...step4, rating: e.target.value })} className="mt-1 bg-white text-sm" placeholder="0.0" />
+          </div>
+          <div>
+            <Label className="text-xs text-gray-700">Total Ratings</Label>
+            <Input type="number" min="0" value={step4.totalRatings || ""} onChange={(e) => setStep4({ ...step4, totalRatings: e.target.value })} className="mt-1 bg-white text-sm" placeholder="0" />
+          </div>
         </div>
       </section>
     </div>

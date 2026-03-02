@@ -1,87 +1,77 @@
-import { initializeApp, getApps } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getDatabase } from 'firebase/database';
 
-// Firebase configuration - fallback to hardcoded values if env vars are not available
+// ─── Firebase Configuration (maava-7ddea project) ─────────────────────────
+// Auth domain + apiKey from VITE env vars (set in frontend .env)
+// Falls back to hardcoded values for local dev convenience.
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyC_TqpDR7LNHxFEPd8cGjl_ka_Rj0ebECA",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "zomato-607fa.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "zomato-607fa",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:1065631021082:web:7424afd0ad2054ed6879a3",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "1065631021082",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "zomato-607fa.firebasestorage.app",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-7JJV7JYVRX"
+  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY            || "AIzaSyBzXOfR_ktA8X9UcZoTxPWmUwrfOXVMYvo",
+  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN        || "maava-7ddea.firebaseapp.com",
+  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID         || "maava-7ddea",
+  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET     || "maava-7ddea.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "595117846778",
+  appId:             import.meta.env.VITE_FIREBASE_APP_ID             || "1:595117846778:web:1c6df2a989627d21b41943",
+  measurementId:     import.meta.env.VITE_FIREBASE_MEASUREMENT_ID     || "G-18F2LPSHVE",
+  databaseURL:       import.meta.env.VITE_FIREBASE_DATABASE_URL       || "https://maava-7ddea-default-rtdb.asia-southeast1.firebasedatabase.app"
 };
 
-// Validate Firebase configuration
+// Validate required fields
 const requiredFields = ['apiKey', 'authDomain', 'projectId', 'appId', 'messagingSenderId'];
 const missingFields = requiredFields.filter(field => !firebaseConfig[field] || firebaseConfig[field] === 'undefined');
 
 if (missingFields.length > 0) {
   console.error('Firebase configuration is missing required fields:', missingFields);
-  console.error('Current config:', firebaseConfig);
-  console.error('Environment variables:', {
-    VITE_FIREBASE_API_KEY: import.meta.env.VITE_FIREBASE_API_KEY,
-    VITE_FIREBASE_AUTH_DOMAIN: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-    VITE_FIREBASE_PROJECT_ID: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-    VITE_FIREBASE_APP_ID: import.meta.env.VITE_FIREBASE_APP_ID,
-    VITE_FIREBASE_MESSAGING_SENDER_ID: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  });
-  throw new Error(`Firebase configuration error: Missing fields: ${missingFields.join(', ')}. Please check your .env file and restart the dev server.`);
+  console.error('Please set VITE_FIREBASE_* variables in frontend/.env');
 }
 
-// Initialize Firebase app only once
+// ─── State ─────────────────────────────────────────────────────────────────
 let app;
 let firebaseAuth;
 let googleProvider;
+let realtimeDB;
 
-// Function to ensure Firebase is initialized
+// ─── Initialize ──────────────────────────────────────────────────────────────
 function ensureFirebaseInitialized() {
   try {
     const existingApps = getApps();
     if (existingApps.length === 0) {
       app = initializeApp(firebaseConfig);
-      console.log('Firebase initialized successfully with config:', {
-        projectId: firebaseConfig.projectId,
-        authDomain: firebaseConfig.authDomain,
-        apiKey: firebaseConfig.apiKey ? firebaseConfig.apiKey.substring(0, 20) + '...' : 'missing'
-      });
+      console.log('Firebase initialized — project:', firebaseConfig.projectId);
     } else {
       app = existingApps[0];
-      console.log('Firebase app already initialized, reusing existing instance');
     }
 
-    // Initialize Auth - ensure it's connected to the app
     if (!firebaseAuth) {
       firebaseAuth = getAuth(app);
-      if (!firebaseAuth) {
-        throw new Error('Failed to get Firebase Auth instance');
-      }
-      console.log('Firebase Auth initialized successfully', {
-        app: app.name,
-        authApp: firebaseAuth.app.name
-      });
     }
 
-    // Initialize Google Provider
     if (!googleProvider) {
       googleProvider = new GoogleAuthProvider();
-      // Add scopes if needed
       googleProvider.addScope('email');
       googleProvider.addScope('profile');
-      // Note: Don't set custom client_id - Firebase uses its own OAuth client
-      console.log('Google Auth Provider initialized');
+    }
+
+    // Initialize Realtime Database (used for delivery tracking — zero Maps API cost)
+    if (!realtimeDB && firebaseConfig.databaseURL) {
+      try {
+        realtimeDB = getDatabase(app);
+        console.log('Firebase Realtime Database ready — delivery tracking enabled');
+      } catch (dbErr) {
+        console.warn('Firebase Realtime Database not available:', dbErr.message);
+      }
     }
   } catch (error) {
     console.error('Firebase initialization error:', error);
-    console.error('Firebase config used:', firebaseConfig);
     throw error;
   }
 }
 
-// Initialize immediately
+// Initialize immediately on module load
 ensureFirebaseInitialized();
 
+export { firebaseAuth, googleProvider, realtimeDB, ensureFirebaseInitialized };
 export const firebaseApp = app;
-export { firebaseAuth, googleProvider, ensureFirebaseInitialized };
+
 
 

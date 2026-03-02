@@ -375,7 +375,19 @@ export const createRestaurantFromOnboarding = async (onboardingData, restaurantI
     existing.ownerEmail = step1.ownerEmail || existing.ownerEmail;
     existing.ownerPhone = step1.ownerPhone || existing.ownerPhone;
     existing.primaryContactNumber = step1.primaryContactNumber || existing.primaryContactNumber;
-    if (step1.location) existing.location = step1.location;
+    if (step1.location) {
+      const loc = { ...step1.location };
+      // Auto-derive coordinates from latitude/longitude if not already set
+      if (loc.latitude && loc.longitude && (!loc.coordinates || !Array.isArray(loc.coordinates) || loc.coordinates.length < 2)) {
+        loc.coordinates = [loc.longitude, loc.latitude]; // GeoJSON: [lng, lat]
+      }
+      // Auto-derive lat/lng from coordinates if not already set
+      if (loc.coordinates && Array.isArray(loc.coordinates) && loc.coordinates.length >= 2) {
+        if (!loc.longitude) loc.longitude = loc.coordinates[0];
+        if (!loc.latitude) loc.latitude = loc.coordinates[1];
+      }
+      existing.location = loc;
+    }
 
     // Update step2 data - always update even if empty arrays
     if (step2) {

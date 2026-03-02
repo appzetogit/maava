@@ -14,8 +14,10 @@ import {
   getUserById,
   updateUserStatus,
   getRestaurants,
+  getRestaurantById,
   createRestaurant,
   updateRestaurant,
+
   updateRestaurantStatus,
   getRestaurantJoinRequests,
   approveRestaurant,
@@ -292,8 +294,10 @@ router.get('/customer-wallet-report', getCustomerWalletReport);
 
 // Restaurant Management
 router.get('/restaurants', getRestaurants);
+router.get('/restaurants/requests', getRestaurantJoinRequests);  // ⚠️ MUST be before /restaurants/:id
+router.get('/restaurants/:id', getRestaurantById);
 router.post('/restaurants', createRestaurant);
-router.get('/restaurants/requests', getRestaurantJoinRequests);
+
 router.get('/restaurant-analytics/:restaurantId', getRestaurantAnalytics);
 router.post('/restaurants/:id/approve', approveRestaurant);
 router.post('/restaurants/:id/reject', rejectRestaurant);
@@ -301,6 +305,7 @@ router.post('/restaurants/:id/reverify', reverifyRestaurant);
 router.put('/restaurants/:id/status', updateRestaurantStatus);
 router.put('/restaurants/:id', updateRestaurant);
 router.delete('/restaurants/:id', deleteRestaurant);
+
 
 // Category Management
 router.get('/categories', getCategories);

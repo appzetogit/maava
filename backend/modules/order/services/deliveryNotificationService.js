@@ -28,11 +28,11 @@ async function checkDeliveryPartnerConnection(deliveryPartnerId) {
 
     const deliveryNamespace = io.of('/delivery');
     const normalizedId = deliveryPartnerId?.toString() || deliveryPartnerId;
-    
+
     const roomVariations = [
       `delivery:${normalizedId}`,
       `delivery:${deliveryPartnerId}`,
-      ...(mongoose.Types.ObjectId.isValid(normalizedId) 
+      ...(mongoose.Types.ObjectId.isValid(normalizedId)
         ? [`delivery:${new mongoose.Types.ObjectId(normalizedId).toString()}`]
         : [])
     ];
@@ -64,7 +64,7 @@ export async function notifyDeliveryBoyNewOrder(order, deliveryPartnerId) {
   }
   try {
     const io = await getIOInstance();
-    
+
     if (!io) {
       console.warn('Socket.IO not initialized, skipping delivery boy notification');
       return;
@@ -102,9 +102,9 @@ export async function notifyDeliveryBoyNewOrder(order, deliveryPartnerId) {
       console.warn(`⚠️ Delivery partner ${deliveryPartnerId} (${deliveryPartner.name}) is not active.`);
     }
 
-    if (!deliveryPartner.availability?.currentLocation?.coordinates || 
-        deliveryPartner.availability.currentLocation.coordinates[0] === 0 && 
-        deliveryPartner.availability.currentLocation.coordinates[1] === 0) {
+    if (!deliveryPartner.availability?.currentLocation?.coordinates ||
+      deliveryPartner.availability.currentLocation.coordinates[0] === 0 &&
+      deliveryPartner.availability.currentLocation.coordinates[1] === 0) {
       console.warn(`⚠️ Delivery partner ${deliveryPartnerId} (${deliveryPartner.name}) has no valid location.`);
     }
 
@@ -120,7 +120,7 @@ export async function notifyDeliveryBoyNewOrder(order, deliveryPartnerId) {
     // Check if delivery partner is connected to socket BEFORE trying to notify
     const connectionStatus = await checkDeliveryPartnerConnection(deliveryPartnerId);
     console.log(`🔌 Delivery partner socket connection status:`, connectionStatus);
-    
+
     if (!connectionStatus.connected) {
       console.warn(`⚠️ Delivery partner ${deliveryPartnerId} (${deliveryPartner.name}) is NOT connected to socket!`);
       console.warn(`⚠️ Notification will be sent but may not be received until they reconnect.`);
@@ -162,7 +162,7 @@ export async function notifyDeliveryBoyNewOrder(order, deliveryPartnerId) {
     // Calculate distances
     let pickupDistance = null;
     let deliveryDistance = null;
-    
+
     const resolvedRestaurantCoords = restaurantLocationOverride?.coordinates || restaurant?.location?.coordinates;
     if (deliveryPartner.availability?.currentLocation?.coordinates && resolvedRestaurantCoords) {
       const [deliveryLng, deliveryLat] = deliveryPartner.availability.currentLocation.coordinates;
@@ -171,7 +171,7 @@ export async function notifyDeliveryBoyNewOrder(order, deliveryPartnerId) {
 
       // Calculate pickup distance (delivery boy to restaurant)
       pickupDistance = calculateDistance(deliveryLat, deliveryLng, restaurantLat, restaurantLng);
-      
+
       // Calculate delivery distance (restaurant to customer)
       deliveryDistance = calculateDistance(restaurantLat, restaurantLng, customerLat, customerLng);
     }
@@ -232,27 +232,27 @@ export async function notifyDeliveryBoyNewOrder(order, deliveryPartnerId) {
 
     // Get delivery namespace
     const deliveryNamespace = io.of('/delivery');
-    
+
     // Normalize deliveryPartnerId to string
     const normalizedDeliveryPartnerId = deliveryPartnerId?.toString() || deliveryPartnerId;
-    
+
     // Try multiple room formats to ensure we find the delivery partner
     const roomVariations = [
       `delivery:${normalizedDeliveryPartnerId}`,
       `delivery:${deliveryPartnerId}`,
-      ...(mongoose.Types.ObjectId.isValid(normalizedDeliveryPartnerId) 
+      ...(mongoose.Types.ObjectId.isValid(normalizedDeliveryPartnerId)
         ? [`delivery:${new mongoose.Types.ObjectId(normalizedDeliveryPartnerId).toString()}`]
         : [])
     ];
-    
+
     // Get all connected sockets in the delivery partner room
     let socketsInRoom = [];
     let foundRoom = null;
-    
+
     // First, get all connected sockets in delivery namespace for debugging
     const allSockets = await deliveryNamespace.fetchSockets();
     console.log(`📊 Total connected delivery sockets: ${allSockets.length}`);
-    
+
     // Check each room variation
     for (const room of roomVariations) {
       const sockets = await deliveryNamespace.in(room).fetchSockets();
@@ -270,15 +270,15 @@ export async function notifyDeliveryBoyNewOrder(order, deliveryPartnerId) {
         }
       }
     }
-    
+
     const primaryRoom = roomVariations[0];
-    
+
     console.log(`📢 Attempting to notify delivery partner ${normalizedDeliveryPartnerId} about order ${order.orderId}`);
     console.log(`📢 Delivery partner name: ${deliveryPartner.name}`);
     console.log(`📢 Room variations to try:`, roomVariations);
     console.log(`📢 Connected sockets in primary room ${primaryRoom}:`, socketsInRoom.length);
     console.log(`📢 Found room:`, foundRoom || 'none');
-    
+
     // Emit new order notification to all room variations (even if no sockets found, in case they connect)
     let notificationSent = false;
     roomVariations.forEach(room => {
@@ -309,18 +309,18 @@ export async function notifyDeliveryBoyNewOrder(order, deliveryPartnerId) {
       console.warn(`  3. Socket connection failed`);
       console.warn(`  4. Delivery partner needs to refresh their app`);
       console.warn(`  5. Delivery partner ID mismatch (check if ID used to join room matches ${normalizedDeliveryPartnerId})`);
-      
+
       if (allSockets.length > 0) {
         console.log(`📊 Connected delivery socket IDs:`, allSockets.map(s => s.id));
         console.log(`📊 Checking all delivery rooms to see which partners are connected...`);
-        
+
         // List all rooms in delivery namespace
         const allRooms = deliveryNamespace.adapter.rooms;
         console.log(`📊 All delivery rooms:`, Array.from(allRooms.keys()).filter(room => room.startsWith('delivery:')));
       } else {
         console.warn(`⚠️ No delivery partners are currently connected to the app!`);
       }
-      
+
       // Still broadcast to all delivery sockets as fallback
       console.warn(`⚠️ Broadcasting to all delivery sockets as fallback (in case they connect later)`);
       deliveryNamespace.emit('new_order', orderNotification);
@@ -340,7 +340,7 @@ export async function notifyDeliveryBoyNewOrder(order, deliveryPartnerId) {
     } else {
       console.error(`❌ Failed to send notification - no sockets found and broadcast failed`);
     }
-    
+
     return {
       success: true,
       deliveryPartnerId,
@@ -362,8 +362,9 @@ export async function notifyDeliveryBoyNewOrder(order, deliveryPartnerId) {
  */
 export async function notifyMultipleDeliveryBoys(order, deliveryPartnerIds, phase = 'priority') {
   try {
-    if (!deliveryPartnerIds || deliveryPartnerIds.length === 0) {
-      return { success: false, notified: 0 };
+    // If no specific partners, we still proceed to the mandatory broadcast fallback below
+    if (!deliveryPartnerIds) {
+      deliveryPartnerIds = [];
     }
 
     const io = await getIOInstance();
@@ -401,10 +402,10 @@ export async function notifyMultipleDeliveryBoys(order, deliveryPartnerIds, phas
     } else if (orderWithUser.restaurantId) {
       // If restaurantId is populated, use it directly
       if (typeof orderWithUser.restaurantId === 'object') {
-        restaurantAddress = orderWithUser.restaurantId.address || 
-                          orderWithUser.restaurantId.location?.formattedAddress ||
-                          orderWithUser.restaurantId.location?.address ||
-                          'Restaurant address';
+        restaurantAddress = orderWithUser.restaurantId.address ||
+          orderWithUser.restaurantId.location?.formattedAddress ||
+          orderWithUser.restaurantId.location?.address ||
+          'Restaurant address';
         restaurantLocation = orderWithUser.restaurantId.location;
       } else {
         // If restaurantId is just an ID, fetch restaurant details
@@ -414,10 +415,10 @@ export async function notifyMultipleDeliveryBoys(order, deliveryPartnerIds, phas
             .select('name address location')
             .lean();
           if (restaurant) {
-            restaurantAddress = restaurant.address || 
-                              restaurant.location?.formattedAddress ||
-                              restaurant.location?.address ||
-                              'Restaurant address';
+            restaurantAddress = restaurant.address ||
+              restaurant.location?.formattedAddress ||
+              restaurant.location?.address ||
+              'Restaurant address';
             restaurantLocation = restaurant.location;
           }
         } catch (e) {
@@ -428,30 +429,30 @@ export async function notifyMultipleDeliveryBoys(order, deliveryPartnerIds, phas
 
     // Calculate delivery distance (restaurant to customer) for earnings calculation
     let deliveryDistance = 0;
-    
+
     console.log(`🔍 Calculating earnings for order ${orderWithUser.orderId}:`, {
       hasRestaurantLocation: !!restaurantLocation,
       restaurantCoords: restaurantLocation?.coordinates,
       hasAddressLocation: !!orderWithUser.address?.location,
       addressCoords: orderWithUser.address?.location?.coordinates
     });
-    
+
     if (restaurantLocation?.coordinates && orderWithUser.address?.location?.coordinates) {
       const [restaurantLng, restaurantLat] = restaurantLocation.coordinates;
       const [customerLng, customerLat] = orderWithUser.address.location.coordinates;
-      
+
       // Validate coordinates
       if (restaurantLat && restaurantLng && customerLat && customerLng &&
-          !isNaN(restaurantLat) && !isNaN(restaurantLng) && 
-          !isNaN(customerLat) && !isNaN(customerLng)) {
+        !isNaN(restaurantLat) && !isNaN(restaurantLng) &&
+        !isNaN(customerLat) && !isNaN(customerLng)) {
         // Calculate distance using Haversine formula
         const R = 6371; // Earth radius in km
         const dLat = (customerLat - restaurantLat) * Math.PI / 180;
         const dLng = (customerLng - restaurantLng) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                  Math.cos(restaurantLat * Math.PI / 180) * Math.cos(customerLat * Math.PI / 180) *
-                  Math.sin(dLng/2) * Math.sin(dLng/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(restaurantLat * Math.PI / 180) * Math.cos(customerLat * Math.PI / 180) *
+          Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         deliveryDistance = R * c;
         console.log(`✅ Calculated delivery distance: ${deliveryDistance.toFixed(2)} km`);
       } else {
@@ -464,18 +465,18 @@ export async function notifyMultipleDeliveryBoys(order, deliveryPartnerIds, phas
     // Calculate estimated earnings based on delivery distance
     let estimatedEarnings = null;
     const deliveryFeeFromOrder = orderWithUser.pricing?.deliveryFee ?? 0;
-    
+
     try {
       estimatedEarnings = await calculateEstimatedEarnings(deliveryDistance);
       const earnedValue = typeof estimatedEarnings === 'object' ? (estimatedEarnings.totalEarning ?? 0) : (Number(estimatedEarnings) || 0);
-      
+
       console.log(`💰 Earnings calculation result:`, {
         estimatedEarnings,
         earnedValue,
         deliveryFeeFromOrder,
         deliveryDistance
       });
-      
+
       // Use deliveryFee as fallback if earnings is 0 or invalid
       if (earnedValue <= 0 && deliveryFeeFromOrder > 0) {
         console.log(`⚠️ Earnings is 0, using deliveryFee as fallback: ₹${deliveryFeeFromOrder}`);
@@ -483,7 +484,7 @@ export async function notifyMultipleDeliveryBoys(order, deliveryPartnerIds, phas
           ? { ...estimatedEarnings, totalEarning: deliveryFeeFromOrder }
           : deliveryFeeFromOrder;
       }
-      
+
       console.log(`✅ Final estimated earnings for order ${orderWithUser.orderId}: ₹${typeof estimatedEarnings === 'object' ? estimatedEarnings.totalEarning : estimatedEarnings} (distance: ${deliveryDistance.toFixed(2)} km)`);
     } catch (earningsError) {
       console.error('❌ Error calculating estimated earnings in notification:', earningsError);
@@ -551,7 +552,7 @@ export async function notifyMultipleDeliveryBoys(order, deliveryPartnerIds, phas
       hasCustomerLocation: !!orderNotification.customerLocation
     });
 
-    // Notify each delivery partner
+    // Notify each delivery partner via targeted room
     for (const deliveryPartnerId of deliveryPartnerIds) {
       try {
         const normalizedId = deliveryPartnerId?.toString() || deliveryPartnerId;
@@ -583,8 +584,8 @@ export async function notifyMultipleDeliveryBoys(order, deliveryPartnerIds, phas
         }
 
         if (!notificationSent) {
-          console.warn(`⚠️ Delivery partner ${normalizedId} not connected, but will receive notification when they connect`);
-          // Still emit to room for when they connect
+          console.warn(`⚠️ Delivery partner ${normalizedId} not found in specific room, emitting to room anyway`);
+          // Still emit to all room variations (delivery boy may connect to room later)
           roomVariations.forEach(room => {
             deliveryNamespace.to(room).emit('new_order_available', orderNotification);
             deliveryNamespace.to(room).emit('new_order', orderNotification);
@@ -595,6 +596,38 @@ export async function notifyMultipleDeliveryBoys(order, deliveryPartnerIds, phas
         console.error(`❌ Error notifying delivery partner ${deliveryPartnerId}:`, partnerError);
       }
     }
+
+    // ─── MANDATORY BROADCAST FALLBACK ───────────────────────────────────────
+    // ALWAYS broadcast to ALL connected delivery sockets as safety net.
+    // This ensures delivery boys receive the notification even if their socket room
+    // doesn't match their deliveryPartnerId, or they just connected without joining a room.
+    try {
+      const allConnectedSockets = await deliveryNamespace.fetchSockets();
+      console.log(`📡 Broadcasting new order to ALL ${allConnectedSockets.length} connected delivery sockets (safety broadcast)`);
+      if (allConnectedSockets.length > 0) {
+        const broadcastNotification = { ...orderNotification, isBroadcast: true };
+        deliveryNamespace.emit('new_order', broadcastNotification);
+        deliveryNamespace.emit('new_order_available', broadcastNotification);
+        deliveryNamespace.emit('play_notification_sound', {
+          type: 'new_order_available',
+          orderId: order.orderId,
+          message: `New order available: ${order.orderId}`,
+          phase: phase
+        });
+        console.log(`✅ Safety broadcast sent to all ${allConnectedSockets.length} delivery sockets for order ${order.orderId}`);
+      } else {
+        console.warn(`⚠️ NO delivery sockets connected! Delivery boys must open the app to receive notifications.`);
+        // Log all rooms in delivery namespace for debugging
+        const allRooms = deliveryNamespace.adapter?.rooms;
+        if (allRooms) {
+          const deliveryRooms = Array.from(allRooms.keys()).filter(r => r.startsWith('delivery:'));
+          console.warn(`⚠️ Delivery rooms in namespace:`, deliveryRooms);
+        }
+      }
+    } catch (broadcastError) {
+      console.error('❌ Error in safety broadcast:', broadcastError);
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     console.log(`✅ Notified ${notifiedCount} delivery partners (phase: ${phase}) for order ${order.orderId}`);
     return { success: true, notified: notifiedCount };
@@ -612,7 +645,7 @@ export async function notifyMultipleDeliveryBoys(order, deliveryPartnerIds, phas
 export async function notifyDeliveryBoyOrderReady(order, deliveryPartnerId) {
   try {
     const io = await getIOInstance();
-    
+
     if (!io) {
       console.warn('Socket.IO not initialized, skipping delivery boy notification');
       return;
@@ -640,7 +673,7 @@ export async function notifyDeliveryBoyOrderReady(order, deliveryPartnerId) {
     const roomVariations = [
       `delivery:${normalizedDeliveryPartnerId}`,
       `delivery:${deliveryPartnerId}`,
-      ...(mongoose.Types.ObjectId.isValid(normalizedDeliveryPartnerId) 
+      ...(mongoose.Types.ObjectId.isValid(normalizedDeliveryPartnerId)
         ? [`delivery:${new mongoose.Types.ObjectId(normalizedDeliveryPartnerId).toString()}`]
         : [])
     ];
@@ -703,12 +736,12 @@ function calculateDistance(lat1, lng1, lat2, lng2) {
 async function calculateEstimatedEarnings(deliveryDistance) {
   try {
     const DeliveryBoyCommission = (await import('../../admin/models/DeliveryBoyCommission.js')).default;
-    
+
     // Always use calculateCommission method which handles all cases including distance = 0
     // It will return base payout even if distance is 0
     const deliveryDistanceForCalc = deliveryDistance || 0;
     const commissionResult = await DeliveryBoyCommission.calculateCommission(deliveryDistanceForCalc);
-    
+
     // If distance is 0 or not provided, still return base payout
     if (!deliveryDistance || deliveryDistance <= 0) {
       console.log(`💰 Distance is 0 or missing, returning base payout only: ₹${commissionResult.breakdown.basePayout}`);
@@ -725,7 +758,7 @@ async function calculateEstimatedEarnings(deliveryDistance) {
     }
 
     // Use the already calculated commissionResult for distance > 0
-    
+
     const basePayout = commissionResult.breakdown.basePayout;
     const distance = deliveryDistance;
     const commissionPerKm = commissionResult.breakdown.commissionPerKm;

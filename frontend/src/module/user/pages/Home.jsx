@@ -1283,12 +1283,12 @@ export default function Home() {
                 whileHover={{ scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
               >
-                <div className="relative bg-white dark:bg-[#1a1a1a] rounded-xl lg:rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 p-1 sm:p-1.5 lg:p-2 transition-all duration-300 hover:shadow-xl">
-                  <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
-                    <Search className="h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-green-600 flex-shrink-0 ml-2 sm:ml-3 lg:ml-4" strokeWidth={2.5} />
-                    <div className="flex-1 relative">
-                      <div className="relative w-full">
-                        <Input
+                <div className="relative w-full h-11 sm:h-13 lg:h-16 bg-white dark:bg-[#1a1a1a] rounded-xl lg:rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 flex items-center px-1 sm:px-1.5 lg:px-2 transition-all duration-300 hover:shadow-xl">
+                  <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 w-full h-full">
+                    <Search className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-green-600 flex-shrink-0 ml-2 sm:ml-3 lg:ml-4" strokeWidth={2.5} />
+                    <div className="flex-1 relative h-full flex items-center">
+                      <div className="relative w-full h-full flex items-center">
+                        <input
                           value={heroSearch}
                           onChange={(e) => setHeroSearch(e.target.value)}
                           onFocus={handleSearchFocus}
@@ -1299,17 +1299,17 @@ export default function Home() {
                               setHeroSearch("")
                             }
                           }}
-                          className="pl-0 pr-2 h-8 sm:h-9 lg:h-11 w-full bg-white dark:bg-[#1a1a1a] border-0 text-sm sm:text-base lg:text-lg font-semibold text-gray-700 dark:text-white focus-visible:ring-0 focus-visible:ring-offset-0 rounded-full placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                          className="w-full h-full bg-transparent border-0 border-none outline-none focus:ring-0 text-sm sm:text-base lg:text-lg font-semibold text-gray-700 dark:text-white placeholder:text-transparent py-0 m-0"
                         />
-                        {/* Animated placeholder - same animation as RestaurantDetails highlight offer */}
+                        {/* Animated placeholder - shifted up 1px for visual balance */}
                         {!heroSearch && (
-                          <div className="absolute left-0 top-1/2 -translate-y-1/2 pointer-events-none h-5 lg:h-6 overflow-hidden">
+                          <div className="absolute left-0 top-1/2 -translate-y-[calc(50%+1px)] pointer-events-none h-5 lg:h-7 overflow-hidden flex items-center">
                             <AnimatePresence mode="wait">
                               <motion.span
                                 key={placeholderIndex}
-                                initial={{ y: 16, opacity: 0 }}
+                                initial={{ y: 20, opacity: 0 }}
                                 animate={{ y: 0, opacity: 1 }}
-                                exit={{ y: -16, opacity: 0 }}
+                                exit={{ y: -20, opacity: 0 }}
                                 transition={{ duration: 0.3 }}
                                 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-400 dark:text-gray-500 inline-block"
                               >
@@ -1325,10 +1325,11 @@ export default function Home() {
                       onClick={handleSearchFocus}
                       className="flex-shrink-0 mr-2 sm:mr-3 lg:mr-4 p-1 lg:p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
                     >
-                      <Mic className="h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-gray-500 dark:text-gray-400" strokeWidth={2.5} />
+                      <Mic className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-gray-500 dark:text-gray-400" strokeWidth={2.5} />
                     </button>
                   </div>
                 </div>
+
               </motion.div>
 
               {/* VEG MODE Toggle - Enhanced Leafy Animation */}

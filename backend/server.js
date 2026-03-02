@@ -11,8 +11,14 @@ import { Server } from 'socket.io';
 import cron from 'node-cron';
 import mongoose from 'mongoose';
 
-// Load environment variables
+// Load environment variables FIRST (before anything else)
 dotenv.config();
+
+// ─── Firebase Realtime Database — Initialize FIRST ───────────────────────────
+// Must happen before routes, sockets, or any module that calls getRealtimeDB()
+import { initializeFirebaseRealtime } from './config/firebaseRealtimeDB.js';
+initializeFirebaseRealtime();
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Import configurations
 import { connectDB } from './config/database.js';
@@ -411,6 +417,30 @@ app.get('/api/geocode/reverse', async (req, res) => {
     return res.status(502).json({ success: false, message: 'Reverse geocode failed' });
   }
 });
+
+// ─── Firebase Order Tracking (public endpoint — reads from Firebase, NOT Google Maps) ─
+// Returns polyline + delivery boy live location from Firebase Realtime DB
+// Called by user tracking screen as REST fallback (Firebase listener is preferred)
+app.get('/api/tracking/:orderId', async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    if (!orderId) return res.status(400).json({ success: false, message: 'orderId required' });
+
+    const { getOrderTrackingFromFirebase } = await import('./modules/delivery/services/deliveryFirebaseService.js');
+    const data = await getOrderTrackingFromFirebase(orderId);
+
+    if (!data) {
+      return res.status(404).json({ success: false, message: 'Tracking data not found in Firebase. Order may not be active.' });
+    }
+
+    return res.json({ success: true, data });
+  } catch (error) {
+    console.error('Tracking API error:', error?.message || error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch tracking data' });
+  }
+});
+// ─────────────────────────────────────────────────────────────────────────────────────
+
 app.use('/api/order', orderRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/menu', menuRoutes);
@@ -686,12 +716,29 @@ function initializeScheduledTasks() {
 }
 
 // Handle unhandled promise rejections
+// ⚠️ IMPORTANT: Do NOT exit on unhandled rejections in development
+// MongoDB disconnect + cron jobs can cause unhandledRejection which would kill the server
 process.on('unhandledRejection', (err) => {
-  console.error('Unhandled Promise Rejection:', err);
-  // Close server & exit process
-  httpServer.close(() => {
-    process.exit(1);
-  });
+  const isNetworkError = err?.message?.includes('ENOTFOUND') ||
+    err?.message?.includes('EAI_AGAIN') ||
+    err?.message?.includes('ENOENT') ||
+    err?.message?.includes('getaddrinfo') ||
+    err?.message?.includes('MongoServerSelectionError') ||
+    err?.message?.includes('MongoNetworkError') ||
+    err?.message?.includes('ResetPool');
+
+  if (isNetworkError) {
+    // MongoDB/network errors - just log, don't crash server
+    console.warn('⚠️ Network/DB error (server continues):', err?.message);
+  } else {
+    console.error('Unhandled Promise Rejection:', err);
+    // Only crash in production for non-network errors
+    if (process.env.NODE_ENV === 'production') {
+      httpServer.close(() => {
+        process.exit(1);
+      });
+    }
+  }
 });
 
 export default app;

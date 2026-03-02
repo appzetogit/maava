@@ -30,14 +30,14 @@ export const getRestaurantOrders = asyncHandler(async (req, res) => {
     // Query orders by restaurantId (stored as String in Order model)
     // Try multiple restaurantId formats to handle different storage formats
     const restaurantIdVariations = [restaurantIdString];
-    
+
     // Also add ObjectId string format if valid (both directions)
     if (mongoose.Types.ObjectId.isValid(restaurantIdString)) {
       const objectIdString = new mongoose.Types.ObjectId(restaurantIdString).toString();
       if (!restaurantIdVariations.includes(objectIdString)) {
         restaurantIdVariations.push(objectIdString);
       }
-      
+
       // Also try the original ObjectId if restaurantIdString is already a string
       try {
         const objectId = new mongoose.Types.ObjectId(restaurantIdString);
@@ -49,7 +49,7 @@ export const getRestaurantOrders = asyncHandler(async (req, res) => {
         // Ignore if not a valid ObjectId
       }
     }
-    
+
     // Also try direct match without ObjectId conversion
     restaurantIdVariations.push(restaurantIdString);
 
@@ -107,15 +107,15 @@ export const getRestaurantOrders = asyncHandler(async (req, res) => {
       total,
       restaurantId: restaurantIdString,
       queryUsed: JSON.stringify(query),
-      orders: orders.map(o => ({ 
-        orderId: o.orderId, 
-        status: o.status, 
+      orders: orders.map(o => ({
+        orderId: o.orderId,
+        status: o.status,
         restaurantId: o.restaurantId,
         restaurantIdType: typeof o.restaurantId,
         createdAt: o.createdAt
       }))
     });
-    
+
     // If no orders found, log a warning with more details
     if (orders.length === 0 && total === 0) {
       console.warn('⚠️ No orders found for restaurant:', {
@@ -124,11 +124,11 @@ export const getRestaurantOrders = asyncHandler(async (req, res) => {
         variationsTried: restaurantIdVariations,
         query: JSON.stringify(query)
       });
-      
+
       // Try to find ANY orders in database for debugging
       const allOrdersCount = await Order.countDocuments({});
       console.log(`📊 Total orders in database: ${allOrdersCount}`);
-      
+
       // Check if orders exist with similar restaurantId
       const sampleOrders = await Order.find({}).limit(5).select('orderId restaurantId status').lean();
       if (sampleOrders.length > 0) {
@@ -262,20 +262,20 @@ export const acceptOrder = asyncHandler(async (req, res) => {
     if (preparationTime) {
       const restaurantPrepTime = parseInt(preparationTime, 10);
       const initialPrepTime = order.preparationTime || 0;
-      
+
       // Calculate additional time restaurant is adding
       const additionalTime = Math.max(0, restaurantPrepTime - initialPrepTime);
-      
+
       // Update ETA with additional time (add to both min and max)
       if (order.eta) {
         const currentMin = order.eta.min || 0;
         const currentMax = order.eta.max || 0;
-        
+
         order.eta.min = currentMin + additionalTime;
         order.eta.max = currentMax + additionalTime;
         order.eta.additionalTime = (order.eta.additionalTime || 0) + additionalTime;
         order.eta.lastUpdated = new Date();
-        
+
         // Update estimated delivery time to average of new min and max
         order.estimatedDeliveryTime = Math.ceil((order.eta.min + order.eta.max) / 2);
       } else {
@@ -288,7 +288,7 @@ export const acceptOrder = asyncHandler(async (req, res) => {
         };
         order.estimatedDeliveryTime = Math.ceil((order.eta.min + order.eta.max) / 2);
       }
-      
+
       console.log(`📋 Restaurant updated preparation time:`, {
         initialPrepTime,
         restaurantPrepTime,
@@ -336,29 +336,42 @@ export const acceptOrder = asyncHandler(async (req, res) => {
           }).lean();
         }
 
+        // Map restaurant location (may be null if not set, fallback below handles it)
+        let restaurantLat = null, restaurantLng = null;
+
         if (!restaurantDoc) {
-          console.error(`❌ Restaurant not found for restaurantId: ${restaurantId}`);
+          console.warn(`⚠️ Restaurant not found for id: ${restaurantId}. Will broadcast to all connected delivery sockets.`);
         } else if (!restaurantDoc.location || !restaurantDoc.location.coordinates ||
           restaurantDoc.location.coordinates.length < 2 ||
           (restaurantDoc.location.coordinates[0] === 0 && restaurantDoc.location.coordinates[1] === 0)) {
-          console.error(`❌ Restaurant location not found or invalid for restaurant ${restaurantId}`);
+          console.warn(`⚠️ Restaurant location not set/invalid for ${restaurantId}. Will broadcast to all connected delivery sockets.`);
         } else {
-          const [restaurantLng, restaurantLat] = restaurantDoc.location.coordinates;
+          [restaurantLng, restaurantLat] = restaurantDoc.location.coordinates;
           console.log(`📍 Restaurant location: ${restaurantLat}, ${restaurantLng}`);
+        }
 
-          // Reload order to ensure we have the latest version
-          const freshOrder = await Order.findById(order._id);
-          if (!freshOrder) {
-            console.error(`❌ Order ${order.orderId} not found after save`);
-          } else if (freshOrder.deliveryPartnerId) {
-            console.log(`⚠️ Order ${order.orderId} already has delivery partner: ${freshOrder.deliveryPartnerId}`);
-          } else {
-            // Step 1: Find nearest delivery boys (within 5km priority distance)
+        // Reload order to ensure we have the latest version
+        const freshOrder = await Order.findById(order._id);
+        if (!freshOrder) {
+          console.error(`❌ Order ${order.orderId} not found after save`);
+        } else if (freshOrder.deliveryPartnerId) {
+          console.log(`⚠️ Order ${order.orderId} already has delivery partner: ${freshOrder.deliveryPartnerId}`);
+        } else {
+          // Reload order with populated fields for notification payload
+          const populatedOrder = await Order.findById(freshOrder._id)
+            .populate('userId', 'name phone')
+            .populate('restaurantId', 'name address location phone ownerPhone')
+            .lean();
+
+          if (!populatedOrder) {
+            console.error(`❌ Could not populate order ${order.orderId} for notification`);
+          } else if (restaurantLat !== null && restaurantLng !== null) {
+            // We have restaurant location — do priority-based notification
             const priorityDeliveryBoys = await findNearestDeliveryBoys(restaurantLat, restaurantLng, restaurantId, 5);
-            
+
             if (priorityDeliveryBoys && priorityDeliveryBoys.length > 0) {
               console.log(`✅ Found ${priorityDeliveryBoys.length} priority delivery partners within 5km`);
-              
+
               // Store priority notification info in order
               freshOrder.assignmentInfo = {
                 priorityNotifiedAt: new Date(),
@@ -367,93 +380,81 @@ export const acceptOrder = asyncHandler(async (req, res) => {
               };
               await freshOrder.save();
 
-              // Reload order with populated userId and restaurantId (with location)
-              const populatedOrder = await Order.findById(freshOrder._id)
-                .populate('userId', 'name phone')
-                .populate('restaurantId', 'name address location phone ownerPhone')
-                .lean();
+              const priorityIds = priorityDeliveryBoys.map(db => db.deliveryPartnerId);
+              await notifyMultipleDeliveryBoys(populatedOrder, priorityIds, 'priority');
+              console.log(`✅ Notified ${priorityIds.length} priority delivery partners for order ${order.orderId}`);
 
-              if (populatedOrder) {
-                // Notify priority delivery boys (without assigning)
-                const priorityIds = priorityDeliveryBoys.map(db => db.deliveryPartnerId);
-                await notifyMultipleDeliveryBoys(populatedOrder, priorityIds, 'priority');
-                console.log(`✅ Notified ${priorityIds.length} priority delivery partners for order ${order.orderId}`);
-
-                // Step 2: Set timeout to expand to other delivery boys after 30 seconds
-                setTimeout(async () => {
-                  try {
-                    // Re-check if order still doesn't have delivery partner
-                    const checkOrder = await Order.findById(order._id);
-                    if (!checkOrder || checkOrder.deliveryPartnerId) {
-                      console.log(`ℹ️ Order ${order.orderId} already assigned, skipping expanded notification`);
-                      return;
-                    }
-
-                    console.log(`⏰ 30 seconds passed, expanding notification to other delivery partners for order ${order.orderId}`);
-                    
-                    // Find all other delivery boys (excluding already notified priority ones)
-                    // Get all delivery boys within 50km, excluding priority ones
-                    const allDeliveryBoys = await findNearestDeliveryBoys(
-                      restaurantLat, 
-                      restaurantLng, 
-                      restaurantId, 
-                      50 // Max distance 50km
-                    );
-
-                    // Filter out priority delivery boys
-                    const expandedDeliveryBoys = allDeliveryBoys.filter(
-                      db => !priorityIds.includes(db.deliveryPartnerId)
-                    );
-
-                    if (expandedDeliveryBoys && expandedDeliveryBoys.length > 0) {
-                      const expandedIds = expandedDeliveryBoys.map(db => db.deliveryPartnerId);
-                      
-                      // Update assignment info
-                      checkOrder.assignmentInfo = {
-                        ...(checkOrder.assignmentInfo || {}),
-                        expandedNotifiedAt: new Date(),
-                        expandedDeliveryPartnerIds: expandedIds,
-                        notificationPhase: 'expanded'
-                      };
-                      await checkOrder.save();
-
-                      // Reload with populated userId and restaurantId (with location)
-                      const expandedOrder = await Order.findById(checkOrder._id)
-                        .populate('userId', 'name phone')
-                        .populate('restaurantId', 'name address location phone ownerPhone')
-                        .lean();
-
-                      if (expandedOrder) {
-                        // Notify all expanded delivery boys
-                        await notifyMultipleDeliveryBoys(expandedOrder, expandedIds, 'expanded');
-                        console.log(`✅ Notified ${expandedIds.length} expanded delivery partners for order ${order.orderId}`);
-                      }
-                    } else {
-                      console.warn(`⚠️ No additional delivery partners found for order ${order.orderId}`);
-                    }
-                  } catch (expandError) {
-                    console.error(`❌ Error in expanded notification for order ${order.orderId}:`, expandError);
+              // Step 2: Set timeout to expand to other delivery boys after 30 seconds
+              setTimeout(async () => {
+                try {
+                  const checkOrder = await Order.findById(order._id);
+                  if (!checkOrder || checkOrder.deliveryPartnerId) {
+                    console.log(`ℹ️ Order ${order.orderId} already assigned, skipping expanded notification`);
+                    return;
                   }
-                }, 30000); // 30 seconds timeout
-              }
-            } else {
-              // No priority delivery boys found, immediately try to find any delivery boy
-              console.log(`⚠️ No priority delivery partners found, searching for any available delivery partner`);
-              const anyDeliveryBoy = await findNearestDeliveryBoy(restaurantLat, restaurantLng, restaurantId, 50);
-              
-              if (anyDeliveryBoy) {
-                const populatedOrder = await Order.findById(freshOrder._id)
-                  .populate('userId', 'name phone')
-                  .lean();
 
-                if (populatedOrder) {
-                  await notifyMultipleDeliveryBoys(populatedOrder, [anyDeliveryBoy.deliveryPartnerId], 'immediate');
-                  console.log(`✅ Notified delivery partner immediately for order ${order.orderId}`);
+                  console.log(`⏰ 30 seconds passed, expanding notification for order ${order.orderId}`);
+
+                  const allDeliveryBoys = await findNearestDeliveryBoys(
+                    restaurantLat,
+                    restaurantLng,
+                    restaurantId,
+                    50
+                  );
+
+                  const expandedDeliveryBoys = allDeliveryBoys.filter(
+                    db => !priorityIds.includes(db.deliveryPartnerId)
+                  );
+
+                  if (expandedDeliveryBoys && expandedDeliveryBoys.length > 0) {
+                    const expandedIds = expandedDeliveryBoys.map(db => db.deliveryPartnerId);
+
+                    checkOrder.assignmentInfo = {
+                      ...(checkOrder.assignmentInfo || {}),
+                      expandedNotifiedAt: new Date(),
+                      expandedDeliveryPartnerIds: expandedIds,
+                      notificationPhase: 'expanded'
+                    };
+                    await checkOrder.save();
+
+                    const expandedOrder = await Order.findById(checkOrder._id)
+                      .populate('userId', 'name phone')
+                      .populate('restaurantId', 'name address location phone ownerPhone')
+                      .lean();
+
+                    if (expandedOrder) {
+                      await notifyMultipleDeliveryBoys(expandedOrder, expandedIds, 'expanded');
+                      console.log(`✅ Notified ${expandedIds.length} expanded delivery partners for order ${order.orderId}`);
+                    }
+                  } else {
+                    // Even at expanded stage, do a broadcast as final fallback
+                    console.warn(`⚠️ No additional delivery partners found; broadcasting expanded for order ${order.orderId}`);
+                    await notifyMultipleDeliveryBoys(populatedOrder, [], 'expanded-broadcast');
+                  }
+                } catch (expandError) {
+                  console.error(`❌ Error in expanded notification for order ${order.orderId}:`, expandError);
                 }
+              }, 30000);
+            } else {
+              // No priority delivery boys found via DB — try wider radius
+              console.log(`⚠️ No priority delivery partners in DB, searching wider area...`);
+              const anyDeliveryBoy = await findNearestDeliveryBoy(restaurantLat, restaurantLng, restaurantId, 50);
+
+              if (anyDeliveryBoy) {
+                await notifyMultipleDeliveryBoys(populatedOrder, [anyDeliveryBoy.deliveryPartnerId], 'immediate');
+                console.log(`✅ Notified delivery partner immediately for order ${order.orderId}`);
               } else {
-                console.warn(`⚠️ No delivery partners available for order ${order.orderId}`);
+                // Broadcast to all sockets — last resort
+                console.warn(`⚠️ No delivery partners found in DB. Broadcasting to all connected sockets.`);
+                await notifyMultipleDeliveryBoys(populatedOrder, [], 'broadcast');
+                console.log(`✅ Broadcast notification sent for order ${order.orderId}`);
               }
             }
+          } else {
+            // No restaurant location — broadcast to ALL connected delivery sockets directly
+            console.warn(`⚠️ No restaurant location for order ${order.orderId}. Broadcasting to all connected delivery sockets.`);
+            await notifyMultipleDeliveryBoys(populatedOrder, [], 'broadcast');
+            console.log(`✅ Broadcast notification sent (no restaurant location) for order ${order.orderId}`);
           }
         }
       } catch (assignmentError) {
@@ -1016,7 +1017,7 @@ export const resendDeliveryNotification = asyncHandler(async (req, res) => {
 
       if (populatedOrder) {
         const deliveryPartnerIds = allDeliveryBoys.map(db => db.deliveryPartnerId);
-        
+
         // Update assignment info
         await Order.findByIdAndUpdate(order._id, {
           $set: {
@@ -1027,7 +1028,7 @@ export const resendDeliveryNotification = asyncHandler(async (req, res) => {
         });
 
         await notifyMultipleDeliveryBoys(populatedOrder, deliveryPartnerIds, 'priority');
-        
+
         console.log(`✅ Resent notification to ${deliveryPartnerIds.length} delivery partners for order ${order.orderId}`);
 
         return successResponse(res, 200, `Notification sent to ${deliveryPartnerIds.length} delivery partners`, {
@@ -1044,7 +1045,7 @@ export const resendDeliveryNotification = asyncHandler(async (req, res) => {
 
       if (populatedOrder) {
         const priorityIds = priorityDeliveryBoys.map(db => db.deliveryPartnerId);
-        
+
         // Update assignment info
         await Order.findByIdAndUpdate(order._id, {
           $set: {
@@ -1055,7 +1056,7 @@ export const resendDeliveryNotification = asyncHandler(async (req, res) => {
         });
 
         await notifyMultipleDeliveryBoys(populatedOrder, priorityIds, 'priority');
-        
+
         console.log(`✅ Resent notification to ${priorityIds.length} priority delivery partners for order ${order.orderId}`);
 
         return successResponse(res, 200, `Notification sent to ${priorityIds.length} delivery partners`, {

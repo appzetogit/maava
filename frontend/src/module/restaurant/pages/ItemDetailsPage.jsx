@@ -13,7 +13,8 @@ import {
   ThumbsUp,
   ChevronLeft,
   ChevronRight,
-  Loader2
+  Loader2,
+  Star
 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 // Removed getAllFoods and saveFood - now using menu API
@@ -54,6 +55,7 @@ export default function ItemDetailsPage() {
   const [allergens, setAllergens] = useState("")
   const [showMoreNutrition, setShowMoreNutrition] = useState(false)
   const [selectedTags, setSelectedTags] = useState([])
+  const [rating, setRating] = useState("0.0") // New field for manual rating
   const [images, setImages] = useState([])
   const [imageFiles, setImageFiles] = useState(new Map()) // Track File objects by preview URL
   const [uploadingImages, setUploadingImages] = useState(false)
@@ -100,6 +102,7 @@ export default function ItemDetailsPage() {
         setIsRecommended(item.isRecommended || false)
         setIsInStock(item.isAvailable !== false)
         setSelectedTags(item.tags || [])
+        setRating(item.rating?.toString() || "0.0")
         setImages(item.images && item.images.length > 0 ? item.images : (item.image ? [item.image] : []))
         
         // Parse nutrition data
@@ -191,6 +194,7 @@ export default function ItemDetailsPage() {
             setIsRecommended(foundItem.isRecommended || false)
             setIsInStock(foundItem.isAvailable !== false)
             setSelectedTags(foundItem.tags || [])
+            setRating(foundItem.rating?.toString() || "0.0")
             setImages(foundItem.images && foundItem.images.length > 0 ? foundItem.images : (foundItem.image ? [foundItem.image] : []))
             
             // Parse nutrition data
@@ -645,14 +649,14 @@ export default function ItemDetailsPage() {
         image: allImageUrls.length > 0 ? allImageUrls[0] : "",
         images: allImageUrls.length > 0 ? allImageUrls : [], // Multiple images support - all Cloudinary URLs (ensure it's always an array)
         category: category,
-        rating: itemData?.rating || 0.0,
+        rating: parseFloat(rating) || 0.0,
         reviews: itemData?.reviews || 0,
         price: parseFloat(basePrice) || 0,
         preparationTime: preparationTime || "",
         stock: "Unlimited",
         discount: null,
         originalPrice: null,
-        foodType: foodType === "Egg" ? "Non-Veg" : foodType, // Menu model only supports Veg/Non-Veg
+        foodType: foodType, // Save value directly (Veg, Non-Veg, or Egg)
         availabilityTimeStart: "12:01 AM",
         availabilityTimeEnd: "11:57 PM",
         description: itemDescription.trim(),
@@ -1062,16 +1066,41 @@ export default function ItemDetailsPage() {
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
                 </div>
               </div>
-              {/* <div>
-                <label className="block text-xs text-gray-600 mb-1">GST</label>
-                <button
-                  onClick={() => setIsGstPopupOpen(true)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-left flex items-center justify-between bg-white hover:bg-gray-50 transition-colors"
-                >
-                  <span className="text-sm text-gray-900">GST {gst}%</span>
-                  <ChevronDown className="w-5 h-5 text-gray-500" />
-                </button>
-              </div> */}
+
+              {/* Manual Rating Field */}
+              <div className="relative">
+                <label className="block text-xs text-gray-600 mb-1">Manual Rating (1-5 stars)</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="1"
+                    max="5"
+                    value={rating}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "") {
+                        setRating("");
+                        return;
+                      }
+                      const num = parseFloat(val);
+                      if (num > 5) {
+                        setRating("5");
+                      } else {
+                        setRating(val);
+                      }
+                    }}
+                    onBlur={() => {
+                      if (rating !== "" && parseFloat(rating) < 1) {
+                        setRating("1.0");
+                      }
+                    }}
+                    placeholder="Eg: 4.5"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <Star className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
             </div>
             
           </div>

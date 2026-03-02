@@ -5,6 +5,7 @@ import Zone from '../../admin/models/Zone.js';
 import { validate } from '../../../shared/middleware/validate.js';
 import Joi from 'joi';
 import winston from 'winston';
+import { setDeliveryBoyStatus, updateDeliveryBoyLocation } from '../services/deliveryFirebaseService.js';
 
 const logger = winston.createLogger({
   level: 'info',
@@ -94,6 +95,27 @@ export const updateLocation = asyncHandler(async (req, res) => {
     }
 
     const currentLocation = updatedDelivery.availability?.currentLocation;
+
+    // ─── Mirror status + location to Firebase Realtime DB ─────────────────
+    // This is used to: find nearest delivery boys (zero Maps API) and
+    // show delivery boy markers on admin map via Firebase listener.
+    const boyId = delivery._id.toString();
+    const firebaseStatus = updatedDelivery.availability?.isOnline ? 'online' : 'offline';
+    const fireMeta = {
+      name: updatedDelivery.name || '',
+      phone: updatedDelivery.phone || ''
+    };
+
+    if (typeof latitude === 'number' && typeof longitude === 'number') {
+      // Location + status update
+      updateDeliveryBoyLocation(boyId, null, latitude, longitude, 0, 0)
+        .catch(err => console.warn('⚠️ Firebase location sync failed:', err.message));
+    } else {
+      // Status-only update
+      setDeliveryBoyStatus(boyId, firebaseStatus, fireMeta)
+        .catch(err => console.warn('⚠️ Firebase status sync failed:', err.message));
+    }
+    // ──────────────────────────────────────────────────────────────────────
 
     return successResponse(res, 200, 'Status updated successfully', {
       location: currentLocation ? {

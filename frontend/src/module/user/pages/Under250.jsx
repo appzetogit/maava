@@ -458,8 +458,8 @@ export default function Under250() {
               variant="outline"
               onClick={() => setUnder30MinsFilter(!under30MinsFilter)}
               className={`h-8 sm:h-9 md:h-10 px-3 sm:px-4 md:px-5 rounded-md flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 font-medium transition-all text-sm md:text-base ${under30MinsFilter
-                  ? 'bg-green-600 text-white border border-green-600 hover:bg-green-600/90'
-                  : 'bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300'
+                ? 'bg-green-600 text-white border border-green-600 hover:bg-green-600/90'
+                : 'bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300'
                 }`}
             >
               <Timer className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5" />
@@ -610,8 +610,8 @@ export default function Under250() {
                                     size="sm"
                                     disabled={shouldShowGrayscale}
                                     className={`h-7 md:h-8 lg:h-9 px-3 md:px-4 lg:px-5 text-xs md:text-sm lg:text-base ${shouldShowGrayscale
-                                        ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 border-gray-300 dark:border-gray-700 cursor-not-allowed opacity-50'
-                                        : 'bg-green-600/10 text-green-500 border-green-500 hover:bg-green-700 hover:text-white'
+                                      ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 border-gray-300 dark:border-gray-700 cursor-not-allowed opacity-50'
+                                      : 'bg-green-600/10 text-green-500 border-green-500 hover:bg-green-700 hover:text-white'
                                       }`}
                                     onClick={(e) => {
                                       e.stopPropagation()
@@ -787,8 +787,8 @@ export default function Under250() {
                       handleBookmarkClick(selectedItem.id)
                     }}
                     className={`h-10 w-10 rounded-full border flex items-center justify-center transition-all duration-300 ${bookmarkedItems.has(selectedItem.id)
-                        ? "border-red-500 bg-red-50 text-red-500"
-                        : "border-white bg-white/90 text-gray-600 hover:bg-white"
+                      ? "border-red-500 bg-red-50 text-red-500"
+                      : "border-white bg-white/90 text-gray-600 hover:bg-white"
                       }`}
                   >
                     <Bookmark
@@ -824,8 +824,8 @@ export default function Under250() {
                         handleBookmarkClick(selectedItem.id)
                       }}
                       className={`h-8 w-8 lg:h-10 lg:w-10 rounded-full border flex items-center justify-center transition-all duration-300 ${bookmarkedItems.has(selectedItem.id)
-                          ? "border-red-500 bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400"
-                          : "border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                        ? "border-red-500 bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400"
+                        : "border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                         }`}
                     >
                       <Bookmark
@@ -869,8 +869,8 @@ export default function Under250() {
                 <div className="flex items-center gap-4 md:gap-5 lg:gap-6">
                   {/* Quantity Selector */}
                   <div className={`flex items-center gap-3 md:gap-4 lg:gap-5 border-2 rounded-lg md:rounded-xl px-3 md:px-4 lg:px-5 h-[44px] md:h-[50px] lg:h-[56px] ${shouldShowGrayscale
-                      ? 'border-gray-300 dark:border-gray-700 opacity-50'
-                      : 'border-gray-300 dark:border-gray-700'
+                    ? 'border-gray-300 dark:border-gray-700 opacity-50'
+                    : 'border-gray-300 dark:border-gray-700'
                     }`}>
                     <button
                       onClick={(e) => {
@@ -880,15 +880,15 @@ export default function Under250() {
                       }}
                       disabled={(quantities[selectedItem.id] || 0) === 0 || shouldShowGrayscale}
                       className={`${shouldShowGrayscale
-                          ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 disabled:text-gray-300 dark:disabled:text-gray-600 disabled:cursor-not-allowed'
+                        ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 disabled:text-gray-300 dark:disabled:text-gray-600 disabled:cursor-not-allowed'
                         }`}
                     >
                       <Minus className="h-5 w-5 md:h-6 md:w-6 lg:h-7 lg:w-7" />
                     </button>
                     <span className={`text-lg md:text-xl lg:text-2xl font-semibold min-w-[2rem] md:min-w-[2.5rem] lg:min-w-[3rem] text-center ${shouldShowGrayscale
-                        ? 'text-gray-400 dark:text-gray-600'
-                        : 'text-gray-900 dark:text-white'
+                      ? 'text-gray-400 dark:text-gray-600'
+                      : 'text-gray-900 dark:text-white'
                       }`}>
                       {quantities[selectedItem.id] || 0}
                     </span>
@@ -911,8 +911,8 @@ export default function Under250() {
                   {/* Add Item Button */}
                   <Button
                     className={`flex-1 h-[44px] md:h-[50px] lg:h-[56px] rounded-lg md:rounded-xl font-semibold flex items-center justify-center gap-2 text-sm md:text-base lg:text-lg ${shouldShowGrayscale
-                        ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-600 cursor-not-allowed opacity-50'
-                        : 'bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white'
+                      ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-600 cursor-not-allowed opacity-50'
+                      : 'bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white'
                       }`}
                     onClick={(e) => {
                       if (!shouldShowGrayscale) {

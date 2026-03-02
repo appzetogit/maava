@@ -21,22 +21,59 @@ export default function EditRestaurantAddress() {
   const [selectedOption, setSelectedOption] = useState("minor_correction") // "update_address" or "minor_correction"
   const [lat, setLat] = useState(DEFAULT_LAT)
   const [lng, setLng] = useState(DEFAULT_LNG)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchResults, setSearchResults] = useState([])
 
-  // Format address from location object
-  const formatAddress = (loc) => {
-    if (!loc) return ""
-    const parts = []
-    if (loc.addressLine1) parts.push(loc.addressLine1.trim())
-    if (loc.addressLine2) parts.push(loc.addressLine2.trim())
-    if (loc.area) parts.push(loc.area.trim())
-    if (loc.city) {
-      const city = loc.city.trim()
-      if (!loc.area || !loc.area.includes(city)) {
-        parts.push(city)
+  // Format address consistently with RestaurantDetails.jsx
+  const formatAddress = (locationObj) => {
+    if (!locationObj) return "Location"
+
+    // If location is a string, return it as is
+    if (typeof locationObj === 'string') {
+      return locationObj
+    }
+
+    // PRIORITY 1: Use formattedAddress if it's complete
+    if (locationObj.formattedAddress && locationObj.formattedAddress.trim() !== "" && locationObj.formattedAddress !== "Select location") {
+      const isCoordinates = /^-?\d+\.\d+,\s*-?\d+\.\d+$/.test(locationObj.formattedAddress.trim())
+      if (!isCoordinates) {
+        const cleanedAddr = locationObj.formattedAddress.trim().replace(/^[A-Z0-9]+\+[A-Z0-9]+,\s*/i, '')
+        if (cleanedAddr.length > 5) {
+          return cleanedAddr
+        }
       }
     }
-    if (loc.landmark) parts.push(loc.landmark.trim())
-    return parts.join(", ") || ""
+
+    // PRIORITY 2: Build address from location object components
+    const addressParts = []
+    if (locationObj.addressLine1 && locationObj.addressLine1.trim() !== "") {
+      addressParts.push(locationObj.addressLine1.trim())
+    }
+    if (locationObj.addressLine2 && locationObj.addressLine2.trim() !== "") {
+      addressParts.push(locationObj.addressLine2.trim())
+    }
+    if (locationObj.area && locationObj.area.trim() !== "") {
+      addressParts.push(locationObj.area.trim())
+    }
+    if (locationObj.city && locationObj.city.trim() !== "") {
+      addressParts.push(locationObj.city.trim())
+    }
+    const pinCode = locationObj.pincode || locationObj.zipCode || locationObj.postalCode
+    if (pinCode && pinCode.toString().trim() !== "") {
+      addressParts.push(pinCode.toString().trim())
+    }
+
+    if (addressParts.length >= 1) {
+      return addressParts.join(', ')
+    }
+
+    // PRIORITY 3: Fallback to formattedAddress
+    if (locationObj.formattedAddress && locationObj.formattedAddress.trim() !== "") {
+      return locationObj.formattedAddress.trim()
+    }
+
+    return locationObj.address || "Location"
   }
 
   // Fetch restaurant data from backend
@@ -152,7 +189,6 @@ export default function EditRestaurantAddress() {
       } else {
         // Minor correction - update location coordinates
         // Fetch live address from coordinates using Google Maps API
-        try {
           // Get Google Maps API key
           const { getGoogleMapsApiKey } = await import('@/lib/utils/googleMapsApiKey.js')
           const GOOGLE_MAPS_API_KEY = await getGoogleMapsApiKey()
@@ -196,16 +232,48 @@ export default function EditRestaurantAddress() {
             navigate(-1)
           } else {
             throw new Error("Invalid response from server")
-          }
-        } catch (updateError) {
-          console.error("Error updating address:", updateError)
-          alert(`Failed to update address: ${updateError.response?.data?.message || updateError.message || "Please try again."}`)
         }
       }
     } catch (error) {
       console.error("Error updating address:", error)
       alert(`Failed to update address: ${error.response?.data?.message || error.message || "Please try again."}`)
     }
+  }
+
+  // Handle address search using Nominatim
+  const handleSearch = async (query) => {
+    if (!query || query.length < 3) return
+    
+    setIsSearching(true)
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&limit=5`)
+      const data = await res.json()
+      setSearchResults(data)
+    } catch (err) {
+      console.error("Search error:", err)
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  // Handle selecting a search result
+  const handleSelectLocation = (result) => {
+    const newLat = parseFloat(result.lat)
+    const newLng = parseFloat(result.lon)
+    setLat(newLat)
+    setLng(newLng)
+    setAddress(result.display_name)
+    setSearchResults([])
+    setSearchQuery("")
+    
+    // Update temporary location object
+    setLocation(prev => ({
+      ...prev,
+      latitude: newLat,
+      longitude: newLng,
+      formattedAddress: result.display_name,
+      coordinates: [newLng, newLat]
+    }))
   }
 
   // Get simplified address for navbar (last two parts: area, city)
@@ -276,9 +344,46 @@ export default function EditRestaurantAddress() {
             </p>
           </div>
 
-          {/* Current Address Display */}
+          {/* Address Search */}
           <div className="mb-4">
-            <p className="text-base text-gray-900">{address}</p>
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  handleSearch(e.target.value)
+                }}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-black"
+                placeholder="Search for your outlet area..."
+              />
+              {isSearching && (
+                <div className="absolute right-3 top-3.5">
+                  <div className="animate-spin h-4 w-4 border-2 border-black border-t-transparent rounded-full"></div>
+                </div>
+              )}
+            </div>
+
+            {/* Search Results Dropdown */}
+            {searchResults.length > 0 && (
+              <div className="absolute left-4 right-4 bg-white border border-gray-200 rounded-lg shadow-xl z-30 mt-1 max-h-60 overflow-y-auto">
+                {searchResults.map((result, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleSelectLocation(result)}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-0"
+                  >
+                    <p className="text-sm font-medium text-gray-900 truncate">{result.display_name}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Current Address Display */}
+          <div className="mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+            <p className="text-xs font-bold text-gray-500 uppercase mb-1">Current Pinned Address</p>
+            <p className="text-sm text-gray-900">{address}</p>
           </div>
 
           {/* Update Button */}

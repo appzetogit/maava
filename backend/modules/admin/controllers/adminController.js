@@ -1088,6 +1088,29 @@ export const getRestaurants = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Get Restaurant by ID
+ * GET /api/admin/restaurants/:id
+ */
+export const getRestaurantById = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const restaurant = await Restaurant.findById(id).select('-password').lean();
+
+    if (!restaurant) {
+      return errorResponse(res, 404, 'Restaurant not found');
+    }
+
+    // Prepare full data format expected by some parts of frontend (if needed)
+    // But for EditRestaurant.jsx, it expects the object directly
+    return successResponse(res, 200, 'Restaurant retrieved successfully', restaurant);
+  } catch (error) {
+    logger.error(`Error fetching restaurant by ID: ${error.message}`, { error: error.stack });
+    return errorResponse(res, 500, 'Failed to fetch restaurant');
+  }
+});
+
+
+/**
  * Update Restaurant Status (Active/Inactive/Ban)
  * PUT /api/admin/restaurants/:id/status
  */
@@ -1141,229 +1164,112 @@ export const getRestaurantJoinRequests = asyncHandler(async (req, res) => {
       search
     } = req.query;
 
-    // Build query
-    const query = {};
+    // ─── Build base query ──────────────────────────────────────────────────────
+    let andConditions = [];
 
-    // Status filter
-    // Pending = restaurants with ALL onboarding steps completed (step 4) but not yet active
-    // Rejected = restaurants that have rejectionReason
     if (status === 'pending') {
-      // Build conditions array for $and - ensures all conditions are met
-      // Check for rejectionReason: either doesn't exist OR is null
-      const conditions = [
-        { isActive: false },
-        {
-          $or: [
-            { 'rejectionReason': { $exists: false } },
-            { 'rejectionReason': null }
-          ]
-        }
-      ];
-
-      // Only show restaurants that have completed ALL onboarding steps (all 4 steps)
-      // Check if onboarding.completedSteps is 4, OR if restaurant has all required data filled
-      // This handles both cases: restaurants with proper tracking AND restaurants that completed onboarding before tracking was added
-      const completionCheck = {
+      andConditions.push({ isActive: false });
+      andConditions.push({
+        $or: [
+          { rejectionReason: { $exists: false } },
+          { rejectionReason: null },
+          { rejectionReason: '' }
+        ]
+      });
+      // Restaurant has completed onboarding (step 4) OR has all required fields
+      andConditions.push({
         $or: [
           { 'onboarding.completedSteps': 4 },
-          // Fallback: If completedSteps is not 4 (or doesn't exist), check if restaurant has all main fields filled
-          // This matches restaurants that have completed onboarding even if completedSteps field wasn't set to 4
           {
             $and: [
-              { 'name': { $exists: true, $ne: null, $ne: '' } }, // Has restaurant name
-              { 'cuisines': { $exists: true, $ne: null, $not: { $size: 0 } } }, // Has cuisines (array with items)
-              { 'openDays': { $exists: true, $ne: null, $not: { $size: 0 } } }, // Has open days (array with items)
-              { 'estimatedDeliveryTime': { $exists: true, $ne: null, $ne: '' } }, // Has delivery time (from step 4)
-              { 'featuredDish': { $exists: true, $ne: null, $ne: '' } } // Has featured dish (from step 4)
+              { name: { $exists: true, $ne: null, $ne: '' } },
+              { cuisines: { $exists: true, $ne: null } },
+              { openDays:  { $exists: true, $ne: null } },
+              { estimatedDeliveryTime: { $exists: true, $ne: null, $ne: '' } }
             ]
           }
         ]
-      };
-
-      conditions.push(completionCheck);
-      query.$and = conditions;
+      });
     } else if (status === 'rejected') {
-      query['rejectionReason'] = { $exists: true, $ne: null };
-      // For rejected, also check if onboarding is complete
-      query.$or = [
-        { 'onboarding.completedSteps': 4 },
-        {
-          $and: [
-            { 'name': { $exists: true, $ne: null, $ne: '' } },
-            { 'estimatedDeliveryTime': { $exists: true, $ne: null, $ne: '' } }
-          ]
-        }
-      ];
+      andConditions.push({ rejectionReason: { $exists: true, $ne: null, $ne: '' } });
+    } else {
+      // All non-active restaurants
+      andConditions.push({ isActive: false });
     }
 
-    // Search filter - combine with $and if search is provided
+    // ─── Search filter ─────────────────────────────────────────────────────────
     if (search && search.trim()) {
-      const searchConditions = {
+      andConditions.push({
         $or: [
-          { name: { $regex: search.trim(), $options: 'i' } },
-          { ownerName: { $regex: search.trim(), $options: 'i' } },
+          { name:       { $regex: search.trim(), $options: 'i' } },
+          { ownerName:  { $regex: search.trim(), $options: 'i' } },
           { ownerPhone: { $regex: search.trim(), $options: 'i' } },
-          { phone: { $regex: search.trim(), $options: 'i' } },
-          { email: { $regex: search.trim(), $options: 'i' } }
+          { phone:      { $regex: search.trim(), $options: 'i' } },
+          { email:      { $regex: search.trim(), $options: 'i' } }
         ]
-      };
-
-      // If query already has $and, add search to it; otherwise create new $and
-      if (query.$and) {
-        query.$and.push(searchConditions);
-      } else {
-        // Convert existing query conditions to $and format
-        const baseConditions = { ...query };
-        query = {
-          $and: [
-            baseConditions,
-            searchConditions
-          ]
-        };
-      }
-    }
-
-    console.log('🔍 Restaurant Join Requests Query:', JSON.stringify(query, null, 2));
-
-    // Calculate pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    // Fetch restaurants
-    const restaurants = await Restaurant.find(query)
-      .select('-password')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit))
-      .lean();
-
-    // Debug: Log found restaurants with detailed info
-    console.log(`📊 Found ${restaurants.length} restaurants matching query:`, {
-      status,
-      queryStructure: Object.keys(query).length,
-      restaurantsFound: restaurants.length,
-      sampleRestaurants: restaurants.slice(0, 5).map(r => ({
-        _id: r._id.toString().substring(0, 10) + '...',
-        name: r.name,
-        isActive: r.isActive,
-        completedSteps: r.onboarding?.completedSteps,
-        hasRejectionReason: !!r.rejectionReason,
-        hasName: !!r.name,
-        hasCuisines: !!r.cuisines && r.cuisines.length > 0,
-        hasOpenDays: !!r.openDays && r.openDays.length > 0,
-        hasEstimatedDeliveryTime: !!r.estimatedDeliveryTime,
-        hasFeaturedDish: !!r.featuredDish,
-      }))
-    });
-
-    // Get total count
-    const total = await Restaurant.countDocuments(query);
-
-    console.log(`📊 Total count: ${total} restaurants`);
-
-    // Also log a sample of ALL inactive restaurants (for debugging)
-    if (status === 'pending' && restaurants.length === 0) {
-      const allInactive = await Restaurant.find({
-        isActive: false,
-        $or: [
-          { 'rejectionReason': { $exists: false } },
-          { 'rejectionReason': null }
-        ]
-      })
-        .select('name isActive onboarding.completedSteps cuisines openDays estimatedDeliveryTime featuredDish')
-        .limit(10)
-        .lean();
-
-      const totalInactive = await Restaurant.countDocuments({
-        isActive: false,
-        $or: [
-          { 'rejectionReason': { $exists: false } },
-          { 'rejectionReason': null }
-        ]
-      });
-
-      console.log('⚠️ No restaurants found with query. Debugging inactive restaurants:', {
-        totalInactive,
-        queryUsed: JSON.stringify(query, null, 2),
-        samples: allInactive.map(r => ({
-          _id: r._id.toString(),
-          name: r.name,
-          isActive: r.isActive,
-          completedSteps: r.onboarding?.completedSteps,
-          hasAllFields: {
-            hasName: !!r.name && r.name !== '',
-            hasCuisines: !!r.cuisines && Array.isArray(r.cuisines) && r.cuisines.length > 0,
-            hasOpenDays: !!r.openDays && Array.isArray(r.openDays) && r.openDays.length > 0,
-            hasEstimatedDeliveryTime: !!r.estimatedDeliveryTime && r.estimatedDeliveryTime !== '',
-            hasFeaturedDish: !!r.featuredDish && r.featuredDish !== '',
-          },
-          fieldValues: {
-            name: r.name || 'MISSING',
-            cuisinesCount: r.cuisines?.length || 0,
-            openDaysCount: r.openDays?.length || 0,
-            estimatedDeliveryTime: r.estimatedDeliveryTime || 'MISSING',
-            featuredDish: r.featuredDish || 'MISSING',
-          },
-          shouldMatch: (
-            (!!r.name && r.name !== '') &&
-            (!!r.cuisines && Array.isArray(r.cuisines) && r.cuisines.length > 0) &&
-            (!!r.openDays && Array.isArray(r.openDays) && r.openDays.length > 0) &&
-            (!!r.estimatedDeliveryTime && r.estimatedDeliveryTime !== '') &&
-            (!!r.featuredDish && r.featuredDish !== '')
-          ) || r.onboarding?.completedSteps === 4
-        }))
       });
     }
 
-    // Format response to match frontend expectations
+    const query = andConditions.length > 0 ? { $and: andConditions } : {};
+
+    // ─── Pagination ────────────────────────────────────────────────────────────
+    const skip    = (Math.max(1, parseInt(page)) - 1) * parseInt(limit);
+    const limitN  = Math.min(parseInt(limit) || 50, 200);
+
+    // ─── Fetch ─────────────────────────────────────────────────────────────────
+    const [restaurants, total] = await Promise.all([
+      Restaurant.find(query)
+        .select('-password')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitN)
+        .lean(),
+      Restaurant.countDocuments(query)
+    ]);
+
+    // ─── Format response ───────────────────────────────────────────────────────
     const formattedRequests = restaurants.map((restaurant, index) => {
-      // Get zone from location
-      let zone = 'All over the World';
-      if (restaurant.location?.area) {
-        zone = restaurant.location.area;
-      } else if (restaurant.location?.city) {
-        zone = restaurant.location.city;
-      }
-
-      // Get business model (could be from subscription or commission - defaulting for now)
+      const zone = restaurant.location?.area || restaurant.location?.city || 'All over the World';
       const businessModel = restaurant.businessModel || 'Commission Base';
-
-      // Get status
       const requestStatus = restaurant.rejectionReason ? 'Rejected' : 'Pending';
 
       return {
-        _id: restaurant._id.toString(),
-        sl: skip + index + 1,
-        restaurantName: restaurant.name || 'N/A',
-        restaurantImage: restaurant.profileImage?.url || restaurant.onboarding?.step2?.profileImageUrl?.url || 'https://via.placeholder.com/40',
-        ownerName: restaurant.ownerName || 'N/A',
-        ownerPhone: restaurant.ownerPhone || restaurant.phone || 'N/A',
-        zone: zone,
-        businessModel: businessModel,
-        status: requestStatus,
+        _id:             restaurant._id.toString(),
+        sl:              skip + index + 1,
+        restaurantName:  restaurant.name || 'N/A',
+        restaurantImage: restaurant.profileImage?.url || restaurant.onboarding?.step2?.profileImageUrl?.url || '',
+        ownerName:       restaurant.ownerName || 'N/A',
+        ownerPhone:      restaurant.ownerPhone || restaurant.phone || 'N/A',
+        zone,
+        businessModel,
+        status:          requestStatus,
         rejectionReason: restaurant.rejectionReason || null,
-        createdAt: restaurant.createdAt,
-        // Include full data for view/details
-        fullData: {
-          ...restaurant,
-          _id: restaurant._id.toString()
-        }
+        createdAt:       restaurant.createdAt,
+        fullData: { ...restaurant, _id: restaurant._id.toString() }
       };
     });
 
     return successResponse(res, 200, 'Restaurant join requests retrieved successfully', {
       requests: formattedRequests,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page:  parseInt(page),
+        limit: limitN,
         total,
-        pages: Math.ceil(total / parseInt(limit))
+        pages: Math.ceil(total / limitN)
       }
     });
   } catch (error) {
-    logger.error(`Error fetching restaurant join requests: ${error.message}`, { error: error.stack });
+    logger.error(`Error fetching restaurant join requests: ${error.message}`, { stack: error.stack });
     return errorResponse(res, 500, 'Failed to fetch restaurant join requests');
   }
 });
+
+
+/**
+ * Approve Restaurant Join Request
+ * POST /api/admin/restaurants/:id/approve
+ */
+
 
 /**
  * Approve Restaurant Join Request
@@ -1861,7 +1767,8 @@ export const updateRestaurant = asyncHandler(async (req, res) => {
     const fieldsToUpdate = [
       'name', 'ownerName', 'ownerEmail', 'ownerPhone', 'primaryContactNumber',
       'location', 'cuisines', 'openDays', 'estimatedDeliveryTime',
-      'featuredDish', 'featuredPrice', 'offer', 'isActive', 'isAcceptingOrders'
+      'featuredDish', 'featuredPrice', 'offer', 'isActive', 'isAcceptingOrders',
+      'rating', 'totalRatings'
     ];
 
     fieldsToUpdate.forEach(field => {

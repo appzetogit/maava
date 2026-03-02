@@ -80,12 +80,29 @@ export default function RestaurantDetails() {
     sortBy: null, // "low-to-high" | "high-to-low"
     vegNonVeg: null, // "veg" | "non-veg"
   })
-
   // Restaurant data state
   const [restaurant, setRestaurant] = useState(null)
   const [loadingRestaurant, setLoadingRestaurant] = useState(true)
   const [restaurantError, setRestaurantError] = useState(null)
   const fetchedRestaurantRef = useRef(false) // Track if restaurant has been fetched for current slug
+
+  const [currentOfferIndex, setCurrentOfferIndex] = useState(0)
+
+  // Create normalized offers array for rotation
+  const offersList =
+    restaurant?.offers?.length > 0
+      ? restaurant.offers
+      : (restaurant?.offerText || restaurant?.offer)
+        ? [{ title: restaurant?.offerText || restaurant?.offer, name: restaurant?.offerText || restaurant?.offer }]
+        : []
+
+  useEffect(() => {
+    if (offersList.length <= 1) return
+    const interval = setInterval(() => {
+      setCurrentOfferIndex((prev) => (prev + 1) % offersList.length)
+    }, 4000) // Change offer every 4 seconds
+    return () => clearInterval(interval)
+  }, [offersList.length])
 
   // Fetch restaurant data from API
   useEffect(() => {
@@ -110,67 +127,48 @@ export default function RestaurantDetails() {
         let response = null
         let apiRestaurant = null
 
-        // Try dining API first
+        // Primary fetch from restaurant API
         try {
-          response = await diningAPI.getRestaurantBySlug(slug)
+          // First, try to get restaurant directly by slug/ID
+          response = await restaurantAPI.getRestaurantById(slug)
           if (response.data && response.data.success && response.data.data) {
             apiRestaurant = response.data.data
-            console.log('✅ Found restaurant in dining API:', apiRestaurant)
+            console.log("✅ Found restaurant in restaurant API:", apiRestaurant)
+          } else {
+            // Fallback: search by name if ID/Slug lookup didn't return data
+            throw new Error("Direct lookup failed")
           }
-        } catch (diningError) {
-          // If dining API fails with 404, try restaurant API
-          if (diningError.response?.status === 404) {
-            console.log('⚠️ Restaurant not found in dining API, trying restaurant API...')
-            try {
-              // First, try to get restaurant directly by slug (getRestaurantById supports both ID and slug)
-              // This doesn't require zoneId, so it works even if zone is not detected
-              try {
-                response = await restaurantAPI.getRestaurantById(slug)
-                if (response.data && response.data.success && response.data.data) {
-                  apiRestaurant = response.data.data
-                  console.log('✅ Found restaurant in restaurant API by slug/ID:', apiRestaurant)
-                }
-              } catch (directLookupError) {
-                // If direct lookup fails, try searching by name (requires zoneId)
-                console.log('⚠️ Direct lookup failed, trying search by name...')
+        } catch (error) {
+          console.log("⚠️ Direct lookup failed, trying search by name...")
 
-                // Only search if zoneId is available (zoneId is required by backend for search)
-                if (!zoneId) {
-                  console.warn('⚠️ User zone not available, cannot search restaurants. Restaurant may not be found.')
-                  // Don't throw error - let it fall through to show "Restaurant not found" message
-                } else {
-                  // Include zoneId for zone-based filtering
-                  const searchParams = { limit: 100, zoneId: zoneId }
-                  const searchResponse = await restaurantAPI.getRestaurants(searchParams)
-                  const restaurants = searchResponse?.data?.data?.restaurants || searchResponse?.data?.data || []
+          // Only search if zoneId is available (required for search)
+          if (zoneId) {
+            const searchParams = { limit: 100, zoneId: zoneId }
+            const searchResponse = await restaurantAPI.getRestaurants(searchParams)
+            const restaurants = searchResponse?.data?.data?.restaurants || searchResponse?.data?.data || []
 
-                  // Try to find by slug match or name match
-                  const restaurantName = slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                  const matchingRestaurant = restaurants.find(r =>
-                    r.slug === slug ||
-                    r.name?.toLowerCase().replace(/\s+/g, '-') === slug.toLowerCase() ||
-                    r.name?.toLowerCase() === restaurantName.toLowerCase()
-                  )
+            // Try to find by slug match or name match
+            const restaurantName = slug.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+            const matchingRestaurant = restaurants.find(
+              (r) =>
+                r.slug === slug ||
+                r.name?.toLowerCase().replace(/\s+/g, "-") === slug.toLowerCase() ||
+                r.name?.toLowerCase() === restaurantName.toLowerCase()
+            )
 
-                  if (matchingRestaurant) {
-                    // Get full restaurant details by ID
-                    const fullResponse = await restaurantAPI.getRestaurantById(matchingRestaurant._id || matchingRestaurant.restaurantId)
-                    if (fullResponse.data && fullResponse.data.success && fullResponse.data.data) {
-                      apiRestaurant = fullResponse.data.data
-                      console.log('✅ Found restaurant in restaurant API by name search:', apiRestaurant)
-                    }
-                  }
-                }
-              }
-            } catch (restaurantError) {
-              console.error('❌ Restaurant not found in restaurant API either:', restaurantError)
-              // Only throw if we haven't found the restaurant yet
-              if (!apiRestaurant) {
-                throw diningError // Throw original error to show "Restaurant not found"
+            if (matchingRestaurant) {
+              const fullResponse = await restaurantAPI.getRestaurantById(
+                matchingRestaurant._id || matchingRestaurant.restaurantId
+              )
+              if (fullResponse.data && fullResponse.data.success && fullResponse.data.data) {
+                apiRestaurant = fullResponse.data.data
+                console.log("✅ Found restaurant by name search:", apiRestaurant)
               }
             }
-          } else {
-            throw diningError // Re-throw if it's not a 404
+          }
+
+          if (!apiRestaurant) {
+            throw new Error("Restaurant not found")
           }
         }
 
@@ -194,23 +192,13 @@ export default function RestaurantDetails() {
               return locationObj
             }
 
-            // PRIORITY 1: Use formattedAddress if it's complete and has pin code
-            // formattedAddress usually has the most complete information from Google Maps
+            // PRIORITY 1: Use formattedAddress if it's complete
+            // formattedAddress is the real-time address pined by the restaurant
             if (locationObj.formattedAddress && locationObj.formattedAddress.trim() !== "" && locationObj.formattedAddress !== "Select location") {
               const isCoordinates = /^-?\d+\.\d+,\s*-?\d+\.\d+$/.test(locationObj.formattedAddress.trim())
               if (!isCoordinates) {
-                const formattedAddr = locationObj.formattedAddress.trim()
-                // Check if it contains a pin code (6 digit number)
-                const hasPinCode = /\b\d{6}\b/.test(formattedAddr)
-                // If it has pin code, it's complete - use it directly
-                if (hasPinCode) {
-                  // Clean up the address - remove Google Plus Code if present (e.g., "PV6X+JXX, ")
-                  const cleanedAddr = formattedAddr.replace(/^[A-Z0-9]+\+[A-Z0-9]+,\s*/i, '')
-                  return cleanedAddr
-                }
-                // If it has multiple parts (3+), it's likely complete
-                if (formattedAddr.split(',').length >= 3) {
-                  const cleanedAddr = formattedAddr.replace(/^[A-Z0-9]+\+[A-Z0-9]+,\s*/i, '')
+                const cleanedAddr = locationObj.formattedAddress.trim().replace(/^[A-Z0-9]+\+[A-Z0-9]+,\s*/i, '')
+                if (cleanedAddr.length > 5) {
                   return cleanedAddr
                 }
               }
@@ -257,7 +245,7 @@ export default function RestaurantDetails() {
             }
 
             // If we have at least 2 parts, use it
-            if (addressParts.length >= 2) {
+            if (addressParts.length >= 1) {
               return addressParts.join(', ')
             }
 
@@ -366,13 +354,13 @@ export default function RestaurantDetails() {
               || apiRestaurant?.image
               || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=600&fit=crop",
             priceRange: apiRestaurant?.priceRange || null,
-            offers: Array.isArray(apiRestaurant?.offers) ? apiRestaurant.offers : [],
-            offerText: apiRestaurant?.offer || null,
-            offerCount: apiRestaurant?.offerCount ?? 0,
+            offers: Array.isArray(actualRestaurant?.offers) ? actualRestaurant.offers : [],
+            offerText: actualRestaurant?.offer || null,
+            offerCount: actualRestaurant?.offerCount ?? 0,
             restaurantOffers: {
-              goldOffer: apiRestaurant?.restaurantOffers?.goldOffer || null,
-              coupons: Array.isArray(apiRestaurant?.restaurantOffers?.coupons)
-                ? apiRestaurant.restaurantOffers.coupons
+              goldOffer: actualRestaurant?.restaurantOffers?.goldOffer || null,
+              coupons: Array.isArray(actualRestaurant?.restaurantOffers?.coupons)
+                ? actualRestaurant.restaurantOffers.coupons
                 : [],
             },
             outlets: Array.isArray(apiRestaurant?.outlets) ? apiRestaurant.outlets : [],
@@ -1113,20 +1101,22 @@ export default function RestaurantDetails() {
         if (!itemName.includes(query)) return false
       }
 
-      // VegMode filter - when vegMode is ON, show only Veg items
-      // When vegMode is false/null/undefined, show all items (Veg and Non-Veg)
-      if (vegMode === true) {
-        if (item.foodType !== "Veg") return false
+      // Normalize foodType for comparison
+      const itemFoodType = (item.foodType || "").toLowerCase()
+
+      // VegMode filter - globally show only Veg items if enabled
+      // But if user explicitly clicks "Non-veg" filter, we should respect that local override
+      if (vegMode === true && filters.vegNonVeg !== "non-veg") {
+        if (itemFoodType !== "veg") return false
       }
 
       // Veg/Non-veg filter (local filter override)
       if (filters.vegNonVeg === "veg") {
-        // Show only veg items
-        if (item.foodType !== "Veg") return false
+        if (itemFoodType !== "veg") return false
       }
       if (filters.vegNonVeg === "non-veg") {
-        // Show only non-veg items
-        if (item.foodType !== "Non-Veg") return false
+        // Show non-veg and egg items
+        if (itemFoodType !== "non-veg" && itemFoodType !== "egg") return false
       }
 
 
@@ -1367,15 +1357,47 @@ export default function RestaurantDetails() {
                 </span>
               </h1>
               <div
-                className="flex items-center gap-1.5 text-[13px] font-bold text-gray-500 cursor-pointer group"
+                className="flex flex-col gap-0.5 cursor-pointer group"
                 onClick={() => setShowLocationSheet(true)}
               >
+                <div className="flex items-center gap-1 text-[12px] font-bold text-gray-500">
+                  <span className="group-hover:text-red-500 transition-colors line-clamp-1">
+                    {restaurant?.location || "Location"}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 text-gray-400 group-hover:text-red-500 transition-colors flex-shrink-0" />
+                </div>
                 {restaurant?.deliveryTime && (
-                  <><span>{restaurant.deliveryTime} mins</span>
-                    <span className="w-0.5 h-0.5 rounded-full bg-gray-300" /></>
+                  <div className="flex items-center gap-1.5 text-[11px] font-black text-gray-400 uppercase tracking-tightest">
+                    <span>
+                      {restaurant.deliveryTime.toLowerCase().includes("mins")
+                        ? restaurant.deliveryTime
+                        : `${restaurant.deliveryTime} mins`}
+                    </span>
+                  </div>
                 )}
-                <span className="group-hover:text-gray-900 transition-colors">{restaurant?.location || "Location"}</span>
-                <ChevronDown className="h-4 w-4 text-gray-400 group-hover:text-gray-900" />
+
+                {/* Animated Offers Ticker */}
+                {offersList.length > 0 && (
+                  <div className="mt-0.5 h-4 overflow-hidden relative">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={currentOfferIndex}
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -20, opacity: 0 }}
+                        transition={{ duration: 0.5, ease: "easeInOut" }}
+                        className="flex items-center gap-1 text-[11px] font-black text-red-500 uppercase italic tracking-wider leading-4"
+                      >
+                        <Percent className="h-2.5 w-2.5 fill-red-500 text-red-500 flex-shrink-0" />
+                        <span className="truncate">
+                          {offersList[currentOfferIndex]?.title ||
+                            offersList[currentOfferIndex]?.name ||
+                            offersList[currentOfferIndex]}
+                        </span>
+                      </motion.div>
+                    </AnimatePresence>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1386,10 +1408,10 @@ export default function RestaurantDetails() {
                   <Star className="h-3 w-3 fill-white text-white" />
                 </div>
               )}
-              {restaurant?.reviews > 0 && (
+              {(restaurant?.totalRatings > 0 || restaurant?.reviews > 0) && (
                 <div className="mt-1 flex flex-col items-center">
                   <span className="text-[12px] font-black text-gray-900 dark:text-white leading-none">
-                    {restaurant.reviews.toLocaleString()}+
+                    {(restaurant.totalRatings || restaurant.reviews).toLocaleString()}+
                   </span>
                   <span className="text-[8px] font-bold text-gray-500 uppercase tracking-widest mt-0.5">ratings</span>
                 </div>
@@ -1578,7 +1600,6 @@ export default function RestaurantDetails() {
                       <div className="space-y-0">
                         {sortMenuItems(filterMenuItems(section.items)).map((item) => {
                           const quantity = quantities[item.id] || 0
-                          const isVeg = item.foodType === "Veg"
                           const finalPrice = getFinalPrice(item)
                           const originalPrice = item.originalPrice || null
 
@@ -1592,9 +1613,13 @@ export default function RestaurantDetails() {
                               <div className="flex-1 min-w-0 space-y-1">
                                 {/* Badges Row */}
                                 <div className="flex items-center gap-2 mb-1.5">
-                                  {isVeg ? (
+                                  {item.foodType?.toLowerCase() === "veg" ? (
                                     <div className="w-3.5 h-3.5 border border-emerald-600 flex items-center justify-center rounded-sm bg-white">
                                       <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full"></div>
+                                    </div>
+                                  ) : item.foodType?.toLowerCase() === "egg" ? (
+                                    <div className="w-3.5 h-3.5 border border-amber-500 flex items-center justify-center rounded-sm bg-white">
+                                      <div className="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>
                                     </div>
                                   ) : (
                                     <div className="w-3.5 h-3.5 border border-rose-600 flex items-center justify-center rounded-sm bg-white">
@@ -1631,26 +1656,39 @@ export default function RestaurantDetails() {
                                   </div>
                                 )}
 
-                                {/* Rating Row - only show if item has real rating */}
-                                {item.rating != null && (
-                                  <div className="flex items-center gap-1 mt-1">
-                                    <div className="flex items-center gap-0.5 bg-emerald-50 text-emerald-600 px-1 rounded-md">
-                                      <Star className="w-2.5 h-2.5 fill-current" />
-                                      <span className="text-[10px] font-black">{item.rating}</span>
+                                <div className="flex items-center gap-2 mt-1">
+                                  {/* Rating - only show if item has a real (non-zero) rating */}
+                                  {item.rating > 0 && (
+                                    <div className="flex items-center gap-1">
+                                      <div className="flex items-center gap-0.5 bg-emerald-50 text-emerald-600 px-1 rounded-md">
+                                        <Star className="w-2.5 h-2.5 fill-current" />
+                                        <span className="text-[10px] font-black">{item.rating}</span>
+                                      </div>
+                                      {item.reviews > 0 && (
+                                        <span className="text-[10px] font-bold text-emerald-600">
+                                          ({item.reviews.toLocaleString()}+)
+                                        </span>
+                                      )}
                                     </div>
-                                    {item.reviews > 0 && (
-                                      <span className="text-[10px] font-bold text-emerald-600">
-                                        ({item.reviews.toLocaleString()}+)
+                                  )}
+
+                                  {/* Preparation Time - Light Gray styling */}
+                                  {item.preparationTime && (
+                                    <div className="flex items-center gap-0.5 bg-neutral-100 text-neutral-400 px-1 rounded-md border border-neutral-200/50">
+                                      <Clock className="w-2 h-2" />
+                                      <span className="text-[9px] font-bold">
+                                        {item.preparationTime}
                                       </span>
-                                    )}
-                                  </div>
-                                )}
+                                    </div>
+                                  )}
+                                </div>
 
                                 {/* More Details Button */}
                                 <button className="mt-3 px-3 py-1 border border-neutral-200 rounded-full text-[10px] font-black text-neutral-400 uppercase tracking-widest hover:border-black hover:text-black transition-all">
                                   More Details
                                 </button>
                               </div>
+
 
                               {/* Right Side - Image and Overlaid Add Button */}
                               <div className="relative w-36 h-36 flex-shrink-0">
@@ -1752,8 +1790,7 @@ export default function RestaurantDetails() {
                                 <div className="space-y-0">
                                   {sortMenuItems(filterMenuItems(subsection.items)).map((item) => {
                                     const quantity = quantities[item.id] || 0
-                                    // Determine veg/non-veg based on foodType
-                                    const isVeg = item.foodType === "Veg"
+                                    // Determine veg/non-veg indicator based on foodType
 
                                     // Debug: Log preparationTime for troubleshooting
                                     if (item.preparationTime) {
@@ -1770,9 +1807,13 @@ export default function RestaurantDetails() {
                                         <div className="flex-1 min-w-0">
                                           {/* Veg Icon & Spicy Indicator */}
                                           <div className="flex items-center gap-2 mb-1">
-                                            {isVeg ? (
+                                            {item.foodType?.toLowerCase() === "veg" ? (
                                               <div className="w-4 h-4 border-2 border-green-600 flex items-center justify-center rounded-sm flex-shrink-0">
                                                 <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+                                              </div>
+                                            ) : item.foodType?.toLowerCase() === "egg" ? (
+                                              <div className="w-4 h-4 border-2 border-amber-500 flex items-center justify-center rounded-sm flex-shrink-0">
+                                                <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
                                               </div>
                                             ) : (
                                               <div className="w-4 h-4 border-2 border-orange-600 flex items-center justify-center rounded-sm flex-shrink-0">
