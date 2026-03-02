@@ -141,6 +141,7 @@ export default function Cart() {
     saveAs: 'House', // House, Office, Other
     instructions: ''
   })
+  const [lastOrderAddress, setLastOrderAddress] = useState(null)
 
   // Payment UI State
   const [showPaymentOptions, setShowPaymentOptions] = useState(false)
@@ -191,6 +192,7 @@ export default function Cart() {
       } : savedAddress?.location
     }
     : savedAddress
+  const activeAddress = selectedAddressForOrder || defaultAddress
   const defaultPayment = getDefaultPaymentMethod()
 
   // Get restaurant ID from cart or restaurant data
@@ -582,6 +584,22 @@ export default function Cart() {
       }
     }
     fetchFeeSettings()
+  }, [])
+
+  // Fetch last order to get the last used delivery address
+  useEffect(() => {
+    const fetchLastOrderAddress = async () => {
+      try {
+        const response = await orderAPI.getOrders({ limit: 1 })
+        const orders = response?.data?.data?.orders || response?.data?.orders || []
+        if (orders.length > 0 && orders[0].address) {
+          setLastOrderAddress(orders[0].address)
+        }
+      } catch (error) {
+        console.warn("⚠️ Failed to fetch last order address:", error)
+      }
+    }
+    fetchLastOrderAddress()
   }, [])
 
   // Calculate pricing from backend whenever cart, address, or coupon changes
@@ -1748,10 +1766,10 @@ export default function Cart() {
                     <MapPin className="h-4 w-4 md:h-5 md:w-5 text-gray-500 dark:text-gray-400" />
                     <div className="flex-1">
                       <p className="text-sm md:text-base text-gray-800 dark:text-gray-200">
-                        Delivery at <span className="font-semibold">Location</span>
+                        Delivery at <span className="font-semibold">{activeAddress?.label || activeAddress?.area || 'Location'}</span>
                       </p>
                       <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
-                        {defaultAddress ? (formatFullAddress(defaultAddress) || defaultAddress?.formattedAddress || defaultAddress?.address || "Add delivery address") : "Add delivery address"}
+                        {activeAddress ? (formatFullAddress(activeAddress) || activeAddress?.formattedAddress || activeAddress?.address || "Add delivery address") : "Add delivery address"}
                       </p>
                       {/* Address Selection Buttons */}
                       <div className="flex gap-2 mt-2">
@@ -1947,6 +1965,29 @@ export default function Cart() {
                 <span className="text-lg font-bold text-purple-500">Add new Address</span>
               </button>
 
+              {/* Last Order Address Option */}
+              {lastOrderAddress && (
+                <button
+                  onClick={() => {
+                    setSelectedAddressForOrder(lastOrderAddress)
+                    setIsAddressConfirmed(true)
+                    setCheckoutStage('payment')
+                  }}
+                  className="w-full flex items-start gap-4 p-4 rounded-2xl border-2 border-purple-100 dark:border-purple-900/20 bg-purple-50/30 dark:bg-purple-900/5 hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-all text-left group mb-6"
+                >
+                  <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <Clock className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-purple-700 dark:text-purple-400">Last Used Location</p>
+                      <span className="text-[10px] bg-purple-600 text-white px-1.5 py-0.5 rounded-full font-bold uppercase">Recent</span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mt-1">{formatFullAddress(lastOrderAddress)}</p>
+                  </div>
+                </button>
+              )}
+
               <div className="space-y-4">
                 {addresses.map((addr) => (
                   <button
@@ -2023,6 +2064,25 @@ export default function Cart() {
                 <Navigation className="h-5 w-5 text-purple-500 fill-purple-500" />
                 <span className="text-sm font-bold text-gray-800">Current location</span>
               </button>
+
+              {/* Use Last Order Location Button */}
+              {lastOrderAddress && lastOrderAddress.location?.coordinates && (
+                <button
+                  onClick={() => {
+                    const [lng, lat] = lastOrderAddress.location.coordinates
+                    setTempMapCoords({ lat, lng })
+                    setTempAddressInfo({
+                      area: lastOrderAddress.area || lastOrderAddress.street || 'Last Order Area',
+                      city: lastOrderAddress.city || '',
+                      formattedAddress: formatFullAddress(lastOrderAddress)
+                    })
+                  }}
+                  className="absolute bottom-64 right-4 z-[1001] p-3 bg-white shadow-lg rounded-full flex items-center gap-2 border border-purple-500 bg-purple-50/50 backdrop-blur-sm"
+                >
+                  <Clock className="h-5 w-5 text-purple-600" />
+                  <span className="text-sm font-bold text-gray-800">Last order location</span>
+                </button>
+              )}
 
               <div className="absolute bottom-0 left-0 right-0 z-[1001] p-4">
                 <motion.div
@@ -2154,34 +2214,21 @@ export default function Cart() {
                     </button>
                   </div>
 
-                  <input
-                    placeholder="Save address as *"
-                    value={receiverDetails.landmark}
-                    onChange={e => setReceiverDetails({ ...receiverDetails, landmark: e.target.value })}
-                    className="w-full p-4 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-purple-500 shadow-sm"
-                  />
+                  {/* Landmark input removed as requested */}
                 </div>
               </div>
 
-              {/* Delivery Instructions */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-black text-gray-900 dark:text-white">Delivery Instructions</h3>
-                <div className="relative">
-                  <textarea
-                    placeholder="Instructions to reach location"
-                    value={receiverDetails.instructions}
-                    onChange={e => setReceiverDetails({ ...receiverDetails, instructions: e.target.value })}
-                    className="w-full p-4 py-6 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-2xl outline-none focus:border-purple-500 shadow-sm min-h-[80px]"
-                  />
-                  <button className="absolute right-4 top-1/2 -translate-y-1/2 text-purple-500 font-bold">Add</button>
-                </div>
-              </div>
+              {/* Delivery Instructions section removed as requested */}
 
               <Button
                 onClick={() => setCheckoutStage('confirm_details')}
-                className="w-full py-8 rounded-2xl bg-gray-200 dark:bg-gray-800 hover:bg-purple-600 hover:text-white text-gray-400 font-black text-xl transition-all shadow-lg"
+                disabled={!receiverDetails.houseNo || (!receiverDetails.useAccountDetails && (!receiverDetails.name || !receiverDetails.phone))}
+                className={`w-full py-8 rounded-2xl font-black text-xl transition-all shadow-lg ${(!receiverDetails.houseNo || (!receiverDetails.useAccountDetails && (!receiverDetails.name || !receiverDetails.phone)))
+                    ? 'bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
+                    : 'bg-purple-600 text-white hover:bg-purple-700 hover:scale-[1.02] active:scale-[0.98]'
+                  }`}
               >
-                Save Address
+                Review details
               </Button>
             </div>
           </div>
