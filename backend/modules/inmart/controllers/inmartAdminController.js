@@ -683,7 +683,8 @@ export const getDashboardStats = async (req, res) => {
             totalNavEntries,
             activeProducts,
             newProducts,
-            saleProducts
+            saleProducts,
+            mainStore
         ] = await Promise.all([
             InMartProduct.countDocuments(),
             InMartCategory.countDocuments(),
@@ -692,7 +693,8 @@ export const getDashboardStats = async (req, res) => {
             InMartNavigation.countDocuments(),
             InMartProduct.countDocuments({ isAvailable: true }),
             InMartProduct.countDocuments({ isNew: true }),
-            InMartProduct.countDocuments({ isOnSale: true })
+            InMartProduct.countDocuments({ isOnSale: true }),
+            InMartStore.findOne()
         ]);
 
         res.status(200).json({
@@ -706,7 +708,8 @@ export const getDashboardStats = async (req, res) => {
                     totalNavEntries,
                     activeProducts,
                     newProducts,
-                    saleProducts
+                    saleProducts,
+                    isStoreOpen: mainStore ? mainStore.isAcceptingOrders : true
                 }
             }
         });
@@ -714,6 +717,29 @@ export const getDashboardStats = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error fetching stats',
+            error: error.message
+        });
+    }
+};
+// @desc    Toggle InMart store status (open/closed)
+// @route   PATCH /api/admin/inmart/store-status
+// @access  Private/Admin
+export const toggleStoreStatus = async (req, res) => {
+    try {
+        const { isOpen } = req.body;
+
+        // Update all stores or the main one. For simplicity, updating all since Hibermart is usually one store in this context.
+        await InMartStore.updateMany({}, { isAcceptingOrders: isOpen });
+
+        res.status(200).json({
+            success: true,
+            message: `Store status updated to ${isOpen ? 'Open' : 'Closed'}`,
+            data: { isOpen }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error updating store status',
             error: error.message
         });
     }

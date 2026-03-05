@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { HelpCircle, ArrowRight, Phone, Ambulance, AlertTriangle, Shield, ShieldCheck, User, AlertOctagon, CircleHelp } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { deliveryAPI } from "@/lib/api";
 import { useCompanyName } from "@/lib/hooks/useCompanyName";
 
@@ -54,6 +55,7 @@ function BottomPopup({
 }
 
 export default function FeedNavbar({ className = "" }) {
+  const { t } = useTranslation()
   const companyName = useCompanyName()
   const navigate = useNavigate();
 
@@ -95,12 +97,12 @@ export default function FeedNavbar({ className = "" }) {
 
     // Show new toast with a consistent ID to prevent duplicates and offset position
     if (isNowOnline) {
-      toast.success("You are now online", {
+      toast.success(t('delivery.now_online'), {
         id: TOAST_ID_KEY,
         style: { marginTop: '80px' }
       });
     } else {
-      toast("You are now offline", {
+      toast(t('delivery.now_offline'), {
         id: TOAST_ID_KEY,
         style: { marginTop: '80px' }
       });
@@ -207,14 +209,14 @@ export default function FeedNavbar({ className = "" }) {
   const helpOptions = [
     {
       id: "supportTickets",
-      title: "Support tickets",
+      title: t('delivery.support_tickets'),
       subtitle: "Check status of tickets raised",
       icon: "ticket",
       path: "/delivery/help/tickets"
     },
     {
       id: "idCard",
-      title: "Show ID card",
+      title: t('delivery.show_id_card'),
       subtitle: `See your ${companyName} ID card`,
       icon: "idCard",
       path: "/delivery/help/id-card"
@@ -385,7 +387,7 @@ export default function FeedNavbar({ className = "" }) {
                   }`}
                 style={{ opacity: 1, zIndex: 2, pointerEvents: "none" }}
               >
-                {isOnline ? "Online" : "Offline"}
+                {isOnline ? t('delivery.online') : t('delivery.offline')}
               </span>
 
               <motion.div
@@ -440,7 +442,7 @@ export default function FeedNavbar({ className = "" }) {
       <BottomPopup
         isOpen={showHelpPopup}
         onClose={() => setShowHelpPopup(false)}
-        title="How can we help?"
+        title={t('delivery.how_can_we_help')}
         showCloseButton={true}
         closeOnBackdropClick={true}
         maxHeight="70vh"

@@ -2,9 +2,11 @@ import { useNavigate, useLocation } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { User, Home, Banknote, History } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { deliveryAPI } from "@/lib/api"
 
 export default function BottomNavigation() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const [profileImage, setProfileImage] = useState(null)
@@ -64,10 +66,10 @@ export default function BottomNavigation() {
   }, [])
 
   const navItems = [
-    { id: 'home', path: "/delivery", label: "Home", icon: Home },
-    { id: 'pocket', path: "/delivery/requests", label: "Earnings", icon: Banknote },
-    { id: 'history', path: "/delivery/trip-history", label: "History", icon: History },
-    { id: 'profile', path: "/delivery/profile", label: "Profile", icon: User },
+    { id: 'home', path: "/delivery", label: t('delivery.home_title'), icon: Home },
+    { id: 'pocket', path: "/delivery/requests", label: t('delivery.earnings'), icon: Banknote },
+    { id: 'history', path: "/delivery/trip-history", label: t('delivery.history'), icon: History },
+    { id: 'profile', path: "/delivery/profile", label: t('delivery.profile'), icon: User },
   ]
 
   return (

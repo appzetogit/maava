@@ -353,7 +353,7 @@ export const getHomeData = async (req, res) => {
             InMartBanner.find({ isActive: true }).sort({ displayOrder: 1 }).select('-__v'),
             InMartStory.find({ isActive: true }).sort({ displayOrder: 1 }).select('-__v'),
             InMartNavigation.find({ isActive: true }).sort({ displayOrder: 1 }).select('-__v'),
-            InMartStore.findOne({ isActive: true, isAcceptingOrders: true }).select('name slug deliveryTime minimumOrder rating')
+            InMartStore.findOne({ isActive: true }).select('name slug deliveryTime minimumOrder rating isAcceptingOrders')
         ]);
 
         res.status(200).json({

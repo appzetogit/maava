@@ -97,10 +97,9 @@ export default function RestaurantDetails() {
         : []
 
   useEffect(() => {
-    if (offersList.length <= 1) return
     const interval = setInterval(() => {
-      setCurrentOfferIndex((prev) => (prev + 1) % offersList.length)
-    }, 4000) // Change offer every 4 seconds
+      setCurrentOfferIndex((prev) => (offersList.length > 0 ? (prev + 1) % offersList.length : 0))
+    }, 3000) // Change offer every 3 seconds
     return () => clearInterval(interval)
   }, [offersList.length])
 
@@ -1381,14 +1380,14 @@ export default function RestaurantDetails() {
                   <div className="mt-0.5 h-4 overflow-hidden relative">
                     <AnimatePresence mode="wait">
                       <motion.div
-                        key={currentOfferIndex}
-                        initial={{ y: 20, opacity: 0 }}
+                        key={`${currentOfferIndex}-${Math.floor(Date.now() / 3000)}`}
+                        initial={{ y: 15, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: -20, opacity: 0 }}
-                        transition={{ duration: 0.5, ease: "easeInOut" }}
-                        className="flex items-center gap-1 text-[11px] font-black text-red-500 uppercase italic tracking-wider leading-4"
+                        exit={{ y: -15, opacity: 0 }}
+                        transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
+                        className="flex items-center gap-1 text-[11px] font-[1000] text-black dark:text-white uppercase italic tracking-wider leading-4"
                       >
-                        <Percent className="h-2.5 w-2.5 fill-red-500 text-red-500 flex-shrink-0" />
+                        <Percent className="h-2.5 w-2.5 fill-black dark:fill-white text-black dark:text-white flex-shrink-0" />
                         <span className="truncate">
                           {offersList[currentOfferIndex]?.title ||
                             offersList[currentOfferIndex]?.name ||
@@ -2673,7 +2672,7 @@ export default function RestaurantDetails() {
                       <Button
                         className={`flex-1 h-[44px] rounded-lg font-semibold flex items-center justify-center gap-2 ${shouldShowGrayscale
                           ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-600 cursor-not-allowed opacity-50'
-                          : 'bg-red-500 hover:bg-red-600 text-white'
+                          : 'bg-black hover:bg-gray-900 text-white transition-colors shadow-lg'
                           }`}
                         onClick={(e) => {
                           if (!shouldShowGrayscale) {

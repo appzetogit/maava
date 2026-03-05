@@ -439,6 +439,19 @@ export const uploadImage = async (formData) => {
     }
 };
 
+/**
+ * Admin: Toggle store status
+ */
+export const adminToggleStoreStatus = async (isOpen) => {
+    try {
+        const response = await api.patch('/admin/inmart/store-status', { isOpen });
+        return response.data;
+    } catch (error) {
+        console.error('Error toggling store status:', error);
+        throw error;
+    }
+};
+
 export default {
     // Public
     getInMartHome,
@@ -475,4 +488,5 @@ export default {
     adminUpdateNavEntry,
     adminDeleteNavEntry,
     uploadImage,
+    adminToggleStoreStatus,
 };

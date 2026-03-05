@@ -68,15 +68,26 @@ const ProductCard = ({ product, themeColor }) => (
     </div>
 );
 
-const AnimatedGoldenLines = () => {
+const AnimatedGoldenLines = ({ type }) => {
+    // Unique color palette per section
+    const colors = {
+        'newly-launched': { primary: '#FBCFE8', secondary: '#F472B6', stop: '#DB2777' }, // Pink
+        'best-sellers': { primary: '#DDD6FE', secondary: '#A78BFA', stop: '#7C3AED' }, // Purple
+        'trending': { primary: '#FEF3C7', secondary: '#FBBF24', stop: '#D97706' }, // Amber/Gold
+        'sale': { primary: '#FECACA', secondary: '#F87171', stop: '#DC2626' }, // Red
+        'default': { primary: '#FBDF93', secondary: '#FBDF93', stop: '#FBDF93' }
+    };
+
+    const sectionColor = colors[type] || colors.default;
+
     return (
         <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
             <svg className="w-full h-full" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">
                 <defs>
-                    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#FBDF93" stopOpacity="0" />
-                        <stop offset="50%" stopColor="#FBDF93" stopOpacity="0.8" />
-                        <stop offset="100%" stopColor="#FBDF93" stopOpacity="0" />
+                    <linearGradient id={`grad-${type}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor={sectionColor.primary} stopOpacity="0" />
+                        <stop offset="50%" stopColor={sectionColor.secondary} stopOpacity="0.8" />
+                        <stop offset="100%" stopColor={sectionColor.stop} stopOpacity="0" />
                     </linearGradient>
                     <filter id="glow">
                         <feGaussianBlur stdDeviation="3" result="coloredBlur" />
@@ -87,12 +98,37 @@ const AnimatedGoldenLines = () => {
                     </filter>
                 </defs>
 
+                {/* Unique animations based on type */}
+                {type === 'newly-launched' && (
+                    /* Floating Bubbles/Circles for Freshness */
+                    [...Array(12)].map((_, i) => (
+                        <motion.circle
+                            key={i}
+                            cx={200 + Math.random() * 600}
+                            cy={200 + Math.random() * 600}
+                            r={2 + Math.random() * 4}
+                            fill={sectionColor.secondary}
+                            initial={{ opacity: 0, scale: 0 }}
+                            animate={{
+                                opacity: [0, 0.4, 0],
+                                scale: [0.5, 1.5, 0.5],
+                                y: [0, -100]
+                            }}
+                            transition={{
+                                duration: 4 + Math.random() * 4,
+                                repeat: Infinity,
+                                delay: i * 0.5
+                            }}
+                        />
+                    ))
+                )}
+
                 {/* Center radiating curved lines */}
                 {[...Array(6)].map((_, i) => (
                     <motion.path
                         key={`line-right-${i}`}
                         d={`M 500 500 Q ${600 + i * 50} ${300 - i * 40} ${900} ${500 + i * 60}`}
-                        stroke="url(#goldGradient)"
+                        stroke={`url(#grad-${type})`}
                         strokeWidth="1.5"
                         fill="none"
                         filter="url(#glow)"
@@ -100,7 +136,8 @@ const AnimatedGoldenLines = () => {
                         animate={{
                             pathLength: [0, 1, 0],
                             opacity: [0, 0.5, 0],
-                            pathOffset: [0, 1.5]
+                            pathOffset: [0, 1.5],
+                            rotate: type === 'trending' ? [0, 5, 0] : 0
                         }}
                         transition={{
                             duration: 10 + i * 2,
@@ -115,7 +152,7 @@ const AnimatedGoldenLines = () => {
                     <motion.path
                         key={`line-left-${i}`}
                         d={`M 500 500 Q ${400 - i * 50} ${700 + i * 40} ${100} ${500 - i * 60}`}
-                        stroke="url(#goldGradient)"
+                        stroke={`url(#grad-${type})`}
                         strokeWidth="1.5"
                         fill="none"
                         filter="url(#glow)"
@@ -123,7 +160,8 @@ const AnimatedGoldenLines = () => {
                         animate={{
                             pathLength: [0, 1, 0],
                             opacity: [0, 0.5, 0],
-                            pathOffset: [0, 1.5]
+                            pathOffset: [0, 1.5],
+                            rotate: type === 'trending' ? [0, -5, 0] : 0
                         }}
                         transition={{
                             duration: 10 + i * 2,
@@ -134,25 +172,23 @@ const AnimatedGoldenLines = () => {
                     />
                 ))}
 
-                {/* Vertical radiating lines */}
-                {[...Array(4)].map((_, i) => (
+                {/* Vertical radiating lines for Sale - aggressive/fast */}
+                {type === 'sale' && [...Array(8)].map((_, i) => (
                     <motion.path
                         key={`line-up-${i}`}
-                        d={`M 500 500 Q ${500 + (i % 2 === 0 ? 100 : -100)} ${400} ${500 + (i % 2 === 0 ? 200 : -200)} 0`}
-                        stroke="url(#goldGradient)"
-                        strokeWidth="1"
+                        d={`M ${Math.random() * 1000} 1000 L ${Math.random() * 1000} 0`}
+                        stroke={`url(#grad-${type})`}
+                        strokeWidth="0.5"
                         fill="none"
-                        filter="url(#glow)"
                         animate={{
                             pathLength: [0, 1, 0],
-                            opacity: [0, 0.3, 0],
-                            pathOffset: [0, 1.2]
+                            opacity: [0, 0.2, 0],
+                            y: [0, -200]
                         }}
                         transition={{
-                            duration: 12 + i * 3,
+                            duration: 2 + Math.random() * 2,
                             repeat: Infinity,
-                            ease: "easeInOut",
-                            delay: i * 1.5
+                            delay: i * 0.2
                         }}
                     />
                 ))}
@@ -220,6 +256,21 @@ export default function ProductSectionPage() {
         fetchData()
     }, [sectionId])
 
+    const getSectionStyle = (id) => {
+        switch (id) {
+            case 'newly-launched':
+                return "from-[#4c0519] to-[#881337]"; // Deep Pink/Rose
+            case 'best-sellers':
+                return "from-[#2e1065] to-[#4c1d95]"; // Deep Purple
+            case 'trending':
+                return "from-[#451a03] to-[#78350f]"; // Deep Amber/Brown
+            case 'sale':
+                return "from-[#450a0a] to-[#7f1d1d]"; // Deep Red
+            default:
+                return "from-[#4a0404] to-[#2a0202]";
+        }
+    }
+
     return (
         <AnimatedPage className="min-h-screen bg-slate-50 dark:bg-[#0a0a0a] pb-20">
             <style>
@@ -230,8 +281,11 @@ export default function ProductSectionPage() {
             font-family: 'Playfair Display', serif;
           }
 
-          .gold-text-gradient {
-            background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 50%, #D97706 100%);
+          .text-gradient-${sectionId} {
+            background: ${sectionId === 'newly-launched' ? 'linear-gradient(135deg, #FCE7F3 0%, #F472B6 50%, #DB2777 100%)' :
+                        sectionId === 'best-sellers' ? 'linear-gradient(135deg, #EDE9FE 0%, #A78BFA 50%, #7C3AED 100%)' :
+                            sectionId === 'trending' ? 'linear-gradient(135deg, #FEF3C7 0%, #FBBF24 50%, #D97706 100%)' :
+                                'linear-gradient(135deg, #FEE2E2 0%, #F87171 50%, #EF4444 100%)'};
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
@@ -240,9 +294,9 @@ export default function ProductSectionPage() {
             </style>
 
             {/* Hero Section */}
-            <section className="relative w-full h-[60vh] sm:h-[70vh] flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#4a0404] to-[#2a0202]">
+            <section className={`relative w-full h-[60vh] sm:h-[70vh] flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b ${getSectionStyle(sectionId)}`}>
                 {/* Animated Golden Lines Background */}
-                <AnimatedGoldenLines />
+                <AnimatedGoldenLines type={sectionId} />
 
                 {/* Back Button */}
                 <button
@@ -258,7 +312,7 @@ export default function ProductSectionPage() {
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 1, ease: "easeOut" }}
-                        className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-luxury font-bold italic gold-text-gradient tracking-tight"
+                        className={`text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-luxury font-bold italic text-gradient-${sectionId} tracking-tight`}
                     >
                         {sectionTitle}
                     </motion.h1>

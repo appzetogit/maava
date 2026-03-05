@@ -854,6 +854,108 @@ const PartyCelebration = () => {
   );
 };
 
+const HibermartClosedPage = ({ onGoBack }) => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    className="fixed inset-0 z-[10002] bg-[#8B5CF6] flex flex-col items-center justify-center p-6 text-center"
+  >
+    <div className="absolute top-8 left-8">
+      <button
+        onClick={onGoBack}
+        className="p-3 bg-white/20 hover:bg-white/30 rounded-2xl transition-all text-white backdrop-blur-md border border-white/10"
+      >
+        <ArrowLeft size={24} />
+      </button>
+    </div>
+
+    <motion.div
+      initial={{ scale: 0.8, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ type: "spring", stiffness: 200, damping: 20 }}
+      className="mb-8"
+    >
+      <div className="relative">
+        <svg width="120" height="120" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-2xl">
+          <path
+            d="M50 0C22.3858 0 0 22.3858 0 50C0 67.4552 9.42149 82.6826 23.5113 91.0776L50 100L76.4887 91.0776C90.5785 82.6826 100 67.4552 100 50C100 22.3858 77.6142 0 50 0Z"
+            fill="white"
+          />
+          <text
+            x="50"
+            y="62"
+            textAnchor="middle"
+            fill="#8B5CF6"
+            fontSize="55"
+            fontWeight="bold"
+            fontStyle="italic"
+            className="select-none"
+            style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
+          >
+            M
+          </text>
+        </svg>
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+          className="absolute -top-4 -right-4 w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg"
+        >
+          <Sparkles className="text-white w-6 h-6" />
+        </motion.div>
+      </div>
+    </motion.div>
+
+    <motion.h1
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay: 0.2 }}
+      className="text-white text-4xl sm:text-5xl font-[1000] italic tracking-tightest uppercase mb-4"
+    >
+      Hibermart
+    </motion.h1>
+
+    <motion.div
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay: 0.3 }}
+      className="max-w-md"
+    >
+      <h2 className="text-white/90 text-2xl font-bold mb-4 uppercase tracking-tighter">Current under maintenance</h2>
+      <p className="text-white/70 text-lg font-bold leading-tight uppercase tracking-tight">
+        We're currently refreshing our store <br />
+        with some amazing new products. <br />
+        <span className="text-white">Stay tuned!</span>
+      </p>
+    </motion.div>
+
+    {/* Background Decorative Elements */}
+    <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10">
+      {[...Array(20)].map((_, i) => (
+        <motion.div
+          key={i}
+          initial={{
+            opacity: 0,
+            x: Math.random() * 800,
+            y: Math.random() * 600
+          }}
+          animate={{
+            opacity: [0, 0.2, 0],
+            scale: [0.5, 1, 0.5],
+            y: [null, '-=100']
+          }}
+          transition={{
+            duration: 3 + Math.random() * 5,
+            repeat: Infinity,
+            delay: Math.random() * 5
+          }}
+          className="absolute w-2 h-2 bg-white rounded-full blur-[1px]"
+        />
+      ))}
+    </div>
+
+  </motion.div>
+);
+
 export default function InMart() {
   const navigate = useNavigate()
   const [heroSearch, setHeroSearch] = useState("")
@@ -1228,439 +1330,442 @@ export default function InMart() {
         )}
       </AnimatePresence>
 
-      <AnimatedPage
-        className="bg-white dark:bg-[#0a0a0a] scrollbar-hide"
-        style={{
-          minHeight: '100vh',
-          paddingBottom: '80px',
-          overflowY: 'auto',
-          msOverflowStyle: 'none',
-          scrollbarWidth: 'none'
-        }}
-      >
-        <style>
-          {`
+      {!showSplash && !isLoading && apiData.store?.isAcceptingOrders === false ? (
+        <HibermartClosedPage onGoBack={() => navigate(-1)} />
+      ) : (
+        <AnimatedPage
+          className="bg-white dark:bg-[#0a0a0a] scrollbar-hide"
+          style={{
+            minHeight: '100vh',
+            paddingBottom: '80px',
+            overflowY: 'auto',
+            msOverflowStyle: 'none',
+            scrollbarWidth: 'none'
+          }}
+        >
+          <style>
+            {`
           .scrollbar-hide::-webkit-scrollbar {
             display: none;
           }
         `}
-        </style>
-        {/* Unified Navbar & Hero Section */}
-        <div
-          className="relative w-full overflow-hidden lg:min-h-[35vh] md:pt-4 transition-colors duration-500 ease-in-out"
-          style={{
-            background: `linear-gradient(180deg, ${activeCategoryData.themeColor} 0%, ${activeCategoryData.themeColor}33 100%)`
-          }}
-        >
+          </style>
+          {/* Unified Navbar & Hero Section */}
+          <div
+            className="relative w-full overflow-hidden lg:min-h-[35vh] md:pt-4 transition-colors duration-500 ease-in-out"
+            style={{
+              background: `linear-gradient(180deg, ${activeCategoryData.themeColor} 0%, ${activeCategoryData.themeColor}33 100%)`
+            }}
+          >
 
-          {/* Navbar */}
-          <div className="relative z-20 pt-1 sm:pt-3 lg:pt-4">
-            <PageNavbar
-              textColor="black"
-              zIndex={20}
-            />
-          </div>
-
-          {/* Hero Section with Search */}
-          <section className="relative z-20 w-full px-4 sm:px-6 lg:px-8 xl:px-12 mt-4 sm:mt-6 md:mt-8 py-4 sm:py-8">
-            <div className="max-w-7xl lg:max-w-[1400px] xl:max-w-[1600px] mx-auto">
-              <div className="relative w-full overflow-hidden">
-                <div className="flex items-center gap-3 sm:gap-4 md:gap-5 lg:gap-6">
-                  {/* Search Input Container */}
-                  <div
-                    className="relative flex-1 group cursor-pointer"
-                    onClick={() => setIsInMartSearchOpen(true)}
-                  >
-                    <Search className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-[#8B5CF6] transition-colors w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
-                    <div className="w-full h-12 sm:h-14 md:h-16 bg-white dark:bg-[#1a1a1a] border-2 border-transparent group-hover:border-[#E7D1FF] rounded-2xl sm:rounded-[1.25rem] pl-12 sm:pl-14 pr-12 flex items-center shadow-[0_4px_20px_rgba(0,0,0,0.04)] transition-all">
-                      <span className="text-gray-400 dark:text-gray-500 text-sm sm:text-base md:text-lg font-medium select-none truncate">
-                        {placeholderItems[placeholderIndex]}
-                      </span>
-                    </div>
-                    <Mic
-                      className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#8B5CF6] transition-colors w-5 h-5 sm:w-6 sm:h-6 cursor-pointer z-10"
-                      strokeWidth={2.5}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsVoiceSearchOpen(true);
-                      }}
-                    />
-                  </div>
-
-                  {/* Trending Deals Toggle - Hidden on mobile, shown on md+ */}
-                  <motion.button
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="hidden md:flex flex-shrink-0 h-14 md:h-16 px-6 lg:px-8 rounded-2xl sm:rounded-[1.25rem] bg-white dark:bg-[#1a1a1a] shadow-[0_4px_20px_rgba(0,0,0,0.04)] items-center gap-3 border-2 border-transparent hover:border-[#FFEDEB] transition-all"
-                  >
-                    <div className="p-2 bg-[#FFEDEB] dark:bg-[#FFEDEB]/10 rounded-xl">
-                      <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-[#FF725E]" strokeWidth={2.5} />
-                    </div>
-                    <div className="flex flex-col items-start leading-tight">
-                      <span className="text-[#FF725E] font-black text-[10px] lg:text-xs tracking-tighter uppercase italic">Trending</span>
-                      <span className="text-[#FF725E] font-black text-sm lg:text-xl tracking-tighter uppercase italic">Deals</span>
-                    </div>
-                  </motion.button>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Categories Section */}
-          <section className="relative z-20 w-full mt-1 sm:mt-2 pb-2 px-0 overflow-hidden">
-            {/* Subtle Snow Shower Background for Navigation */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-              {[...Array(15)].map((_, i) => (
-                <motion.div
-                  key={`nav-snow-${i}`}
-                  initial={{
-                    top: "-10%",
-                    left: `${Math.random() * 100}%`,
-                    opacity: 0,
-                    scale: 0.1 + Math.random() * 0.4
-                  }}
-                  animate={{
-                    top: "110%",
-                    left: [`${Math.random() * 100}%`, `${(Math.random() * 100) + (Math.random() > 0.5 ? 3 : -3)}%`],
-                    opacity: [0, 0.4, 0.4, 0],
-                  }}
-                  transition={{
-                    duration: 6 + Math.random() * 8,
-                    repeat: Infinity,
-                    delay: Math.random() * 10,
-                    ease: "linear"
-                  }}
-                  style={{
-                    position: 'absolute',
-                    width: `${Math.random() * 4 + 1}px`,
-                    height: `${Math.random() * 4 + 1}px`,
-                    background: 'white',
-                    borderRadius: '50%',
-                    filter: 'blur(0.5px) drop-shadow(0 0 1px rgba(255,255,255,0.5))'
-                  }}
-                />
-              ))}
+            {/* Navbar */}
+            <div className="relative z-20 pt-1 sm:pt-3 lg:pt-4">
+              <PageNavbar
+                textColor="black"
+                zIndex={20}
+              />
             </div>
 
-            <div className="max-w-7xl lg:max-w-[1400px] xl:max-w-[1600px] mx-auto relative z-10">
-              <div
-                className="flex items-center gap-4 sm:gap-6 md:gap-8 overflow-x-auto scrollbar-hide pb-1 px-4 sm:px-6 lg:px-8 xl:px-12"
-                style={{
-                  scrollbarWidth: 'none',
-                  msOverflowStyle: 'none',
-                  WebkitOverflowScrolling: 'touch'
-                }}
-              >
-                {categoriesData.map((cat) => {
-                  const isActive = activeCategory === cat.name;
-                  const Icon = cat.icon;
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => {
-                        if (cat.name === "All" || cat.name === "Home" || cat.slug === "home") {
-                          setActiveCategory(cat.name);
-                        } else if (cat.targetType === "external") {
-                          window.open(cat.targetId, "_blank");
-                        } else {
-                          setActiveCategory(cat.name);
-                        }
-                      }}
-                      className="flex flex-col items-center gap-1 sm:gap-2 group relative pb-3 px-1 transition-all hover:translate-y-[-2px] min-w-[60px] sm:min-w-[80px]"
+            {/* Hero Section with Search */}
+            <section className="relative z-20 w-full px-4 sm:px-6 lg:px-8 xl:px-12 mt-4 sm:mt-6 md:mt-8 py-4 sm:py-8">
+              <div className="max-w-7xl lg:max-w-[1400px] xl:max-w-[1600px] mx-auto">
+                <div className="relative w-full overflow-hidden">
+                  <div className="flex items-center gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+                    {/* Search Input Container */}
+                    <div
+                      className="relative flex-1 group cursor-pointer"
+                      onClick={() => setIsInMartSearchOpen(true)}
                     >
-                      <div
-                        className="p-2 sm:p-3 transition-all shadow-sm flex items-center justify-center overflow-hidden"
-                        style={{
-                          backgroundColor: isActive ? 'white' : 'transparent',
-                          clipPath: isActive ? 'polygon(50% 0%, 100% 35%, 100% 100%, 0 100%, 0 35%)' : 'none',
-                          borderRadius: isActive ? '0' : '1.2rem'
-                        }}
-                      >
-                        <Icon
-                          className="w-5 h-5 sm:w-7 sm:h-7 md:w-8 md:h-8 mb-[-2px]" // Adjusted for house shape bottom heavy
-                          color={isActive ? cat.themeColor : "black"}
-                          strokeWidth={isActive ? 3.5 : 2.5}
-                        />
+                      <Search className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-[#8B5CF6] transition-colors w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
+                      <div className="w-full h-12 sm:h-14 md:h-16 bg-white dark:bg-[#1a1a1a] border-2 border-transparent group-hover:border-[#E7D1FF] rounded-2xl sm:rounded-[1.25rem] pl-12 sm:pl-14 pr-12 flex items-center shadow-[0_4px_20px_rgba(0,0,0,0.04)] transition-all">
+                        <span className="text-gray-400 dark:text-gray-500 text-sm sm:text-base md:text-lg font-medium select-none truncate">
+                          {placeholderItems[placeholderIndex]}
+                        </span>
                       </div>
-                      <span
-                        className={`text-[10px] sm:text-sm md:text-base font-bold transition-colors whitespace-nowrap text-center ${isActive ? 'opacity-100' : 'text-black opacity-60 group-hover:opacity-100'}`}
-                        style={{ color: isActive ? cat.themeColor : undefined }}
-                      >
-                        {cat.name}
-                      </span>
-                      {isActive && (
-                        <motion.div
-                          layoutId="activeIndicator"
-                          className="absolute bottom-0 left-0 right-0 h-1 rounded-full"
-                          style={{ width: '100%', backgroundColor: cat.themeColor }}
-                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        </div>
-
-        {/* Banner Carousel or Inline Category Content */}
-        {activeCategory === "All" ? (
-          heroBanners.length > 0 && (
-            <section className="relative z-20 w-full px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6 overflow-hidden">
-              <div className="max-w-7xl mx-auto relative group">
-                <div className="relative overflow-hidden rounded-2xl sm:rounded-[2.5rem] shadow-2xl border border-purple-100 dark:border-white/10 bg-[#F3E8FF] aspect-[21/9] sm:aspect-[24/10]">
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={currentBannerIndex}
-                      initial={{ opacity: 0, x: 50 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -50 }}
-                      transition={{ duration: 0.6, ease: "easeInOut" }}
-                      className="absolute inset-0 w-full h-full cursor-pointer"
-                      onClick={() => heroBanners[currentBannerIndex].linkUrl && (window.location.href = heroBanners[currentBannerIndex].linkUrl)}
-                    >
-                      <img
-                        src={heroBanners[currentBannerIndex].imageUrl || heroBanners[currentBannerIndex].image}
-                        alt={heroBanners[currentBannerIndex].title || "Promo Banner"}
-                        className="w-full h-full object-cover block"
+                      <Mic
+                        className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#8B5CF6] transition-colors w-5 h-5 sm:w-6 sm:h-6 cursor-pointer z-10"
+                        strokeWidth={2.5}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsVoiceSearchOpen(true);
+                        }}
                       />
-
-                      {/* Optional Overlay for better text visibility if we ever add text */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-                    </motion.div>
-                  </AnimatePresence>
-
-                  {/* Indicators/Dots */}
-                  {heroBanners.length > 1 && (
-                    <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-30">
-                      {heroBanners.map((_, idx) => (
-                        <button
-                          key={idx}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setCurrentBannerIndex(idx);
-                          }}
-                          className={`transition-all duration-300 rounded-full ${currentBannerIndex === idx
-                            ? "w-6 sm:w-8 h-1.5 sm:h-2 bg-white"
-                            : "w-1.5 sm:w-2 h-1.5 sm:h-2 bg-white/50 hover:bg-white/80"
-                            }`}
-                          aria-label={`Go to banner ${idx + 1}`}
-                        />
-                      ))}
                     </div>
-                  )}
+
+                    {/* Trending Deals Toggle - Hidden on mobile, shown on md+ */}
+                    <motion.button
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="hidden md:flex flex-shrink-0 h-14 md:h-16 px-6 lg:px-8 rounded-2xl sm:rounded-[1.25rem] bg-white dark:bg-[#1a1a1a] shadow-[0_4px_20px_rgba(0,0,0,0.04)] items-center gap-3 border-2 border-transparent hover:border-[#FFEDEB] transition-all"
+                    >
+                      <div className="p-2 bg-[#FFEDEB] dark:bg-[#FFEDEB]/10 rounded-xl">
+                        <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-[#FF725E]" strokeWidth={2.5} />
+                      </div>
+                      <div className="flex flex-col items-start leading-tight">
+                        <span className="text-[#FF725E] font-black text-[10px] lg:text-xs tracking-tighter uppercase italic">Trending</span>
+                        <span className="text-[#FF725E] font-black text-sm lg:text-xl tracking-tighter uppercase italic">Deals</span>
+                      </div>
+                    </motion.button>
+                  </div>
                 </div>
               </div>
             </section>
-          )
-        ) : (
-          <section className="relative z-20 w-full px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6">
-            <div className="max-w-7xl mx-auto">
-              {isInlineLoading ? (
-                <div className="w-full aspect-[21/9] sm:aspect-[24/10] bg-gray-50 animate-pulse rounded-[2.5rem] flex items-center justify-center border border-gray-100">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-10 h-10 border-4 border-black/10 border-t-black rounded-full animate-spin" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400">Loading {activeCategory}...</span>
-                  </div>
-                </div>
-              ) : (
+
+            {/* Categories Section */}
+            <section className="relative z-20 w-full mt-1 sm:mt-2 pb-2 px-0 overflow-hidden">
+              {/* Subtle Snow Shower Background for Navigation */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+                {[...Array(15)].map((_, i) => (
+                  <motion.div
+                    key={`nav-snow-${i}`}
+                    initial={{
+                      top: "-10%",
+                      left: `${Math.random() * 100}%`,
+                      opacity: 0,
+                      scale: 0.1 + Math.random() * 0.4
+                    }}
+                    animate={{
+                      top: "110%",
+                      left: [`${Math.random() * 100}%`, `${(Math.random() * 100) + (Math.random() > 0.5 ? 3 : -3)}%`],
+                      opacity: [0, 0.4, 0.4, 0],
+                    }}
+                    transition={{
+                      duration: 6 + Math.random() * 8,
+                      repeat: Infinity,
+                      delay: Math.random() * 10,
+                      ease: "linear"
+                    }}
+                    style={{
+                      position: 'absolute',
+                      width: `${Math.random() * 4 + 1}px`,
+                      height: `${Math.random() * 4 + 1}px`,
+                      background: 'white',
+                      borderRadius: '50%',
+                      filter: 'blur(0.5px) drop-shadow(0 0 1px rgba(255,255,255,0.5))'
+                    }}
+                  />
+                ))}
+              </div>
+
+              <div className="max-w-7xl lg:max-w-[1400px] xl:max-w-[1600px] mx-auto relative z-10">
                 <div
-                  className="rounded-[3rem] pt-10 pb-6 sm:pt-20 sm:pb-12 shadow-[0_40px_120px_-20px_rgba(0,0,0,0.2)] border border-white/20 backdrop-blur-2xl transition-all relative overflow-hidden flex flex-col items-center text-center"
+                  className="flex items-center gap-4 sm:gap-6 md:gap-8 overflow-x-auto scrollbar-hide pb-1 px-4 sm:px-6 lg:px-8 xl:px-12"
                   style={{
-                    background: `radial-gradient(circle at center, ${activeCategoryData.themeColor} 0%, ${activeCategoryData.themeColor}dd 100%)`,
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none',
+                    WebkitOverflowScrolling: 'touch'
                   }}
                 >
-                  {/* Premium Glow Effects */}
-                  <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-white/20 rounded-full blur-[120px]" />
-                    <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-black/30 rounded-full blur-[120px]" />
-                  </div>
-
-                  {/* Enhanced Floating Decorative Elements */}
-                  <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                    {[...Array(12)].map((_, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{
-                          x: `${Math.random() * 100}%`,
-                          y: `${Math.random() * 100}%`,
-                          opacity: 0,
-                          scale: 0
+                  {categoriesData.map((cat) => {
+                    const isActive = activeCategory === cat.name;
+                    const Icon = cat.icon;
+                    return (
+                      <button
+                        key={cat.id}
+                        onClick={() => {
+                          if (cat.name === "All" || cat.name === "Home" || cat.slug === "home") {
+                            setActiveCategory(cat.name);
+                          } else if (cat.targetType === "external") {
+                            window.open(cat.targetId, "_blank");
+                          } else {
+                            setActiveCategory(cat.name);
+                          }
                         }}
-                        animate={{
-                          y: ["-10%", "110%"],
-                          opacity: [0, 0.7, 0],
-                          scale: [0.3, 1, 0.3],
-                          rotate: Math.random() * 360
-                        }}
-                        transition={{
-                          duration: 5 + Math.random() * 8,
-                          repeat: Infinity,
-                          ease: "easeInOut",
-                          delay: Math.random() * 5
-                        }}
-                        className="absolute"
-                        style={{ color: i % 2 === 0 ? '#FFE082' : 'white' }}
+                        className="flex flex-col items-center gap-1 sm:gap-2 group relative pb-3 px-1 transition-all hover:translate-y-[-2px] min-w-[60px] sm:min-w-[80px]"
                       >
-                        {i % 3 === 0 ? <Sparkles size={16} /> : i % 3 === 1 ? <Heart size={14} fill="currentColor" /> : <div className="w-2 h-2 rounded-full bg-current opacity-60" />}
+                        <div
+                          className="p-2 sm:p-3 transition-all shadow-sm flex items-center justify-center overflow-hidden"
+                          style={{
+                            backgroundColor: isActive ? 'white' : 'transparent',
+                            clipPath: isActive ? 'polygon(50% 0%, 100% 35%, 100% 100%, 0 100%, 0 35%)' : 'none',
+                            borderRadius: isActive ? '0' : '1.2rem'
+                          }}
+                        >
+                          <Icon
+                            className="w-5 h-5 sm:w-7 sm:h-7 md:w-8 md:h-8 mb-[-2px]" // Adjusted for house shape bottom heavy
+                            color={isActive ? cat.themeColor : "black"}
+                            strokeWidth={isActive ? 3.5 : 2.5}
+                          />
+                        </div>
+                        <span
+                          className={`text-[10px] sm:text-sm md:text-base font-bold transition-colors whitespace-nowrap text-center ${isActive ? 'opacity-100' : 'text-black opacity-60 group-hover:opacity-100'}`}
+                          style={{ color: isActive ? cat.themeColor : undefined }}
+                        >
+                          {cat.name}
+                        </span>
+                        {isActive && (
+                          <motion.div
+                            layoutId="activeIndicator"
+                            className="absolute bottom-0 left-0 right-0 h-1 rounded-full"
+                            style={{ width: '100%', backgroundColor: cat.themeColor }}
+                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+          </div>
+
+          {/* Banner Carousel or Inline Category Content */}
+          {activeCategory === "All" ? (
+            heroBanners.length > 0 && (
+              <section className="relative z-20 w-full px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6 overflow-hidden">
+                <div className="max-w-7xl mx-auto relative group">
+                  <div className="relative overflow-hidden rounded-2xl sm:rounded-[2.5rem] shadow-2xl border border-purple-100 dark:border-white/10 bg-[#F3E8FF] aspect-[21/9] sm:aspect-[24/10]">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={currentBannerIndex}
+                        initial={{ opacity: 0, x: 50 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -50 }}
+                        transition={{ duration: 0.6, ease: "easeInOut" }}
+                        className="absolute inset-0 w-full h-full cursor-pointer"
+                        onClick={() => heroBanners[currentBannerIndex].linkUrl && (window.location.href = heroBanners[currentBannerIndex].linkUrl)}
+                      >
+                        <img
+                          src={heroBanners[currentBannerIndex].imageUrl || heroBanners[currentBannerIndex].image}
+                          alt={heroBanners[currentBannerIndex].title || "Promo Banner"}
+                          className="w-full h-full object-cover block"
+                        />
+
+                        {/* Optional Overlay for better text visibility if we ever add text */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                       </motion.div>
-                    ))}
-                  </div>
+                    </AnimatePresence>
 
-                  <div className="relative z-10 w-full max-w-5xl">
-                    <AnimatedCategoryHeader categoryName={activeCategory} />
-                  </div>
-
-                  {/* Horizontal Product Scroll */}
-                  <div className="relative z-10 w-full mb-0 px-4 sm:px-6 lg:px-8">
-                    {activeCategoryData.featuredCategories && activeCategoryData.featuredCategories.length > 0 ? (
-                      <div className="grid grid-cols-3 gap-3 sm:gap-6 pb-12 transition-all">
-                        {activeCategoryData.featuredCategories.flatMap((fc) => {
-                          const mainCat = apiData.allCategories.find(c => c._id === fc.categoryId);
-                          if (!mainCat) return [];
-                          return mainCat.subCategories?.filter(s =>
-                            fc.subCategoryIds.includes(s.slug || s.id)
-                          ) || [];
-                        }).slice(0, 6).map((sub, idx) => (
-                          <CategoryCard
-                            key={`${sub.slug || sub.id}-${idx}`}
-                            category={sub}
-                            themeColor={activeCategoryData.themeColor}
-                            onClick={() => {
-                              navigate(`/in-mart/products/${sub.slug || sub.id}`);
+                    {/* Indicators/Dots */}
+                    {heroBanners.length > 1 && (
+                      <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-30">
+                        {heroBanners.map((_, idx) => (
+                          <button
+                            key={idx}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCurrentBannerIndex(idx);
                             }}
+                            className={`transition-all duration-300 rounded-full ${currentBannerIndex === idx
+                              ? "w-6 sm:w-8 h-1.5 sm:h-2 bg-white"
+                              : "w-1.5 sm:w-2 h-1.5 sm:h-2 bg-white/50 hover:bg-white/80"
+                              }`}
+                            aria-label={`Go to banner ${idx + 1}`}
                           />
                         ))}
-                      </div>
-                    ) : (
-                      <div
-                        className="flex items-center gap-4 sm:gap-6 md:gap-8 overflow-x-auto scrollbar-hide pb-6"
-                        style={{
-                          scrollbarWidth: 'none',
-                          msOverflowStyle: 'none',
-                          WebkitOverflowScrolling: 'touch'
-                        }}
-                      >
-                        {inlineProducts.length > 0 ? (
-                          <>
-                            {inlineProducts.map(p => (
-                              <ProductCard key={p._id} product={p} themeColor={activeCategoryData.themeColor} />
-                            ))}
-                            <div className="min-w-[20px] sm:min-w-[40px] h-full" />
-                          </>
-                        ) : (
-                          <div className="w-full py-32 text-center">
-                            <div className="w-28 h-28 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-8 backdrop-blur-lg">
-                              <ShoppingBag className="w-12 h-12 text-white/40" />
-                            </div>
-                            <p className="text-white font-black uppercase tracking-[0.3em] text-sm">Curating more products for the {activeCategory} Store...</p>
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
                 </div>
-              )}
+              </section>
+            )
+          ) : (
+            <section className="relative z-20 w-full px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6">
+              <div className="max-w-7xl mx-auto">
+                {isInlineLoading ? (
+                  <div className="w-full aspect-[21/9] sm:aspect-[24/10] bg-gray-50 animate-pulse rounded-[2.5rem] flex items-center justify-center border border-gray-100">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-10 h-10 border-4 border-black/10 border-t-black rounded-full animate-spin" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400">Loading {activeCategory}...</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className="rounded-[3rem] pt-10 pb-6 sm:pt-20 sm:pb-12 shadow-[0_40px_120px_-20px_rgba(0,0,0,0.2)] border border-white/20 backdrop-blur-2xl transition-all relative overflow-hidden flex flex-col items-center text-center"
+                    style={{
+                      background: `radial-gradient(circle at center, ${activeCategoryData.themeColor} 0%, ${activeCategoryData.themeColor}dd 100%)`,
+                    }}
+                  >
+                    {/* Premium Glow Effects */}
+                    <div className="absolute inset-0 pointer-events-none">
+                      <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-white/20 rounded-full blur-[120px]" />
+                      <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-black/30 rounded-full blur-[120px]" />
+                    </div>
+
+                    {/* Enhanced Floating Decorative Elements */}
+                    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                      {[...Array(12)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{
+                            x: `${Math.random() * 100}%`,
+                            y: `${Math.random() * 100}%`,
+                            opacity: 0,
+                            scale: 0
+                          }}
+                          animate={{
+                            y: ["-10%", "110%"],
+                            opacity: [0, 0.7, 0],
+                            scale: [0.3, 1, 0.3],
+                            rotate: Math.random() * 360
+                          }}
+                          transition={{
+                            duration: 5 + Math.random() * 8,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                            delay: Math.random() * 5
+                          }}
+                          className="absolute"
+                          style={{ color: i % 2 === 0 ? '#FFE082' : 'white' }}
+                        >
+                          {i % 3 === 0 ? <Sparkles size={16} /> : i % 3 === 1 ? <Heart size={14} fill="currentColor" /> : <div className="w-2 h-2 rounded-full bg-current opacity-60" />}
+                        </motion.div>
+                      ))}
+                    </div>
+
+                    <div className="relative z-10 w-full max-w-5xl">
+                      <AnimatedCategoryHeader categoryName={activeCategory} />
+                    </div>
+
+                    {/* Horizontal Product Scroll */}
+                    <div className="relative z-10 w-full mb-0 px-4 sm:px-6 lg:px-8">
+                      {activeCategoryData.featuredCategories && activeCategoryData.featuredCategories.length > 0 ? (
+                        <div className="grid grid-cols-3 gap-3 sm:gap-6 pb-12 transition-all">
+                          {activeCategoryData.featuredCategories.flatMap((fc) => {
+                            const mainCat = apiData.allCategories.find(c => c._id === fc.categoryId);
+                            if (!mainCat) return [];
+                            return mainCat.subCategories?.filter(s =>
+                              fc.subCategoryIds.includes(s.slug || s.id)
+                            ) || [];
+                          }).slice(0, 6).map((sub, idx) => (
+                            <CategoryCard
+                              key={`${sub.slug || sub.id}-${idx}`}
+                              category={sub}
+                              themeColor={activeCategoryData.themeColor}
+                              onClick={() => {
+                                navigate(`/in-mart/products/${sub.slug || sub.id}`);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <div
+                          className="flex items-center gap-4 sm:gap-6 md:gap-8 overflow-x-auto scrollbar-hide pb-6"
+                          style={{
+                            scrollbarWidth: 'none',
+                            msOverflowStyle: 'none',
+                            WebkitOverflowScrolling: 'touch'
+                          }}
+                        >
+                          {inlineProducts.length > 0 ? (
+                            <>
+                              {inlineProducts.map(p => (
+                                <ProductCard key={p._id} product={p} themeColor={activeCategoryData.themeColor} />
+                              ))}
+                              <div className="min-w-[20px] sm:min-w-[40px] h-full" />
+                            </>
+                          ) : (
+                            <div className="w-full py-32 text-center">
+                              <div className="w-28 h-28 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-8 backdrop-blur-lg">
+                                <ShoppingBag className="w-12 h-12 text-white/40" />
+                              </div>
+                              <p className="text-white font-black uppercase tracking-[0.3em] text-sm">Curating more products for the {activeCategory} Store...</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Special Price Interactive Banner */}
+          <section className="relative z-20 w-full px-4 sm:px-6 lg:px-8 xl:px-12 mt-4 sm:mt-6 md:mt-8">
+            <div className="max-w-7xl lg:max-w-[1400px] xl:max-w-[1600px] mx-auto">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="w-full rounded-xl sm:rounded-2xl md:rounded-[1.5rem] py-3 sm:py-4 md:py-5 px-5 sm:px-8 md:px-10 flex items-center justify-start gap-4 sm:gap-6 shadow-sm hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden"
+                style={{
+                  backgroundColor: `${activeCategoryData.themeColor}15`,
+                  border: `1.5px solid ${activeCategoryData.themeColor}33`
+                }}
+              >
+                {/* Gold Coin Icon with Glint */}
+                <div className="flex-shrink-0 w-8 h-8 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full flex items-center justify-center shadow-inner border-[1.5px] border-yellow-200 relative overflow-hidden group-hover:rotate-12 transition-transform">
+                  <span className="text-white font-black text-lg sm:text-2xl md:text-3xl drop-shadow-sm relative z-10">₹</span>
+
+                  {/* Coin Glint Effect */}
+                  <motion.div
+                    initial={{ x: '-150%', skewX: -20 }}
+                    animate={{ x: '150%' }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatDelay: 3,
+                      ease: "easeInOut"
+                    }}
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full"
+                  />
+                </div>
+
+                <div className="flex flex-col min-w-0 relative">
+                  <span
+                    className="font-bold text-[12px] sm:text-xl md:text-2xl lg:text-3xl tracking-tighter uppercase leading-tight whitespace-nowrap"
+                    style={{ color: activeCategoryData.themeColor }}
+                  >
+                    Special Prices for your 1st order
+                  </span>
+
+                  {/* Golden Text Shimmer */}
+                  <motion.span
+                    initial={{ backgroundPosition: '200% 0' }}
+                    animate={{ backgroundPosition: '-200% 0' }}
+                    transition={{
+                      duration: 4,
+                      repeat: Infinity,
+                      ease: "linear"
+                    }}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'linear-gradient(110deg, transparent 30%, rgba(255, 215, 0, 0) 35%, rgba(255, 215, 0, 0.4) 45%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 215, 0, 0.4) 55%, rgba(255, 215, 0, 0) 65%, transparent 70%)',
+                      backgroundSize: '200% 100%',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      zIndex: 20,
+                    }}
+                    className="filter brightness-110 saturate-120 pointer-events-none font-bold text-[12px] sm:text-xl md:text-2xl lg:text-3xl tracking-tighter uppercase leading-tight whitespace-nowrap"
+                  >
+                    Special Prices for your 1st order
+                  </motion.span>
+                </div>
+
+                <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                  <ChevronRight
+                    size={24}
+                    className="md:w-8 md:h-8"
+                    strokeWidth={3}
+                    style={{ color: `${activeCategoryData.themeColor}66` }}
+                  />
+                </div>
+              </motion.div>
             </div>
           </section>
-        )}
 
-        {/* Special Price Interactive Banner */}
-        <section className="relative z-20 w-full px-4 sm:px-6 lg:px-8 xl:px-12 mt-4 sm:mt-6 md:mt-8">
-          <div className="max-w-7xl lg:max-w-[1400px] xl:max-w-[1600px] mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="w-full rounded-xl sm:rounded-2xl md:rounded-[1.5rem] py-3 sm:py-4 md:py-5 px-5 sm:px-8 md:px-10 flex items-center justify-start gap-4 sm:gap-6 shadow-sm hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden"
-              style={{
-                backgroundColor: `${activeCategoryData.themeColor}15`,
-                border: `1.5px solid ${activeCategoryData.themeColor}33`
-              }}
-            >
-              {/* Gold Coin Icon with Glint */}
-              <div className="flex-shrink-0 w-8 h-8 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full flex items-center justify-center shadow-inner border-[1.5px] border-yellow-200 relative overflow-hidden group-hover:rotate-12 transition-transform">
-                <span className="text-white font-black text-lg sm:text-2xl md:text-3xl drop-shadow-sm relative z-10">₹</span>
-
-                {/* Coin Glint Effect */}
-                <motion.div
-                  initial={{ x: '-150%', skewX: -20 }}
-                  animate={{ x: '150%' }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    repeatDelay: 3,
-                    ease: "easeInOut"
-                  }}
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full"
-                />
-              </div>
-
-              <div className="flex flex-col min-w-0 relative">
-                <span
-                  className="font-bold text-[12px] sm:text-xl md:text-2xl lg:text-3xl tracking-tighter uppercase leading-tight whitespace-nowrap"
-                  style={{ color: activeCategoryData.themeColor }}
-                >
-                  Special Prices for your 1st order
-                </span>
-
-                {/* Golden Text Shimmer */}
-                <motion.span
-                  initial={{ backgroundPosition: '200% 0' }}
-                  animate={{ backgroundPosition: '-200% 0' }}
-                  transition={{
-                    duration: 4,
-                    repeat: Infinity,
-                    ease: "linear"
-                  }}
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: 'linear-gradient(110deg, transparent 30%, rgba(255, 215, 0, 0) 35%, rgba(255, 215, 0, 0.4) 45%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 215, 0, 0.4) 55%, rgba(255, 215, 0, 0) 65%, transparent 70%)',
-                    backgroundSize: '200% 100%',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    zIndex: 20,
-                  }}
-                  className="filter brightness-110 saturate-120 pointer-events-none font-bold text-[12px] sm:text-xl md:text-2xl lg:text-3xl tracking-tighter uppercase leading-tight whitespace-nowrap"
-                >
-                  Special Prices for your 1st order
-                </motion.span>
-              </div>
-
-              <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                <ChevronRight
-                  size={24}
-                  className="md:w-8 md:h-8"
-                  strokeWidth={3}
-                  style={{ color: `${activeCategoryData.themeColor}66` }}
-                />
-              </div>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* Big Sale Section */}
-        <section className="relative z-20 w-full px-4 sm:px-6 lg:px-8 xl:px-12 mt-6 sm:mt-10 md:mt-14 pb-10">
-          <div className="max-w-7xl lg:max-w-[1400px] xl:max-w-[1600px] mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="w-full rounded-[2rem] sm:rounded-[3rem] md:rounded-[4rem] overflow-hidden py-8 sm:py-12 md:py-16 px-4 sm:px-8 md:px-12 shadow-xl border border-purple-100/50 relative transition-colors duration-500 ease-in-out"
-              style={{
-                background: `linear-gradient(180deg, ${activeCategoryData.themeColor}80 0%, ${activeCategoryData.themeColor}40 100%)`,
-                border: `1.5px solid ${activeCategoryData.themeColor}99`
-              }}
-            >
-              {/* Sunburst Background Effect */}
-              <div className="absolute top-[-50px] left-0 right-0 h-[400px] sm:h-[700px] md:h-[900px] overflow-hidden pointer-events-none flex items-center justify-center">
-                <div
-                  className="w-[1000px] h-[1000px] sm:w-[1600px] sm:h-[1600px] md:w-[2000px] md:h-[2000px] opacity-60 dark:opacity-30 animate-[spin_30s_linear_infinite]"
-                  style={{
-                    background: `conic-gradient(
+          {/* Big Sale Section */}
+          <section className="relative z-20 w-full px-4 sm:px-6 lg:px-8 xl:px-12 mt-6 sm:mt-10 md:mt-14 pb-10">
+            <div className="max-w-7xl lg:max-w-[1400px] xl:max-w-[1600px] mx-auto">
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+                className="w-full rounded-[2rem] sm:rounded-[3rem] md:rounded-[4rem] overflow-hidden py-8 sm:py-12 md:py-16 px-4 sm:px-8 md:px-12 shadow-xl border border-purple-100/50 relative transition-colors duration-500 ease-in-out"
+                style={{
+                  background: `linear-gradient(180deg, ${activeCategoryData.themeColor}80 0%, ${activeCategoryData.themeColor}40 100%)`,
+                  border: `1.5px solid ${activeCategoryData.themeColor}99`
+                }}
+              >
+                {/* Sunburst Background Effect */}
+                <div className="absolute top-[-50px] left-0 right-0 h-[400px] sm:h-[700px] md:h-[900px] overflow-hidden pointer-events-none flex items-center justify-center">
+                  <div
+                    className="w-[1000px] h-[1000px] sm:w-[1600px] sm:h-[1600px] md:w-[2000px] md:h-[2000px] opacity-60 dark:opacity-30 animate-[spin_30s_linear_infinite]"
+                    style={{
+                      background: `conic-gradient(
                     from 0deg,
                     transparent 0deg, 
                     transparent 5deg, 
@@ -1688,34 +1793,34 @@ export default function InMart() {
                     rgba(255,255,255,0.8) 320deg,
                     transparent 325deg
                   )`,
-                    maskImage: 'radial-gradient(circle, black 25%, transparent 65%)',
-                    WebkitMaskImage: 'radial-gradient(circle, black 25%, transparent 65%)',
-                  }}
-                />
-              </div>
+                      maskImage: 'radial-gradient(circle, black 25%, transparent 65%)',
+                      WebkitMaskImage: 'radial-gradient(circle, black 25%, transparent 65%)',
+                    }}
+                  />
+                </div>
 
-              {/* Section Header */}
-              <div className="relative z-10 flex flex-col items-center mb-6 sm:mb-10 md:mb-14">
-                <PartyCelebration />
-                <motion.h2
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  whileInView={{ scale: 1, opacity: 1 }}
-                  animate={{
-                    scale: [1, 1.04, 1],
-                  }}
-                  transition={{
-                    scale: {
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    },
-                    opacity: { duration: 0.8 }
-                  }}
-                  viewport={{ once: true }}
-                  className="text-5xl sm:text-8xl md:text-9xl lg:text-[11rem] font-[1000] text-white italic tracking-tighter flex flex-col items-center select-none relative"
-                  style={{
-                    WebkitTextStroke: '2px black',
-                    textShadow: `
+                {/* Section Header */}
+                <div className="relative z-10 flex flex-col items-center mb-6 sm:mb-10 md:mb-14">
+                  <PartyCelebration />
+                  <motion.h2
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    whileInView={{ scale: 1, opacity: 1 }}
+                    animate={{
+                      scale: [1, 1.04, 1],
+                    }}
+                    transition={{
+                      scale: {
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      },
+                      opacity: { duration: 0.8 }
+                    }}
+                    viewport={{ once: true }}
+                    className="text-5xl sm:text-8xl md:text-9xl lg:text-[11rem] font-[1000] text-white italic tracking-tighter flex flex-col items-center select-none relative"
+                    style={{
+                      WebkitTextStroke: '2px black',
+                      textShadow: `
                     1px 1px 0px #000,
                     2px 2px 0px #000,
                     3px 3px 0px #000,
@@ -1725,251 +1830,252 @@ export default function InMart() {
                     7px 7px 0px #000,
                     8px 8px 15px rgba(0,0,0,0.4)
                   `
-                  }}
-                >
-                  <div className="flex items-center gap-x-[1px] sm:gap-x-1 relative">
-                    <span className="flex relative z-10">
-                      {"BIG SALE".split("").map((char, i) => (
-                        <motion.span
-                          key={i}
-                          animate={{
-                            y: [0, -20, 0],
-                          }}
-                          transition={{
-                            duration: 0.8,
-                            repeat: Infinity,
-                            repeatDelay: 6,
-                            delay: i * 0.1,
-                            ease: "easeInOut"
-                          }}
-                          style={{ display: 'inline-block', whiteSpace: char === ' ' ? 'pre' : 'normal' }}
-                        >
-                          {char}
-                        </motion.span>
-                      ))}
-                    </span>
-
-                    {/* Synchronized Gold Flash Layer */}
-                    <span className="absolute inset-0 easy-gold-flash pointer-events-none z-20 flex">
-                      {"BIG SALE".split("").map((char, i) => (
-                        <motion.span
-                          key={i}
-                          animate={{
-                            y: [0, -20, 0],
-                          }}
-                          transition={{
-                            duration: 0.8,
-                            repeat: Infinity,
-                            repeatDelay: 6,
-                            delay: i * 0.1,
-                            ease: "easeInOut"
-                          }}
-                          style={{ display: 'inline-block', whiteSpace: char === ' ' ? 'pre' : 'normal' }}
-                        >
-                          {char}
-                        </motion.span>
-                      ))}
-                    </span>
-                  </div>
-                </motion.h2>
-              </div>
-
-              {/* Product Carousel */}
-              <div className="relative mb-6 sm:mb-10 md:mb-14">
-                <div
-                  className="flex items-center gap-4 sm:gap-6 md:gap-8 overflow-x-auto scrollbar-hide pb-4 px-1"
-                  style={{
-                    scrollbarWidth: 'none',
-                    msOverflowStyle: 'none',
-                    WebkitOverflowScrolling: 'touch'
-                  }}
-                >
-                  {(apiData.collections?.find(c => c.slug === 'sale')?.products || []).map((product) => {
-                    // Ensure product has id field mapped from _id
-                    const productWithId = {
-                      ...product,
-                      id: product.id || product._id?.toString() || product._id
-                    };
-                    return <ProductCard key={productWithId.id} product={productWithId} themeColor={activeCategoryData.themeColor} />;
-                  })}
-                  <div className="min-w-[4px] h-full"></div>
-                </div>
-              </div>
-
-              {/* See All Button */}
-              <div className="mt-0 px-2 sm:px-4 md:px-8 lg:px-12">
-                <motion.button
-                  whileHover={{
-                    scale: 1.01,
-                    y: -2,
-                    background: `linear-gradient(180deg, #ffffff 0%, ${activeCategoryData.themeColor}22 100%)`
-                  }}
-                  whileTap={{ scale: 0.99 }}
-                  onClick={() => navigate('/in-mart/section/sale')}
-                  className="w-full max-w-2xl mx-auto text-gray-900 dark:text-white font-bold py-4 sm:py-5 md:py-6 rounded-2xl md:rounded-3xl flex items-center justify-center gap-3 text-base sm:text-xl lg:text-2xl transition-all shadow-md border border-black/10"
-                  style={{
-                    background: `linear-gradient(180deg, #ffffff 0%, ${activeCategoryData.themeColor}11 100%)`
-                  }}
-                >
-                  See all
-                  <ChevronRight size={24} className="stroke-[4px]" />
-                </motion.button>
-              </div>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* Content */}
-        <div className="max-w-7xl lg:max-w-[1400px] xl:max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 pt-2 sm:pt-4 md:pt-6 lg:pt-8 pb-10">
-          <ProductSection
-            title="Newly Launched"
-            products={apiData.collections?.find(c => c.slug === 'newly-launched')?.products || []}
-            onSeeAll={() => navigate('/in-mart/section/newly-launched')}
-            isNewlyLaunched={true}
-            themeColor={activeCategoryData.themeColor}
-          />
-
-          <ProductSection
-            title="Best Sellers"
-            products={apiData.collections?.find(c => c.slug === 'best-sellers')?.products || []}
-            onSeeAll={() => navigate('/in-mart/section/best-sellers')}
-            themeColor={activeCategoryData.themeColor}
-          />
-
-          {/* Category Banner Section (Carousel Style) */}
-          {activeCategory === "All" && categoryBanners.length > 0 && (
-            <section className="relative z-20 w-full mb-8 overflow-hidden">
-              <div className="relative group">
-                <div className="relative overflow-hidden rounded-2xl sm:rounded-[2.5rem] shadow-2xl border border-neutral-100 dark:border-white/10 bg-neutral-50 aspect-[21/9] sm:aspect-[24/10]">
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={currentCategoryBannerIndex}
-                      initial={{ opacity: 0, x: 50 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -50 }}
-                      transition={{ duration: 0.6, ease: "easeInOut" }}
-                      className="absolute inset-0 w-full h-full cursor-pointer"
-                      onClick={() => categoryBanners[currentCategoryBannerIndex].linkUrl && (window.location.href = categoryBanners[currentCategoryBannerIndex].linkUrl)}
-                    >
-                      <img
-                        src={categoryBanners[currentCategoryBannerIndex].imageUrl || categoryBanners[currentCategoryBannerIndex].image}
-                        alt={categoryBanners[currentCategoryBannerIndex].title || "Category Banner"}
-                        className="w-full h-full object-cover block"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-                    </motion.div>
-                  </AnimatePresence>
-
-                  {/* Indicators/Dots */}
-                  {categoryBanners.length > 1 && (
-                    <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-30">
-                      {categoryBanners.map((_, idx) => (
-                        <button
-                          key={idx}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setCurrentCategoryBannerIndex(idx);
-                          }}
-                          className={`transition-all duration-300 rounded-full ${currentCategoryBannerIndex === idx
-                            ? "w-6 sm:w-8 h-1.5 sm:h-2 bg-white"
-                            : "w-1.5 sm:w-2 h-1.5 sm:h-2 bg-white/50 hover:bg-white/80"
-                            }`}
-                          aria-label={`Go to category banner ${idx + 1}`}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* Fixed Main Category Sections matching User Request */}
-          {!isLoading && apiData.allCategories && (
-            <div className="space-y-8 mb-8">
-              {[
-                { id: 'grocery', title: 'Grocery & Kitchen' },
-                { id: 'snacks', title: 'Snacks & Drinks' },
-                { id: 'beauty', title: 'Beauty & Wellness' },
-                { id: 'household', title: 'Household & Lifestyle' }
-              ].map((header) => {
-                // More flexible matching for root categories
-                const rootCategory = apiData.allCategories.find(c => {
-                  const s = c.slug?.toLowerCase() || "";
-                  const n = c.name?.toLowerCase() || "";
-                  const id = header.id.toLowerCase();
-
-                  return s === id ||
-                    s.includes(id) ||
-                    n.includes(id) ||
-                    (id === 'grocery' && (s.includes('kitchen') || n.includes('kitchen'))) ||
-                    (id === 'snacks' && (s.includes('drinks') || n.includes('drinks'))) ||
-                    (id === 'beauty' && (s.includes('wellness') || n.includes('wellness'))) ||
-                    (id === 'household' && (s.includes('lifestyle') || n.includes('lifestyle')));
-                });
-
-                if (!rootCategory || !rootCategory.subCategories.length) return null;
-
-                return (
-                  <section key={header.id} className="w-full">
-                    <div className="flex items-center justify-between mb-6 px-1">
-                      <h2 className="text-xl sm:text-2xl md:text-[23px] font-black text-[#1F2937] tracking-tight">
-                        {header.title}
-                      </h2>
-                    </div>
-
-                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4 md:gap-5">
-                      {rootCategory.subCategories.map((subCat) => (
-                        <Link
-                          key={subCat.id || subCat.slug}
-                          to={`/in-mart/products/${subCat.slug || subCat.id}`}
-                          className="group"
-                        >
-                          <motion.div
-                            whileHover={{ y: -4 }}
-                            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                            className="flex flex-col items-center gap-2"
+                    }}
+                  >
+                    <div className="flex items-center gap-x-[1px] sm:gap-x-1 relative">
+                      <span className="flex relative z-10">
+                        {"BIG SALE".split("").map((char, i) => (
+                          <motion.span
+                            key={i}
+                            animate={{
+                              y: [0, -20, 0],
+                            }}
+                            transition={{
+                              duration: 0.8,
+                              repeat: Infinity,
+                              repeatDelay: 6,
+                              delay: i * 0.1,
+                              ease: "easeInOut"
+                            }}
+                            style={{ display: 'inline-block', whiteSpace: char === ' ' ? 'pre' : 'normal' }}
                           >
-                            <div className="w-full aspect-square bg-[#ECF3FF] rounded-[2rem] overflow-hidden p-2 flex items-center justify-center transition-all group-hover:shadow-xl group-hover:shadow-blue-900/10">
-                              <img
-                                src={subCat.image || "https://via.placeholder.com/200"}
-                                alt={subCat.name}
-                                className="w-[85%] h-[85%] object-contain transform transition-transform duration-700 group-hover:scale-110"
-                              />
-                            </div>
-                            <span className="text-[10px] sm:text-[11px] md:text-[12px] font-bold text-[#1F2937] text-center leading-[1.2] pt-1 px-1 line-clamp-2">
-                              {subCat.name}
-                            </span>
-                          </motion.div>
-                        </Link>
-                      ))}
+                            {char}
+                          </motion.span>
+                        ))}
+                      </span>
+
+                      {/* Synchronized Gold Flash Layer */}
+                      <span className="absolute inset-0 easy-gold-flash pointer-events-none z-20 flex">
+                        {"BIG SALE".split("").map((char, i) => (
+                          <motion.span
+                            key={i}
+                            animate={{
+                              y: [0, -20, 0],
+                            }}
+                            transition={{
+                              duration: 0.8,
+                              repeat: Infinity,
+                              repeatDelay: 6,
+                              delay: i * 0.1,
+                              ease: "easeInOut"
+                            }}
+                            style={{ display: 'inline-block', whiteSpace: char === ' ' ? 'pre' : 'normal' }}
+                          >
+                            {char}
+                          </motion.span>
+                        ))}
+                      </span>
                     </div>
-                  </section>
-                );
-              })}
+                  </motion.h2>
+                </div>
+
+                {/* Product Carousel */}
+                <div className="relative mb-6 sm:mb-10 md:mb-14">
+                  <div
+                    className="flex items-center gap-4 sm:gap-6 md:gap-8 overflow-x-auto scrollbar-hide pb-4 px-1"
+                    style={{
+                      scrollbarWidth: 'none',
+                      msOverflowStyle: 'none',
+                      WebkitOverflowScrolling: 'touch'
+                    }}
+                  >
+                    {(apiData.collections?.find(c => c.slug === 'sale')?.products || []).map((product) => {
+                      // Ensure product has id field mapped from _id
+                      const productWithId = {
+                        ...product,
+                        id: product.id || product._id?.toString() || product._id
+                      };
+                      return <ProductCard key={productWithId.id} product={productWithId} themeColor={activeCategoryData.themeColor} />;
+                    })}
+                    <div className="min-w-[4px] h-full"></div>
+                  </div>
+                </div>
+
+                {/* See All Button */}
+                <div className="mt-0 px-2 sm:px-4 md:px-8 lg:px-12">
+                  <motion.button
+                    whileHover={{
+                      scale: 1.01,
+                      y: -2,
+                      background: `linear-gradient(180deg, #ffffff 0%, ${activeCategoryData.themeColor}22 100%)`
+                    }}
+                    whileTap={{ scale: 0.99 }}
+                    onClick={() => navigate('/in-mart/section/sale')}
+                    className="w-full max-w-2xl mx-auto text-gray-900 dark:text-white font-bold py-4 sm:py-5 md:py-6 rounded-2xl md:rounded-3xl flex items-center justify-center gap-3 text-base sm:text-xl lg:text-2xl transition-all shadow-md border border-black/10"
+                    style={{
+                      background: `linear-gradient(180deg, #ffffff 0%, ${activeCategoryData.themeColor}11 100%)`
+                    }}
+                  >
+                    See all
+                    <ChevronRight size={24} className="stroke-[4px]" />
+                  </motion.button>
+                </div>
+              </motion.div>
             </div>
-          )}
-
-
-          {/* Trending Near You Section */}
-          <ProductSection
-            title="Trending Near You"
-            products={apiData.collections?.find(c => c.slug === 'trending')?.products || []}
-            onSeeAll={() => navigate('/in-mart/section/trending')}
-            themeColor={activeCategoryData.themeColor}
-          />
-
-          {/* Hibermart Branding Section */}
-          <section className="mt-12 mb-8 py-12 sm:py-16 md:py-20 flex flex-col items-center bg-gray-50/40 dark:bg-white/5 border-t border-b border-gray-100/50 dark:border-white/5 select-none">
-            <h2 className="text-[56px] sm:text-[80px] md:text-[100px] lg:text-[120px] font-black tracking-tighter leading-none italic bg-clip-text text-transparent bg-gradient-to-r from-[#16A34A] via-[#15803D] to-[#166534]">
-              hibermart
-            </h2>
-            <p className="text-sm sm:text-lg md:text-xl font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mt-4">
-              Freshness at your doorstep
-            </p>
           </section>
-        </div>
-      </AnimatedPage>
+
+          {/* Content */}
+          <div className="max-w-7xl lg:max-w-[1400px] xl:max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 pt-2 sm:pt-4 md:pt-6 lg:pt-8 pb-10">
+            <ProductSection
+              title="Newly Launched"
+              products={apiData.collections?.find(c => c.slug === 'newly-launched')?.products || []}
+              onSeeAll={() => navigate('/in-mart/section/newly-launched')}
+              isNewlyLaunched={true}
+              themeColor={activeCategoryData.themeColor}
+            />
+
+            <ProductSection
+              title="Best Sellers"
+              products={apiData.collections?.find(c => c.slug === 'best-sellers')?.products || []}
+              onSeeAll={() => navigate('/in-mart/section/best-sellers')}
+              themeColor={activeCategoryData.themeColor}
+            />
+
+            {/* Category Banner Section (Carousel Style) */}
+            {activeCategory === "All" && categoryBanners.length > 0 && (
+              <section className="relative z-20 w-full mb-8 overflow-hidden">
+                <div className="relative group">
+                  <div className="relative overflow-hidden rounded-2xl sm:rounded-[2.5rem] shadow-2xl border border-neutral-100 dark:border-white/10 bg-neutral-50 aspect-[21/9] sm:aspect-[24/10]">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={currentCategoryBannerIndex}
+                        initial={{ opacity: 0, x: 50 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -50 }}
+                        transition={{ duration: 0.6, ease: "easeInOut" }}
+                        className="absolute inset-0 w-full h-full cursor-pointer"
+                        onClick={() => categoryBanners[currentCategoryBannerIndex].linkUrl && (window.location.href = categoryBanners[currentCategoryBannerIndex].linkUrl)}
+                      >
+                        <img
+                          src={categoryBanners[currentCategoryBannerIndex].imageUrl || categoryBanners[currentCategoryBannerIndex].image}
+                          alt={categoryBanners[currentCategoryBannerIndex].title || "Category Banner"}
+                          className="w-full h-full object-cover block"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+                      </motion.div>
+                    </AnimatePresence>
+
+                    {/* Indicators/Dots */}
+                    {categoryBanners.length > 1 && (
+                      <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-30">
+                        {categoryBanners.map((_, idx) => (
+                          <button
+                            key={idx}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCurrentCategoryBannerIndex(idx);
+                            }}
+                            className={`transition-all duration-300 rounded-full ${currentCategoryBannerIndex === idx
+                              ? "w-6 sm:w-8 h-1.5 sm:h-2 bg-white"
+                              : "w-1.5 sm:w-2 h-1.5 sm:h-2 bg-white/50 hover:bg-white/80"
+                              }`}
+                            aria-label={`Go to category banner ${idx + 1}`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Fixed Main Category Sections matching User Request */}
+            {!isLoading && apiData.allCategories && (
+              <div className="space-y-8 mb-8">
+                {[
+                  { id: 'grocery', title: 'Grocery & Kitchen' },
+                  { id: 'snacks', title: 'Snacks & Drinks' },
+                  { id: 'beauty', title: 'Beauty & Wellness' },
+                  { id: 'household', title: 'Household & Lifestyle' }
+                ].map((header) => {
+                  // More flexible matching for root categories
+                  const rootCategory = apiData.allCategories.find(c => {
+                    const s = c.slug?.toLowerCase() || "";
+                    const n = c.name?.toLowerCase() || "";
+                    const id = header.id.toLowerCase();
+
+                    return s === id ||
+                      s.includes(id) ||
+                      n.includes(id) ||
+                      (id === 'grocery' && (s.includes('kitchen') || n.includes('kitchen'))) ||
+                      (id === 'snacks' && (s.includes('drinks') || n.includes('drinks'))) ||
+                      (id === 'beauty' && (s.includes('wellness') || n.includes('wellness'))) ||
+                      (id === 'household' && (s.includes('lifestyle') || n.includes('lifestyle')));
+                  });
+
+                  if (!rootCategory || !rootCategory.subCategories.length) return null;
+
+                  return (
+                    <section key={header.id} className="w-full">
+                      <div className="flex items-center justify-between mb-6 px-1">
+                        <h2 className="text-xl sm:text-2xl md:text-[23px] font-black text-[#1F2937] tracking-tight">
+                          {header.title}
+                        </h2>
+                      </div>
+
+                      <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4 md:gap-5">
+                        {rootCategory.subCategories.map((subCat) => (
+                          <Link
+                            key={subCat.id || subCat.slug}
+                            to={`/in-mart/products/${subCat.slug || subCat.id}`}
+                            className="group"
+                          >
+                            <motion.div
+                              whileHover={{ y: -4 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                              className="flex flex-col items-center gap-2"
+                            >
+                              <div className="w-full aspect-square bg-[#ECF3FF] rounded-[2rem] overflow-hidden p-2 flex items-center justify-center transition-all group-hover:shadow-xl group-hover:shadow-blue-900/10">
+                                <img
+                                  src={subCat.image || "https://via.placeholder.com/200"}
+                                  alt={subCat.name}
+                                  className="w-[85%] h-[85%] object-contain transform transition-transform duration-700 group-hover:scale-110"
+                                />
+                              </div>
+                              <span className="text-[10px] sm:text-[11px] md:text-[12px] font-bold text-[#1F2937] text-center leading-[1.2] pt-1 px-1 line-clamp-2">
+                                {subCat.name}
+                              </span>
+                            </motion.div>
+                          </Link>
+                        ))}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+            )}
+
+
+            {/* Trending Near You Section */}
+            <ProductSection
+              title="Trending Near You"
+              products={apiData.collections?.find(c => c.slug === 'trending')?.products || []}
+              onSeeAll={() => navigate('/in-mart/section/trending')}
+              themeColor={activeCategoryData.themeColor}
+            />
+
+            {/* Hibermart Branding Section */}
+            <section className="mt-12 mb-8 py-12 sm:py-16 md:py-20 flex flex-col items-center bg-gray-50/40 dark:bg-white/5 border-t border-b border-gray-100/50 dark:border-white/5 select-none">
+              <h2 className="text-[56px] sm:text-[80px] md:text-[100px] lg:text-[120px] font-black tracking-tighter leading-none italic bg-clip-text text-transparent bg-gradient-to-r from-[#16A34A] via-[#15803D] to-[#166534]">
+                hibermart
+              </h2>
+              <p className="text-sm sm:text-lg md:text-xl font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mt-4">
+                Freshness at your doorstep
+              </p>
+            </section>
+          </div>
+        </AnimatedPage>
+      )}
 
       <VoiceSearchModal
         isOpen={isVoiceSearchOpen}

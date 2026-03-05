@@ -424,6 +424,16 @@ export default function DeliveryRouter() {
         }
         path="/help/language"
       />
+      <Route
+        element={
+          <ProtectedRoute>
+            <DeliveryLayout>
+              <ChangeLanguage />
+            </DeliveryLayout>
+          </ProtectedRoute>
+        }
+        path="/change-language"
+      />
     </Routes>
   )
 }

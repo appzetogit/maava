@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import Lenis from "lenis"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 import {
   Lightbulb,
   HelpCircle,
@@ -299,6 +300,7 @@ function animateMarkerSmoothly(marker, newPosition, duration = 1500, animationRe
 }
 
 export default function DeliveryHome() {
+  const { t } = useTranslation()
   const companyName = useCompanyName()
   const navigate = useNavigate()
   const location = useLocation()
@@ -7472,47 +7474,55 @@ export default function DeliveryHome() {
     }
 
     return new Promise((resolve) => {
-      const img = new Image();
-      // Don't set crossOrigin for local images - it causes CORS issues
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          const size = 34; // Icon size
-          canvas.width = size;
-          canvas.height = size;
-          const ctx = canvas.getContext('2d');
+      try {
+        const canvas = document.createElement('canvas');
+        const size = 64; // Use a larger canvas for better resolution
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        const centerX = size / 2;
+        const centerY = size / 2;
 
-          // Clear canvas
-          ctx.clearRect(0, 0, size, size);
+        // 1. Draw Directional Arrow (Heading indicator)
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate((roundedHeading * Math.PI) / 180);
 
-          // Move to center, rotate, then draw image
-          ctx.save();
-          ctx.translate(size / 2, size / 2);
-          ctx.rotate((roundedHeading * Math.PI) / 180); // Convert degrees to radians
-          ctx.drawImage(img, -size / 2, -size / 2, size, size);
-          ctx.restore();
+        ctx.beginPath();
+        ctx.moveTo(0, -26); // Tip of the pointer
+        ctx.lineTo(12, -8);
+        ctx.lineTo(-12, -8);
+        ctx.closePath();
+        ctx.fillStyle = '#15803d'; // Darker green for heading arrow
+        ctx.fill();
+        ctx.restore();
 
-          // Get data URL and cache it
-          const dataUrl = canvas.toDataURL();
-          rotatedIconCache.current.set(cacheKey, dataUrl);
-          resolve(dataUrl);
-        } catch (error) {
-          console.warn('⚠️ Error rotating bike icon:', error);
-          // Fallback to original image if rotation fails
-          resolve(bikeLogo);
-        }
-      };
-      img.onerror = () => {
-        console.warn('⚠️ Bike logo image failed to load:', bikeLogo);
-        // Fallback to original image if loading fails
-        resolve(bikeLogo);
-      };
-      img.src = bikeLogo;
+        // 2. Draw Soft Outer Halo
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 18, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(34, 197, 94, 0.25)'; // Green-500 with opacity
+        ctx.fill();
 
-      // If image is already loaded (cached), resolve immediately
-      if (img.complete) {
-        // Image already loaded, process it
-        img.onload();
+        // 3. Draw White Border (Inner Ring)
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 11, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+        ctx.fill();
+
+        // 4. Draw Main Green Dot
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#22c55e'; // Bright green for the main dot
+        ctx.fill();
+
+        const dataUrl = canvas.toDataURL();
+        rotatedIconCache.current.set(cacheKey, dataUrl);
+        resolve(dataUrl);
+      } catch (error) {
+        console.warn('⚠️ Error drawing green dot marker:', error);
+        resolve(bikeLogo); // Fallback to original image
       }
     });
   };
@@ -7535,8 +7545,8 @@ export default function DeliveryHome() {
       // Create bike marker with rotated icon - exact position
       const bikeIcon = {
         url: rotatedIconUrl,
-        scaledSize: new window.google.maps.Size(34, 34), // Small icon size
-        anchor: new window.google.maps.Point(17, 17) // Center point
+        scaledSize: new window.google.maps.Size(42, 42), // Perfectly sized green dot
+        anchor: new window.google.maps.Point(21, 21) // Precisely centered
       };
 
       bikeMarkerRef.current = new window.google.maps.Marker({
@@ -8774,7 +8784,7 @@ export default function DeliveryHome() {
                   }}
                   className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
                 >
-                  <span>Go online</span>
+                  <span>{isOnline ? t('delivery.go_offline') : t('delivery.go_online')}</span>
                   <ArrowRight className="w-5 h-5" />
                 </button>
               </motion.div>
@@ -8793,7 +8803,7 @@ export default function DeliveryHome() {
                     <Calendar className="w-5 h-5 text-white" />
                     <CheckCircle className="w-3 h-3 text-green-500 absolute -top-1 -right-1 bg-white rounded-full" fill="currentColor" />
                   </div>
-                  <span className="text-white font-semibold">Today's progress</span>
+                  <span className="text-white font-semibold">{t('delivery.todays_progress')}</span>
                 </div>
 
                 {/* Content */}
@@ -8809,7 +8819,7 @@ export default function DeliveryHome() {
                         {formatCurrency(todayEarnings)}
                       </span>
                       <div className="flex items-center gap-1 text-sm text-gray-600">
-                        <span>Earnings</span>
+                        <span>{t('delivery.earnings')}</span>
                         <ArrowRight className="w-4 h-4" />
                       </div>
                     </button>
@@ -8823,7 +8833,7 @@ export default function DeliveryHome() {
                         {todayTrips}
                       </span>
                       <div className="flex items-center gap-1 text-sm text-gray-600">
-                        <span>Trips</span>
+                        <span>{t('delivery.trips')}</span>
                         <ArrowRight className="w-4 h-4" />
                       </div>
                     </button>
@@ -8837,7 +8847,7 @@ export default function DeliveryHome() {
                         {`${formatHours(todayHoursWorked)} hrs`}
                       </span>
                       <div className="flex items-center gap-1 text-sm text-gray-600">
-                        <span>Time on orders</span>
+                        <span>{t('delivery.time_on_orders')}</span>
                         <ArrowRight className="w-4 h-4" />
                       </div>
                     </button>

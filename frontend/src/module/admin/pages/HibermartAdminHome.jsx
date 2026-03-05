@@ -66,7 +66,8 @@ export default function HibermartAdminHome() {
         totalProducts: 0,
         monthlyRev: "₹0",
         activePromos: 0,
-        storeUsers: 0
+        storeUsers: 0,
+        isStoreOpen: true
     })
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -662,7 +663,8 @@ export default function HibermartAdminHome() {
                     totalProducts: statsRes.data.stats.totalProducts,
                     monthlyRev: "₹45.2L", // Still mock for now as backend doesn't have orders/rev yet
                     activePromos: statsRes.data.stats.saleProducts,
-                    storeUsers: statsRes.data.stats.totalStores
+                    storeUsers: statsRes.data.stats.totalStores,
+                    isStoreOpen: statsRes.data.stats.isStoreOpen ?? true
                 });
             }
 
@@ -837,6 +839,16 @@ export default function HibermartAdminHome() {
         } catch (err) {
             console.error("Delete failed:", err);
             alert("Failed to delete item.");
+        }
+    }
+
+    const handleToggleStoreStatus = async (isOpen) => {
+        try {
+            await inmartAPI.adminToggleStoreStatus(isOpen);
+            setStats(prev => ({ ...prev, isStoreOpen: isOpen }));
+        } catch (err) {
+            console.error("Toggle failed:", err);
+            alert("Failed to update store status.");
         }
     }
 
@@ -1058,7 +1070,7 @@ export default function HibermartAdminHome() {
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.3 }}
                     >
-                        {activeTab === "overview" && <DashboardOverview stats={stats} />}
+                        {activeTab === "overview" && <DashboardOverview stats={stats} onToggleStore={handleToggleStoreStatus} />}
 
                         {/* Catalog Sections */}
                         {["grocery", "beauty", "household", "snacks", "overview"].includes(activeTab) && (
@@ -1543,9 +1555,39 @@ export default function HibermartAdminHome() {
     )
 }
 
-function DashboardOverview({ stats }) {
+function DashboardOverview({ stats, onToggleStore }) {
     return (
         <div className="space-y-8">
+            {/* Store Status Toggle Section */}
+            <div className="bg-white p-6 rounded-[2.5rem] border border-neutral-100 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-6">
+                    <div className={`w-16 h-16 rounded-3xl flex items-center justify-center transition-all duration-500 ${stats.isStoreOpen ? 'bg-emerald-50 text-emerald-500 shadow-lg shadow-emerald-500/10' : 'bg-red-50 text-red-500 shadow-lg shadow-red-500/10'}`}>
+                        {stats.isStoreOpen ? <ShoppingBag className="w-8 h-8" /> : <X className="w-8 h-8" />}
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-black text-neutral-900 tracking-tight">Hibermart is {stats.isStoreOpen ? 'OPEN' : 'CLOSED'}</h3>
+                        <p className="text-sm font-bold text-neutral-400">
+                            {stats.isStoreOpen
+                                ? "Customers can currently view and order from the store."
+                                : "The store is currently hidden. Customers will see the maintenance/info page."}
+                        </p>
+                    </div>
+                </div>
+
+                <button
+                    onClick={() => onToggleStore(!stats.isStoreOpen)}
+                    className={`relative w-20 h-10 rounded-full transition-all duration-300 p-1 ${stats.isStoreOpen ? 'bg-emerald-500' : 'bg-neutral-200'}`}
+                >
+                    <motion.div
+                        animate={{ x: stats.isStoreOpen ? 40 : 0 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                        className="w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center"
+                    >
+                        <div className={`w-2 h-2 rounded-full ${stats.isStoreOpen ? 'bg-emerald-500' : 'bg-neutral-400'}`} />
+                    </motion.div>
+                </button>
+            </div>
+
             {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[

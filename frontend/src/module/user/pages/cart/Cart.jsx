@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { Plus, Minus, ArrowLeft, ChevronRight, Clock, MapPin, Phone, FileText, Utensils, Tag, Percent, Share2, ChevronUp, ChevronDown, X, Check, Settings, CreditCard, Wallet, Building2, Sparkles, Navigation, Search, Image as ImageIcon, Briefcase, User as UserIcon } from "lucide-react"
+import { Plus, Minus, ArrowLeft, ChevronRight, Clock, MapPin, Phone, FileText, Utensils, Tag, Percent, Send, ChevronUp, ChevronDown, X, Check, Settings, CreditCard, Wallet, Building2, Sparkles, Navigation, Search, Image as ImageIcon, Briefcase, User as UserIcon } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-leaflet"
 import "leaflet/dist/leaflet.css"
@@ -162,6 +162,33 @@ export default function Cart() {
   // Coupons state - fetched from backend
   const [availableCoupons, setAvailableCoupons] = useState([])
   const [loadingCoupons, setLoadingCoupons] = useState(false)
+  const [showExclusiveOfferPopup, setShowExclusiveOfferPopup] = useState(false)
+  const [hasShownOfferPopup, setHasShownOfferPopup] = useState(false)
+
+  // Celebration / Confetti Effect - Swiggy Style Top-to-Bottom Shower
+  const triggerCelebration = () => {
+    const end = Date.now() + 3 * 1000;
+    const colors = ["#22c55e", "#3b82f6", "#ef4444", "#eab308", "#ec4899", "#8b5cf6"];
+
+    (function frame() {
+      confetti({
+        particleCount: 3,
+        angle: 270, // Straight down
+        spread: 90,
+        origin: { x: Math.random(), y: -0.2 }, // Random top position
+        colors: colors,
+        gravity: 0.8,
+        scalar: Math.random() * 0.8 + 0.5,
+        drift: Math.random() * 2 - 1,
+        zIndex: 9999,
+        ticks: 300
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    })();
+  };
 
   // Fee settings from database (used as fallback if pricing not available)
   const [feeSettings, setFeeSettings] = useState({
@@ -194,6 +221,18 @@ export default function Cart() {
     : savedAddress
   const activeAddress = selectedAddressForOrder || defaultAddress
   const defaultPayment = getDefaultPaymentMethod()
+
+  // Show Exclusive Offer Popup when coupons are available
+  useEffect(() => {
+    if (availableCoupons.length > 0 && !hasShownOfferPopup && !appliedCoupon && !loadingCoupons) {
+      // Delay slightly for better UX
+      const timer = setTimeout(() => {
+        setShowExclusiveOfferPopup(true)
+        setHasShownOfferPopup(true)
+      }, 800)
+      return () => clearTimeout(timer)
+    }
+  }, [availableCoupons, hasShownOfferPopup, appliedCoupon, loadingCoupons])
 
   // Get restaurant ID from cart or restaurant data
   // Priority: restaurantData > cart[0].restaurantId
@@ -776,6 +815,9 @@ export default function Cart() {
       setCouponCode(coupon.code)
       setShowCoupons(false)
 
+      // Trigger Celebration Shower
+      triggerCelebration();
+
       // Recalculate pricing with new coupon
       if (cart.length > 0 && defaultAddress) {
         try {
@@ -1331,10 +1373,10 @@ export default function Cart() {
           <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">Your cart is empty</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 text-center">Add items from a restaurant to start a new order</p>
           <Link>
-            <Button className="bg-purple-600 hover:opacity-90 text-white">Browse Restaurants</Button>
+            <Button className="bg-black hover:opacity-90 text-white">Browse Restaurants</Button>
           </Link>
         </div>
-      </AnimatedPage>
+      </AnimatedPage >
     )
   }
 
@@ -1359,7 +1401,7 @@ export default function Cart() {
               </div>
             </div>
             <Button variant="ghost" size="icon" className="h-7 w-7 md:h-8 md:w-8 flex-shrink-0">
-              <Share2 className="h-4 w-4 md:h-5 md:w-5" />
+              <Send className="h-4 w-4 md:h-5 md:w-5" />
             </Button>
           </div>
         </div>
@@ -1426,18 +1468,18 @@ export default function Cart() {
 
                       <div className="flex items-center gap-3 md:gap-4">
                         {/* Quantity controls */}
-                        <div className="flex items-center border border-purple-600 dark:border-purple-500 rounded">
+                        <div className="flex items-center border border-black dark:border-gray-600 rounded">
                           <button
-                            className="px-2 md:px-3 py-1 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                            className="px-2 md:px-3 py-1 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
                           >
                             <Minus className="h-3 w-3 md:h-4 md:w-4" />
                           </button>
-                          <span className="px-2 md:px-3 text-sm md:text-base font-semibold text-purple-600 dark:text-purple-400 min-w-[20px] md:min-w-[24px] text-center">
+                          <span className="px-2 md:px-3 text-sm md:text-base font-semibold text-black dark:text-white min-w-[20px] md:min-w-[24px] text-center">
                             {item.quantity}
                           </span>
                           <button
-                            className="px-2 md:px-3 py-1 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                            className="px-2 md:px-3 py-1 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
                           >
                             <Plus className="h-3 w-3 md:h-4 md:w-4" />
@@ -1455,7 +1497,7 @@ export default function Cart() {
                 {/* Add more items */}
                 <button
                   onClick={() => navigate(-1)}
-                  className="flex items-center gap-2 mt-4 md:mt-6 text-purple-600 dark:text-purple-400"
+                  className="flex items-center gap-2 mt-4 md:mt-6 text-black dark:text-white"
                 >
                   <Plus className="h-4 w-4 md:h-5 md:w-5" />
                   <span className="text-sm md:text-base font-medium">Add more items</span>
@@ -1464,20 +1506,20 @@ export default function Cart() {
 
 
               {/* Note & Cutlery */}
-              <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl flex flex-col sm:flex-row gap-2 md:gap-3">
+              <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl flex flex-row gap-2 md:gap-3">
                 <button
                   onClick={() => setShowNoteInput(!showNoteInput)}
-                  className="flex-1 flex items-center gap-2 px-3 md:px-4 py-2 md:py-3 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl text-sm md:text-base text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  className="flex-1 flex items-center gap-1.5 px-2 md:px-4 py-2 md:py-3 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl text-[11px] md:text-base text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all active:scale-[0.98]"
                 >
-                  <FileText className="h-4 w-4 md:h-5 md:w-5" />
-                  <span className="truncate">{note || "Add a note for the restaurant"}</span>
+                  <FileText className="h-3.5 w-3.5 md:h-5 md:w-5 flex-shrink-0" />
+                  <span className="truncate">{note || "Add a note"}</span>
                 </button>
                 <button
                   onClick={() => setSendCutlery(!sendCutlery)}
-                  className={`flex items-center gap-2 px-3 md:px-4 py-2 md:py-3 border rounded-lg md:rounded-xl text-sm md:text-base ${sendCutlery ? 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300' : 'border-purple-600 dark:border-purple-500 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20'}`}
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-2 md:px-4 py-2 md:py-3 border rounded-lg md:rounded-xl text-[11px] md:text-base transition-all active:scale-[0.98] ${sendCutlery ? 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300' : 'border-black dark:border-gray-600 text-black dark:text-white bg-gray-50 dark:bg-gray-800'}`}
                 >
-                  <Utensils className="h-4 w-4 md:h-5 md:w-5" />
-                  <span className="whitespace-nowrap">{sendCutlery ? "Don't send cutlery" : "No cutlery"}</span>
+                  <Utensils className="h-3.5 w-3.5 md:h-5 md:w-5 flex-shrink-0" />
+                  <span className="whitespace-nowrap">{sendCutlery ? "No cutlery" : "Add cutlery"}</span>
                 </button>
               </div>
 
@@ -1488,7 +1530,7 @@ export default function Cart() {
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     placeholder="Add cooking instructions, allergies, etc."
-                    className="w-full border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl p-3 md:p-4 text-sm md:text-base resize-none h-20 md:h-24 focus:outline-none focus:border-purple-600 dark:focus:border-purple-500 bg-white dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100"
+                    className="w-full border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl p-3 md:p-4 text-sm md:text-base resize-none h-20 md:h-24 focus:outline-none focus:border-black dark:focus:border-white bg-white dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100"
                   />
                 </div>
               )}
@@ -1560,9 +1602,9 @@ export default function Cart() {
                                   restaurantId: cartRestaurantId
                                 });
                               }}
-                              className="absolute bottom-1 md:bottom-2 right-1 md:right-2 w-6 h-6 md:w-7 md:h-7 bg-white border border-purple-600 rounded flex items-center justify-center shadow-sm hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                              className="absolute bottom-1 md:bottom-2 right-1 md:right-2 w-6 h-6 md:w-7 md:h-7 bg-white border border-black rounded flex items-center justify-center shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                             >
-                              <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 text-purple-600" />
+                              <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 text-black" />
                             </button>
                           </div>
                           <p className="text-xs md:text-sm font-medium text-gray-800 dark:text-gray-200 mt-1.5 md:mt-2 line-clamp-2 leading-tight">{addon.name}</p>
@@ -1580,12 +1622,12 @@ export default function Cart() {
               {/* Coupon Section */}
               <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl">
                 {appliedCoupon ? (
-                  <div className="flex items-center justify-between bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg md:rounded-xl p-3 md:p-4">
+                  <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl p-3 md:p-4">
                     <div className="flex items-center gap-2 md:gap-3">
-                      <Tag className="h-4 w-4 md:h-5 md:w-5 text-purple-600 dark:text-purple-400" />
+                      <Tag className="h-4 w-4 md:h-5 md:w-5 text-black dark:text-white" />
                       <div>
-                        <p className="text-sm md:text-base font-medium text-purple-700 dark:text-purple-300">'{appliedCoupon.code}' applied</p>
-                        <p className="text-xs md:text-sm text-purple-600 dark:text-purple-400">You saved ₹{discount}</p>
+                        <p className="text-sm md:text-base font-medium text-black dark:text-white">'{appliedCoupon.code}' applied</p>
+                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">You saved ₹{discount}</p>
                       </div>
                     </div>
                     <button onClick={handleRemoveCoupon} className="text-gray-500 dark:text-gray-400 text-xs md:text-sm font-medium">Remove</button>
@@ -1614,7 +1656,7 @@ export default function Cart() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-7 md:h-8 text-xs md:text-sm border-purple-600 dark:border-purple-500 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                        className="h-7 md:h-8 text-xs md:text-sm border-black dark:border-white text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                         onClick={() => handleApplyCoupon(availableCoupons[0])}
                         disabled={subtotal < availableCoupons[0].minOrder}
                       >
@@ -1641,7 +1683,7 @@ export default function Cart() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-6 md:h-7 text-xs md:text-sm border-purple-600 dark:border-purple-500 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                          className="h-6 md:h-7 text-xs md:text-sm border-black dark:border-white text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                           onClick={() => handleApplyCoupon(coupon)}
                           disabled={subtotal < coupon.minOrder}
                         >
@@ -1693,13 +1735,13 @@ export default function Cart() {
                         }
                       }}
                       className={`relative px-4 py-2 rounded-full border-2 text-sm font-semibold transition-all ${selectedTip === amount
-                        ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
+                        ? 'border-black bg-black text-white'
                         : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400'
                         }`}
                     >
                       ₹{amount}
                       {amount === 30 && (
-                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[9px] bg-purple-600 text-white px-1.5 py-0.5 rounded-full whitespace-nowrap font-bold">
+                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[9px] bg-black text-white px-1.5 py-0.5 rounded-full whitespace-nowrap font-bold">
                           Most Tipped
                         </span>
                       )}
@@ -1718,7 +1760,7 @@ export default function Cart() {
                       }
                     }}
                     className={`flex items-center gap-1 px-4 py-2 rounded-full border-2 text-sm font-semibold transition-all ${selectedTip === 'other'
-                      ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
+                      ? 'border-black bg-black text-white'
                       : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400'
                       }`}
                   >
@@ -1731,7 +1773,7 @@ export default function Cart() {
                           setTipAmount(0)
                           setCustomTipInput("")
                         }}
-                        className="ml-1 text-purple-600 hover:text-purple-800"
+                        className="ml-1 text-white hover:text-gray-200"
                       >
                         <X className="h-3 w-3" />
                       </span>
@@ -1957,12 +1999,12 @@ export default function Cart() {
                   }
                   setCheckoutStage('map_picker')
                 }}
-                className="w-full flex items-center gap-4 p-4 border-2 border-dashed border-purple-500 rounded-2xl mb-6 hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-colors group"
+                className="w-full flex items-center gap-4 p-4 border-2 border-dashed border-black dark:border-gray-600 rounded-2xl mb-6 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group"
               >
-                <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/20 rounded-xl flex items-center justify-center">
-                  <Plus className="h-6 w-6 text-purple-500" />
+                <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center">
+                  <Plus className="h-6 w-6 text-black dark:text-white" />
                 </div>
-                <span className="text-lg font-bold text-purple-500">Add new Address</span>
+                <span className="text-lg font-bold text-black dark:text-white">Add new Address</span>
               </button>
 
               {/* Last Order Address Option */}
@@ -1973,15 +2015,15 @@ export default function Cart() {
                     setIsAddressConfirmed(true)
                     setCheckoutStage('payment')
                   }}
-                  className="w-full flex items-start gap-4 p-4 rounded-2xl border-2 border-purple-100 dark:border-purple-900/20 bg-purple-50/30 dark:bg-purple-900/5 hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-all text-left group mb-6"
+                  className="w-full flex items-start gap-4 p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all text-left group mb-6"
                 >
-                  <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <Clock className="h-6 w-6 text-purple-600" />
+                  <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <Clock className="h-6 w-6 text-black dark:text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-bold text-purple-700 dark:text-purple-400">Last Used Location</p>
-                      <span className="text-[10px] bg-purple-600 text-white px-1.5 py-0.5 rounded-full font-bold uppercase">Recent</span>
+                      <p className="font-bold text-black dark:text-white">Last Used Location</p>
+                      <span className="text-[10px] bg-black text-white px-1.5 py-0.5 rounded-full font-bold uppercase">Recent</span>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mt-1">{formatFullAddress(lastOrderAddress)}</p>
                   </div>
@@ -2045,10 +2087,10 @@ export default function Cart() {
                 <MapEventsHandler setCoords={setTempMapCoords} setAddressInfo={setTempAddressInfo} />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1000]">
                   <div className="relative -top-8 flex flex-col items-center">
-                    <div className="bg-purple-600 w-12 h-12 rounded-full flex items-center justify-center border-4 border-white shadow-xl">
+                    <div className="bg-black w-12 h-12 rounded-full flex items-center justify-center border-4 border-white shadow-xl">
                       <MapPin className="h-6 w-6 text-white" />
                     </div>
-                    <div className="w-1 h-8 bg-purple-600" />
+                    <div className="w-1 h-8 bg-black" />
                   </div>
                 </div>
               </MapContainer>
@@ -2059,9 +2101,9 @@ export default function Cart() {
                     setTempMapCoords({ lat: currentLocation.latitude, lng: currentLocation.longitude })
                   }
                 }}
-                className="absolute bottom-52 right-4 z-[1001] p-3 bg-white shadow-lg rounded-full flex items-center gap-2 border border-purple-100"
+                className="absolute bottom-52 right-4 z-[1001] p-3 bg-white shadow-lg rounded-full flex items-center gap-2 border border-gray-100"
               >
-                <Navigation className="h-5 w-5 text-purple-500 fill-purple-500" />
+                <Navigation className="h-5 w-5 text-black fill-black" />
                 <span className="text-sm font-bold text-gray-800">Current location</span>
               </button>
 
@@ -2077,9 +2119,9 @@ export default function Cart() {
                       formattedAddress: formatFullAddress(lastOrderAddress)
                     })
                   }}
-                  className="absolute bottom-64 right-4 z-[1001] p-3 bg-white shadow-lg rounded-full flex items-center gap-2 border border-purple-500 bg-purple-50/50 backdrop-blur-sm"
+                  className="absolute bottom-64 right-4 z-[1001] p-3 bg-white shadow-lg rounded-full flex items-center gap-2 border border-black bg-gray-50/50 backdrop-blur-sm"
                 >
-                  <Clock className="h-5 w-5 text-purple-600" />
+                  <Clock className="h-5 w-5 text-black" />
                   <span className="text-sm font-bold text-gray-800">Last order location</span>
                 </button>
               )}
@@ -2094,8 +2136,8 @@ export default function Cart() {
                   <p className="text-sm text-gray-500 mb-4 font-medium italic">Order will be delivered here</p>
 
                   <div className="flex items-start gap-4 mb-8">
-                    <div className="w-10 h-10 bg-purple-50 dark:bg-purple-900/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <MapPin className="h-6 w-6 text-purple-500" />
+                    <div className="w-10 h-10 bg-gray-50 dark:bg-gray-800/40 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <MapPin className="h-6 w-6 text-black dark:text-white" />
                     </div>
                     <div>
                       <p className="font-black text-xl text-gray-900 leading-tight mb-1">{tempAddressInfo.area || 'Locating...'}</p>
@@ -2106,7 +2148,7 @@ export default function Cart() {
                   <Button
                     onClick={() => setCheckoutStage('address_details')}
                     disabled={!tempAddressInfo.formattedAddress}
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white h-14 rounded-2xl text-lg font-black shadow-xl shadow-purple-200 dark:shadow-purple-900/30 transition-all hover:scale-[1.02]"
+                    className="w-full bg-black hover:bg-neutral-900 text-white h-14 rounded-2xl text-lg font-black shadow-xl shadow-black/10 dark:shadow-black/40 transition-all hover:scale-[1.02]"
                   >
                     Confirm & proceed
                   </Button>
@@ -2141,7 +2183,7 @@ export default function Cart() {
                     id="useAcc"
                     checked={receiverDetails.useAccountDetails}
                     onChange={(e) => setReceiverDetails({ ...receiverDetails, useAccountDetails: e.target.checked })}
-                    className="w-5 h-5 accent-purple-600"
+                    className="w-5 h-5 accent-black"
                   />
                   <label htmlFor="useAcc" className="text-sm font-bold text-gray-700 dark:text-gray-300">
                     Use my account details <span className="text-gray-400 font-medium ml-1">{userProfile?.name}, {userProfile?.phone}</span>
@@ -2154,7 +2196,7 @@ export default function Cart() {
                       <input
                         value={receiverDetails.name}
                         onChange={e => setReceiverDetails({ ...receiverDetails, name: e.target.value })}
-                        className="w-full p-3 bg-gray-50 dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-purple-500"
+                        className="w-full p-3 bg-gray-50 dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-black dark:focus:border-white"
                       />
                     </div>
                     <div className="space-y-1">
@@ -2162,7 +2204,7 @@ export default function Cart() {
                       <input
                         value={receiverDetails.phone}
                         onChange={e => setReceiverDetails({ ...receiverDetails, phone: e.target.value })}
-                        className="w-full p-3 bg-gray-50 dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-purple-500"
+                        className="w-full p-3 bg-gray-50 dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-black dark:focus:border-white"
                       />
                     </div>
                   </div>
@@ -2192,13 +2234,13 @@ export default function Cart() {
                     placeholder="House / Flat / Floor *"
                     value={receiverDetails.houseNo}
                     onChange={e => setReceiverDetails({ ...receiverDetails, houseNo: e.target.value })}
-                    className="w-full p-4 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-purple-500 shadow-sm"
+                    className="w-full p-4 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-black dark:focus:border-white shadow-sm"
                   />
                   <input
                     placeholder="Building / Street (Recommended)"
                     value={receiverDetails.buildingName}
                     onChange={e => setReceiverDetails({ ...receiverDetails, buildingName: e.target.value })}
-                    className="w-full p-4 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-purple-500 shadow-sm"
+                    className="w-full p-4 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl outline-none focus:border-black dark:focus:border-white shadow-sm"
                   />
 
                   <div className="p-4 border-2 border-gray-100 dark:border-gray-700 rounded-2xl bg-gray-50/50 dark:bg-gray-800/50 flex gap-4">
@@ -2208,9 +2250,9 @@ export default function Cart() {
                     </div>
                     <button onClick={() => setCheckoutStage('map_picker')} className="flex flex-col items-center gap-1">
                       <div className="w-10 h-10 bg-white dark:bg-gray-700 rounded-xl shadow-md border border-gray-50 dark:border-gray-600 flex items-center justify-center">
-                        <MapPin className="h-5 w-5 text-purple-500" />
+                        <MapPin className="h-5 w-5 text-black dark:text-white" />
                       </div>
-                      <span className="text-[10px] font-black text-purple-500 uppercase tracking-tighter">Change</span>
+                      <span className="text-[10px] font-black text-black dark:text-white uppercase tracking-tighter">Change</span>
                     </button>
                   </div>
 
@@ -2224,8 +2266,8 @@ export default function Cart() {
                 onClick={() => setCheckoutStage('confirm_details')}
                 disabled={!receiverDetails.houseNo || (!receiverDetails.useAccountDetails && (!receiverDetails.name || !receiverDetails.phone))}
                 className={`w-full py-8 rounded-2xl font-black text-xl transition-all shadow-lg ${(!receiverDetails.houseNo || (!receiverDetails.useAccountDetails && (!receiverDetails.name || !receiverDetails.phone)))
-                    ? 'bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
-                    : 'bg-purple-600 text-white hover:bg-purple-700 hover:scale-[1.02] active:scale-[0.98]'
+                  ? 'bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
+                  : 'bg-black text-white hover:bg-neutral-900 hover:scale-[1.02] active:scale-[0.98]'
                   }`}
               >
                 Review details
@@ -2256,8 +2298,8 @@ export default function Cart() {
 
                 <div className="space-y-6">
                   <div className="flex gap-4">
-                    <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <MapPin className="h-6 w-6 text-purple-500" />
+                    <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <MapPin className="h-6 w-6 text-black dark:text-white" />
                     </div>
                     <div>
                       <p className="font-black text-lg text-gray-900 dark:text-white leading-tight mb-2">
@@ -2272,8 +2314,8 @@ export default function Cart() {
                   </div>
 
                   <div className="flex gap-4">
-                    <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <UserIcon className="h-6 w-6 text-purple-500" />
+                    <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <UserIcon className="h-6 w-6 text-black dark:text-white" />
                     </div>
                     <div>
                       <p className="text-sm font-bold text-gray-900 dark:text-white">
@@ -2289,7 +2331,7 @@ export default function Cart() {
                 <div className="flex gap-4 mt-12">
                   <button
                     onClick={() => setCheckoutStage('address_details')}
-                    className="flex-1 py-4 bg-purple-50 dark:bg-purple-900/10 text-purple-600 font-bold rounded-2xl border border-purple-100 dark:border-purple-900/20 hover:bg-purple-100 transition-colors"
+                    className="flex-1 py-4 bg-gray-50 dark:bg-gray-800 text-black dark:text-white font-bold rounded-2xl border border-gray-100 dark:border-gray-700 hover:bg-gray-100 transition-colors"
                   >
                     Edit details
                   </button>
@@ -2307,7 +2349,7 @@ export default function Cart() {
                       setIsAddressConfirmed(true)
                       setCheckoutStage('payment')
                     }}
-                    className="flex-1 py-4 bg-purple-600 text-white font-bold rounded-2xl shadow-lg shadow-purple-200 dark:shadow-purple-900/30 transition-transform active:scale-95"
+                    className="flex-1 py-4 bg-black text-white font-bold rounded-2xl shadow-lg shadow-black/10 dark:shadow-black/40 transition-transform active:scale-95"
                   >
                     Confirm
                   </button>
@@ -2316,10 +2358,10 @@ export default function Cart() {
             </div>
           </div>
         )}
-      </AnimatePresence>
+      </AnimatePresence >
 
       {/* Bottom Sticky - CTA Area */}
-      <div className="bg-white dark:bg-[#1a1a1a] border-t dark:border-gray-800 shadow-lg z-30 flex-shrink-0 fixed bottom-0 left-0 right-0">
+      < div className="bg-white dark:bg-[#1a1a1a] border-t dark:border-gray-800 shadow-lg z-30 flex-shrink-0 fixed bottom-0 left-0 right-0" >
         <div className="max-w-7xl mx-auto">
           <div className="px-4 md:px-6 py-3 md:py-4">
             <div className="w-full max-w-md md:max-w-lg mx-auto">
@@ -2327,14 +2369,14 @@ export default function Cart() {
                 /* Address Prompt Flow */
                 <div className="flex flex-col items-center gap-4 py-4 md:py-6 animate-in fade-in slide-in-from-bottom-4">
                   <div className="flex items-center gap-3">
-                    <Navigation className="h-6 w-6 text-purple-500 fill-purple-500" />
+                    <Navigation className="h-6 w-6 text-black fill-black dark:text-white dark:fill-white" />
                     <p className="text-xl md:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
                       Where would you like us to deliver this order?
                     </p>
                   </div>
                   <Button
                     onClick={() => setCheckoutStage('address_selection')}
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-3xl h-14 md:h-16 text-lg md:text-xl font-black shadow-xl shadow-purple-200 dark:shadow-purple-900/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    className="w-full bg-black hover:bg-neutral-900 text-white rounded-3xl h-14 md:h-16 text-lg md:text-xl font-black shadow-xl shadow-black/10 dark:shadow-black/40 transition-all hover:scale-[1.02] active:scale-[0.98]"
                   >
                     Add or Select address
                   </Button>
@@ -2383,10 +2425,10 @@ export default function Cart() {
             </div>
           </div>
         </div>
-      </div>
+      </div >
 
       {/* ===== Payment Options Sheet ===== */}
-      <AnimatePresence>
+      < AnimatePresence >
         {showPaymentOptions && (
           <div className="fixed inset-0 z-50 overflow-hidden">
             <motion.div
@@ -2448,8 +2490,8 @@ export default function Cart() {
                     disabled={walletBalance < total}
                     className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all disabled:opacity-50 ${selectedPaymentMethod === 'wallet' ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                   >
-                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Wallet className="h-6 w-6 text-purple-600" />
+                    <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Wallet className="h-6 w-6 text-black dark:text-white" />
                     </div>
                     <div className="flex-1 text-left">
                       <p className="font-bold text-gray-900 dark:text-white text-sm">App Wallet</p>
@@ -2620,10 +2662,10 @@ export default function Cart() {
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
+      </AnimatePresence >
 
       {/* ===== Cash Order Confirmation Dialog ===== */}
-      <AnimatePresence>
+      < AnimatePresence >
         {showCashConfirm && (
           <div className="fixed inset-0 z-[70] overflow-hidden flex items-end justify-center">
             <motion.div
@@ -2671,212 +2713,216 @@ export default function Cart() {
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
+      </AnimatePresence >
 
       {/* Placing Order Modal */}
-      {showPlacingOrder && (
-        <div className="fixed inset-0 z-[60] h-screen w-screen overflow-hidden">
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      {
+        showPlacingOrder && (
+          <div className="fixed inset-0 z-[60] h-screen w-screen overflow-hidden">
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
-          {/* Modal Sheet */}
-          <div
-            className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl overflow-hidden"
-            style={{ animation: 'slideUpModal 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}
-          >
-            <div className="px-6 py-8">
-              {/* Title */}
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Placing your order</h2>
+            {/* Modal Sheet */}
+            <div
+              className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl overflow-hidden"
+              style={{ animation: 'slideUpModal 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}
+            >
+              <div className="px-6 py-8">
+                {/* Title */}
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Placing your order</h2>
 
-              {/* Payment Info */}
-              <div className="flex items-center gap-4 mb-5">
-                <div className="w-14 h-14 rounded-xl border border-gray-200 flex items-center justify-center bg-white shadow-sm">
-                  <CreditCard className="w-6 h-6 text-gray-600" />
+                {/* Payment Info */}
+                <div className="flex items-center gap-4 mb-5">
+                  <div className="w-14 h-14 rounded-xl border border-gray-200 flex items-center justify-center bg-white shadow-sm">
+                    <CreditCard className="w-6 h-6 text-gray-600" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {selectedPaymentMethod === "razorpay"
+                        ? `Pay ₹${total.toFixed(2)} online (Razorpay)`
+                        : selectedPaymentMethod === "wallet"
+                          ? `Pay ₹${total.toFixed(2)} from Wallet`
+                          : `Pay on delivery (COD)`}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-lg font-semibold text-gray-900">
-                    {selectedPaymentMethod === "razorpay"
-                      ? `Pay ₹${total.toFixed(2)} online (Razorpay)`
-                      : selectedPaymentMethod === "wallet"
-                        ? `Pay ₹${total.toFixed(2)} from Wallet`
-                        : `Pay on delivery (COD)`}
-                  </p>
-                </div>
-              </div>
 
-              {/* Delivery Address */}
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-14 h-14 rounded-xl border border-gray-200 flex items-center justify-center bg-gray-50">
-                  <svg className="w-7 h-7 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path d="M9 22V12h6v10" />
-                  </svg>
+                {/* Delivery Address */}
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="w-14 h-14 rounded-xl border border-gray-200 flex items-center justify-center bg-gray-50">
+                    <svg className="w-7 h-7 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path d="M9 22V12h6v10" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-lg font-semibold text-gray-900">Delivering to Location</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {defaultAddress ? (formatFullAddress(defaultAddress) || defaultAddress?.formattedAddress || defaultAddress?.address || "Address") : "Add address"}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {defaultAddress ? (formatFullAddress(defaultAddress) || "Address") : "Address"}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-lg font-semibold text-gray-900">Delivering to Location</p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {defaultAddress ? (formatFullAddress(defaultAddress) || defaultAddress?.formattedAddress || defaultAddress?.address || "Address") : "Add address"}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {defaultAddress ? (formatFullAddress(defaultAddress) || "Address") : "Address"}
-                  </p>
-                </div>
-              </div>
 
-              {/* Progress Bar */}
-              <div className="relative mb-6">
-                <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                {/* Progress Bar */}
+                <div className="relative mb-6">
+                  <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-green-500 to-green-600 rounded-full transition-all duration-100 ease-linear"
+                      style={{
+                        width: `${orderProgress}%`,
+                        boxShadow: '0 0 10px rgba(34, 197, 94, 0.5)'
+                      }}
+                    />
+                  </div>
+                  {/* Animated shimmer effect */}
                   <div
-                    className="h-full bg-gradient-to-r from-green-500 to-green-600 rounded-full transition-all duration-100 ease-linear"
+                    className="absolute inset-0 h-2.5 rounded-full overflow-hidden pointer-events-none"
                     style={{
-                      width: `${orderProgress}%`,
-                      boxShadow: '0 0 10px rgba(34, 197, 94, 0.5)'
+                      background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+                      animation: 'shimmer 1.5s infinite',
+                      width: `${orderProgress}%`
                     }}
                   />
                 </div>
-                {/* Animated shimmer effect */}
-                <div
-                  className="absolute inset-0 h-2.5 rounded-full overflow-hidden pointer-events-none"
-                  style={{
-                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
-                    animation: 'shimmer 1.5s infinite',
-                    width: `${orderProgress}%`
-                  }}
-                />
-              </div>
 
-              {/* Cancel Button */}
-              <button
-                onClick={() => {
-                  setShowPlacingOrder(false)
-                  setIsPlacingOrder(false)
-                }}
-                className="w-full text-right"
-              >
-                <span className="text-green-600 font-semibold text-base hover:text-green-700 transition-colors">
-                  CANCEL
-                </span>
-              </button>
+                {/* Cancel Button */}
+                <button
+                  onClick={() => {
+                    setShowPlacingOrder(false)
+                    setIsPlacingOrder(false)
+                  }}
+                  className="w-full text-right"
+                >
+                  <span className="text-green-600 font-semibold text-base hover:text-green-700 transition-colors">
+                    CANCEL
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Order Success Celebration Page */}
-      {showOrderSuccess && (
-        <div
-          className="fixed inset-0 z-[70] bg-white flex flex-col items-center justify-center h-screen w-screen overflow-hidden"
-          style={{ animation: 'fadeIn 0.3s ease-out' }}
-        >
-          {/* Confetti Background */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            {/* Animated confetti pieces */}
-            {[...Array(50)].map((_, i) => (
-              <div
-                key={i}
-                className="absolute w-3 h-3 rounded-sm"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `-10%`,
-                  backgroundColor: ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'][Math.floor(Math.random() * 6)],
-                  animation: `confettiFall ${2 + Math.random() * 2}s linear ${Math.random() * 2}s infinite`,
-                  transform: `rotate(${Math.random() * 360}deg)`,
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Success Content */}
-          <div className="relative z-10 flex flex-col items-center px-6">
-            {/* Success Tick Circle */}
-            <div
-              className="relative mb-8"
-              style={{ animation: 'scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both' }}
-            >
-              {/* Outer ring animation */}
-              <div
-                className="absolute inset-0 w-32 h-32 rounded-full border-4 border-green-500"
-                style={{
-                  animation: 'ringPulse 1.5s ease-out infinite',
-                  opacity: 0.3
-                }}
-              />
-              {/* Main circle */}
-              <div className="w-32 h-32 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-2xl">
-                <svg
-                  className="w-16 h-16 text-white"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  style={{ animation: 'checkDraw 0.5s ease-out 0.5s both' }}
-                >
-                  <path d="M5 12l5 5L19 7" className="check-path" />
-                </svg>
-              </div>
-              {/* Sparkles */}
-              {[...Array(6)].map((_, i) => (
+      {
+        showOrderSuccess && (
+          <div
+            className="fixed inset-0 z-[70] bg-white flex flex-col items-center justify-center h-screen w-screen overflow-hidden"
+            style={{ animation: 'fadeIn 0.3s ease-out' }}
+          >
+            {/* Confetti Background */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              {/* Animated confetti pieces */}
+              {[...Array(50)].map((_, i) => (
                 <div
                   key={i}
-                  className="absolute w-2 h-2 bg-yellow-400 rounded-full"
+                  className="absolute w-3 h-3 rounded-sm"
                   style={{
-                    top: '50%',
-                    left: '50%',
-                    animation: `sparkle 0.6s ease-out ${0.3 + i * 0.1}s both`,
-                    transform: `rotate(${i * 60}deg) translateY(-80px)`,
+                    left: `${Math.random() * 100}%`,
+                    top: `-10%`,
+                    backgroundColor: ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'][Math.floor(Math.random() * 6)],
+                    animation: `confettiFall ${2 + Math.random() * 2}s linear ${Math.random() * 2}s infinite`,
+                    transform: `rotate(${Math.random() * 360}deg)`,
                   }}
                 />
               ))}
             </div>
 
-            {/* Location Info */}
-            <div
-              className="text-center"
-              style={{ animation: 'slideUp 0.5s ease-out 0.6s both' }}
-            >
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <div className="w-5 h-5 text-red-500">
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+            {/* Success Content */}
+            <div className="relative z-10 flex flex-col items-center px-6">
+              {/* Success Tick Circle */}
+              <div
+                className="relative mb-8"
+                style={{ animation: 'scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both' }}
+              >
+                {/* Outer ring animation */}
+                <div
+                  className="absolute inset-0 w-32 h-32 rounded-full border-4 border-green-500"
+                  style={{
+                    animation: 'ringPulse 1.5s ease-out infinite',
+                    opacity: 0.3
+                  }}
+                />
+                {/* Main circle */}
+                <div className="w-32 h-32 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-2xl">
+                  <svg
+                    className="w-16 h-16 text-white"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ animation: 'checkDraw 0.5s ease-out 0.5s both' }}
+                  >
+                    <path d="M5 12l5 5L19 7" className="check-path" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {defaultAddress?.city || "Your Location"}
-                </h2>
+                {/* Sparkles */}
+                {[...Array(6)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute w-2 h-2 bg-yellow-400 rounded-full"
+                    style={{
+                      top: '50%',
+                      left: '50%',
+                      animation: `sparkle 0.6s ease-out ${0.3 + i * 0.1}s both`,
+                      transform: `rotate(${i * 60}deg) translateY(-80px)`,
+                    }}
+                  />
+                ))}
               </div>
-              <p className="text-gray-500 text-base">
-                {defaultAddress ? (formatFullAddress(defaultAddress) || defaultAddress?.formattedAddress || defaultAddress?.address || "Delivery Address") : "Delivery Address"}
-              </p>
-            </div>
 
-            {/* Order Placed Message */}
-            <div
-              className="mt-12 text-center"
-              style={{ animation: 'slideUp 0.5s ease-out 0.8s both' }}
-            >
-              <h3 className="text-3xl font-bold text-green-600 mb-2">
-                {wasHibermartOrder ? "Order Submitted!" : "Order Placed!"}
-              </h3>
-              <p className="text-gray-600">
-                {wasHibermartOrder
-                  ? "Waiting for admin approval before assigning a delivery partner"
-                  : "Your delicious food is on its way"}
-              </p>
-            </div>
+              {/* Location Info */}
+              <div
+                className="text-center"
+                style={{ animation: 'slideUp 0.5s ease-out 0.6s both' }}
+              >
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <div className="w-5 h-5 text-red-500">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {defaultAddress?.city || "Your Location"}
+                  </h2>
+                </div>
+                <p className="text-gray-500 text-base">
+                  {defaultAddress ? (formatFullAddress(defaultAddress) || defaultAddress?.formattedAddress || defaultAddress?.address || "Delivery Address") : "Delivery Address"}
+                </p>
+              </div>
 
-            {/* Action Button */}
-            <button
-              onClick={handleGoToOrders}
-              className="mt-10 bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-12 rounded-xl shadow-lg transition-all hover:shadow-xl hover:scale-105"
-              style={{ animation: 'slideUp 0.5s ease-out 1s both' }}
-            >
-              {wasHibermartOrder ? "View Order Status" : "Track Your Order"}
-            </button>
+              {/* Order Placed Message */}
+              <div
+                className="mt-12 text-center"
+                style={{ animation: 'slideUp 0.5s ease-out 0.8s both' }}
+              >
+                <h3 className="text-3xl font-bold text-green-600 mb-2">
+                  {wasHibermartOrder ? "Order Submitted!" : "Order Placed!"}
+                </h3>
+                <p className="text-gray-600">
+                  {wasHibermartOrder
+                    ? "Waiting for admin approval before assigning a delivery partner"
+                    : "Your delicious food is on its way"}
+                </p>
+              </div>
+
+              {/* Action Button */}
+              <button
+                onClick={handleGoToOrders}
+                className="mt-10 bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-12 rounded-xl shadow-lg transition-all hover:shadow-xl hover:scale-105"
+                style={{ animation: 'slideUp 0.5s ease-out 1s both' }}
+              >
+                {wasHibermartOrder ? "View Order Status" : "Track Your Order"}
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Animation Styles */}
       <style>{`
@@ -3064,7 +3110,78 @@ export default function Cart() {
           stroke-dashoffset: 0;
         }
       `}</style>
-    </div>
+      {/* Exclusive Offer Popup */}
+      <AnimatePresence>
+        {showExclusiveOfferPopup && availableCoupons.length > 0 && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowExclusiveOfferPopup(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm bg-white dark:bg-[#1a1a1a] rounded-[2.5rem] overflow-hidden shadow-2xl"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setShowExclusiveOfferPopup(false)}
+                className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              </button>
+
+              <div className="p-8 pt-10 flex flex-col items-center text-center">
+                {/* Icon Circle */}
+                <div className="w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center shadow-lg shadow-blue-200 dark:shadow-blue-900/20 mb-6">
+                  <Percent className="w-12 h-12 text-white" />
+                </div>
+
+                {/* Exclusively For You Badge */}
+                <div className="flex items-center gap-2 mb-4 bg-yellow-50 dark:bg-yellow-900/20 px-4 py-1.5 rounded-full border border-yellow-100 dark:border-yellow-900/30">
+                  <Sparkles className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                  <span className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest">Exclusively for you</span>
+                  <Sparkles className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                </div>
+
+                {/* Main Offer Text */}
+                <h2 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white mb-2 leading-tight">
+                  Save <span className="text-blue-600">₹{availableCoupons[0].discount}</span> on this order
+                </h2>
+
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">
+                  with coupon <span className="font-bold text-gray-900 dark:text-white uppercase">'{availableCoupons[0].code}'</span>
+                </p>
+                <p className="text-gray-400 dark:text-gray-500 text-xs font-semibold uppercase tracking-tighter">
+                  Tap on 'APPLY' to avail this
+                </p>
+
+                {/* Apply Button */}
+                <button
+                  onClick={() => {
+                    handleApplyCoupon(availableCoupons[0]);
+                    setShowExclusiveOfferPopup(false);
+                    // Add a nice toast
+                    toast.success(`${availableCoupons[0].code} applied successfully!`);
+                  }}
+                  disabled={subtotal < availableCoupons[0].minOrder}
+                  className={`w-full mt-8 py-5 rounded-2xl font-black text-xl transition-all shadow-xl ${subtotal < availableCoupons[0].minOrder
+                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
+                    : 'bg-green-600 hover:bg-green-700 text-white transform hover:scale-[1.02] active:scale-[0.98] shadow-green-100 dark:shadow-green-900/20'
+                    }`}
+                >
+                  {subtotal < availableCoupons[0].minOrder ? `Min ₹${availableCoupons[0].minOrder}` : 'APPLY NOW'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div >
   )
 }
 
