@@ -2,12 +2,14 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { ArrowLeft, ChevronDown, Loader2, Gift, X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useTranslation } from "react-i18next"
 import { useProgressStore } from "../store/progressStore"
 import FeedNavbar from "../components/FeedNavbar"
 import { deliveryAPI } from "@/lib/api"
 import { fetchWalletTransactions } from "../utils/deliveryWalletState"
 
 export default function TripHistory() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState("daily")
   const [selectedDate, setSelectedDate] = useState(new Date())
@@ -23,6 +25,15 @@ export default function TripHistory() {
   const [hasViewedBonus, setHasViewedBonus] = useState(false)
 
   const tripTypes = ["ALL TRIPS", "Completed", "Cancelled", "Pending"]
+  const getTripTypeLabel = (type) => {
+    switch (type) {
+      case "ALL TRIPS": return t('delivery.all_trips');
+      case "Completed": return t('delivery.completed');
+      case "Cancelled": return t('delivery.cancelled');
+      case "Pending": return t('delivery.pending');
+      default: return type;
+    }
+  }
 
   const { updateTodayTrips } = useProgressStore()
 
@@ -31,7 +42,7 @@ export default function TripHistory() {
     const fetchTrips = async () => {
       setLoading(true)
       setError("")
-      
+
       try {
         const params = {
           period: activeTab,
@@ -39,19 +50,19 @@ export default function TripHistory() {
           status: selectedTripType !== "ALL TRIPS" ? selectedTripType : undefined,
           limit: 1000
         }
-        
+
         const response = await deliveryAPI.getTripHistory(params)
-        
+
         if (response.data?.success && response.data?.data?.trips) {
           const tripsData = response.data.data.trips
           setTrips(tripsData)
-          
+
           // Update store if viewing today's data and showing all trips
           const today = new Date()
           today.setHours(0, 0, 0, 0)
           const selectedDateNormalized = new Date(selectedDate)
           selectedDateNormalized.setHours(0, 0, 0, 0)
-          
+
           if (activeTab === "daily" && selectedDateNormalized.getTime() === today.getTime() && selectedTripType === "ALL TRIPS") {
             updateTodayTrips(tripsData.length)
           }
@@ -87,11 +98,11 @@ export default function TripHistory() {
     const today = new Date()
     const yesterday = new Date(today)
     yesterday.setDate(yesterday.getDate() - 1)
-    
+
     if (date.toDateString() === today.toDateString()) {
-      return "Today"
+      return t('delivery.today')
     } else if (date.toDateString() === yesterday.toDateString()) {
-      return "Yesterday"
+      return t('delivery.yesterday')
     } else {
       const options = { day: 'numeric', month: 'short' }
       return date.toLocaleDateString('en-US', options)
@@ -163,7 +174,7 @@ export default function TripHistory() {
         >
           <ArrowLeft className="w-5 h-5 text-black" />
         </button>
-        <h1 className="text-lg font-bold text-black flex-1 text-center">Trip History</h1>
+        <h1 className="text-lg font-bold text-black flex-1 text-center">{t('delivery.trip_history')}</h1>
         <button
           onClick={() => {
             setShowBonusModal(true)
@@ -190,10 +201,9 @@ export default function TripHistory() {
             }}
             className="relative"
           >
-            <span className={`text-base font-medium transition-colors ${
-              activeTab === "daily" ? "text-green-600" : "text-gray-500"
-            }`}>
-              Daily
+            <span className={`text-base font-medium transition-colors ${activeTab === "daily" ? "text-green-600" : "text-gray-500"
+              }`}>
+              {t('delivery.daily')}
             </span>
             {activeTab === "daily" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-600 mt-2"></div>
@@ -206,10 +216,9 @@ export default function TripHistory() {
             }}
             className="relative"
           >
-            <span className={`text-base font-medium transition-colors ${
-              activeTab === "weekly" ? "text-green-600" : "text-gray-500"
-            }`}>
-              Weekly
+            <span className={`text-base font-medium transition-colors ${activeTab === "weekly" ? "text-green-600" : "text-gray-500"
+              }`}>
+              {t('delivery.weekly')}
             </span>
             {activeTab === "weekly" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-600 mt-2"></div>
@@ -222,10 +231,9 @@ export default function TripHistory() {
             }}
             className="relative"
           >
-            <span className={`text-base font-medium transition-colors ${
-              activeTab === "monthly" ? "text-green-600" : "text-gray-500"
-            }`}>
-              Monthly
+            <span className={`text-base font-medium transition-colors ${activeTab === "monthly" ? "text-green-600" : "text-gray-500"
+              }`}>
+              {t('delivery.monthly')}
             </span>
             {activeTab === "monthly" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-600 mt-2"></div>
@@ -260,7 +268,7 @@ export default function TripHistory() {
           }}
           className="flex-1 flex items-center justify-between px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
         >
-          <span className="text-sm font-medium text-black">{selectedTripType}</span>
+          <span className="text-sm font-medium text-black">{getTripTypeLabel(selectedTripType)}</span>
           <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${showTripTypePicker ? 'rotate-180' : ''}`} />
         </button>
       </div>
@@ -275,9 +283,8 @@ export default function TripHistory() {
                 setSelectedDate(date)
                 setShowDatePicker(false)
               }}
-              className={`w-full text-left px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors ${
-                date.toDateString() === selectedDate.toDateString() ? 'bg-gray-50 font-medium' : ''
-              }`}
+              className={`w-full text-left px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors ${date.toDateString() === selectedDate.toDateString() ? 'bg-gray-50 font-medium' : ''
+                }`}
             >
               <span className="text-sm text-black">
                 {formatDateDisplay(date)}: {date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
@@ -297,11 +304,10 @@ export default function TripHistory() {
                 setSelectedTripType(type)
                 setShowTripTypePicker(false)
               }}
-              className={`w-full text-left px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors ${
-                type === selectedTripType ? 'bg-gray-50 font-medium' : ''
-              }`}
+              className={`w-full text-left px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors ${type === selectedTripType ? 'bg-gray-50 font-medium' : ''
+                }`}
             >
-              <span className="text-sm text-black">{type}</span>
+              <span className="text-sm text-black">{getTripTypeLabel(type)}</span>
             </button>
           ))}
         </div>
@@ -312,7 +318,7 @@ export default function TripHistory() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="w-12 h-12 text-green-600 animate-spin mb-4" />
-            <p className="text-gray-500 text-base">Loading trips...</p>
+            <p className="text-gray-500 text-base">{t('delivery.loading_trips')}</p>
           </div>
         ) : error ? (
           <div className="text-center py-12">
@@ -326,7 +332,7 @@ export default function TripHistory() {
           </div>
         ) : trips.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-base">No trips found</p>
+            <p className="text-gray-500 text-base">{t('delivery.no_trips_found')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -344,29 +350,27 @@ export default function TripHistory() {
                       const paymentMethod = trip.paymentMethod || trip.payment?.method || 'razorpay';
                       const isCOD = paymentMethod === 'cash' || paymentMethod === 'cod';
                       return (
-                        <span className={`inline-block mt-2 text-xs font-medium px-2 py-1 rounded-full ${
-                          isCOD ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
-                        }`}>
+                        <span className={`inline-block mt-2 text-xs font-medium px-2 py-1 rounded-full ${isCOD ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
+                          }`}>
                           {isCOD ? 'COD' : 'Online'}
                         </span>
                       );
                     })()}
                   </div>
-                  <span className={`text-sm font-medium ${
-                    trip.status === 'Completed' ? 'text-green-600' :
-                    trip.status === 'Cancelled' ? 'text-red-600' :
-                    'text-yellow-600'
-                  }`}>
-                    {trip.status}
+                  <span className={`text-sm font-medium ${trip.status === 'Completed' ? 'text-green-600' :
+                      trip.status === 'Cancelled' ? 'text-red-600' :
+                        'text-yellow-600'
+                    }`}>
+                    {getTripTypeLabel(trip.status)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
                   <div>
-                    <p className="text-xs text-gray-500">Time</p>
+                    <p className="text-xs text-gray-500">{t('delivery.time')}</p>
                     <p className="text-sm font-medium text-black mt-1">{trip.time}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-gray-500">Amount</p>
+                    <p className="text-xs text-gray-500">{t('delivery.amount')}</p>
                     <p className="text-sm font-semibold text-black mt-1">₹{trip.amount}</p>
                   </div>
                 </div>
@@ -406,8 +410,8 @@ export default function TripHistory() {
                     <Gift className="w-5 h-5 text-green-600" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-black">Bonus History</h2>
-                    <p className="text-xs text-gray-500">Admin added bonuses</p>
+                    <h2 className="text-lg font-bold text-black">{t('delivery.bonus_history')}</h2>
+                    <p className="text-xs text-gray-500">{t('delivery.admin_added_bonuses')}</p>
                   </div>
                 </div>
                 <button
@@ -423,12 +427,12 @@ export default function TripHistory() {
                 {bonusLoading ? (
                   <div className="flex flex-col items-center justify-center py-12">
                     <Loader2 className="w-8 h-8 text-green-600 animate-spin mb-4" />
-                    <p className="text-gray-500 text-sm">Loading bonuses...</p>
+                    <p className="text-gray-500 text-sm">{t('delivery.loading_bonuses')}</p>
                   </div>
                 ) : bonusTransactions.length === 0 ? (
                   <div className="text-center py-12">
                     <Gift className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500 text-base">No bonus transactions found</p>
+                    <p className="text-gray-500 text-base">{t('delivery.no_bonus_found')}</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -451,13 +455,12 @@ export default function TripHistory() {
                               </p>
                             )}
                           </div>
-                          <span className={`text-xs font-medium px-3 py-1 rounded-full ${
-                            transaction.status === 'Completed' 
-                              ? 'bg-green-100 text-green-700' 
+                          <span className={`text-xs font-medium px-3 py-1 rounded-full ${transaction.status === 'Completed'
+                              ? 'bg-green-100 text-green-700'
                               : transaction.status === 'Pending'
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-red-100 text-red-700'
-                          }`}>
+                                ? 'bg-yellow-100 text-yellow-700'
+                                : 'bg-red-100 text-red-700'
+                            }`}>
                             {transaction.status || 'Pending'}
                           </span>
                         </div>
@@ -465,12 +468,12 @@ export default function TripHistory() {
                           <p className="text-xs text-gray-500">
                             {transaction.createdAt || transaction.date
                               ? new Date(transaction.createdAt || transaction.date).toLocaleDateString('en-IN', {
-                                  day: '2-digit',
-                                  month: 'short',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })
                               : 'N/A'}
                           </p>
                         </div>

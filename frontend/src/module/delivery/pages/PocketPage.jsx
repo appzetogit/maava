@@ -18,6 +18,7 @@ import {
   Sparkles,
   IndianRupee
 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -37,6 +38,7 @@ import BottomPopup from "../components/BottomPopup"
 import DepositPopup from "../components/DepositPopup"
 
 export default function PocketPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const [animationKey, setAnimationKey] = useState(0)
@@ -120,10 +122,10 @@ export default function PocketPage() {
   const carouselSlides = useMemo(() =>
     bankDetailsFilled ? [] : [{
       id: 2,
-      title: "Submit bank details",
-      subtitle: "PAN & bank details required for payouts",
+      title: t('delivery.submit_bank_details'),
+      subtitle: t('delivery.pan_bank_required'),
       icon: "bank",
-      buttonText: "Submit",
+      buttonText: t('delivery.submit'),
       bgColor: "bg-yellow-400"
     }]
     , [bankDetailsFilled])
@@ -787,15 +789,18 @@ export default function PocketPage() {
           {/* Top bar — black header */}
           <div className="flex p-4 px-4 items-center justify-between bg-black">
             <div className="flex-1">
+              <div className="mt-auto">
+                <h4 className="text-sm font-bold text-black mb-1">{t('delivery.customer_tips')}</h4>
+              </div>
               <h2 className="text-[17px] leading-tight font-extrabold text-white mb-1 pr-4">
-                complete total of {earningsGuaranteeOrdersTarget} trips and make {earningsGuaranteeTarget} extra
+                {t('delivery.complete_trips_for_extra', { count: earningsGuaranteeOrdersTarget, amount: earningsGuaranteeTarget })}
               </h2>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400 font-medium">Valid till {weekEndDate}</span>
+                <span className="text-xs text-gray-400 font-medium">{t('delivery.valid_till')} {weekEndDate}</span>
                 {isOfferLive && (
                   <div className="flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-                    <span className="text-xs text-green-500 font-bold">Live</span>
+                    <span className="text-xs text-green-500 font-bold">{t('delivery.live')}</span>
                   </div>
                 )}
               </div>
@@ -824,7 +829,7 @@ export default function PocketPage() {
 
             {/* Label */}
             <p className="text-[10px] text-center font-bold text-gray-400 tracking-[0.2em] uppercase mb-3">
-              QUEST
+              {t('delivery.quest')}
             </p>
 
             {/* Progress bar */}
@@ -850,11 +855,11 @@ export default function PocketPage() {
             {/* Remaining trips text */}
             {ordersProgress < 1 ? (
               <p className="text-center text-[15px] font-medium text-gray-600">
-                Complete <span className="text-black font-extrabold tracking-tight">{earningsGuaranteeOrdersTarget - earningsGuaranteeCurrentOrders} more trips</span> to make <span className="text-black font-extrabold tracking-tight">₹{earningsGuaranteeTarget} extra</span>
+                {t('delivery.complete_more_trips_for_extra', { count: earningsGuaranteeOrdersTarget - earningsGuaranteeCurrentOrders, amount: earningsGuaranteeTarget })}
               </p>
             ) : (
               <p className="text-center text-[15px] font-bold text-green-600 animate-bounce">
-                🎉 Target complete! ₹{earningsGuaranteeTarget} earned
+                {t('delivery.target_complete_earned', { amount: earningsGuaranteeTarget })}
               </p>
             )}
           </div>
@@ -870,7 +875,7 @@ export default function PocketPage() {
             {/* Top text */}
             <div className="flex justify-center mb-2">
               <span className="text-black text-sm">
-                Earnings: {getCurrentWeekRange()} →
+                {t('delivery.earnings')}: {getCurrentWeekRange()} →
               </span>
             </div>
 
@@ -888,7 +893,7 @@ export default function PocketPage() {
           <div className="relative mb-4 my-4">
             <div className="h-px bg-gray-300"></div>
             <div className="absolute left-1/2 transform -translate-x-1/2 bg-gray-100 -top-3 px-3">
-              <span className="text-black text-xs font-medium">POCKET</span>
+              <span className="text-black text-xs font-medium">{t('delivery.pocket')}</span>
             </div>
           </div>
 
@@ -896,7 +901,7 @@ export default function PocketPage() {
             <CardContent className="p-4 space-y-4">
               {/* Pocket Balance */}
               <div onClick={() => navigate("/delivery/pocket-balance")} className="flex items-center justify-between">
-                <span className="text-black text-sm">Pocket balance</span>
+                <span className="text-black text-sm">{t('delivery.pocket_balance')}</span>
                 <div className="flex items-center gap-2">
                   <span className="text-black text-sm font-medium">₹{pocketBalance.toFixed(2)}</span>
                   <ArrowRight className="w-4 h-4 text-gray-600" />
@@ -907,7 +912,7 @@ export default function PocketPage() {
 
               {/* Available Cash Limit */}
               <div onClick={() => setShowCashLimitPopup(true)} className="flex items-center justify-between">
-                <span className="text-black text-sm">Available cash limit</span>
+                <span className="text-black text-sm">{t('delivery.available_cash_limit')}</span>
                 <div className="flex items-center gap-2">
                   <span className="text-black text-sm font-medium">₹{availableCashLimit.toFixed(2)}</span>
                   <ArrowRight className="w-4 h-4 text-gray-600" />
@@ -916,9 +921,9 @@ export default function PocketPage() {
 
               {/* Warning Message */}
               {/* <div className="bg-yellow-500 rounded-lg p-3 flex items-start gap-3">
-                <div className="w-5 h-5 rounded-full bg-black flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-yellow-500 text-xs font-bold leading-none">!</span>
-                </div>
+                <div className="flex h-11 items-center justify-center border-b border-gray-100">
+                <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">{t('delivery.pocket')}</span>
+              </div>
                 <p className="text-black text-sm font-medium flex-1">
                   Deposit ₹{depositAmount.toFixed(2)} to avoid getting blocked
                 </p>
@@ -930,7 +935,7 @@ export default function PocketPage() {
                   onClick={() => setShowDepositPopup(true)}
                   className="flex-1 bg-white hover:bg-gray-300 text-black border border-black font-semibold py-3 rounded-lg"
                 >
-                  Deposit
+                  {t('delivery.deposit')}
                 </Button>
               </div>
             </CardContent>
@@ -942,7 +947,7 @@ export default function PocketPage() {
           <div className="relative mb-4">
             <div className="h-px bg-gray-300"></div>
             <div className="absolute left-1/2 transform -translate-x-1/2 -top-3 bg-gray-100 px-3">
-              <span className="text-black text-xs font-medium">MORE SERVICES</span>
+              <span className="text-black text-xs font-medium">{t('delivery.more_services')}</span>
             </div>
           </div>
 
@@ -955,7 +960,7 @@ export default function PocketPage() {
             >
               <CardContent className="p-4 flex flex-col items-start text-start">
                 <div className="text-black text-2xl font-bold mb-2">₹{payoutAmount}</div>
-                <div className="text-black text-sm font-medium mb-1">Payout</div>
+                <div className="text-black text-sm font-medium mb-1">{t('delivery.payout')}</div>
                 <div className="text-gray-600 text-xs">{payoutPeriod}</div>
               </CardContent>
             </Card>
@@ -969,7 +974,7 @@ export default function PocketPage() {
                 <div className="w-12 h-12 flex items-start mb-3">
                   <Receipt className="w-8 h-8 text-black" />
                 </div>
-                <div className="text-black text-sm font-medium text-start">Available limit settlement</div>
+                <div className="text-black text-sm font-medium text-start">{t('delivery.available_limit_settlement')}</div>
               </CardContent>
             </Card>
 
@@ -982,7 +987,7 @@ export default function PocketPage() {
                 <div className="w-12 h-12 flex items-center justify-center mb-3">
                   <FileTextIcon className="w-8 h-8 text-black" />
                 </div>
-                <div className="text-black text-sm font-medium">Deduction statement</div>
+                <div className="text-black text-sm font-medium">{t('delivery.deduction_statement')}</div>
               </CardContent>
             </Card>
 
@@ -995,7 +1000,7 @@ export default function PocketPage() {
                 <div className="w-12 h-12 flex items-center justify-center mb-3">
                   <WalletIcon className="w-8 h-8 text-black" />
                 </div>
-                <div className="text-black text-sm font-medium">Pocket details</div>
+                <div className="text-black text-sm font-medium">{t('delivery.pocket_details')}</div>
               </CardContent>
             </Card>
 
@@ -1007,7 +1012,7 @@ export default function PocketPage() {
       <BottomPopup
         isOpen={showCashLimitPopup}
         onClose={() => setShowCashLimitPopup(false)}
-        title="Available Cash Limit?"
+        title={t('delivery.available_cash_limit')}
         showCloseButton={true}
         closeOnBackdropClick={true}
         maxHeight="60vh"
@@ -1027,7 +1032,7 @@ export default function PocketPage() {
       <BottomPopup
         isOpen={showDepositPopup}
         onClose={() => setShowDepositPopup(false)}
-        title="Deposit"
+        title={t('delivery.deposit')}
         showCloseButton={true}
         closeOnBackdropClick={true}
         maxHeight="50vh"
