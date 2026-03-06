@@ -1,5 +1,91 @@
 import admin from 'firebase-admin';
 
+const normalizeTokens = (tokens = []) => {
+    const flattened = tokens.flatMap((token) => {
+        if (Array.isArray(token)) return token;
+        if (typeof token === 'string') return [token];
+        return [];
+    });
+
+    return [...new Set(
+        flattened
+            .map((token) => (typeof token === 'string' ? token.trim() : ''))
+            .filter((token) => token && token.length > 20)
+    )];
+};
+
+const normalizeDataPayload = (data = {}) => {
+    if (!data || typeof data !== 'object') return {};
+
+    const normalized = {};
+    for (const [key, value] of Object.entries(data)) {
+        if (!key) continue;
+        if (value === undefined || value === null) continue;
+
+        if (typeof value === 'string') {
+            normalized[key] = value;
+            continue;
+        }
+        if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') {
+            normalized[key] = String(value);
+            continue;
+        }
+        if (value instanceof Date) {
+            normalized[key] = value.toISOString();
+            continue;
+        }
+        // FCM data payload only supports string values.
+        try {
+            normalized[key] = JSON.stringify(value);
+        } catch {
+            normalized[key] = String(value);
+        }
+    }
+    return normalized;
+};
+
+const INVALID_TOKEN_CODES = new Set([
+    'messaging/registration-token-not-registered',
+    'messaging/invalid-registration-token',
+    'messaging/mismatched-credential'
+]);
+
+const getModelByTargetType = async (targetType) => {
+    if (targetType === 'customer') {
+        return (await import('../../auth/models/User.js')).default;
+    }
+    if (targetType === 'delivery') {
+        return (await import('../../delivery/models/Delivery.js')).default;
+    }
+    if (targetType === 'restaurant') {
+        return (await import('../../restaurant/models/Restaurant.js')).default;
+    }
+    return null;
+};
+
+const cleanupInvalidTokens = async (targetType, invalidTokens = []) => {
+    const uniqueInvalidTokens = normalizeTokens(invalidTokens);
+    if (!targetType || uniqueInvalidTokens.length === 0) return;
+
+    const Model = await getModelByTargetType(targetType);
+    if (!Model) return;
+
+    await Model.updateMany(
+        {
+            $or: [
+                { fcmTokens: { $in: uniqueInvalidTokens } },
+                { fcmTokenMobile: { $in: uniqueInvalidTokens } }
+            ]
+        },
+        {
+            $pull: {
+                fcmTokens: { $in: uniqueInvalidTokens },
+                fcmTokenMobile: { $in: uniqueInvalidTokens }
+            }
+        }
+    );
+};
+
 /**
  * Send push notification to specific tokens
  * @param {string[]} tokens - Array of FCM tokens
@@ -13,50 +99,61 @@ export const sendPushNotification = async (tokens, title, body, data = {}) => {
         return { success: false, message: 'No tokens provided' };
     }
 
-    // Filter out null/undefined tokens
-    const validTokens = tokens.filter(token => !!token);
+    // Normalize + dedupe tokens to avoid same device receiving duplicates.
+    const validTokens = normalizeTokens(tokens);
     if (validTokens.length === 0) {
         return { success: false, message: 'No valid tokens provided' };
     }
 
     // Prepare the message
+    const normalizedData = normalizeDataPayload(data);
+
     const message = {
         notification: {
             title,
             body,
         },
         data: {
-            ...data,
-            click_action: data.click_action || 'FLUTTER_NOTIFICATION_CLICK', // Common for mobile apps
+            ...normalizedData,
+            click_action: normalizedData.click_action || 'FLUTTER_NOTIFICATION_CLICK',
         },
         tokens: validTokens,
     };
 
     try {
-        // Note: Use sendEachForMulticast instead of sendMulticast (deprecated in newer versions)
-        // admin.messaging().sendMulticast(message) is deprecated in some versions, but sendEachForMulticast is newer
         const response = await admin.messaging().sendEachForMulticast(message);
 
-        console.log(`✅ Push notification sent. Success: ${response.successCount}, Failure: ${response.failureCount}`);
+        console.log(`? Push notification sent. Success: ${response.successCount}, Failure: ${response.failureCount}`);
 
-        // Check for stale tokens (those that failed with specific error codes)
+        const failedDetails = [];
+        const invalidTokens = [];
         if (response.failureCount > 0) {
-            const failedTokens = [];
             response.responses.forEach((res, idx) => {
                 if (!res.success) {
-                    console.error(`❌ Token ${validTokens[idx]} failed:`, res.error.code);
-                    if (res.error.code === 'messaging/invalid-registration-token' ||
-                        res.error.code === 'messaging/registration-token-not-registered') {
-                        failedTokens.push(validTokens[idx]);
+                    const token = validTokens[idx];
+                    const code = res?.error?.code || 'unknown';
+                    failedDetails.push({ token, code });
+                    if (INVALID_TOKEN_CODES.has(code)) {
+                        invalidTokens.push(token);
                     }
+                    console.error(`? Token ${token} failed:`, code);
                 }
             });
-            // We could emit an event here to clean up these tokens from DB
         }
 
-        return response;
+        return {
+            ...response,
+            attemptedTokenCount: validTokens.length,
+            invalidTokens: normalizeTokens(invalidTokens),
+            failedDetails,
+            message: response.successCount > 0
+                ? 'Push notification sent successfully'
+                : (response.failureCount > 0
+                    ? 'Push delivery failed for all target devices'
+                    : 'No target devices processed')
+        };
     } catch (error) {
-        console.error('❌ FCM Error:', error);
+        console.error('? FCM Error:', error);
         throw error;
     }
 };
@@ -64,36 +161,68 @@ export const sendPushNotification = async (tokens, title, body, data = {}) => {
 /**
  * Send notification to a specific user role (all users in that role)
  * @param {string} target - 'Customer', 'Delivery Man', 'Restaurant'
- * @param {string} title 
- * @param {string} body 
- * @param {Object} data 
+ * @param {string} title
+ * @param {string} body
+ * @param {Object} data
  */
 export const sendNotificationToTarget = async (target, title, body, data = {}) => {
     let tokens = [];
+    const normalizedTarget = String(target || '').trim().toLowerCase();
+    const targetType =
+        normalizedTarget === 'customer' || normalizedTarget === 'user'
+            ? 'customer'
+            : normalizedTarget === 'delivery man' || normalizedTarget === 'delivery' || normalizedTarget === 'delivery_partner'
+                ? 'delivery'
+                : normalizedTarget === 'restaurant'
+                    ? 'restaurant'
+                    : null;
 
     try {
-        if (target === 'Customer') {
-            const User = (await import('../../auth/models/User.js')).default;
-            const users = await User.find({ $or: [{ fcmTokens: { $exists: true, $ne: [] } }, { fcmTokenMobile: { $exists: true, $ne: [] } }] }).select('fcmTokens fcmTokenMobile');
-            tokens = users.flatMap(u => [...(u.fcmTokens || []), ...(u.fcmTokenMobile || [])]);
-        } else if (target === 'Delivery Man') {
-            const Delivery = (await import('../../delivery/models/Delivery.js')).default;
-            const deliveryPartners = await Delivery.find({ $or: [{ fcmTokens: { $exists: true, $ne: [] } }, { fcmTokenMobile: { $exists: true, $ne: [] } }] }).select('fcmTokens fcmTokenMobile');
-            tokens = deliveryPartners.flatMap(d => [...(d.fcmTokens || []), ...(d.fcmTokenMobile || [])]);
-        } else if (target === 'Restaurant') {
-            const Restaurant = (await import('../../restaurant/models/Restaurant.js')).default;
-            const restaurants = await Restaurant.find({ $or: [{ fcmTokens: { $exists: true, $ne: [] } }, { fcmTokenMobile: { $exists: true, $ne: [] } }] }).select('fcmTokens fcmTokenMobile');
-            tokens = restaurants.flatMap(r => [...(r.fcmTokens || []), ...(r.fcmTokenMobile || [])]);
+        if (targetType === 'customer') {
+            const User = await getModelByTargetType('customer');
+            const users = await User.find({
+                $or: [
+                    { fcmTokens: { $exists: true, $ne: [] } },
+                    { fcmTokenMobile: { $exists: true, $ne: [] } }
+                ]
+            }).select('fcmTokens fcmTokenMobile');
+            tokens = users.flatMap((u) => [...(u.fcmTokens || []), ...(u.fcmTokenMobile || [])]);
+        } else if (targetType === 'delivery') {
+            const Delivery = await getModelByTargetType('delivery');
+            const deliveryPartners = await Delivery.find({
+                $or: [
+                    { fcmTokens: { $exists: true, $ne: [] } },
+                    { fcmTokenMobile: { $exists: true, $ne: [] } }
+                ]
+            }).select('fcmTokens fcmTokenMobile');
+            tokens = deliveryPartners.flatMap((d) => [...(d.fcmTokens || []), ...(d.fcmTokenMobile || [])]);
+        } else if (targetType === 'restaurant') {
+            const Restaurant = await getModelByTargetType('restaurant');
+            const restaurants = await Restaurant.find({
+                $or: [
+                    { fcmTokens: { $exists: true, $ne: [] } },
+                    { fcmTokenMobile: { $exists: true, $ne: [] } }
+                ]
+            }).select('fcmTokens fcmTokenMobile');
+            tokens = restaurants.flatMap((r) => [...(r.fcmTokens || []), ...(r.fcmTokenMobile || [])]);
+        } else {
+            return { successCount: 0, failureCount: 0, message: `Unsupported notification target: ${target}` };
         }
 
-        if (tokens.length > 0) {
-            return await sendPushNotification(tokens, title, body, data);
-        } else {
-            console.warn(`⚠️ No ${target} subscribers found with FCM tokens.`);
-            return { successCount: 0, failureCount: 0 };
+        const uniqueTokens = normalizeTokens(tokens);
+
+        if (uniqueTokens.length > 0) {
+            const result = await sendPushNotification(uniqueTokens, title, body, data);
+            if (result?.invalidTokens?.length) {
+                await cleanupInvalidTokens(targetType, result.invalidTokens);
+            }
+            return result;
         }
+
+        console.warn(`?? No ${target} subscribers found with FCM tokens.`);
+        return { successCount: 0, failureCount: 0, message: `No active ${target} device tokens found` };
     } catch (error) {
-        console.error(`❌ Global Notification Error for ${target}:`, error);
+        console.error(`? Global Notification Error for ${target}:`, error);
         throw error;
     }
 };

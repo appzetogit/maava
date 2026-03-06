@@ -36,6 +36,8 @@ export const registerFCMToken = async (req, res) => {
 
         const targetField = platform === 'mobile' ? 'fcmTokenMobile' : 'fcmTokens';
 
+        // Keep registration stable: dedupe token by set semantics.
+        // (Avoid combining multiple updates on same path, which can trigger Mongo update conflicts.)
         const updated = await Model.findByIdAndUpdate(decoded.userId, {
             $addToSet: { [targetField]: token }
         });
@@ -100,6 +102,19 @@ export const sendTestNotification = async (req, res) => {
             `Hello ${account.name || 'User'}! This is a test push notification from Maava.`,
             { type: 'test' }
         );
+
+        if (!result || (result.successCount || 0) === 0) {
+            return res.status(400).json({
+                success: false,
+                message: result?.message || 'Test notification delivery failed for all devices',
+                data: {
+                    tokensProcessed: uniqueTokens.length,
+                    successCount: result?.successCount || 0,
+                    failureCount: result?.failureCount || 0,
+                    failedDetails: result?.failedDetails || []
+                }
+            });
+        }
 
         return res.status(200).json({
             success: true,

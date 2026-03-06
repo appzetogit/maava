@@ -3,6 +3,7 @@ import { notificationAPI } from '@/lib/api';
 import { firebaseApp } from '@/lib/firebase';
 
 const REGISTRATION_CACHE_KEY = 'fcm_registration_cache_v1';
+const CACHE_REVALIDATE_MS = 5 * 60 * 1000;
 
 const getCurrentModuleRole = (path) => {
   if (path.startsWith('/restaurant') && !path.startsWith('/restaurants')) {
@@ -68,10 +69,33 @@ export default function usePushRegistration(pathname) {
       const cacheRaw = localStorage.getItem(REGISTRATION_CACHE_KEY);
       const cache = cacheRaw ? JSON.parse(cacheRaw) : {};
 
-      if (cache.role === role && cache.token === fcmToken) return true;
+      if (cache.role === role && cache.token === fcmToken) {
+        const now = Date.now();
+        const shouldRevalidate = !cache.lastCheckedAt || (now - cache.lastCheckedAt > CACHE_REVALIDATE_MS);
+        if (!shouldRevalidate) return true;
+
+        try {
+          const statusResponse = await notificationAPI.getTokenStatus();
+          const totalTokenCount = statusResponse?.data?.data?.totalTokenCount || 0;
+          if (totalTokenCount > 0) {
+            localStorage.setItem(REGISTRATION_CACHE_KEY, JSON.stringify({
+              role,
+              token: fcmToken,
+              lastCheckedAt: now
+            }));
+            return true;
+          }
+        } catch {
+          // If status endpoint fails, continue with registration attempt.
+        }
+      }
 
       await notificationAPI.registerFCMToken(fcmToken, role);
-      localStorage.setItem(REGISTRATION_CACHE_KEY, JSON.stringify({ role, token: fcmToken }));
+      localStorage.setItem(REGISTRATION_CACHE_KEY, JSON.stringify({
+        role,
+        token: fcmToken,
+        lastCheckedAt: Date.now()
+      }));
       return true;
     };
 

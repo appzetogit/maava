@@ -12,13 +12,48 @@ firebase.initializeApp({
 });
 
 const messaging = firebase.messaging();
+const seenNotifications = new Map();
+const DEDUPE_WINDOW_MS = 20000;
 
 messaging.onBackgroundMessage((payload) => {
   const title = payload?.notification?.title || 'New notification';
+  const body = payload?.notification?.body || '';
+  const dedupeKey = String(
+    payload?.messageId ||
+    payload?.data?.notificationId ||
+    payload?.data?.id ||
+    payload?.data?.orderId ||
+    `${title}|${body}`
+  );
+  const now = Date.now();
+  const lastSeen = seenNotifications.get(dedupeKey) || 0;
+
+  if (now - lastSeen < DEDUPE_WINDOW_MS) {
+    return;
+  }
+  seenNotifications.set(dedupeKey, now);
+
+  // For notification payloads, FCM/browser can already display one notification in background.
+  // Rendering again here causes duplicate popups.
+  if (payload?.notification?.title || payload?.notification?.body) {
+    return;
+  }
+
+  // Keep map small
+  if (seenNotifications.size > 100) {
+    for (const [key, ts] of seenNotifications.entries()) {
+      if (now - ts > DEDUPE_WINDOW_MS) {
+        seenNotifications.delete(key);
+      }
+    }
+  }
+
   const options = {
-    body: payload?.notification?.body || '',
+    body,
     icon: '/vite.svg',
     data: payload?.data || {},
+    tag: dedupeKey,
+    renotify: false,
   };
 
   self.registration.showNotification(title, options);

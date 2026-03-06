@@ -68,7 +68,13 @@ export default function PushNotification() {
       }
     } catch (error) {
       console.error("Error sending notification:", error)
-      toast.error(error.response?.data?.message || "Failed to send notification")
+      const baseMessage = error.response?.data?.message || "Failed to send notification"
+      const firstCode = error.response?.data?.data?.firstFailureCode
+      const failedDetails = error.response?.data?.data?.failedDetails || []
+      if (failedDetails.length > 0) {
+        console.error("Push failedDetails:", failedDetails)
+      }
+      toast.error(firstCode ? `${baseMessage} (${firstCode})` : baseMessage)
     } finally {
       setSending(false)
     }

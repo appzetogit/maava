@@ -4,6 +4,7 @@ import { API_BASE_URL } from '@/lib/api/config';
 import bikeLogo from '@/assets/bikelogo.png';
 import { RouteBasedAnimationController } from '@/module/user/utils/routeBasedAnimation';
 import { extractPolylineFromDirections, findNearestPointOnPolyline } from '@/module/delivery/utils/liveTrackingPolyline';
+import { useFirebaseTracking } from '@/lib/hooks/useFirebaseTracking';
 import './DeliveryTrackingMap.css';
 
 // Helper function to calculate Haversine distance
@@ -49,9 +50,16 @@ const DeliveryTrackingMap = ({
   const mapInitializedRef = useRef(false);
   const directionsCacheRef = useRef(new Map()); // Cache for Directions API calls
   const lastRouteRequestRef = useRef({ start: null, end: null, timestamp: 0 });
+  const routeRequestMetaRef = useRef({
+    phaseKey: null,
+    start: null,
+    end: null,
+    timestamp: 0
+  });
 
   const backendUrl = API_BASE_URL.replace('/api', '');
   const [GOOGLE_MAPS_API_KEY, setGOOGLE_MAPS_API_KEY] = useState("");
+  const { location: firebaseLocation } = useFirebaseTracking(orderId);
   
   // Load Google Maps API key from backend
   useEffect(() => {
@@ -322,6 +330,30 @@ const DeliveryTrackingMap = ({
     // Default: Show restaurant to customer
     return { start: restaurantCoords, end: customerCoords };
   }, [order, deliveryBoyLocation, restaurantCoords, customerCoords]);
+
+  // Prefer Firebase RTDB location stream when available (lower cost, real-time, no polling)
+  useEffect(() => {
+    if (!firebaseLocation?.lat || !firebaseLocation?.lng) return;
+
+    setDeliveryBoyLocation((prev) => {
+      if (!prev?.lat || !prev?.lng) {
+        return {
+          lat: firebaseLocation.lat,
+          lng: firebaseLocation.lng,
+          heading: firebaseLocation.bearing || 0,
+        };
+      }
+
+      const shift = calculateHaversineDistance(prev.lat, prev.lng, firebaseLocation.lat, firebaseLocation.lng);
+      if (shift < 3) return prev; // avoid noisy micro updates
+
+      return {
+        lat: firebaseLocation.lat,
+        lng: firebaseLocation.lng,
+        heading: firebaseLocation.bearing || prev.heading || 0,
+      };
+    });
+  }, [firebaseLocation?.lat, firebaseLocation?.lng, firebaseLocation?.bearing]);
 
   // Move bike smoothly with rotation
   const moveBikeSmoothly = useCallback((lat, lng, heading) => {
@@ -1098,12 +1130,8 @@ const DeliveryTrackingMap = ({
       }
     }
     
-    // Throttle route updates to avoid too many API calls
     const now = Date.now();
-    if (lastRouteUpdateRef.current && (now - lastRouteUpdateRef.current) < 10000) {
-      return; // Skip if updated less than 10 seconds ago
-    }
-    
+
     // Only draw route if delivery partner is assigned
     const routePhase = order?.deliveryState?.currentPhase;
     const routeStatus = order?.deliveryState?.status;
@@ -1112,7 +1140,7 @@ const DeliveryTrackingMap = ({
                                       routePhase === 'at_pickup' ||
                                       routePhase === 'en_route_to_delivery' ||
                                       (routeStatus && routeStatus !== 'pending');
-    
+
     // Only draw route if delivery partner is assigned
     if (!hasDeliveryPartnerForRoute) {
       // Clear any existing route if delivery partner is not assigned
@@ -1125,18 +1153,56 @@ const DeliveryTrackingMap = ({
       }
       return;
     }
-    
+
     const route = getRouteToShow();
     if (route.start && route.end) {
-      lastRouteUpdateRef.current = now;
-      drawRoute(route.start, route.end);
-      console.log('🔄 Route updated:', {
-        phase: order?.deliveryState?.currentPhase,
-        status: order?.deliveryState?.status,
-        from: route.start,
-        to: route.end,
-        hasBikeMarker: !!bikeMarkerRef.current
-      });
+      const phaseKey = `${routePhase || 'none'}:${routeStatus || 'none'}`;
+      const previousRouteMeta = routeRequestMetaRef.current;
+      const startShiftMeters = previousRouteMeta.start
+        ? calculateHaversineDistance(previousRouteMeta.start.lat, previousRouteMeta.start.lng, route.start.lat, route.start.lng)
+        : Number.POSITIVE_INFINITY;
+      const endShiftMeters = previousRouteMeta.end
+        ? calculateHaversineDistance(previousRouteMeta.end.lat, previousRouteMeta.end.lng, route.end.lat, route.end.lng)
+        : Number.POSITIVE_INFINITY;
+      const phaseChanged = previousRouteMeta.phaseKey !== phaseKey;
+      const isFirstRoute = !previousRouteMeta.timestamp;
+      const elapsed = now - (previousRouteMeta.timestamp || 0);
+
+      // Cost optimization:
+      // 1) Immediate refresh on phase change / first draw.
+      // 2) Destination change always refreshes.
+      // 3) En-route origin movement must be significant before refreshing route.
+      // 4) Safety refresh every 2 minutes if rider moved enough.
+      const shouldRedrawRoute =
+        isFirstRoute ||
+        phaseChanged ||
+        endShiftMeters > 30 ||
+        startShiftMeters > 250 ||
+        (elapsed >= 300000 && startShiftMeters > 120);
+
+      if (shouldRedrawRoute) {
+        lastRouteUpdateRef.current = now;
+        routeRequestMetaRef.current = {
+          phaseKey,
+          start: { ...route.start },
+          end: { ...route.end },
+          timestamp: now
+        };
+        drawRoute(route.start, route.end);
+        console.log('🔄 Route updated:', {
+          phase: order?.deliveryState?.currentPhase,
+          status: order?.deliveryState?.status,
+          from: route.start,
+          to: route.end,
+          hasBikeMarker: !!bikeMarkerRef.current,
+          reason: {
+            phaseChanged,
+            startShiftMeters: Number.isFinite(startShiftMeters) ? Number(startShiftMeters.toFixed(1)) : null,
+            endShiftMeters: Number.isFinite(endShiftMeters) ? Number(endShiftMeters.toFixed(1)) : null,
+            elapsedMs: elapsed
+          }
+        });
+      }
       
       // Force show bike if delivery partner is assigned but bike marker doesn't exist
       if (hasDeliveryPartnerByPhase && !bikeMarkerRef.current && mapInstance.current) {

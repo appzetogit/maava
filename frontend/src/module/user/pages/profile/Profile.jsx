@@ -47,6 +47,7 @@ import { clearModuleAuth } from "@/lib/utils/auth"
 export default function Profile() {
   const { userProfile, vegMode, setVegMode } = useProfile()
   const navigate = useNavigate()
+  const companyName = useCompanyName()
 
   // Popup states
   const [vegModeOpen, setVegModeOpen] = useState(false)
@@ -152,28 +153,6 @@ export default function Profile() {
     // Calculate percentage based ONLY on required fields (anniversary NOT included)
     const percentage = Math.round((completedRequiredFields / totalRequiredFields) * 100)
 
-    // Always log for debugging (remove in production if needed)
-    console.log('🔍 Profile completion check:', {
-      requiredFields,
-      completedRequiredFields,
-      totalRequiredFields,
-      percentage,
-      fieldStatus: {
-        name: hasName ? '✅' : '❌',
-        contact: hasContact ? '✅' : '❌',
-        profileImage: hasImage ? '✅' : '❌',
-        dateOfBirth: hasDateOfBirth ? '✅' : '❌',
-        gender: hasGender ? '✅' : '❌',
-      },
-      rawData: {
-        name: userProfile.name || 'missing',
-        phone: userProfile.phone || 'missing',
-        email: userProfile.email || 'missing',
-        profileImage: userProfile.profileImage ? 'exists' : 'missing',
-        dateOfBirth: userProfile.dateOfBirth ? String(userProfile.dateOfBirth) : 'missing',
-        gender: userProfile.gender || 'missing',
-      }
-    })
 
     return percentage
   }
@@ -182,65 +161,71 @@ export default function Profile() {
   const isComplete = profileCompletion === 100
 
   const ensureWebPushTokenRegistered = async () => {
-    const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY
-    if (!vapidKey) {
-      throw new Error("Missing VAPID key in frontend env")
-    }
-
-    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
-      throw new Error("Push notifications are not supported in this browser")
-    }
-
-    const { isSupported, getMessaging, getToken } = await import("firebase/messaging")
-    const supported = await isSupported()
-    if (!supported) {
-      throw new Error("Firebase messaging is not supported in this browser")
-    }
-
-    if (Notification.permission === "denied") {
-      throw new Error("Notification permission is blocked")
-    }
-
-    if (Notification.permission !== "granted") {
-      const permission = await Notification.requestPermission()
-      if (permission !== "granted") {
-        throw new Error("Notification permission not granted")
-      }
-    }
-
-    const swRegistration = await navigator.serviceWorker.register("/firebase-messaging-sw.js")
-    const messaging = getMessaging(firebaseApp)
-    const token = await getToken(messaging, {
-      vapidKey,
-      serviceWorkerRegistration: swRegistration,
-    })
-
-    if (!token) {
-      throw new Error("Failed to generate FCM token")
-    }
-
-    await notificationAPI.registerFCMToken(token, "user")
-    return token
+  const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY
+  if (!vapidKey) {
+    throw new Error("Missing VAPID key in frontend env")
   }
 
-  // Handle Test Push Notification
-  const handleTestNotification = async () => {
-    if (isTestingPush) return
-    setIsTestingPush(true)
-    try {
-      await ensureWebPushTokenRegistered()
-      const response = await notificationAPI.sendTestNotification()
-      toast.success(response.data?.message || "Test notification sent successfully!")
-    } catch (error) {
-      toast.error(
-        error?.response?.data?.message ||
-        error?.message ||
-        "Failed to send test notification"
-      )
-    } finally {
-      setIsTestingPush(false)
+  if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+    throw new Error("Push notifications are not supported in this browser")
+  }
+
+  const { isSupported, getMessaging, getToken } = await import("firebase/messaging")
+  const supported = await isSupported()
+  if (!supported) {
+    throw new Error("Firebase messaging is not supported in this browser")
+  }
+
+  if (Notification.permission === "denied") {
+    throw new Error("Notification permission is blocked")
+  }
+
+  if (Notification.permission !== "granted") {
+    const permission = await Notification.requestPermission()
+    if (permission !== "granted") {
+      throw new Error("Notification permission not granted")
     }
   }
+
+  const swRegistration = await navigator.serviceWorker.register("/firebase-messaging-sw.js")
+  const messaging = getMessaging(firebaseApp)
+  const token = await getToken(messaging, {
+    vapidKey,
+    serviceWorkerRegistration: swRegistration,
+  })
+
+  if (!token) {
+    throw new Error("Failed to generate FCM token")
+  }
+
+  console.log("[PushTest] FCM token generated", {
+    tokenPrefix: token.slice(0, 18),
+    tokenLength: token.length,
+  })
+
+  await notificationAPI.registerFCMToken(token, "user")
+  return token
+}
+
+// Handle Test Push Notification
+const handleTestNotification = async () => {
+  if (isTestingPush) return
+  setIsTestingPush(true)
+  try {
+    await ensureWebPushTokenRegistered()
+    const response = await notificationAPI.sendTestNotification()
+    toast.success(response.data?.message || "Test notification sent successfully!")
+  } catch (error) {
+    toast.error(
+      error?.response?.data?.message ||
+      error?.message ||
+      "Failed to send test notification"
+    )
+  } finally {
+    console.log("[PushTest] Test flow finished")
+    setIsTestingPush(false)
+  }
+}
 
   // Handle logout
   const handleLogout = async () => {
@@ -396,7 +381,7 @@ export default function Profile() {
                     <Wallet className="h-5 w-5 text-gray-700 dark:text-gray-300" />
                   </motion.div>
                   <div className="flex-1 min-w-0 flex flex-col">
-                    <span className="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap">{useCompanyName} Money</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap">{companyName} Money</span>
                     <span className="text-base font-semibold text-green-600 dark:text-green-400">₹{userProfile?.wallet?.balance?.toFixed(0) || '0'}</span>
                   </div>
                 </CardContent>
@@ -984,3 +969,4 @@ export default function Profile() {
     </AnimatedPage>
   )
 }
+

@@ -23,6 +23,23 @@ export const sendAdminPushNotification = async (req, res) => {
             zone: zone || 'All',
         });
 
+        if (!result || (result.successCount || 0) === 0) {
+            const hasDeliveryFailures = (result?.failureCount || 0) > 0;
+            const firstFailureCode = result?.failedDetails?.[0]?.code;
+            return res.status(400).json({
+                success: false,
+                message: result?.message || (hasDeliveryFailures
+                    ? `Push delivery failed for ${sendTo}. Please re-register tokens and verify Firebase credentials.`
+                    : `No active ${sendTo} device tokens found. Ask users to login and allow notifications first.`),
+                data: {
+                    successCount: result?.successCount || 0,
+                    failureCount: result?.failureCount || 0,
+                    failedDetails: result?.failedDetails || [],
+                    firstFailureCode: firstFailureCode || null
+                }
+            });
+        }
+
         // 2. Save to Notification History in MongoDB
         const newNotification = await NotificationModel.create({
             title,
