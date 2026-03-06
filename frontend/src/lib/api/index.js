@@ -1469,6 +1469,20 @@ export const adminAPI = {
   deleteFeedbackExperience: (id) => {
     return apiClient.delete(API_ENDPOINTS.ADMIN.FEEDBACK_EXPERIENCE_BY_ID.replace(':id', id));
   },
+
+  // Push Notification Management
+  getNotifications: (params = {}) => {
+    return apiClient.get('/admin/push-notification', { params });
+  },
+  sendPushNotification: (data) => {
+    return apiClient.post('/admin/push-notification', data);
+  },
+  deleteNotification: (id) => {
+    return apiClient.delete(`/admin/push-notification/${id}`);
+  },
+  toggleNotificationStatus: (id) => {
+    return apiClient.patch(`/admin/push-notification/${id}/toggle`);
+  },
 };
 
 // Upload / media helper functions
@@ -1592,3 +1606,34 @@ export const heroBannerAPI = {
     return apiClient.get(API_ENDPOINTS.HERO_BANNER.GOURMET_PUBLIC);
   },
 };
+
+// Export notification API helper functions
+export const notificationAPI = {
+  // Register/Update FCM token
+  registerFCMToken: (token, role) => {
+    return apiClient.post('/notification/register-token', { token, role });
+  },
+
+  // Fetch role-wise notification inbox
+  getUserNotifications: () => {
+    return apiClient.get('/notification/user');
+  },
+
+  getDeliveryNotifications: () => {
+    return apiClient.get('/notification/delivery');
+  },
+
+  getRestaurantNotifications: () => {
+    return apiClient.get('/notification/restaurant');
+  },
+
+  // Send test push notification
+  sendTestNotification: () => {
+    return apiClient.post('/notification/test-token');
+  },
+
+  getTokenStatus: () => {
+    return apiClient.get('/notification/token-status');
+  },
+};
+

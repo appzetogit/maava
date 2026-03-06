@@ -161,6 +161,12 @@ import {
   getCommissionChangeLogs
 } from '../controllers/auditLogController.js';
 import {
+  sendAdminPushNotification,
+  getNotifications,
+  deleteNotification,
+  toggleNotificationStatus
+} from '../controllers/adminNotificationController.js';
+import {
   getAbout,
   updateAbout
 } from '../controllers/aboutController.js';
@@ -406,6 +412,12 @@ router.post('/hibermart-orders/:id/approve', approveHibermartOrder);
 router.post('/hibermart-orders/:id/reject', rejectHibermartOrder);
 router.get('/hibermart-store-location', authenticateAdmin, getHibermartStoreLocation);
 router.put('/hibermart-store-location', authenticateAdmin, updateHibermartStoreLocation);
+
+// Push Notification Management
+router.get('/push-notification', getNotifications);
+router.post('/push-notification', sendAdminPushNotification);
+router.delete('/push-notification/:id', deleteNotification);
+router.patch('/push-notification/:id/toggle', toggleNotificationStatus);
 
 // Offers Management
 router.get('/offers', getAllOffers);

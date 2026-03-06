@@ -1,5 +1,6 @@
+import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { 
+import {
   ArrowLeft,
   Bell,
   CheckCircle,
@@ -8,92 +9,76 @@ import {
   Package
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
-import { formatCurrency } from "../../restaurant/utils/currency"
+import { notificationAPI } from "@/lib/api"
+
+const formatTimeAgo = (dateValue) => {
+  if (!dateValue) return "Just now"
+
+  const date = new Date(dateValue)
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000)
+
+  if (seconds < 60) return "Just now"
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} min ago`
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)} hr ago`
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)} day ago`
+  return date.toLocaleDateString()
+}
+
+const getIconMeta = (title = '', message = '') => {
+  const text = `${title} ${message}`.toLowerCase()
+
+  if (text.includes('order') || text.includes('delivery')) {
+    return { icon: Package, color: "bg-[#ff8100]" }
+  }
+
+  if (text.includes('success') || text.includes('credited') || text.includes('received')) {
+    return { icon: CheckCircle, color: "bg-green-500" }
+  }
+
+  if (text.includes('alert') || text.includes('failed') || text.includes('cancel')) {
+    return { icon: AlertCircle, color: "bg-yellow-500" }
+  }
+
+  return { icon: Info, color: "bg-blue-500" }
+}
 
 export default function Notifications() {
   const navigate = useNavigate()
+  const [notifications, setNotifications] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const notifications = [
-    {
-      id: 1,
-      type: "order",
-      title: "New Order Request",
-      message: "You have a new order request from Hungry Puppets. Order #100102",
-      time: "2 minutes ago",
-      read: false,
-      icon: Package,
-      color: "bg-[#ff8100]"
-    },
-    {
-      id: 2,
-      type: "success",
-      title: "Order Delivered",
-      message: "Order #100101 has been successfully delivered. Payment received: ₹ 2,539.80",
-      time: "1 hour ago",
-      read: false,
-      icon: CheckCircle,
-      color: "bg-green-500"
-    },
-    {
-      id: 3,
-      type: "alert",
-      title: "Payment Pending",
-      message: "Payment for Order #100099 is still pending. Please collect from customer.",
-      time: "3 hours ago",
-      read: true,
-      icon: AlertCircle,
-      color: "bg-yellow-500"
-    },
-    {
-      id: 4,
-      type: "info",
-      title: "System Update",
-      message: "New features have been added to the delivery app. Check them out!",
-      time: "5 hours ago",
-      read: true,
-      icon: Info,
-      color: "bg-blue-500"
-    },
-    {
-      id: 5,
-      type: "order",
-      title: "Order Cancelled",
-      message: "Order #100098 has been cancelled by the customer.",
-      time: "1 day ago",
-      read: true,
-      icon: Package,
-      color: "bg-red-500"
-    },
-    {
-      id: 6,
-      type: "success",
-      title: "Withdrawal Successful",
-      message: "Your withdrawal of ₹ 41,500.00 has been processed successfully.",
-      time: "2 days ago",
-      read: true,
-      icon: CheckCircle,
-      color: "bg-green-500"
-    },
-    {
-      id: 7,
-      type: "info",
-      title: "Profile Updated",
-      message: "Your profile information has been updated successfully.",
-      time: "3 days ago",
-      read: true,
-      icon: Info,
-      color: "bg-blue-500"
+  useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        const response = await notificationAPI.getDeliveryNotifications()
+        setNotifications(response?.data?.data || [])
+      } catch (error) {
+        console.error('Failed to fetch delivery notifications:', error)
+        setNotifications([])
+      } finally {
+        setLoading(false)
+      }
     }
-  ]
 
-  const unreadCount = notifications.filter(n => !n.read).length
+    loadNotifications()
+  }, [])
+
+  const viewData = useMemo(() => notifications.map((item, idx) => ({
+    id: item._id || idx,
+    title: item.title,
+    message: item.message || item.description,
+    time: formatTimeAgo(item.createdAt),
+    read: idx !== 0,
+    ...getIconMeta(item.title, item.message || item.description),
+  })), [notifications])
+
+  const unreadCount = viewData.filter(n => !n.read).length
 
   return (
     <div className="min-h-screen bg-[#f6e9dc] overflow-x-hidden pb-24 md:pb-6">
-      {/* Header */}
       <div className="bg-white border-b border-gray-200 px-4 py-4 md:py-3 flex items-center justify-between rounded-b-3xl md:rounded-b-none sticky top-0 z-10">
         <div className="flex items-center gap-3 md:gap-4">
-          <button 
+          <button
             onClick={() => navigate("/delivery")}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
@@ -108,32 +93,29 @@ export default function Notifications() {
         )}
       </div>
 
-      {/* Main Content */}
       <div className="px-4 py-6">
-        {notifications.length > 0 ? (
+        {loading ? (
+          <div className="text-center py-12 text-gray-600">Loading notifications...</div>
+        ) : viewData.length > 0 ? (
           <div className="space-y-3">
-            {notifications.map((notification) => {
+            {viewData.map((notification) => {
               const Icon = notification.icon
               return (
-                <Card 
+                <Card
                   key={notification.id}
-                  className={`bg-white shadow-sm border py-0 border-gray-100 transition-all ${
-                    !notification.read ? 'border-l-4 border-l-[#ff8100]' : ''
-                  }`}
+                  className={`bg-white shadow-sm border py-0 border-gray-100 transition-all ${!notification.read ? 'border-l-4 border-l-[#ff8100]' : ''
+                    }`}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
-                      {/* Icon */}
                       <div className={`${notification.color} p-2 rounded-full flex-shrink-0`}>
                         <Icon className="w-5 h-5 text-white" />
                       </div>
-                      
-                      {/* Content */}
+
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 mb-1">
-                          <h3 className={`font-semibold text-sm md:text-base ${
-                            !notification.read ? 'text-gray-900' : 'text-gray-700'
-                          }`}>
+                          <h3 className={`font-semibold text-sm md:text-base ${!notification.read ? 'text-gray-900' : 'text-gray-700'
+                            }`}>
                             {notification.title}
                           </h3>
                           {!notification.read && (
@@ -160,8 +142,6 @@ export default function Notifications() {
           </div>
         )}
       </div>
-
     </div>
   )
 }
-

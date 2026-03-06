@@ -21,7 +21,8 @@ import {
   Settings as SettingsIcon,
   Power,
   ShoppingCart,
-  Crown
+  Crown,
+  BellRing
 } from "lucide-react"
 
 import AnimatedPage from "../../components/AnimatedPage"
@@ -38,8 +39,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { authAPI } from "@/lib/api"
-import { firebaseAuth } from "@/lib/firebase"
+import { authAPI, notificationAPI } from "@/lib/api"
+import { toast } from "sonner"
+import { firebaseApp, firebaseAuth } from "@/lib/firebase"
 import { clearModuleAuth } from "@/lib/utils/auth"
 
 export default function Profile() {
@@ -50,6 +52,7 @@ export default function Profile() {
   const [vegModeOpen, setVegModeOpen] = useState(false)
   const [appearanceOpen, setAppearanceOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [isTestingPush, setIsTestingPush] = useState(false)
 
   // Settings states
   const [appearance, setAppearance] = useState(() => {
@@ -177,6 +180,67 @@ export default function Profile() {
 
   const profileCompletion = calculateProfileCompletion()
   const isComplete = profileCompletion === 100
+
+  const ensureWebPushTokenRegistered = async () => {
+    const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY
+    if (!vapidKey) {
+      throw new Error("Missing VAPID key in frontend env")
+    }
+
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+      throw new Error("Push notifications are not supported in this browser")
+    }
+
+    const { isSupported, getMessaging, getToken } = await import("firebase/messaging")
+    const supported = await isSupported()
+    if (!supported) {
+      throw new Error("Firebase messaging is not supported in this browser")
+    }
+
+    if (Notification.permission === "denied") {
+      throw new Error("Notification permission is blocked")
+    }
+
+    if (Notification.permission !== "granted") {
+      const permission = await Notification.requestPermission()
+      if (permission !== "granted") {
+        throw new Error("Notification permission not granted")
+      }
+    }
+
+    const swRegistration = await navigator.serviceWorker.register("/firebase-messaging-sw.js")
+    const messaging = getMessaging(firebaseApp)
+    const token = await getToken(messaging, {
+      vapidKey,
+      serviceWorkerRegistration: swRegistration,
+    })
+
+    if (!token) {
+      throw new Error("Failed to generate FCM token")
+    }
+
+    await notificationAPI.registerFCMToken(token, "user")
+    return token
+  }
+
+  // Handle Test Push Notification
+  const handleTestNotification = async () => {
+    if (isTestingPush) return
+    setIsTestingPush(true)
+    try {
+      await ensureWebPushTokenRegistered()
+      const response = await notificationAPI.sendTestNotification()
+      toast.success(response.data?.message || "Test notification sent successfully!")
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to send test notification"
+      )
+    } finally {
+      setIsTestingPush(false)
+    }
+  }
 
   // Handle logout
   const handleLogout = async () => {
@@ -747,6 +811,37 @@ export default function Profile() {
             >
               <Card
                 className="bg-white dark:bg-[#1a1a1a] py-0 rounded-xl shadow-sm border-0 dark:border-gray-800 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleTestNotification}
+              >
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <motion.div
+                      className="bg-gray-100 dark:bg-gray-800 rounded-full p-2"
+                      whileHover={{ rotate: 15, scale: 1.1 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <BellRing className={`h-5 w-5 text-gray-700 dark:text-gray-300 ${isTestingPush ? 'animate-pulse' : ''}`} />
+                    </motion.div>
+                    <span className="text-base font-medium text-gray-900 dark:text-white">
+                      {isTestingPush ? 'Sending test...' : 'Test Push Notifications'}
+                    </span>
+                  </div>
+                  <motion.div
+                    whileHover={{ x: 4 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                  </motion.div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ x: 4, scale: 1.01 }}
+              transition={{ duration: 0.2, type: "spring", stiffness: 300 }}
+            >
+              <Card
+                className="bg-white dark:bg-[#1a1a1a] py-0 rounded-xl shadow-sm border-0 dark:border-gray-800 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleLogout}
               >
                 <CardContent className="p-4 flex items-center justify-between">
@@ -889,4 +984,3 @@ export default function Profile() {
     </AnimatedPage>
   )
 }
-

@@ -110,6 +110,8 @@ import DeliveryOTP from "@/module/delivery/pages/auth/OTP"
 import DeliverySignupStep1 from "@/module/delivery/pages/auth/SignupStep1"
 import DeliverySignupStep2 from "@/module/delivery/pages/auth/SignupStep2"
 import DeliveryWelcome from "@/module/delivery/pages/auth/Welcome"
+import usePushRegistration from "@/lib/hooks/usePushRegistration"
+import usePushForegroundNotifications from "@/lib/hooks/usePushForegroundNotifications"
 
 function UserPathRedirect() {
   const location = useLocation()
@@ -118,6 +120,10 @@ function UserPathRedirect() {
 }
 
 export default function App() {
+  const location = useLocation()
+  usePushRegistration(location.pathname)
+  usePushForegroundNotifications()
+
   return (
     <Routes>
       <Route path="/user" element={<Navigate to="/" replace />} />
@@ -827,3 +833,4 @@ export default function App() {
     </Routes>
   )
 }
+

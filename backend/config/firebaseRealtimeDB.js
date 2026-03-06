@@ -33,7 +33,17 @@ let _initialized = false;
  * Load service account JSON (prefers env vars, falls back to file on disk).
  */
 function loadServiceAccount() {
-    // 1. Try individual env vars first (most secure approach)
+    // 1. Try JSON string from env var (most flexible for cloud/docker)
+    const jsonStr = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+    if (jsonStr) {
+        try {
+            return JSON.parse(jsonStr);
+        } catch (err) {
+            console.error('❌ Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON:', err.message);
+        }
+    }
+
+    // 2. Try individual env vars (standard approach)
     const projectId = process.env.FIREBASE_PROJECT_ID;
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
     let privateKey = process.env.FIREBASE_PRIVATE_KEY;

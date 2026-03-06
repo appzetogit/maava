@@ -1,11 +1,8 @@
-// Notification module - to be implemented
 import express from 'express';
+import notificationRoutes from './routes/notificationRoutes.js';
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
-  res.status(501).json({ message: 'Notification module not implemented yet' });
-});
+router.use('/', notificationRoutes);
 
 export default router;
-
