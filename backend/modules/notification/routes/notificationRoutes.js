@@ -1,5 +1,5 @@
 import express from 'express';
-import { getTokenStatus, registerFCMToken, sendTestNotification } from '../controllers/tokenController.js';
+import { getTokenStatus, registerFCMToken } from '../controllers/tokenController.js';
 import {
   getDeliveryNotifications,
   getRestaurantNotifications,
@@ -13,7 +13,6 @@ const router = express.Router();
 
 // Register/Update FCM token
 router.post('/register-token', registerFCMToken);
-router.post('/test-token', sendTestNotification);
 router.get('/token-status', getTokenStatus);
 
 // Role-wise notification inbox endpoints

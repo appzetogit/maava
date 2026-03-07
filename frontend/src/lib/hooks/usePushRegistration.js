@@ -90,7 +90,7 @@ export default function usePushRegistration(pathname) {
         }
       }
 
-      await notificationAPI.registerFCMToken(fcmToken, role);
+      await notificationAPI.registerFCMToken(fcmToken, 'web');
       localStorage.setItem(REGISTRATION_CACHE_KEY, JSON.stringify({
         role,
         token: fcmToken,

@@ -211,6 +211,11 @@ export default function Home() {
   const { openSearch, closeSearch, searchValue, setSearchValue } = useSearchOverlay()
   const { openLocationSelector } = useLocationSelector()
   const { vegMode, setVegMode: setVegModeContext } = useProfile()
+  const [appliedVegModeOption, setAppliedVegModeOption] = useState(() => {
+    if (typeof window === "undefined") return "all"
+    const savedOption = localStorage.getItem("userVegModeOption")
+    return savedOption === "pure-veg" ? "pure-veg" : "all"
+  })
   const [prevVegMode, setPrevVegMode] = useState(vegMode)
   const [showVegModePopup, setShowVegModePopup] = useState(false)
   const [showSwitchOffPopup, setShowSwitchOffPopup] = useState(false)
@@ -233,6 +238,30 @@ export default function Home() {
   const [loadingRealCategories, setLoadingRealCategories] = useState(true)
   const [showAllCategoriesModal, setShowAllCategoriesModal] = useState(false)
   const isHandlingSwitchOff = useRef(false)
+
+  const isPureVegRestaurant = useCallback((restaurant = {}) => {
+    const explicitPureVegFlags = [
+      restaurant.isPureVeg,
+      restaurant.pureVeg,
+      restaurant.vegOnly,
+      restaurant.isVegOnly,
+      restaurant.isVeg,
+    ]
+
+    if (explicitPureVegFlags.some((flag) => flag === true)) {
+      return true
+    }
+
+    const restaurantType = `${restaurant.restaurantType || restaurant.type || ""}`.toLowerCase()
+    if (restaurantType.includes("pure") && restaurantType.includes("veg")) {
+      return true
+    }
+
+    const cuisines = Array.isArray(restaurant.cuisines)
+      ? restaurant.cuisines
+      : []
+    return cuisines.some((cuisine) => `${cuisine}`.toLowerCase().includes("pure veg"))
+  }, [])
 
   // Swipe functionality for hero banner carousel
   const touchStartX = useRef(0)
@@ -258,6 +287,7 @@ export default function Home() {
 
     if (newValue && !prevVegMode) {
       // Veg mode was just turned ON
+      setVegModeOption(appliedVegModeOption)
       // Calculate popup position relative to toggle
       if (vegModeToggleRef.current) {
         const rect = vegModeToggleRef.current.getBoundingClientRect()
@@ -640,7 +670,6 @@ export default function Home() {
         if (!healthCheck.ok) {
           throw new Error(`Backend health check failed: ${healthCheck.status}`)
         }
-        console.log('✅ Backend connection successful')
       } catch (healthError) {
         // Backend connection error - handled silently, toast notifications shown via axios interceptor
         setRestaurantsData([])
@@ -709,9 +738,7 @@ export default function Home() {
       }
       // Note: We show all restaurants regardless of zone, but apply grayscale styling if user is out of service
 
-      console.log('Fetching restaurants with params:', params)
       const response = await restaurantAPI.getRestaurants(params)
-      console.log('Restaurants API response:', response.data)
 
       if (response.data && response.data.success && response.data.data && response.data.data.restaurants) {
         const restaurantsArray = response.data.data.restaurants
@@ -816,6 +843,7 @@ export default function Home() {
             location: restaurant.location, // Store location for distance recalculation
             isActive: restaurant.isActive !== false, // Default to true if not specified
             isAcceptingOrders: restaurant.isAcceptingOrders !== false, // Default to true if not specified
+            isPureVeg: isPureVegRestaurant(restaurant),
           }
         })
 
@@ -837,7 +865,6 @@ export default function Home() {
           })
         }
 
-        console.log('Transformed and sorted restaurants:', transformedRestaurants)
         setRestaurantsData(transformedRestaurants)
       } else {
         console.warn('Invalid API response structure:', response.data)
@@ -851,7 +878,6 @@ export default function Home() {
       setRestaurantsData([])
     } finally {
       setLoadingRestaurants(false)
-      console.log('Restaurant loading completed. restaurantsData length:', restaurantsData.length)
     }
   }, [zoneId])
 
@@ -910,7 +936,6 @@ export default function Home() {
     })
 
     setRestaurantsData(updatedRestaurants)
-    console.log('🔄 Recalculated distances for all restaurants based on user location')
   }, [location?.latitude, location?.longitude])
 
   // Filter restaurants and foods based on active filters
@@ -976,6 +1001,9 @@ export default function Home() {
     if (selectedCuisine) {
       filtered = filtered.filter(r => r.cuisine === selectedCuisine)
     }
+    if (vegMode && appliedVegModeOption === "pure-veg") {
+      filtered = filtered.filter((r) => r.isPureVeg === true)
+    }
 
     // Apply sorting
     if (sortBy === 'price-low') {
@@ -1014,7 +1042,7 @@ export default function Home() {
     }
 
     return filtered
-  }, [restaurantsData, activeFilters, selectedCuisine, sortBy])
+  }, [restaurantsData, activeFilters, selectedCuisine, sortBy, vegMode, appliedVegModeOption])
 
   // Featured foods removed - will be handled by restaurants data from API
   const filteredFeaturedFoods = useMemo(() => {
@@ -2586,6 +2614,10 @@ export default function Home() {
                 onClick={() => {
                   setShowVegModePopup(false)
                   setIsApplyingVegMode(true)
+                  setAppliedVegModeOption(vegModeOption)
+                  if (typeof window !== "undefined") {
+                    localStorage.setItem("userVegModeOption", vegModeOption)
+                  }
                   // Confirm veg mode is ON by updating context and prevVegMode
                   setVegModeContext(true)
                   setPrevVegMode(true)
@@ -2629,7 +2661,7 @@ export default function Home() {
               onClick={() => {
                 setShowSwitchOffPopup(false)
                 isHandlingSwitchOff.current = false
-                setVegMode(true)
+                setVegModeContext(true)
                 // prevVegMode stays true (from before), which is correct
               }}
               className="fixed inset-0 bg-black/50 z-[9998] backdrop-blur-sm"
@@ -2689,6 +2721,10 @@ export default function Home() {
                         isHandlingSwitchOff.current = false
                         setVegModeContext(false)
                         setPrevVegMode(false)
+                        setAppliedVegModeOption("all")
+                        if (typeof window !== "undefined") {
+                          localStorage.setItem("userVegModeOption", "all")
+                        }
                       }, 2000)
                     }}
                     className="w-full py-3.5 text-gray-400 hover:text-red-500 font-bold text-[10px] uppercase tracking-widest transition-all"
@@ -2952,7 +2988,9 @@ export default function Home() {
                 transition={{ delay: 0.4 }}
                 className="text-xl font-bold text-white text-center relative z-10 mt-56 w-full"
               >
-                Explore veg dishes from all restaurants
+                {appliedVegModeOption === "pure-veg"
+                  ? "Explore veg dishes from pure veg restaurants"
+                  : "Explore veg dishes from all restaurants"}
               </motion.p>
             </div>
           </motion.div>

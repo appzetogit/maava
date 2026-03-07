@@ -55,7 +55,6 @@ try {
 } catch (urlError) {
   console.error('❌ Invalid API_BASE_URL format:', API_BASE_URL);
   console.error('💡 URL validation error:', urlError.message);
-  console.error('💡 Raw VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL || 'Not set');
   console.error('💡 Expected format: https://your-domain.com/api or http://localhost:5000/api');
 
   // Try to auto-fix common malformed patterns
@@ -84,11 +83,6 @@ if (API_BASE_URL.includes('5173')) {
 }
 
 // Log API base URL in both development and production for debugging
-console.log('🌐 API Base URL:', API_BASE_URL);
-console.log('🌐 Backend URL:', API_BASE_URL.replace('/api', ''));
-console.log('🌐 Frontend URL:', window.location.origin);
-console.log('🌐 Environment:', import.meta.env.MODE);
-console.log('🌐 VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL || 'Not set (using default)');
 
 // Warn if API_BASE_URL is localhost in production
 if (import.meta.env.MODE === 'production' && API_BASE_URL.includes('localhost')) {

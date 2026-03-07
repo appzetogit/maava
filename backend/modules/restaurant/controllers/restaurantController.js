@@ -92,6 +92,45 @@ function getRestaurantZoneId(restaurantLat, restaurantLng, activeZones) {
   return null;
 }
 
+function isMenuPureVegForUsers(menu) {
+  if (!menu || !Array.isArray(menu.sections) || menu.sections.length === 0) {
+    return false;
+  }
+
+  let hasVisibleItems = false;
+  let foundNonVegItem = false;
+
+  const checkItems = (items = []) => {
+    for (const item of items) {
+      const isAvailable = item?.isAvailable !== false;
+      const isApproved = item?.approvalStatus === 'approved' || !item?.approvalStatus;
+      if (!isAvailable || !isApproved) continue;
+
+      hasVisibleItems = true;
+      const foodType = `${item?.foodType || ''}`.toLowerCase();
+      if (foodType !== 'veg') {
+        foundNonVegItem = true;
+        return;
+      }
+    }
+  };
+
+  for (const section of menu.sections) {
+    if (section?.isEnabled === false) continue;
+
+    checkItems(section?.items || []);
+    if (foundNonVegItem) break;
+
+    for (const subsection of section?.subsections || []) {
+      checkItems(subsection?.items || []);
+      if (foundNonVegItem) break;
+    }
+    if (foundNonVegItem) break;
+  }
+
+  return hasVisibleItems && !foundNonVegItem;
+}
+
 // Get all restaurants (for user module)
 export const getRestaurants = async (req, res) => {
   try {
@@ -224,6 +263,43 @@ export const getRestaurants = async (req, res) => {
         if (!r.distance) return false;
         const distMatch = r.distance.match(/(\d+\.?\d*)/);
         return distMatch && parseFloat(distMatch[1]) <= maxDist;
+      });
+    }
+
+    // Derive pure-veg restaurants from user-visible menu items
+    if (restaurants.length > 0) {
+      const restaurantIds = restaurants
+        .map(r => r?._id)
+        .filter(Boolean);
+
+      const menus = await Menu.find({
+        restaurant: { $in: restaurantIds },
+        isActive: true
+      })
+        .select('restaurant sections')
+        .lean();
+
+      const pureVegByRestaurantId = new Map();
+      for (const menu of menus) {
+        const key = menu?.restaurant?.toString();
+        if (!key) continue;
+        pureVegByRestaurantId.set(key, isMenuPureVegForUsers(menu));
+      }
+
+      restaurants = restaurants.map((restaurant) => {
+        const restaurantId = restaurant?._id?.toString();
+        const derivedPureVeg = pureVegByRestaurantId.get(restaurantId) === true;
+        const explicitPureVeg =
+          restaurant?.isPureVeg === true ||
+          restaurant?.pureVeg === true ||
+          restaurant?.vegOnly === true ||
+          restaurant?.isVegOnly === true ||
+          restaurant?.isVeg === true;
+
+        return {
+          ...restaurant,
+          isPureVeg: explicitPureVeg || derivedPureVeg,
+        };
       });
     }
 
@@ -982,4 +1058,3 @@ export const getRestaurantsWithDishesUnder250 = async (req, res) => {
     return errorResponse(res, 500, 'Failed to fetch restaurants with dishes under ₹250');
   }
 };
-

@@ -203,7 +203,7 @@ export default function Profile() {
     tokenLength: token.length,
   })
 
-  await notificationAPI.registerFCMToken(token, "user")
+  await notificationAPI.registerFCMToken(token, "web")
   return token
 }
 
@@ -213,13 +213,12 @@ const handleTestNotification = async () => {
   setIsTestingPush(true)
   try {
     await ensureWebPushTokenRegistered()
-    const response = await notificationAPI.sendTestNotification()
-    toast.success(response.data?.message || "Test notification sent successfully!")
+    toast.success("Push token registered. Admin can now send broadcast from main route.")
   } catch (error) {
     toast.error(
       error?.response?.data?.message ||
       error?.message ||
-      "Failed to send test notification"
+      "Failed to register push token"
     )
   } finally {
     console.log("[PushTest] Test flow finished")
@@ -808,7 +807,7 @@ const handleTestNotification = async () => {
                       <BellRing className={`h-5 w-5 text-gray-700 dark:text-gray-300 ${isTestingPush ? 'animate-pulse' : ''}`} />
                     </motion.div>
                     <span className="text-base font-medium text-gray-900 dark:text-white">
-                      {isTestingPush ? 'Sending test...' : 'Test Push Notifications'}
+                      {isTestingPush ? 'Registering...' : 'Enable Push Notifications'}
                     </span>
                   </div>
                   <motion.div

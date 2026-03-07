@@ -25,7 +25,8 @@ import {
     updateNavEntry,
     deleteNavEntry,
     getDashboardStats,
-    toggleStoreStatus
+    toggleStoreStatus,
+    getHibermartOrders
 } from '../controllers/inmartAdminController.js';
 import { upload, uploadImage } from '../controllers/uploadController.js';
 
@@ -36,6 +37,7 @@ router.post('/upload', upload.single('image'), uploadImage);
 
 // Dashboard Stats
 router.get('/stats', getDashboardStats);
+router.get('/orders', getHibermartOrders);
 router.patch('/store-status', toggleStoreStatus);
 
 // Products

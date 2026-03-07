@@ -5,6 +5,8 @@ import InMartCollection from '../models/InMartCollection.js';
 import InMartBanner from '../models/InMartBanner.js';
 import InMartStory from '../models/InMartStory.js';
 import InMartNavigation from '../models/InMartNavigation.js';
+import Order from '../../order/models/Order.js';
+import User from '../../auth/models/User.js';
 
 // ==================== PRODUCTS ====================
 
@@ -675,6 +677,18 @@ export const deleteNavEntry = async (req, res) => {
 // @access  Private/Admin
 export const getDashboardStats = async (req, res) => {
     try {
+        const hibermartOrderMatch = {
+            $or: [
+                { isHibermartOrder: true },
+                { restaurantId: 'hibermart-id' },
+                { restaurantName: { $regex: /^hibermart$/i } }
+            ]
+        };
+
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
         const [
             totalProducts,
             totalCategories,
@@ -682,9 +696,10 @@ export const getDashboardStats = async (req, res) => {
             totalStores,
             totalNavEntries,
             activeProducts,
-            newProducts,
-            saleProducts,
-            mainStore
+            activeBanners,
+            totalUsers,
+            mainStore,
+            hibermartOrderStats
         ] = await Promise.all([
             InMartProduct.countDocuments(),
             InMartCategory.countDocuments(),
@@ -692,10 +707,52 @@ export const getDashboardStats = async (req, res) => {
             InMartStore.countDocuments(),
             InMartNavigation.countDocuments(),
             InMartProduct.countDocuments({ isAvailable: true }),
-            InMartProduct.countDocuments({ isNew: true }),
-            InMartProduct.countDocuments({ isOnSale: true }),
-            InMartStore.findOne()
+            InMartBanner.countDocuments({ isActive: true }),
+            User.countDocuments(),
+            InMartStore.findOne(),
+            Order.aggregate([
+                {
+                    $match: hibermartOrderMatch
+                },
+                {
+                    $facet: {
+                        total: [
+                            {
+                                $match: {
+                                    status: { $ne: 'cancelled' },
+                                    'payment.status': 'completed'
+                                }
+                            },
+                            {
+                                $group: {
+                                    _id: null,
+                                    totalRevenue: { $sum: { $ifNull: ['$pricing.total', 0] } },
+                                    totalOrders: { $sum: 1 }
+                                }
+                            }
+                        ],
+                        monthly: [
+                            {
+                                $match: {
+                                    createdAt: { $gte: startOfMonth },
+                                    status: { $ne: 'cancelled' },
+                                    'payment.status': 'completed'
+                                }
+                            },
+                            {
+                                $group: {
+                                    _id: null,
+                                    monthlyRevenue: { $sum: { $ifNull: ['$pricing.total', 0] } }
+                                }
+                            }
+                        ]
+                    }
+                }
+            ])
         ]);
+
+        const orderStats = hibermartOrderStats[0]?.total[0] || { totalRevenue: 0, totalOrders: 0 };
+        const monthlyStats = hibermartOrderStats[0]?.monthly[0] || { monthlyRevenue: 0 };
 
         res.status(200).json({
             success: true,
@@ -707,8 +764,11 @@ export const getDashboardStats = async (req, res) => {
                     totalStores,
                     totalNavEntries,
                     activeProducts,
-                    newProducts,
-                    saleProducts,
+                    activeBanners, // Representing "Active Promos" per user request
+                    totalUsers,
+                    totalRevenue: orderStats.totalRevenue || 0,
+                    monthlyRevenue: monthlyStats.monthlyRevenue || 0,
+                    totalOrders: orderStats.totalOrders || 0,
                     isStoreOpen: mainStore ? mainStore.isAcceptingOrders : true
                 }
             }
@@ -721,6 +781,7 @@ export const getDashboardStats = async (req, res) => {
         });
     }
 };
+
 // @desc    Toggle InMart store status (open/closed)
 // @route   PATCH /api/admin/inmart/store-status
 // @access  Private/Admin
@@ -740,6 +801,50 @@ export const toggleStoreStatus = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error updating store status',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Get all hibermart orders for admin console
+// @route   GET /api/admin/inmart/orders
+// @access  Private/Admin
+export const getHibermartOrders = async (req, res) => {
+    try {
+        const { limit = 50, page = 1 } = req.query;
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        // Standard matching for Hibermart orders across all possible markers
+        const hibermartFilter = {
+            $or: [
+                { isHibermartOrder: true },
+                { restaurantId: 'hibermart-id' },
+                { restaurantName: { $regex: /^hibermart$/i } }
+            ]
+        };
+
+        const orders = await Order.find(hibermartFilter)
+            .sort({ createdAt: -1 })
+            .limit(parseInt(limit))
+            .skip(skip)
+            .select('-__v')
+            .populate('userId', 'name phone email');
+
+        const total = await Order.countDocuments(hibermartFilter);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                orders,
+                total,
+                page: parseInt(page),
+                limit: parseInt(limit)
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching hibermart orders',
             error: error.message
         });
     }

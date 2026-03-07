@@ -1610,8 +1610,8 @@ export const heroBannerAPI = {
 // Export notification API helper functions
 export const notificationAPI = {
   // Register/Update FCM token
-  registerFCMToken: (token, role) => {
-    return apiClient.post('/notification/register-token', { token, role });
+  registerFCMToken: (token, platform = 'web') => {
+    return apiClient.post('/notification/register-token', { token, platform });
   },
 
   // Fetch role-wise notification inbox
@@ -1625,11 +1625,6 @@ export const notificationAPI = {
 
   getRestaurantNotifications: () => {
     return apiClient.get('/notification/restaurant');
-  },
-
-  // Send test push notification
-  sendTestNotification: () => {
-    return apiClient.post('/notification/test-token');
   },
 
   getTokenStatus: () => {

@@ -702,11 +702,9 @@ export default function DeliveryHome() {
     const handleStorageChange = (e) => {
       if (e.key === LS_KEY && e.newValue != null) {
         const next = JSON.parse(e.newValue) === true
-        console.log('[DeliveryHome] Storage event - online status changed:', next)
         setIsOnline(prev => {
           // Only update if different to avoid unnecessary re-renders
           if (prev !== next) {
-            console.log('[DeliveryHome] Updating isOnline state:', prev, '->', next)
             return next
           }
           return prev
@@ -722,10 +720,8 @@ export default function DeliveryHome() {
       try {
         const raw = localStorage.getItem(LS_KEY)
         const next = raw ? JSON.parse(raw) === true : false
-        console.log('[DeliveryHome] Custom event - online status changed:', next)
         setIsOnline(prev => {
           if (prev !== next) {
-            console.log('[DeliveryHome] Updating isOnline state from custom event:', prev, '->', next)
             return next
           }
           return prev
@@ -744,7 +740,6 @@ export default function DeliveryHome() {
         const next = raw ? JSON.parse(raw) === true : false
         setIsOnline(prev => {
           if (prev !== next) {
-            console.log('[DeliveryHome] Polling detected change:', prev, '->', next)
             return next
           }
           return prev
@@ -875,11 +870,9 @@ export default function DeliveryHome() {
     const fetchActiveEarningAddons = async () => {
       try {
         const response = await deliveryAPI.getActiveEarningAddons()
-        console.log('Active earning addons response:', response?.data)
 
         if (response?.data?.success && response?.data?.data?.activeOffers) {
           const offers = response.data.data.activeOffers
-          console.log('Active offers found:', offers)
 
           // Get the first valid active offer (prioritize isValid, then isUpcoming, then any active status)
           const activeOffer = offers.find(offer => offer.isValid) ||
@@ -888,10 +881,8 @@ export default function DeliveryHome() {
             offers[0] ||
             null
 
-          console.log('Selected active offer:', activeOffer)
           setActiveEarningAddon(activeOffer)
         } else {
-          console.log('No active offers found in response')
           setActiveEarningAddon(null)
         }
       } catch (error) {
@@ -906,7 +897,7 @@ export default function DeliveryHome() {
         if (error.code !== 'ECONNABORTED' && !error.message?.includes('timeout')) {
           // Only log non-network errors
           if (error.response) {
-            console.error('Error fetching active earning addons:', error.response?.data || error.message)
+            // Error logged by interceptor
           }
         }
         setActiveEarningAddon(null)
@@ -1131,7 +1122,6 @@ export default function DeliveryHome() {
   const playAlertSound = async () => {
     // Only play if user has interacted with the page (browser autoplay policy)
     if (!userInteractedRef.current) {
-      console.log('🔇 Audio playback skipped - user has not interacted with page yet')
       return null
     }
 
@@ -1140,31 +1130,11 @@ export default function DeliveryHome() {
       const selectedSound = localStorage.getItem('delivery_alert_sound') || 'zomato_tone'
       const soundFile = selectedSound === 'original' ? originalSound : alertSound
 
-      console.log('🔊 Playing alert sound:', {
-        selectedSound,
-        soundType: selectedSound === 'original' ? 'Original' : 'Zomato Tone',
-        soundFile,
-        originalSoundPath: originalSound,
-        alertSoundPath: alertSound
-      })
-
-      // Verify sound file exists
-      if (!soundFile) {
-        console.error('❌ Sound file is undefined!', { selectedSound, soundFile })
-        return null
-      }
-
       // Use selected sound file from assets
       const audio = new Audio(soundFile)
 
       // Add load event listener to verify file loads
-      audio.addEventListener('loadeddata', () => {
-        console.log('✅ Audio file loaded successfully:', soundFile)
-      })
-
-      audio.addEventListener('canplay', () => {
-        console.log('✅ Audio can play:', soundFile)
-      })
+      // Audio listeners
 
       audio.volume = 1
       audio.loop = true // Loop the sound
@@ -1192,27 +1162,11 @@ export default function DeliveryHome() {
           setTimeout(() => reject(new Error('Audio load timeout')), 3000)
         })
 
-        const playPromise = audio.play()
         if (playPromise !== undefined) {
           await playPromise
         }
-        console.log('✅ Alert sound started playing successfully', {
-          src: audio.src,
-          volume: audio.volume,
-          loop: audio.loop,
-          readyState: audio.readyState
-        })
         return audio
       } catch (playError) {
-        console.error('❌ Audio play error:', {
-          error: playError,
-          message: playError.message,
-          name: playError.name,
-          soundFile,
-          selectedSound,
-          audioReadyState: audio.readyState,
-          audioSrc: audio.src
-        })
 
         // Don't log autoplay policy errors as they're expected before user interaction
         if (!playError.message?.includes('user didn\'t interact') &&
@@ -1225,23 +1179,20 @@ export default function DeliveryHome() {
         try {
           audio.load()
           await new Promise((resolve) => setTimeout(resolve, 100)) // Small delay
-          const playPromise = audio.play()
           if (playPromise !== undefined) {
             await playPromise
           }
-          console.log('✅ Alert sound started playing after retry')
           return audio
         } catch (retryError) {
           // Don't log autoplay policy errors
           if (!retryError.message?.includes('user didn\'t interact') &&
             !retryError.name?.includes('NotAllowedError')) {
-            console.error('❌ Could not play alert sound after retry:', retryError)
+            // Silently fail
           }
           return null
         }
       }
     } catch (error) {
-      console.error('❌ Could not create audio:', error)
       return null
     }
   }
@@ -1260,7 +1211,6 @@ export default function DeliveryHome() {
               alertAudioRef.current.pause()
               alertAudioRef.current.currentTime = 0
               alertAudioRef.current = null
-              console.log('[NewOrder] 🔇 Audio stopped (countdown ended)')
             }
             // Auto-close when countdown reaches 0
             setShowNewOrderPopup(false)
@@ -1860,12 +1810,10 @@ export default function DeliveryHome() {
             // Send location every 5 seconds even if not smoothed
             if (timeSinceLastSend >= 5000) {
               if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-                console.log('📤 Sending raw location to backend (not smoothed yet):', { lat, lng })
                 deliveryAPI.updateLocation(lat, lng, true)
                   .then(() => {
                     window.lastLocationSentTime = now;
                     window.lastSentLocation = newLocation;
-                    console.log('✅ Raw location sent to backend successfully')
                   })
                   .catch(error => {
                     if (error.code !== 'ERR_NETWORK' && error.message !== 'Network Error') {
@@ -1934,22 +1882,8 @@ export default function DeliveryHome() {
             animateMarkerSmoothly(bikeMarkerRef.current, newSmoothedLocation, 1500, markerAnimationRef)
           } else {
             // Marker doesn't exist yet, create it immediately with correct location
-            console.log('📍 Creating bike marker with smoothed location:', { lat: smoothedLat, lng: smoothedLng })
-            createOrUpdateBikeMarker(smoothedLat, smoothedLng, heading, !isUserPanningRef.current)
-          }
-        }
-
         // Update route polyline
         updateRoutePolyline()
-
-        console.log("📍 Live location updated (smoothed):", {
-          raw: { lat: latitude, lng: longitude },
-          smoothed: { lat: smoothedLat, lng: smoothedLng },
-          heading,
-          accuracy: `${accuracy.toFixed(0)}m`,
-          isOnline: isOnlineRef.current,
-          timestamp: new Date().toISOString()
-        })
 
         // Send SMOOTHED location to backend if user is online (throttle to every 5 seconds)
         if (isOnlineRef.current && smoothedLocation) {
@@ -1983,23 +1917,10 @@ export default function DeliveryHome() {
             // Final validation before sending to backend
             // Ensure coordinates are in correct format [lat, lng] and within valid ranges
             if (smoothedLat >= -90 && smoothedLat <= 90 && smoothedLng >= -180 && smoothedLng <= 180) {
-              console.log('📤 Sending smoothed location to backend:', {
-                smoothed: { lat: smoothedLat, lng: smoothedLng },
-                raw: { lat: latitude, lng: longitude },
-                accuracy: `${accuracy.toFixed(0)}m`,
-                timeSinceLastSend: `${(timeSinceLastSend / 1000).toFixed(1)}s`
-              });
-
               deliveryAPI.updateLocation(smoothedLat, smoothedLng, true)
                 .then(() => {
                   window.lastLocationSentTime = now;
                   window.lastSentLocation = smoothedLocation; // Store last sent location
-                  console.log('✅ Smoothed location sent to backend successfully:', {
-                    latitude: smoothedLat,
-                    longitude: smoothedLng,
-                    format: "lat, lng (correct order)",
-                    accuracy: `${accuracy.toFixed(0)}m`
-                  });
                 })
                 .catch(error => {
                   // Only log non-network errors (backend might be down, which is expected in dev)
@@ -4801,21 +4722,15 @@ export default function DeliveryHome() {
     // If map instance exists, preserve state before re-initializing
     if (window.deliveryMapInstance) {
       const existingMap = window.deliveryMapInstance;
-      const existingBikeMarker = bikeMarkerRef.current;
-      const existingPolyline = routePolylineRef.current;
-
-      console.log('📍 Map instance exists, preserving state for re-initialization...');
 
       // Check if map is already attached to current container
       try {
         const mapDiv = existingMap.getDiv();
         if (mapDiv && mapDiv === mapContainerRef.current) {
-          console.log('📍 Map already attached to current container, skipping re-initialization');
           return; // Map is already properly attached, no need to re-initialize
         }
       } catch (error) {
         // Map div check failed, will re-initialize
-        console.log('📍 Map container check failed, will re-initialize');
       }
 
       // Store map state safely
@@ -4862,13 +4777,10 @@ export default function DeliveryHome() {
       window.deliveryMapInstance = null;
     }
 
-    console.log('📍 Starting map initialization...');
-
     // Load Google Maps if not already loaded
     const loadGoogleMapsIfNeeded = async () => {
       // Check if already loaded
       if (window.google && window.google.maps) {
-        console.log('✅ Google Maps already loaded');
         // Wait a bit to ensure ref is available
         await new Promise(resolve => setTimeout(resolve, 100));
         initializeGoogleMap();
@@ -4878,7 +4790,6 @@ export default function DeliveryHome() {
       // Check if script tag is already present (from main.jsx)
       const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
       if (existingScript || window.__googleMapsLoading) {
-        console.log('📍 Google Maps is already being loaded, waiting...');
         let attempts = 0;
         const maxAttempts = 50; // 5 seconds max wait
 
@@ -4888,7 +4799,6 @@ export default function DeliveryHome() {
         }
 
         if (window.google && window.google.maps) {
-          console.log('✅ Google Maps loaded via script tag');
           await initializeGoogleMap();
           return;
         }
@@ -4896,7 +4806,6 @@ export default function DeliveryHome() {
 
       // Only use Loader if no script tag exists and not already loading
       if (!existingScript && !window.__googleMapsLoading) {
-        console.log('📍 Google Maps not loaded, using Loader as fallback...');
         window.__googleMapsLoading = true;
         try {
           const apiKey = await getGoogleMapsApiKey();
@@ -4907,7 +4816,6 @@ export default function DeliveryHome() {
               libraries: ["places", "geometry", "drawing"]
             });
             await loader.load();
-            console.log('✅ Google Maps loaded via Loader');
             window.__googleMapsLoaded = true;
             window.__googleMapsLoading = false;
             await initializeGoogleMap();
@@ -4933,7 +4841,6 @@ export default function DeliveryHome() {
         }
 
         if (window.google && window.google.maps) {
-          console.log('✅ Google Maps loaded via script tag');
           await initializeGoogleMap();
         } else {
           console.error('❌ Google Maps failed to load');
@@ -4943,7 +4850,6 @@ export default function DeliveryHome() {
 
       // Wait for MapTypeId to be available (sometimes it loads slightly after maps)
       if (window.google && window.google.maps && !window.google.maps.MapTypeId) {
-        console.log('📍 Waiting for MapTypeId to be available...');
         let attempts = 0;
         const maxAttempts = 20; // 2 seconds max wait
 
@@ -4978,7 +4884,6 @@ export default function DeliveryHome() {
       try {
         // Wait for map container ref to be available
         if (!mapContainerRef.current) {
-          console.log('📍 Map container ref not available yet, waiting...');
           let attempts = 0;
           const maxAttempts = 50; // 5 seconds max wait
 
@@ -5000,7 +4905,6 @@ export default function DeliveryHome() {
           return;
         }
 
-        console.log('📍 Initializing Google Map with container:', mapContainerRef.current);
         setMapLoading(true);
 
         // Get location from multiple sources (priority: riderLocation > saved location > wait for GPS)
@@ -5009,7 +4913,6 @@ export default function DeliveryHome() {
         if (riderLocation && riderLocation.length === 2) {
           // Use current rider location
           initialCenter = { lat: riderLocation[0], lng: riderLocation[1] };
-          console.log('📍 Using current rider location for map center:', initialCenter);
         } else {
           // Try to get from localStorage (saved location from previous session)
           const savedLocation = localStorage.getItem('deliveryBoyLastLocation');
@@ -5022,7 +4925,6 @@ export default function DeliveryHome() {
                 if (typeof lat === 'number' && typeof lng === 'number' &&
                   lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
                   initialCenter = { lat, lng };
-                  console.log('📍 Using saved location from localStorage for map center:', initialCenter);
                 }
               }
             } catch (e) {
@@ -5035,24 +4937,14 @@ export default function DeliveryHome() {
         // When GPS location is received, map will recenter and show bike marker.
         if (!initialCenter) {
           initialCenter = { lat: 20.5937, lng: 78.9629 };
-          console.log('📍 No location yet, using default center (India). Map will recenter when GPS is available.');
         }
 
-        console.log('📍 Map center:', initialCenter);
 
         // Check if MapTypeId is available, use string fallback if not
         // Always use string 'roadmap' to avoid MapTypeId enum issues
         const mapTypeId = (window.google?.maps?.MapTypeId?.ROADMAP !== undefined)
           ? window.google.maps.MapTypeId.ROADMAP
           : 'roadmap';
-
-        console.log('📍 MapTypeId:', mapTypeId);
-        console.log('📍 Google Maps API check:', {
-          google: !!window.google,
-          maps: !!window.google?.maps,
-          MapTypeId: !!window.google?.maps?.MapTypeId,
-          ROADMAP: window.google?.maps?.MapTypeId?.ROADMAP !== undefined
-        });
 
         // Wrap map initialization in try-catch to handle any Google Maps internal errors
         let map;
@@ -5084,13 +4976,11 @@ export default function DeliveryHome() {
 
         // Store map instance
         window.deliveryMapInstance = map;
-        console.log('✅ Map instance created and stored');
 
         // Add error listener for map errors (if available)
         try {
           if (window.google.maps.event) {
             window.google.maps.event.addListenerOnce(map, 'tilesloaded', () => {
-              console.log('✅ Map tiles loaded successfully');
             });
           }
         } catch (eventError) {
@@ -5099,7 +4989,6 @@ export default function DeliveryHome() {
 
         // Add error listener for map errors
         window.google.maps.event.addListenerOnce(map, 'tilesloaded', () => {
-          console.log('✅ Map tiles loaded successfully');
         });
 
         // Handle map errors
@@ -5144,12 +5033,10 @@ export default function DeliveryHome() {
           if (preservedState.center && preservedState.zoom) {
             map.setCenter(preservedState.center);
             map.setZoom(preservedState.zoom);
-            console.log('📍 Restored map center and zoom after navigation');
           }
 
           // Re-create bike marker if it existed before navigation
           if (preservedState.bikeMarkerPosition && isOnlineRef.current) {
-            console.log('📍 Re-creating bike marker after navigation:', preservedState.bikeMarkerPosition);
             createOrUpdateBikeMarker(
               preservedState.bikeMarkerPosition.lat,
               preservedState.bikeMarkerPosition.lng,
@@ -5164,7 +5051,6 @@ export default function DeliveryHome() {
             // Only re-attach if we have an active order
             if (routeHistoryRef.current.length >= 2) {
               routePolylineRef.current.setMap(map);
-              console.log('✅ Route polyline re-attached after navigation');
             }
           } else if (!selectedRestaurant && routePolylineRef.current) {
             // Clear polyline if no active order
@@ -5202,7 +5088,6 @@ export default function DeliveryHome() {
           if (riderLocation && riderLocation.length === 2) {
             setTimeout(() => {
               if (!bikeMarkerRef.current || bikeMarkerRef.current.getMap() === null) {
-                console.log('📍 Re-adding bike marker after tiles loaded');
                 createOrUpdateBikeMarker(riderLocation[0], riderLocation[1], null);
               }
             }, 500);
@@ -5213,7 +5098,6 @@ export default function DeliveryHome() {
               try {
                 const parsed = JSON.parse(savedLocation);
                 if (parsed && Array.isArray(parsed) && parsed.length === 2) {
-                  console.log('📍 Creating bike marker from saved location after tiles loaded');
                   setTimeout(() => {
                     createOrUpdateBikeMarker(parsed[0], parsed[1], null);
                   }, 500);
@@ -5228,7 +5112,6 @@ export default function DeliveryHome() {
           if (selectedRestaurant && selectedRestaurant.lat && selectedRestaurant.lng) {
             setTimeout(() => {
               if (!restaurantMarkerRef.current || restaurantMarkerRef.current.getMap() === null) {
-                console.log('📍 Re-adding restaurant marker after tiles loaded');
                 const restaurantLocation = {
                   lat: selectedRestaurant.lat,
                   lng: selectedRestaurant.lng
@@ -5262,7 +5145,7 @@ export default function DeliveryHome() {
           }, 1000);
         });
 
-        console.log('✅ Google Map initialized');
+        // Map initialized
       } catch (error) {
         console.error('❌ Error initializing Google Map:', error);
         setMapLoading(false);
@@ -5273,7 +5156,7 @@ export default function DeliveryHome() {
     return () => {
       // Preserve map instance and markers for navigation
       // Map will be re-initialized when component mounts again
-      console.log('📍 Component cleanup - preserving map instance for navigation');
+      // Map cleanup
 
       // Don't clear map instance - preserve it in window.deliveryMapInstance
       // Don't clear bike marker - preserve it in bikeMarkerRef
@@ -5293,9 +5176,7 @@ export default function DeliveryHome() {
     if (!window.google || !window.google.maps) return // Google Maps not loaded yet
     if (!mapContainerRef.current) return // Container not ready
 
-    console.log('📍 Rider location available, initializing map...')
-    // Map initialization will happen in the main useEffect, but we can trigger it
-    // by calling initializeGoogleMap directly
+    // Initialize map
     const initializeMap = async () => {
       try {
         const initialCenter = { lat: riderLocation[0], lng: riderLocation[1] }

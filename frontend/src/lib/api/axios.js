@@ -21,13 +21,9 @@ if (import.meta.env.DEV) {
   if (API_BASE_URL.includes('5173') || backendUrl.includes('5173')) {
     console.error('❌ CRITICAL: API_BASE_URL is pointing to FRONTEND port (5173) instead of BACKEND port (5000)');
     console.error('💡 Current API_BASE_URL:', API_BASE_URL);
-    console.error('💡 Frontend URL:', frontendUrl);
     console.error('💡 Backend should be at: http://localhost:5000');
     console.error('💡 Fix: Check .env file - VITE_API_BASE_URL should be http://localhost:5000/api');
   } else {
-    console.log('✅ API_BASE_URL correctly points to backend:', API_BASE_URL);
-    console.log('✅ Backend URL:', backendUrl);
-    console.log('✅ Frontend URL:', frontendUrl);
   }
 }
 

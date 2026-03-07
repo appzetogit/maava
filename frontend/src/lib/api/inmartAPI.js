@@ -452,6 +452,16 @@ export const adminToggleStoreStatus = async (isOpen) => {
     }
 };
 
+export const adminGetOrders = async (params = {}) => {
+    try {
+        const response = await api.get('/admin/inmart/orders', { params });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching hibermart orders:', error);
+        throw error;
+    }
+};
+
 export default {
     // Public
     getInMartHome,
@@ -489,4 +499,5 @@ export default {
     adminDeleteNavEntry,
     uploadImage,
     adminToggleStoreStatus,
+    adminGetOrders,
 };

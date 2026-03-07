@@ -64,7 +64,7 @@ export default function HibermartAdminHome() {
     // --- API DATA STATES ---
     const [stats, setStats] = useState({
         totalProducts: 0,
-        monthlyRev: "₹0",
+        totalRevenue: 0,
         activePromos: 0,
         storeUsers: 0,
         isStoreOpen: true
@@ -649,23 +649,52 @@ export default function HibermartAdminHome() {
                 categoriesRes,
                 bannersRes,
                 collectionsRes,
-                productsRes
+                productsRes,
+                ordersRes
             ] = await Promise.all([
                 inmartAPI.getDashboardStats(),
                 inmartAPI.adminGetAllCategories(),
                 inmartAPI.getBanners(),
                 inmartAPI.adminGetAllCollections(),
-                inmartAPI.adminGetAllProducts()
+                inmartAPI.adminGetAllProducts(),
+                inmartAPI.adminGetOrders()
             ]);
 
             if (statsRes.success) {
                 setStats({
-                    totalProducts: statsRes.data.stats.totalProducts,
-                    monthlyRev: "₹45.2L", // Still mock for now as backend doesn't have orders/rev yet
-                    activePromos: statsRes.data.stats.saleProducts,
-                    storeUsers: statsRes.data.stats.totalStores,
+                    totalProducts: statsRes.data.stats.activeProducts,
+                    totalRevenue: statsRes.data.stats.totalRevenue || 0,
+                    monthlyRevenue: statsRes.data.stats.monthlyRevenue || 0,
+                    activePromos: statsRes.data.stats.activeBanners,
+                    storeUsers: statsRes.data.stats.totalUsers,
                     isStoreOpen: statsRes.data.stats.isStoreOpen ?? true
                 });
+            }
+
+            if (ordersRes && ordersRes.success) {
+                // Transform backend orders to UI format
+                const transformedOrders = ordersRes.data.orders.map(order => ({
+                    id: order.orderId || order._id,
+                    customer: order.userId?.name || "Guest User",
+                    items: order.items.length,
+                    total: order.pricing.total,
+                    status: order.status.charAt(0).toUpperCase() + order.status.slice(1),
+                    time: new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    fullTime: new Date(order.createdAt).toLocaleString(),
+                    priority: order.status === 'pending',
+                    address: `${order.address?.house || ''} ${order.address?.city || ''}`.trim(),
+                    type: order.payment?.method === 'cash' ? 'COD' : 'Online',
+                    phone: order.userId?.phone || "N/A",
+                    email: order.userId?.email || "N/A",
+                    itemsList: order.items.map((item, idx) => ({
+                        id: item.itemId || idx,
+                        name: item.name,
+                        qty: item.quantity,
+                        price: item.price,
+                        image: item.image
+                    }))
+                }));
+                setOrders(transformedOrders);
             }
 
             if (categoriesRes.success && productsRes.success) {
@@ -1589,12 +1618,13 @@ function DashboardOverview({ stats, onToggleStore }) {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 {[
-                    { label: "Active Products", value: stats.totalProducts.toLocaleString(), icon: Package, color: "bg-blue-50 text-blue-600" },
-                    { label: "Monthly Rev", value: stats.monthlyRev, icon: CreditCard, color: "bg-emerald-50 text-emerald-600" },
-                    { label: "Active Promos", value: stats.activePromos, icon: Tag, color: "bg-amber-50 text-amber-600" },
-                    { label: "Store Users", value: stats.storeUsers, icon: Users, color: "bg-purple-50 text-purple-600" },
+                    { label: "Active Products", value: (stats.totalProducts || 0).toLocaleString(), icon: Package, color: "bg-blue-50 text-blue-600" },
+                    { label: "Active Promos", value: (stats.activePromos || 0).toLocaleString(), icon: Tag, color: "bg-amber-50 text-amber-600" },
+                    { label: "Total Revenue", value: `₹${(stats.totalRevenue || 0).toLocaleString('en-IN')}`, icon: CreditCard, color: "bg-emerald-50 text-emerald-600" },
+                    { label: "Monthly Rev", value: `₹${(stats.monthlyRevenue || 0).toLocaleString('en-IN')}`, icon: ShoppingBag, color: "bg-purple-50 text-purple-600" },
+                    { label: "Global Users", value: (stats.storeUsers || 0).toLocaleString(), icon: Users, color: "bg-sky-50 text-sky-600" },
                 ].map((item, idx) => (
                     <div key={idx} className="bg-white p-4 sm:p-5 rounded-2xl border border-neutral-100 shadow-sm hover:shadow-md transition-shadow group">
                         <div className="flex items-center justify-between mb-3">
@@ -1611,7 +1641,7 @@ function DashboardOverview({ stats, onToggleStore }) {
                 ))}
             </div>
 
-        </div>
+        </div >
     )
 }
 
