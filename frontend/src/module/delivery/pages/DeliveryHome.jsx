@@ -1882,6 +1882,9 @@ export default function DeliveryHome() {
             animateMarkerSmoothly(bikeMarkerRef.current, newSmoothedLocation, 1500, markerAnimationRef)
           } else {
             // Marker doesn't exist yet, create it immediately with correct location
+            createOrUpdateBikeMarker(smoothedLat, smoothedLng, heading, !isUserPanningRef.current)
+          }
+        }
         // Update route polyline
         updateRoutePolyline()
 
