@@ -3,7 +3,7 @@ import { notificationAPI } from '@/lib/api';
 import { firebaseApp } from '@/lib/firebase';
 
 const REGISTRATION_CACHE_KEY = 'fcm_registration_cache_v1';
-const CACHE_REVALIDATE_MS = 5 * 60 * 1000;
+const CACHE_REVALIDATE_MS = 60 * 60 * 1000; // 1 hour revalidation
 
 const getCurrentModuleRole = (path) => {
   if (path.startsWith('/restaurant') && !path.startsWith('/restaurants')) {
@@ -34,8 +34,14 @@ export default function usePushRegistration(pathname) {
   useEffect(() => {
     let mounted = true;
     let intervalId = null;
+    let lastProcessedAt = 0;
+    const MIN_THROTTLE_MS = 60000; // Don't re-run more than once per minute on focus
 
     const registerPushToken = async () => {
+      const now = Date.now();
+      if (now - lastProcessedAt < MIN_THROTTLE_MS) return false;
+      lastProcessedAt = now;
+
       const role = getCurrentModuleRole(pathname);
       if (!role) return false;
 
@@ -106,11 +112,11 @@ export default function usePushRegistration(pathname) {
     // First attempt immediately
     attemptRegistration();
 
-    // Retry periodically because login often happens on same route without pathname change
+    // Refresh every 30 minutes (drastically reduced from 15s)
     intervalId = window.setInterval(() => {
       if (!mounted) return;
       attemptRegistration();
-    }, 15000);
+    }, 1800000);
 
     // Retry on focus/visibility regain
     const onFocus = () => attemptRegistration();

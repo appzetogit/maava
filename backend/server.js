@@ -370,12 +370,19 @@ app.use('/uploads', express.static('uploads'));
 if (process.env.NODE_ENV === 'production') {
   const limiter = rateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 2000, // Increased to 2000 to handle busy traffic
-    message: 'Too many requests from this IP, please try again later.'
+    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 10000, // Temporarily very high to debug loops
+    message: 'Too many requests from this IP, please try again later.',
+    standardHeaders: 'draft-7', // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    // Use req.ip (populated via trust proxy) for reliable client identification
+    keyGenerator: (req) => {
+      // Prioritize standard forwarding header if trust proxy 1 is active
+      return req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    }
   });
 
   app.use('/api/', limiter);
-  console.log('Rate limiting enabled (production mode)');
+  console.log('Rate limiting enabled (production mode) with Trust Proxy active');
 } else {
   console.log('Rate limiting disabled (development mode)');
 }
