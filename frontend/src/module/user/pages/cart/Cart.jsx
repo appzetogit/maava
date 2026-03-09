@@ -600,30 +600,6 @@ export default function Cart() {
     fetchCouponsForCartItems()
   }, [cart, restaurantId])
 
-  // Fetch public fee settings (deliveryFeeRanges + freeDeliveryThreshold) from backend
-  useEffect(() => {
-    const fetchFeeSettings = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/fee-settings/public`)
-        if (!res.ok) return
-        const json = await res.json()
-        const data = json?.data?.feeSettings
-        if (data) {
-          setFeeSettings(prev => ({
-            ...prev,
-            deliveryFee: data.deliveryFee ?? prev.deliveryFee,
-            deliveryFeeRanges: Array.isArray(data.deliveryFeeRanges) ? data.deliveryFeeRanges : prev.deliveryFeeRanges,
-            freeDeliveryThreshold: data.freeDeliveryThreshold ?? prev.freeDeliveryThreshold,
-            platformFee: data.platformFee ?? prev.platformFee,
-            gstRate: data.gstRate ?? prev.gstRate,
-          }))
-        }
-      } catch (err) {
-        console.warn('[Cart] Failed to fetch fee settings:', err?.message)
-      }
-    }
-    fetchFeeSettings()
-  }, [])
 
   // Fetch last order to get the last used delivery address
   useEffect(() => {

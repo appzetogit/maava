@@ -7,31 +7,37 @@ import apiClient from '../api/axios.js';
 import { API_ENDPOINTS } from '../api/config.js';
 
 let cachedSettings = null;
+let pendingSettingsPromise = null;
 
 /**
  * Load business settings from backend (public endpoint - no auth required)
  */
 export const loadBusinessSettings = async () => {
-  try {
-    // Check if we have a cached version
-    if (cachedSettings) {
-      return cachedSettings;
-    }
+  if (cachedSettings) return cachedSettings;
+  if (pendingSettingsPromise) return pendingSettingsPromise;
 
-    // Use public endpoint that doesn't require authentication
-    const response = await apiClient.get(API_ENDPOINTS.ADMIN.BUSINESS_SETTINGS_PUBLIC);
-    const settings = response?.data?.data || response?.data;
-    
-    if (settings) {
-      cachedSettings = settings;
-      updateFavicon(settings.favicon?.url);
-      updateTitle(settings.companyName);
-      return settings;
+  pendingSettingsPromise = (async () => {
+    try {
+      // Use public endpoint that doesn't require authentication
+      const response = await apiClient.get(API_ENDPOINTS.ADMIN.BUSINESS_SETTINGS_PUBLIC);
+      const settings = response?.data?.data || response?.data;
+
+      if (settings) {
+        cachedSettings = settings;
+        updateFavicon(settings.favicon?.url);
+        updateTitle(settings.companyName);
+        return settings;
+      }
+      return null;
+    } catch (error) {
+      // Silently fail - this is expected if settings don't exist yet
+      return null;
+    } finally {
+      pendingSettingsPromise = null;
     }
-  } catch (error) {
-    // Silently fail - this is expected if settings don't exist yet
-    return null;
-  }
+  })();
+
+  return pendingSettingsPromise;
 };
 
 /**

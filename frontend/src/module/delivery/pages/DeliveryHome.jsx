@@ -907,10 +907,10 @@ export default function DeliveryHome() {
     // Fetch immediately on mount
     fetchActiveEarningAddons()
 
-    // Refresh every 5 seconds to get latest offers
+    // Refresh every 60 seconds to get latest offers (reduced from 5s to prevent rate limiting)
     const refreshInterval = setInterval(() => {
       fetchActiveEarningAddons()
-    }, 5000)
+    }, 60000)
 
     // Refresh when page becomes visible
     const handleVisibilityChange = () => {
@@ -1807,8 +1807,8 @@ export default function DeliveryHome() {
             const lastSentTime = window.lastLocationSentTime || 0;
             const timeSinceLastSend = now - lastSentTime;
 
-            // Send location every 5 seconds even if not smoothed
-            if (timeSinceLastSend >= 5000) {
+            // Send location every 15 seconds even if not smoothed (reduced from 5s)
+            if (timeSinceLastSend >= 15000) {
               if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
                 deliveryAPI.updateLocation(lat, lng, true)
                   .then(() => {
@@ -1888,7 +1888,7 @@ export default function DeliveryHome() {
         // Update route polyline
         updateRoutePolyline()
 
-        // Send SMOOTHED location to backend if user is online (throttle to every 5 seconds)
+        // Send SMOOTHED location to backend if user is online (throttle to every 15 seconds)
         if (isOnlineRef.current && smoothedLocation) {
           const now = Date.now();
           const lastSentTime = window.lastLocationSentTime || 0;
@@ -1911,10 +1911,11 @@ export default function DeliveryHome() {
           // Get last sent location for distance check
           const lastSentLocation = window.lastSentLocation || null;
 
-          // Send location every 5 seconds OR if location changed significantly (>50m)
-          const shouldSend = timeSinceLastSend >= 5000 ||
+          // Send location every 15 seconds OR if location changed significantly (>50m)
+          const shouldSend = timeSinceLastSend >= 15000 ||
             (lastSentLocation &&
               calculateDistance(lastSentLocation[0], lastSentLocation[1], smoothedLat, smoothedLng) > 0.05);
+
 
           if (shouldSend) {
             // Final validation before sending to backend

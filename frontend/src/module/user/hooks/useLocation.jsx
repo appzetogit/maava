@@ -1,15 +1,22 @@
 import { useState, useEffect, useRef } from "react"
 import { locationAPI, userAPI } from "@/lib/api"
 
-const debugLog = () => {}
+const debugLog = () => { }
+// Singleton state to share one watcher across all hook instances
+let globalWatchId = null
+let globalLocation = null
+let globalPermissionGranted = false
+let globalError = null
+let subscribers = []
+let lastDbUpdateTimestamp = 0
+const DB_UPDATE_THROTTLE_MS = 60000 // Only update DB every 1 minute max (reduced from 5s)
 
 export function useLocation() {
-  const [location, setLocation] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [permissionGranted, setPermissionGranted] = useState(false)
+  const [location, setLocation] = useState(globalLocation)
+  const [loading, setLoading] = useState(!globalLocation)
+  const [error, setError] = useState(globalError)
+  const [permissionGranted, setPermissionGranted] = useState(globalPermissionGranted)
 
-  const watchIdRef = useRef(null)
   const updateTimerRef = useRef(null)
   const prevLocationCoordsRef = useRef({ latitude: null, longitude: null })
   const geocodeCacheRef = useRef({
@@ -1633,26 +1640,43 @@ export function useLocation() {
       return
     }
 
-    // Clear any existing watch
-    if (watchIdRef.current) {
-      navigator.geolocation.clearWatch(watchIdRef.current)
-      watchIdRef.current = null
-    }
+    // Clear any existing local watcher (if any somehow remained)
+    stopWatchingLocation()
 
     debugLog("👀 Starting to watch location for live updates...")
+
+    // If already watching globally, just subscribe
+    if (globalWatchId) {
+      debugLog("🔗 Already watching globally, subscribing...")
+
+      // Check if already subscribed to avoid duplicates
+      const isSubscribed = subscribers.some(sub => sub.setLocation === setLocation)
+      if (!isSubscribed) {
+        subscribers.push({ setLocation, setError, setPermissionGranted })
+      }
+
+      if (globalLocation) setLocation(globalLocation)
+      if (globalPermissionGranted) setPermissionGranted(true)
+      if (globalError) setError(globalError)
+      return
+    }
+
+    // Add this instance to subscribers
+    subscribers.push({ setLocation, setError, setPermissionGranted })
 
     let retryCount = 0
     const maxRetries = 2
 
     const startWatch = (options) => {
-      watchIdRef.current = navigator.geolocation.watchPosition(
+      globalWatchId = navigator.geolocation.watchPosition(
         async (pos) => {
           try {
             const { latitude, longitude, accuracy } = pos.coords
             debugLog("🔄 Location updated:", { latitude, longitude, accuracy: `${accuracy}m` })
 
-            // Reset retry count on success
-            retryCount = 0
+            // Update global state
+            globalPermissionGranted = true
+            globalError = null
 
             // Validate coordinates are in India range BEFORE attempting geocoding
             // India: Latitude 6.5° to 37.1° N, Longitude 68.7° to 97.4° E
@@ -1853,22 +1877,37 @@ export function useLocation() {
               prevLocationCoordsRef.current = { latitude: loc.latitude, longitude: loc.longitude }
               debugLog("💾 Updating live location:", loc)
               localStorage.setItem("userLocation", JSON.stringify(loc))
+
+              // Update global state
+              globalLocation = loc
+              globalPermissionGranted = true
+              globalError = null
+
+              // Notify all hook instances/subscribers
               setLocation(loc)
               setPermissionGranted(true)
               setError(null)
+              subscribers.forEach(sub => {
+                sub.setLocation(loc)
+                sub.setPermissionGranted(true)
+                sub.setError(null)
+              })
             } else {
               // Coordinates haven't changed significantly, skip state update to prevent re-renders
               // Still update localStorage silently for persistence
               localStorage.setItem("userLocation", JSON.stringify(loc))
             }
 
-            // Debounce DB updates - only update every 5 seconds
-            clearTimeout(updateTimerRef.current)
-            updateTimerRef.current = setTimeout(() => {
+            // THROTLED DB updates - only update every 60 seconds (prevents 429 errors)
+            const nowDb = Date.now()
+            if (nowDb - lastDbUpdateTimestamp >= DB_UPDATE_THROTTLE_MS) {
+              lastDbUpdateTimestamp = nowDb
               updateLocationInDB(loc).catch(err => {
                 console.warn("Failed to update location in DB:", err)
               })
-            }, 5000)
+            } else {
+              debugLog(`⏳ DB update throttled. Next update in ${Math.round((DB_UPDATE_THROTTLE_MS - (nowDb - lastDbUpdateTimestamp)) / 1000)}s`)
+            }
           } catch (err) {
             console.error("❌ Error processing live location update:", err)
             // If reverse geocoding fails, DON'T use coordinates - use placeholder
@@ -1905,9 +1944,9 @@ export function useLocation() {
             debugLog(`⏱️ GPS timeout, retrying with high accuracy GPS (attempt ${retryCount}/${maxRetries})...`)
 
             // Clear current watch
-            if (watchIdRef.current) {
-              navigator.geolocation.clearWatch(watchIdRef.current)
-              watchIdRef.current = null
+            if (globalWatchId) {
+              navigator.geolocation.clearWatch(globalWatchId)
+              globalWatchId = null
             }
 
             // Retry with HIGH ACCURACY GPS (don't use network-based location)
@@ -1922,13 +1961,15 @@ export function useLocation() {
             return
           }
 
-          // If all retries failed, silently continue - don't set error state for background watch
-          // The watch will keep trying in background, user won't notice
-          // Only set error for non-timeout errors that are critical
-          if (err.code !== 3) {
-            setError(err.message)
-            setPermissionGranted(false)
-          }
+          // Update global error state
+          globalError = err.message
+          globalPermissionGranted = false
+
+          // Notify all subscribers of error
+          subscribers.forEach(sub => {
+            sub.setError(err.message)
+            sub.setPermissionGranted(false)
+          })
 
           // Don't clear the watch - let it keep trying in background
           // The user might move to a location with better GPS signal
@@ -1952,10 +1993,18 @@ export function useLocation() {
   }
 
   const stopWatchingLocation = () => {
-    if (watchIdRef.current) {
-      navigator.geolocation.clearWatch(watchIdRef.current)
-      watchIdRef.current = null
+    // Remove this instance from subscribers
+    subscribers = subscribers.filter(sub => sub.setLocation !== setLocation)
+
+    debugLog(`👥 Subscriber removed. Remaining: ${subscribers.length}`)
+
+    // Only clear global watcher if no more subscribers
+    if (subscribers.length === 0 && globalWatchId) {
+      navigator.geolocation.clearWatch(globalWatchId)
+      globalWatchId = null
+      debugLog("📍 GLOBAL Geolocation watch stopped (no more subscribers)")
     }
+
     clearTimeout(updateTimerRef.current)
   }
 
