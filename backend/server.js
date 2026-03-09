@@ -105,6 +105,9 @@ if (missingEnvVars.length > 0) {
 
 // Initialize Express app
 const app = express();
+// Trust proxy is required when the app is behind Nginx or another reverse proxy
+// This ensures that the rate limiter sees the real client IP, not the localhost IP
+app.set('trust proxy', 1);
 const httpServer = createServer(app);
 
 // Initialize Socket.IO with proper CORS configuration
@@ -367,7 +370,7 @@ app.use('/uploads', express.static('uploads'));
 if (process.env.NODE_ENV === 'production') {
   const limiter = rateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 1000, // Increase to 1000 to avoid blocking frontend init
+    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 2000, // Increased to 2000 to handle busy traffic
     message: 'Too many requests from this IP, please try again later.'
   });
 
