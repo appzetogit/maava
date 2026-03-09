@@ -367,7 +367,7 @@ app.use('/uploads', express.static('uploads'));
 if (process.env.NODE_ENV === 'production') {
   const limiter = rateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 1000, // Increase to 1000 to avoid blocking frontend init
     message: 'Too many requests from this IP, please try again later.'
   });
 
