@@ -45,6 +45,13 @@ export function useLocation() {
 
   /* ===================== DB UPDATE (LIVE LOCATION TRACKING) ===================== */
   const updateLocationInDB = async (locationData) => {
+    // THROTLED DB updates - only update every 60 seconds (prevents 429 errors)
+    const nowDb = Date.now()
+    if (nowDb - lastDbUpdateTimestamp < DB_UPDATE_THROTTLE_MS) {
+      debugLog(`⏳ DB update throttled inside updateLocationInDB. Next update in ${Math.round((DB_UPDATE_THROTTLE_MS - (nowDb - lastDbUpdateTimestamp)) / 1000)}s`)
+      return
+    }
+
     try {
       // Check if location has placeholder values - don't save placeholders
       const hasPlaceholder =
@@ -81,6 +88,9 @@ export function useLocation() {
         formattedAddress: locationData.formattedAddress || locationData.address || "",
       }
 
+      // Update timestamp BEFORE the call to prevent race conditions during the async call
+      lastDbUpdateTimestamp = nowDb
+
       // Add optional fields if available
       if (locationData.accuracy !== undefined && locationData.accuracy !== null) {
         locationPayload.accuracy = locationData.accuracy
@@ -107,13 +117,17 @@ export function useLocation() {
 
       debugLog("✅ Live location successfully stored in database")
     } catch (err) {
-      // Only log non-network and non-auth errors
-      if (err.code !== "ERR_NETWORK" && err.response?.status !== 404 && err.response?.status !== 401) {
+      // Only log non-network, non-auth, and non-rate-limit errors
+      if (
+        err.code !== "ERR_NETWORK" &&
+        err.response?.status !== 404 &&
+        err.response?.status !== 401 &&
+        err.response?.status !== 429
+      ) {
         console.error("❌ DB location update error:", err)
-      } else if (err.response?.status === 404 || err.response?.status === 401) {
-        // 404 or 401 means user not authenticated or route doesn't exist
-        // Silently skip - this is expected for non-authenticated users
-        debugLog("ℹ️ Location update skipped (user not authenticated or route not available)")
+      } else {
+        // 404, 401, 429 or network error - silently skip or log as info/debug
+        debugLog("ℹ️ Location update skipped or rate-limited:", err.response?.status || err.code)
       }
     }
   }
@@ -1898,16 +1912,10 @@ export function useLocation() {
               localStorage.setItem("userLocation", JSON.stringify(loc))
             }
 
-            // THROTLED DB updates - only update every 60 seconds (prevents 429 errors)
-            const nowDb = Date.now()
-            if (nowDb - lastDbUpdateTimestamp >= DB_UPDATE_THROTTLE_MS) {
-              lastDbUpdateTimestamp = nowDb
-              updateLocationInDB(loc).catch(err => {
-                console.warn("Failed to update location in DB:", err)
-              })
-            } else {
-              debugLog(`⏳ DB update throttled. Next update in ${Math.round((DB_UPDATE_THROTTLE_MS - (nowDb - lastDbUpdateTimestamp)) / 1000)}s`)
-            }
+            // DB updates are now throttled inside updateLocationInDB function itself
+            updateLocationInDB(loc).catch(err => {
+              console.warn("Failed to update location in DB:", err)
+            })
           } catch (err) {
             console.error("❌ Error processing live location update:", err)
             // If reverse geocoding fails, DON'T use coordinates - use placeholder
@@ -2133,36 +2141,14 @@ export function useLocation() {
             location.formattedAddress !== "Select location" &&
             location.city !== "Current Location") {
             debugLog("✅ Fresh location fetched:", location)
-            debugLog("✅ Location details:", {
-              formattedAddress: location?.formattedAddress,
-              address: location?.address,
-              city: location?.city,
-              state: location?.state,
-              area: location?.area
-            })
-            // CRITICAL: Update state with fresh location so PageNavbar displays it
+            // Update state with fresh location
             setLocation(location)
             setPermissionGranted(true)
             // Start watching for live updates
             startWatchingLocation()
           } else {
-            console.warn("⚠️ Location fetch returned placeholder, retrying...")
-            // Retry after 2 seconds if we got placeholder
-            setTimeout(() => {
-              getLocation(true, true)
-                .then((retryLocation) => {
-                  if (retryLocation &&
-                    retryLocation.formattedAddress !== "Select location" &&
-                    retryLocation.city !== "Current Location") {
-                    setLocation(retryLocation)
-                    setPermissionGranted(true)
-                    startWatchingLocation()
-                  }
-                })
-                .catch(() => {
-                  startWatchingLocation()
-                })
-            }, 2000)
+            console.warn("⚠️ Location fetch returned placeholder, skipping update")
+            startWatchingLocation()
           }
         })
         .catch((err) => {

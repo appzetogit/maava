@@ -550,32 +550,40 @@ export default function Cart() {
         return
       }
 
+      const itemIds = cart.map(item => item.id).sort().join(',')
+      const fetchKey = `${restaurantId}-${itemIds}`
+
+      // Skip if we already fetched for these items
+      if (lastFetchedCouponsKeyRef.current === fetchKey) {
+        console.log('[CART-COUPONS] Using cached coupons')
+        return
+      }
+
       console.log(`[CART-COUPONS] Fetching coupons for ${cart.length} items in cart`)
       setLoadingCoupons(true)
 
-      const allCoupons = []
-      const uniqueCouponCodes = new Set()
+      try {
+        const couponPromises = cart.map(cartItem => {
+          if (!cartItem.id) return Promise.resolve(null)
+          return restaurantAPI.getCouponsByItemIdPublic(restaurantId, cartItem.id)
+            .catch(err => {
+              console.error(`[CART-COUPONS] Failed for item ${cartItem.id}:`, err)
+              return null
+            })
+        })
 
-      // Fetch coupons for each item in cart
-      for (const cartItem of cart) {
-        if (!cartItem.id) {
-          console.log(`[CART-COUPONS] Skipping item without id:`, cartItem)
-          continue
-        }
+        const responses = await Promise.all(couponPromises)
+        const allCoupons = []
+        const uniqueCouponCodes = new Set()
 
-        try {
-          console.log(`[CART-COUPONS] Fetching coupons for itemId: ${cartItem.id}, name: ${cartItem.name}`)
-          const response = await restaurantAPI.getCouponsByItemIdPublic(restaurantId, cartItem.id)
-
+        responses.forEach((response, index) => {
           if (response?.data?.success && response?.data?.data?.coupons) {
             const coupons = response.data.data.coupons
-            console.log(`[CART-COUPONS] Found ${coupons.length} coupons for item ${cartItem.id}`)
+            const cartItem = cart[index]
 
-            // Add coupons, avoiding duplicates
             coupons.forEach(coupon => {
               if (!uniqueCouponCodes.has(coupon.couponCode)) {
                 uniqueCouponCodes.add(coupon.couponCode)
-                // Convert backend coupon format to frontend format
                 allCoupons.push({
                   code: coupon.couponCode,
                   discount: coupon.originalPrice - coupon.discountedPrice,
@@ -590,14 +598,16 @@ export default function Cart() {
               }
             })
           }
-        } catch (error) {
-          console.error(`[CART-COUPONS] Error fetching coupons for item ${cartItem.id}:`, error)
-        }
-      }
+        })
 
-      console.log(`[CART-COUPONS] Total unique coupons found: ${allCoupons.length}`, allCoupons)
-      setAvailableCoupons(allCoupons)
-      setLoadingCoupons(false)
+        console.log(`[CART-COUPONS] Total unique coupons found: ${allCoupons.length}`)
+        setAvailableCoupons(allCoupons)
+        lastFetchedCouponsKeyRef.current = fetchKey
+      } catch (error) {
+        console.error(`[CART-COUPONS] Parallel fetch error:`, error)
+      } finally {
+        setLoadingCoupons(false)
+      }
     }
 
     fetchCouponsForCartItems()
@@ -621,6 +631,7 @@ export default function Cart() {
   }, [])
 
   const calculatingRef = useRef(false)
+  const lastFetchedCouponsKeyRef = useRef(null)
   // Calculate pricing from backend whenever cart, address, or coupon changes
   useEffect(() => {
     const calculatePricing = async () => {
