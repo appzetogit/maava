@@ -32,8 +32,19 @@ export const registerFCMToken = async (req, res) => {
 
         const targetField = platform === 'mobile' ? 'fcmTokenMobile' : 'fcmTokens';
 
+        // 1. Remove it if exists (to ensure it moves to the end of the array)
+        await Model.findByIdAndUpdate(decoded.userId, {
+            $pull: { [targetField]: token }
+        });
+
+        // 2. Add to end and keep only last 5 sessions
         const updated = await Model.findByIdAndUpdate(decoded.userId, {
-            $addToSet: { [targetField]: token }
+            $push: {
+                [targetField]: {
+                    $each: [token],
+                    $slice: -5
+                }
+            }
         });
 
         if (!updated) {

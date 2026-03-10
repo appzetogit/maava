@@ -186,7 +186,12 @@ export const sendNotificationToTarget = async (target, title, body, data = {}) =
                     { fcmTokenMobile: { $exists: true, $ne: [] } }
                 ]
             }).select('fcmTokens fcmTokenMobile');
-            tokens = users.flatMap((u) => [...(u.fcmTokens || []), ...(u.fcmTokenMobile || [])]);
+
+            // Limit to last 3 tokens per user to avoid duplicates from old sessions
+            tokens = users.flatMap((u) => [
+                ...(u.fcmTokens || []).slice(-3),
+                ...(u.fcmTokenMobile || []).slice(-3)
+            ]);
         } else if (targetType === 'delivery') {
             const Delivery = await getModelByTargetType('delivery');
             const deliveryPartners = await Delivery.find({
@@ -195,7 +200,12 @@ export const sendNotificationToTarget = async (target, title, body, data = {}) =
                     { fcmTokenMobile: { $exists: true, $ne: [] } }
                 ]
             }).select('fcmTokens fcmTokenMobile');
-            tokens = deliveryPartners.flatMap((d) => [...(d.fcmTokens || []), ...(d.fcmTokenMobile || [])]);
+
+            // Limit to last 3 per partner
+            tokens = deliveryPartners.flatMap((d) => [
+                ...(d.fcmTokens || []).slice(-3),
+                ...(d.fcmTokenMobile || []).slice(-3)
+            ]);
         } else if (targetType === 'restaurant') {
             const Restaurant = await getModelByTargetType('restaurant');
             const restaurants = await Restaurant.find({
@@ -204,7 +214,11 @@ export const sendNotificationToTarget = async (target, title, body, data = {}) =
                     { fcmTokenMobile: { $exists: true, $ne: [] } }
                 ]
             }).select('fcmTokens fcmTokenMobile');
-            tokens = restaurants.flatMap((r) => [...(r.fcmTokens || []), ...(r.fcmTokenMobile || [])]);
+
+            tokens = restaurants.flatMap((r) => [
+                ...(r.fcmTokens || []).slice(-3),
+                ...(r.fcmTokenMobile || []).slice(-3)
+            ]);
         } else {
             return { successCount: 0, failureCount: 0, message: `Unsupported notification target: ${target}` };
         }

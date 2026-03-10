@@ -33,25 +33,43 @@ let _initialized = false;
  * Load service account JSON (prefers env vars, falls back to file on disk).
  */
 function loadServiceAccount() {
-    // 1. Try JSON string from env var (most flexible for cloud/docker)
+    // Helper to strip surrounding quotes if present
+    const stripQuotes = (val) => {
+        if (!val || typeof val !== 'string') return val;
+        let s = val.trim();
+        if ((s.startsWith("'") && s.endsWith("'")) || (s.startsWith('"') && s.endsWith('"'))) {
+            return s.slice(1, -1);
+        }
+        return s;
+    };
+
+    // 1. Try JSON string from env var
     const jsonStr = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
     if (jsonStr) {
         try {
-            return JSON.parse(jsonStr);
+            const cleaned = stripQuotes(jsonStr);
+            return JSON.parse(cleaned);
         } catch (err) {
-            console.error('❌ Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON:', err.message);
+            console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT_JSON parsing skipped/failed. Falling back to individual keys.');
+            // Continue to fallback
         }
     }
 
-    // 2. Try individual env vars (standard approach)
-    const projectId = process.env.FIREBASE_PROJECT_ID;
-    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+    // 2. Try individual env vars
+    const projectId = stripQuotes(process.env.FIREBASE_PROJECT_ID);
+    const clientEmail = stripQuotes(process.env.FIREBASE_CLIENT_EMAIL);
+    let privateKey = stripQuotes(process.env.FIREBASE_PRIVATE_KEY);
 
     if (projectId && clientEmail && privateKey) {
-        // Fix escaped newlines that come from .env files
-        if (privateKey.includes('\\n')) privateKey = privateKey.replace(/\\n/g, '\n');
-        return { project_id: projectId, client_email: clientEmail, private_key: privateKey };
+        // Fix escaped newlines
+        if (privateKey.includes('\\n')) {
+            privateKey = privateKey.replace(/\\n/g, '\n');
+        }
+        return {
+            project_id: projectId,
+            client_email: clientEmail,
+            private_key: privateKey
+        };
     }
 
     // 2. Try the new maava service-account file

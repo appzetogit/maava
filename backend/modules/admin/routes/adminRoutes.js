@@ -414,10 +414,10 @@ router.get('/hibermart-store-location', authenticateAdmin, getHibermartStoreLoca
 router.put('/hibermart-store-location', authenticateAdmin, updateHibermartStoreLocation);
 
 // Push Notification Management
-router.get('/push-notification', getNotifications);
-router.post('/push-notification', sendAdminPushNotification);
-router.delete('/push-notification/:id', deleteNotification);
-router.patch('/push-notification/:id/toggle', toggleNotificationStatus);
+router.get('/push-notification', authenticateAdmin, getNotifications);
+router.post('/push-notification', authenticateAdmin, sendAdminPushNotification);
+router.delete('/push-notification/:id', authenticateAdmin, deleteNotification);
+router.patch('/push-notification/:id/toggle', authenticateAdmin, toggleNotificationStatus);
 
 // Offers Management
 router.get('/offers', getAllOffers);

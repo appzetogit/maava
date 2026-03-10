@@ -38,10 +38,20 @@ class FirebaseAuthService {
         return;
       }
 
-      // Try to load credentials (env vars first, then service account files)
-      let projectId = process.env.FIREBASE_PROJECT_ID;
-      let clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-      let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+      // Helper to strip quotes
+      const stripQuotes = (val) => {
+        if (!val || typeof val !== 'string') return val;
+        let s = val.trim();
+        if ((s.startsWith("'") && s.endsWith("'")) || (s.startsWith('"') && s.endsWith('"'))) {
+          return s.slice(1, -1);
+        }
+        return s;
+      };
+
+      // Try to load credentials
+      let projectId = stripQuotes(process.env.FIREBASE_PROJECT_ID);
+      let clientEmail = stripQuotes(process.env.FIREBASE_CLIENT_EMAIL);
+      let privateKey = stripQuotes(process.env.FIREBASE_PRIVATE_KEY);
 
       // Fix escaped newlines
       if (privateKey && privateKey.includes('\\n')) {
