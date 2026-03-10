@@ -99,8 +99,7 @@ export const useRestaurantNotifications = () => {
     console.log('🔌 API_BASE_URL:', API_BASE_URL);
     console.log('🔌 Restaurant ID:', restaurantId);
     console.log('🔌 Environment:', import.meta.env.MODE);
-    console.log('🔌 Is Production Build:', isProductionBuild);
-    console.log('🔌 Is Production Deployment:', isProductionDeployment);
+    console.log('🔌 Is Production:', isProduction);
 
     // Initialize socket connection to restaurant namespace
     // Use polling only to avoid repeated "WebSocket connection failed" when backend is down
