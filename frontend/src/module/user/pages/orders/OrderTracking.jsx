@@ -282,7 +282,7 @@ export default function OrderTracking() {
               Array.isArray(apiOrder.restaurantId.location.coordinates) &&
               apiOrder.restaurantId.location.coordinates.length >= 2) {
               restaurantCoords = apiOrder.restaurantId.location.coordinates;
-            } else if (typeof apiOrder.restaurantId === 'string') {
+            } else if (typeof apiOrder.restaurantId === 'string' && apiOrder.restaurantId !== 'hibermart-id') {
               try {
                 const restaurantResponse = await restaurantAPI.getRestaurantById(apiOrder.restaurantId);
                 if (restaurantResponse?.data?.success && restaurantResponse.data.data?.restaurant) {
@@ -377,7 +377,7 @@ export default function OrderTracking() {
             console.log('✅ Found coordinates in restaurantId.location (lat/lng):', restaurantCoords);
           }
           // Priority 3: Check if restaurantId is a string ID and fetch restaurant details
-          else if (typeof apiOrder.restaurantId === 'string') {
+          else if (typeof apiOrder.restaurantId === 'string' && apiOrder.restaurantId !== 'hibermart-id') {
             console.log('⚠️ restaurantId is a string ID, fetching restaurant details...', apiOrder.restaurantId);
             try {
               const restaurantResponse = await restaurantAPI.getRestaurantById(apiOrder.restaurantId);
@@ -612,7 +612,7 @@ export default function OrderTracking() {
           restaurantCoords = apiOrder.restaurant.location.coordinates;
         }
         // Priority 4: Check if restaurantId is a string ID and fetch restaurant details
-        else if (typeof apiOrder.restaurantId === 'string') {
+        else if (typeof apiOrder.restaurantId === 'string' && apiOrder.restaurantId !== 'hibermart-id') {
           console.log('⚠️ restaurantId is a string ID, fetching restaurant details...', apiOrder.restaurantId);
           try {
             const restaurantResponse = await restaurantAPI.getRestaurantById(apiOrder.restaurantId);

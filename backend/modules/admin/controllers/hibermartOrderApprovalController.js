@@ -137,15 +137,38 @@ const resolveRestaurantLocation = async (order) => {
 };
 
 export const getPendingHibermartOrders = asyncHandler(async (req, res) => {
-  const orders = await Order.find({
-    isHibermartOrder: true,
-    'adminApproval.status': 'pending'
-  })
+  const { status = 'pending' } = req.query;
+
+  // Robust Hibermart check query
+  const hibermartMatch = {
+    $or: [
+      { isHibermartOrder: true },
+      { restaurantId: 'hibermart-id' },
+      { restaurantName: { $regex: /^hibermart$/i } }
+    ]
+  };
+
+  const query = { ...hibermartMatch };
+
+  if (status === 'pending') {
+    query['adminApproval.status'] = 'pending';
+    // Ensure we don't show cancelled orders in pending list
+    query.status = { $nin: ['cancelled', 'delivered'] };
+  } else if (status === 'approved') {
+    query['adminApproval.status'] = 'approved';
+    // Filter for last 7 days for historical views
+    query.createdAt = { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) };
+  } else if (status === 'rejected') {
+    query['adminApproval.status'] = 'rejected';
+    query.createdAt = { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) };
+  }
+
+  const orders = await Order.find(query)
     .sort({ createdAt: -1 })
     .populate('userId', 'name phone email')
     .lean();
 
-  return successResponse(res, 200, 'Pending Hibermart orders retrieved', {
+  return successResponse(res, 200, 'Hibermart orders retrieved', {
     orders,
     total: orders.length
   });
@@ -159,18 +182,25 @@ export const approveHibermartOrder = asyncHandler(async (req, res) => {
 
   const order = await getOrderByIdOrOrderId(id);
   if (!order) {
+    console.error(`❌ [Hibermart Approve] Order ${id} not found`);
     return errorResponse(res, 404, 'Order not found');
   }
 
-  if (!order.isHibermartOrder) {
+  // Robust check for Hibermart order
+  const isHibermart = order.isHibermartOrder || order.restaurantId === 'hibermart-id' || order.restaurantName?.toLowerCase() === 'hibermart';
+
+  if (!isHibermart) {
+    console.error(`❌ [Hibermart Approve] Order ${id} is NOT a Hibermart order (isHibermartOrder: ${order.isHibermartOrder}, restaurantId: ${order.restaurantId})`);
     return errorResponse(res, 400, 'Order is not a Hibermart order');
   }
 
   if (order.adminApproval?.status === 'approved') {
+    console.warn(`⚠️ [Hibermart Approve] Order ${id} is already approved`);
     return errorResponse(res, 400, 'Order is already approved');
   }
 
   if (order.status === 'cancelled') {
+    console.warn(`⚠️ [Hibermart Approve] Order ${id} is already cancelled`);
     return errorResponse(res, 400, 'Cannot approve a cancelled order');
   }
 
@@ -347,10 +377,15 @@ export const rejectHibermartOrder = asyncHandler(async (req, res) => {
 
   const order = await getOrderByIdOrOrderId(id);
   if (!order) {
+    console.error(`❌ [Hibermart Reject] Order ${id} not found`);
     return errorResponse(res, 404, 'Order not found');
   }
 
-  if (!order.isHibermartOrder) {
+  // Robust check for Hibermart order
+  const isHibermart = order.isHibermartOrder || order.restaurantId === 'hibermart-id' || order.restaurantName?.toLowerCase() === 'hibermart';
+
+  if (!isHibermart) {
+    console.error(`❌ [Hibermart Reject] Order ${id} is NOT a Hibermart order`);
     return errorResponse(res, 400, 'Order is not a Hibermart order');
   }
 

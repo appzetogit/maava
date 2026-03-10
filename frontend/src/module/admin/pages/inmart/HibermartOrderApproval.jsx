@@ -1,374 +1,445 @@
-import { useEffect, useMemo, useState } from "react"
-import { CheckCircle2, XCircle, Eye, Loader2, Search } from "lucide-react"
-import { Card } from "@/components/ui/card"
+import { useState, useEffect } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  Package,
+  MapPin,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Eye,
+  User,
+  Phone,
+  Search,
+  ChevronRight,
+  Filter,
+  Check,
+  X,
+  CreditCard,
+  Briefcase
+} from "lucide-react"
 import { adminAPI } from "@/lib/api"
 import { toast } from "sonner"
 
 export default function HibermartOrderApproval() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
   const [selectedOrder, setSelectedOrder] = useState(null)
-  const [showDetailModal, setShowDetailModal] = useState(false)
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [rejectReason, setRejectReason] = useState("")
-  const [processing, setProcessing] = useState(false)
+  const [processingId, setProcessingId] = useState(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState("pending")
+
+  useEffect(() => {
+    fetchOrders()
+  }, [statusFilter])
 
   const fetchOrders = async () => {
     try {
       setLoading(true)
-      const response = await adminAPI.getPendingHibermartOrders()
-      const data = response?.data?.data?.orders || response?.data?.orders || []
-      setOrders(data)
+      const response = await adminAPI.getPendingHibermartOrders({ status: statusFilter })
+      if (response.data?.success) {
+        setOrders(response.data.data.orders || [])
+      }
     } catch (error) {
-      console.error("Error fetching Hibermart orders:", error)
-      toast.error("Failed to load Hibermart order approvals")
-      setOrders([])
+      console.error("Error fetching orders:", error)
+      toast.error("Failed to load orders")
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => {
-    fetchOrders()
-  }, [])
-
-  const filteredOrders = useMemo(() => {
-    if (!searchQuery.trim()) return orders
-    const query = searchQuery.toLowerCase().trim()
-    return orders.filter((order) =>
-      order.orderId?.toLowerCase().includes(query) ||
-      order.userId?.name?.toLowerCase().includes(query) ||
-      order.userId?.phone?.toLowerCase().includes(query) ||
-      order.restaurantName?.toLowerCase().includes(query)
-    )
-  }, [orders, searchQuery])
-
-  const totalOrders = filteredOrders.length
-
   const handleApprove = async (order) => {
+    const orderId = order._id || order.id;
     try {
-      setProcessing(true)
-      await adminAPI.approveHibermartOrder(order._id || order.id || order.orderId)
-      toast.success("Order moved to processing and sent to delivery partners")
-      await fetchOrders()
-      setShowDetailModal(false)
-      setSelectedOrder(null)
+      setProcessingId(orderId)
+      const response = await adminAPI.approveHibermartOrder(orderId)
+      if (response.data?.success) {
+        toast.success("Order approved successfully!")
+        fetchOrders()
+        if (selectedOrder?._id === orderId) setSelectedOrder(null)
+      }
     } catch (error) {
-      console.error("Error approving order:", error)
-      toast.error(error?.response?.data?.message || "Failed to approve order")
+      console.error("Approval error:", error)
+      const msg = error.response?.data?.message || "Failed to approve order"
+      toast.error(msg)
     } finally {
-      setProcessing(false)
+      setProcessingId(null)
     }
   }
 
   const handleReject = async () => {
-    if (!rejectReason.trim()) {
-      toast.error("Please provide a rejection reason")
-      return
-    }
+    if (!selectedOrder) return
+    const orderId = selectedOrder._id || selectedOrder.id;
 
     try {
-      setProcessing(true)
-      await adminAPI.rejectHibermartOrder(selectedOrder._id || selectedOrder.id || selectedOrder.orderId, rejectReason)
-      toast.success("Order rejected")
-      await fetchOrders()
-      setShowRejectModal(false)
-      setShowDetailModal(false)
-      setSelectedOrder(null)
-      setRejectReason("")
+      setProcessingId(orderId)
+      const response = await adminAPI.rejectHibermartOrder(orderId, rejectReason)
+      if (response.data?.success) {
+        toast.success("Order rejected")
+        setShowRejectModal(false)
+        setRejectReason("")
+        setSelectedOrder(null)
+        fetchOrders()
+      }
     } catch (error) {
-      console.error("Error rejecting order:", error)
-      toast.error(error?.response?.data?.message || "Failed to reject order")
+      console.error("Rejection error:", error)
+      toast.error(error.response?.data?.message || "Failed to reject order")
     } finally {
-      setProcessing(false)
+      setProcessingId(null)
     }
   }
 
-  const handleViewDetails = (order) => {
-    setSelectedOrder(order)
-    setShowDetailModal(true)
+  const filteredOrders = orders.filter(o =>
+    o.orderId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    o.userId?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
   }
 
-  const handleRejectClick = (order) => {
-    setSelectedOrder(order)
-    setShowRejectModal(true)
+  if (loading && orders.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
+         <div className="w-10 h-10 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
+      </div>
+    )
   }
 
   return (
-    <div className="p-6 space-y-4">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-          <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
-            Hibermart Order Approval
-          </h1>
+    <div className="min-h-screen bg-[#F8F9FA] p-6 text-[#2D3748] font-sans">
+      <div className="max-w-7xl mx-auto">
+        
+        {/* Breadcrumb style Header */}
+        <div className="flex items-center gap-2 mb-8">
+            <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
+                <Check className="w-3.5 h-3.5 text-emerald-600" strokeWidth={3} />
+            </div>
+            <h1 className="text-xl font-bold tracking-tight">Hibermart Order Approval</h1>
+        </div>
+
+        {/* Main Card Container */}
+        <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden">
+            
+            {/* Inner Header with Title and Filters */}
+            <div className="p-6 border-b border-neutral-50">
+                <div className="flex items-center gap-3 mb-6">
+                    <h2 className="text-lg font-bold">
+                        {statusFilter === 'pending' ? 'Pending Orders' : 
+                         statusFilter === 'approved' ? 'Approved Orders' : 'Rejected Orders'}
+                    </h2>
+                    <span className="px-2.5 py-0.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-full">
+                        {orders.length}
+                    </span>
+                </div>
+
+                <div className="flex flex-col md:flex-row md:items-center gap-4">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                        <input
+                            type="text"
+                            placeholder="Search by order ID or customer"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all placeholder:text-neutral-300"
+                        />
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                        <select 
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="pl-4 pr-10 py-2.5 bg-neutral-50 border-none rounded-xl text-sm font-bold appearance-none cursor-pointer hover:bg-neutral-100 transition-colors"
+                            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234A5568' stroke-width='2' %3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7' /%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1em' }}
+                        >
+                            <option value="pending">Pending View</option>
+                            <option value="approved">Approved (Last 7 Days)</option>
+                            <option value="rejected">Rejected (Last 7 Days)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {/* Table Area */}
+            <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                    <thead className="bg-[#EBF4FF] text-[#4A5568]">
+                        <tr>
+                            <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider w-[6%]">S.NO</th>
+                            <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider">ORDER ID</th>
+                            <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider">CUSTOMER</th>
+                            <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider">ITEMS</th>
+                            <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider">TOTAL</th>
+                            <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider">REQUESTED DATE</th>
+                            <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-center">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-50">
+                        {filteredOrders.length === 0 ? (
+                            <tr>
+                                <td colSpan="7" className="px-6 py-20 text-center">
+                                    <div className="flex flex-col items-center">
+                                        <Package className="w-10 h-10 text-neutral-100 mb-2" />
+                                        <p className="text-sm font-medium text-neutral-400">No orders found in this category</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        ) : (
+                            filteredOrders.map((order, index) => (
+                                <tr key={order._id} className="hover:bg-neutral-50/50 transition-colors">
+                                    <td className="px-6 py-5 text-sm font-medium text-neutral-500">{index + 1}</td>
+                                    <td className="px-6 py-5">
+                                        <span className="text-sm font-bold text-neutral-700 tracking-tight">{order.orderId}</span>
+                                    </td>
+                                    <td className="px-6 py-5">
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-bold text-neutral-800">{order.userId?.name || "N/A"}</span>
+                                            <span className="text-[11px] text-neutral-400">{order.userId?.phone || "No Phone"}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-5 text-sm font-bold text-neutral-700">
+                                        {order.items?.length || 0}
+                                    </td>
+                                    <td className="px-6 py-5 text-sm font-bold text-neutral-700">
+                                        Rs {order.pricing?.total || 0}.00
+                                    </td>
+                                    <td className="px-6 py-5 text-sm text-neutral-500">
+                                        {formatDate(order.createdAt)}
+                                    </td>
+                                    <td className="px-6 py-5">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <button 
+                                                onClick={() => setSelectedOrder(order)}
+                                                className="w-8 h-8 rounded-lg bg-[#0066CC] flex items-center justify-center text-white hover:bg-blue-700 transition-colors shadow-sm"
+                                                title="View Details"
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                            </button>
+                                            
+                                            {statusFilter === 'pending' && (
+                                                <>
+                                                    <button 
+                                                        onClick={() => handleApprove(order)}
+                                                        disabled={processingId === order._id}
+                                                        className="w-8 h-8 rounded-lg bg-[#28A745] flex items-center justify-center text-white hover:bg-emerald-600 transition-colors shadow-sm disabled:opacity-50"
+                                                        title="Approve Order"
+                                                    >
+                                                        {processingId === order._id ? (
+                                                            <div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                                                        ) : (
+                                                            <CheckCircle2 className="w-4 h-4" />
+                                                        )}
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => { setSelectedOrder(order); setShowRejectModal(true); }}
+                                                        className="w-8 h-8 rounded-lg bg-[#DC3545] flex items-center justify-center text-white hover:bg-red-600 transition-colors shadow-sm"
+                                                        title="Reject Order"
+                                                    >
+                                                        <XCircle className="w-4 h-4" />
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
         </div>
       </div>
 
-      <Card className="border border-gray-200 shadow-sm">
-        <div className="p-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-            <div className="flex items-center gap-2">
-            <h2 className="text-base font-semibold text-gray-900">Pending Orders</h2>
-              <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
-                {totalOrders}
-              </span>
-            </div>
-          </div>
+      {/* Detailed View Modal */}
+      <AnimatePresence>
+        {selectedOrder && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !showRejectModal && setSelectedOrder(null)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+            >
+              <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
+                <h3 className="text-lg font-bold">Order Details: {selectedOrder.orderId}</h3>
+                <button onClick={() => setSelectedOrder(null)} className="p-1 hover:bg-neutral-100 rounded-full">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
-          <div className="mb-4">
-            <div className="relative flex-1">
-              <span className="absolute inset-y-0 left-2.5 flex items-center text-gray-400">
-                <Search className="w-4 h-4" />
-              </span>
-              <input
-                type="text"
-                placeholder="Search by order ID or customer"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-md border border-gray-300 bg-white py-1.5 pl-9 pr-3 text-sm focus:outline-none focus:border-[#006fbd] focus:ring-1 focus:ring-[#006fbd]"
+              <div className="p-6 overflow-y-auto space-y-8">
+                {/* 2-Column Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Customer & Address */}
+                    <div className="space-y-6">
+                        <section>
+                            <h4 className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-3">Customer Information</h4>
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                                        <User className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold">{selectedOrder.userId?.name}</p>
+                                        <p className="text-[11px] text-neutral-500">{selectedOrder.userId?.email || 'No Email'}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500">
+                                        <Phone className="w-4 h-4" />
+                                    </div>
+                                    <p className="text-sm font-bold">{selectedOrder.userId?.phone || 'N/A'}</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section>
+                            <h4 className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-3">Delivery Address</h4>
+                            <div className="p-4 bg-neutral-50 rounded-xl border border-neutral-100 flex gap-3">
+                                <MapPin className="w-4 h-4 text-rose-500 mt-0.5" />
+                                <p className="text-sm leading-relaxed text-neutral-600">
+                                    {selectedOrder.address?.house}, {selectedOrder.address?.street}, {selectedOrder.address?.area}, {selectedOrder.address?.city}
+                                </p>
+                            </div>
+                        </section>
+                    </div>
+
+                    {/* Payment & Status */}
+                    <div className="space-y-6">
+                        <section>
+                            <h4 className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-3">Payment Details</h4>
+                            <div className="p-4 bg-blue-50/30 rounded-xl border border-blue-100/50 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs text-neutral-500">Method</span>
+                                    <span className="text-xs font-bold uppercase">{selectedOrder.payment?.method}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs text-neutral-500">Status</span>
+                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${selectedOrder.payment?.status === 'completed' ? 'bg-emerald-100 text-emerald-600' : 'bg-orange-100 text-orange-600'}`}>
+                                        {selectedOrder.payment?.status}
+                                    </span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section>
+                            <h4 className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-3">Order Status</h4>
+                            <div className="p-4 bg-neutral-50 rounded-xl border border-neutral-100 flex items-center justify-between">
+                                <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase ${
+                                    selectedOrder.status === 'delivered' ? 'bg-emerald-500 text-white' : 
+                                    selectedOrder.status === 'cancelled' ? 'bg-rose-500 text-white' : 
+                                    'bg-blue-500 text-white'
+                                }`}>
+                                    {selectedOrder.status}
+                                </span>
+                                <span className="text-xs font-medium text-neutral-400">
+                                    Placed {formatDate(selectedOrder.createdAt)}
+                                </span>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                {/* Items Section */}
+                <section>
+                    <h4 className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-4">Ordered Items ({selectedOrder.items?.length})</h4>
+                    <div className="space-y-3">
+                        {selectedOrder.items?.map((item, idx) => (
+                            <div key={idx} className="flex items-center gap-4 p-3 bg-white border border-neutral-100 rounded-xl">
+                                <div className="w-12 h-12 bg-neutral-50 rounded-lg flex items-center justify-center p-2">
+                                    {item.image ? (
+                                        <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
+                                    ) : (
+                                        <Package className="w-6 h-6 text-neutral-200" />
+                                    )}
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-sm font-bold text-neutral-800">{item.name}</p>
+                                    <p className="text-xs text-neutral-400">Qty: {item.quantity}</p>
+                                </div>
+                                <p className="text-sm font-bold text-neutral-900">Rs {item.price * item.quantity}.00</p>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
+                <div className="p-4 bg-neutral-900 rounded-2xl text-white flex items-center justify-between">
+                    <span className="text-sm font-medium">Grand Total</span>
+                    <span className="text-2xl font-bold">Rs {selectedOrder.pricing?.total || 0}.00</span>
+                </div>
+              </div>
+
+              {statusFilter === 'pending' && (
+                <div className="px-6 py-5 bg-neutral-50 border-t border-neutral-100 flex gap-4">
+                    <button
+                        onClick={() => setShowRejectModal(true)}
+                        className="flex-1 py-3 bg-white border border-rose-100 text-rose-500 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-rose-50 transition-all"
+                    >
+                        Reject Order
+                    </button>
+                    <button
+                        onClick={() => handleApprove(selectedOrder)}
+                        disabled={processingId}
+                        className="flex-[2] py-3 bg-emerald-500 text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                        {processingId === selectedOrder._id ? "Processing..." : "Approve & Assign Delivery"}
+                    </button>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showRejectModal && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowRejectModal(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6"
+            >
+              <h3 className="text-lg font-bold text-[#2D3748] mb-2">Rejection Reason</h3>
+              <p className="text-xs text-neutral-500 mb-4">Provide a reason for cancelling this order.</p>
+
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Reason (e.g. Out of stock, Store closing...)"
+                className="w-full h-32 px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm focus:border-blue-500 focus:ring-0 transition-all resize-none mb-4"
               />
-            </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => setShowRejectModal(false)} className="py-3 bg-neutral-100 text-neutral-600 rounded-xl text-xs font-bold uppercase">Back</button>
+                <button
+                  onClick={handleReject}
+                  disabled={!rejectReason.trim() || processingId}
+                  className="py-3 bg-rose-500 text-white rounded-xl text-xs font-bold uppercase shadow-md hover:bg-rose-600 disabled:opacity-50 transition-all"
+                >
+                  Reject Now
+                </button>
+              </div>
+            </motion.div>
           </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-[#006fbd]" />
-            </div>
-          ) : (
-            <div className="border-t border-gray-200">
-              <div className="w-full overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                  <thead style={{ backgroundColor: "rgba(0, 111, 189, 0.1)" }}>
-                    <tr>
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        S.No
-                      </th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Order ID
-                      </th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Customer
-                      </th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Items
-                      </th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Total
-                      </th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Requested Date
-                      </th>
-                      <th className="px-3 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Action
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white">
-                    {filteredOrders.length === 0 ? (
-                      <tr>
-                        <td colSpan="7" className="px-3 py-8 text-center text-sm text-gray-500">
-                          No pending Hibermart orders found.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredOrders.map((order, index) => (
-                        <tr key={order._id || order.id || order.orderId} className="hover:bg-gray-50">
-                          <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 font-semibold">
-                            {index + 1}
-                          </td>
-                          <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 font-semibold">
-                            {order.orderId || "-"}
-                          </td>
-                          <td className="px-3 py-3 whitespace-nowrap">
-                            <div className="text-sm">
-                              <div className="font-semibold text-gray-900">{order.userId?.name || "Customer"}</div>
-                              <div className="text-gray-500 text-xs">{order.userId?.phone || "-"}</div>
-                            </div>
-                          </td>
-                          <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700">
-                            {order.items?.length || 0}
-                          </td>
-                          <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 font-semibold">
-                            Rs {Number(order.pricing?.total || 0).toFixed(2)}
-                          </td>
-                          <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
-                            {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "-"}
-                          </td>
-                          <td className="px-3 py-3 whitespace-nowrap text-right text-sm">
-                            <div className="flex justify-end gap-1.5">
-                              <button
-                                onClick={() => handleViewDetails(order)}
-                                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-white transition-colors"
-                                style={{ backgroundColor: "#006fbd" }}
-                                onMouseEnter={(e) => (e.target.style.backgroundColor = "#005a9e")}
-                                onMouseLeave={(e) => (e.target.style.backgroundColor = "#006fbd")}
-                                title="View Details"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleApprove(order)}
-                                disabled={processing}
-                                className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="Update to Processing"
-                              >
-                                <CheckCircle2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleRejectClick(order)}
-                                disabled={processing}
-                                className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="Reject"
-                              >
-                                <XCircle className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
-      </Card>
-
-      <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0 bg-white">
-          <DialogHeader className="p-6 pb-4 border-b border-gray-200">
-            <DialogTitle className="text-xl font-semibold text-gray-900">
-              Hibermart Order Details
-            </DialogTitle>
-            <DialogDescription className="text-sm text-gray-500 mt-1">
-              Review the order details before approval.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedOrder && (
-            <div className="p-6 space-y-4">
-              <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
-                <h3 className="font-semibold text-sm text-gray-900 mb-2">Customer</h3>
-                <p className="text-sm text-gray-700"><span className="font-medium">Name:</span> {selectedOrder.userId?.name || "Customer"}</p>
-                <p className="text-sm text-gray-700"><span className="font-medium">Phone:</span> {selectedOrder.userId?.phone || "-"}</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Order ID</label>
-                  <p className="text-sm text-gray-900">{selectedOrder.orderId || "-"}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Total</label>
-                  <p className="text-sm text-gray-900 font-semibold">Rs {Number(selectedOrder.pricing?.total || 0).toFixed(2)}</p>
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Items</label>
-                  <div className="space-y-2">
-                    {(selectedOrder.items || []).map((item, idx) => (
-                      <div key={`${item.itemId || item.name || idx}`} className="flex items-center justify-between text-sm">
-                        <div>
-                          <span className="font-medium text-gray-900">{item.name}</span>
-                          <span className="text-gray-500 ml-2">x{item.quantity}</span>
-                        </div>
-                        <span className="text-gray-700">Rs {Number(item.price || 0).toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter className="p-6 pt-4 border-t border-gray-200 flex gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setShowDetailModal(false)
-                setSelectedOrder(null)
-              }}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-            >
-              Close
-            </button>
-            <button
-              type="button"
-              onClick={() => handleRejectClick(selectedOrder)}
-              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors"
-            >
-              Reject
-            </button>
-            <button
-              type="button"
-              onClick={() => handleApprove(selectedOrder)}
-              disabled={processing}
-              className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {processing ? "Processing..." : "Update to Processing"}
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showRejectModal} onOpenChange={setShowRejectModal}>
-        <DialogContent className="max-w-md p-0 bg-white">
-          <DialogHeader className="p-6 pb-4 border-b border-gray-200">
-            <DialogTitle className="text-xl font-semibold text-gray-900">
-              Reject Order
-            </DialogTitle>
-            <DialogDescription className="text-sm text-gray-500 mt-1">
-              Please provide a reason for rejecting this order.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="p-6">
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="rejectReason" className="block text-sm font-medium text-gray-700 mb-2">
-                  Rejection Reason <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  id="rejectReason"
-                  value={rejectReason}
-                  onChange={(e) => setRejectReason(e.target.value)}
-                  placeholder="Enter reason for rejection..."
-                  required
-                  rows={4}
-                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#006fbd] focus:border-[#006fbd]"
-                />
-              </div>
-            </div>
-            <DialogFooter className="mt-6 flex gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowRejectModal(false)
-                  setRejectReason("")
-                }}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleReject}
-                disabled={processing || !rejectReason.trim()}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {processing ? "Processing..." : "Reject"}
-              </button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

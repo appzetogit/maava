@@ -1249,7 +1249,7 @@ export default function HibermartAdminHome() {
 
                         {/* Ops & Settings */}
                         {activeTab === "orders" && (
-                            <OrderProcessingHub orders={orders} />
+                            <OrderProcessingHub orders={orders} onRefresh={fetchAllData} />
                         )}
                         {activeTab === "navigation" && (
                             <div className="space-y-6">
@@ -2043,8 +2043,43 @@ function ManagementGrid({ title, subtitle, items, onAdd, onEdit, onDelete, type 
     )
 }
 
-function OrderProcessingHub({ orders }) {
+function OrderProcessingHub({ orders, onRefresh }) {
     const [selectedOrder, setSelectedOrder] = useState(null);
+    const [processingId, setProcessingId] = useState(null);
+
+    const handleApprove = async (e, orderId) => {
+        if (e) e.stopPropagation();
+        if (!window.confirm("Approve this Hibermart order and notify delivery partners?")) return;
+
+        setProcessingId(orderId);
+        try {
+            await inmartAPI.adminApproveOrder(orderId);
+            if (onRefresh) await onRefresh();
+            setSelectedOrder(null);
+        } catch (err) {
+            console.error("Approval failed:", err);
+            alert("Failed to approve order: " + (err.response?.data?.message || err.message));
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    const handleReject = async (e, orderId) => {
+        if (e) e.stopPropagation();
+        if (!window.confirm("Are you sure you want to REJECT this order? This will cancel the order.")) return;
+
+        setProcessingId(orderId);
+        try {
+            await inmartAPI.adminRejectOrder(orderId);
+            if (onRefresh) await onRefresh();
+            setSelectedOrder(null);
+        } catch (err) {
+            console.error("Rejection failed:", err);
+            alert("Failed to reject order: " + (err.response?.data?.message || err.message));
+        } finally {
+            setProcessingId(null);
+        }
+    };
 
     const getStatusStyles = (status) => {
         switch (status) {
@@ -2133,19 +2168,35 @@ function OrderProcessingHub({ orders }) {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <div className="flex items-center justify-end gap-3 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); setSelectedOrder(order); }}
-                                                className="p-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-400 hover:text-neutral-900 rounded-xl transition-all border border-neutral-200/50"
+                                                className="p-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-400 hover:text-neutral-900 rounded-xl transition-all border border-neutral-200/50"
+                                                title="View Details"
                                             >
-                                                <Eye className="w-4 h-4" />
+                                                <Eye className="w-3.5 h-3.5" />
                                             </button>
-                                            <button className="bg-black text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5 active:translate-y-0 transition-all">
-                                                Process
-                                            </button>
-                                            <button className="p-2.5 bg-white hover:bg-neutral-50 text-neutral-300 hover:text-black rounded-xl transition-all border border-neutral-100">
-                                                <MoreHorizontal className="w-4 h-4" />
-                                            </button>
+
+                                            {order.status === "Pending" && (
+                                                <>
+                                                    <button
+                                                        onClick={(e) => handleApprove(e, order.id)}
+                                                        disabled={processingId === order.id}
+                                                        className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-xl transition-all border border-emerald-100 disabled:opacity-50"
+                                                        title="Approve Order"
+                                                    >
+                                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => handleReject(e, order.id)}
+                                                        disabled={processingId === order.id}
+                                                        className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-all border border-red-100 disabled:opacity-50"
+                                                        title="Reject Order"
+                                                    >
+                                                        <X className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -2272,12 +2323,33 @@ function OrderProcessingHub({ orders }) {
                                     <p className="text-3xl font-black text-neutral-900">₹{selectedOrder.total}</p>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <button className="px-6 py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all">
-                                        Print Invoice
-                                    </button>
-                                    <button className="px-8 py-3 bg-black text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:shadow-black/20 hover:-translate-y-1 transition-all">
-                                        Update To Processing
-                                    </button>
+                                    {selectedOrder.status === "Pending" ? (
+                                        <>
+                                            <button
+                                                onClick={() => handleReject(null, selectedOrder.id)}
+                                                disabled={processingId === selectedOrder.id}
+                                                className="px-6 py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all border border-red-100 disabled:opacity-50"
+                                            >
+                                                Reject Order
+                                            </button>
+                                            <button
+                                                onClick={() => handleApprove(null, selectedOrder.id)}
+                                                disabled={processingId === selectedOrder.id}
+                                                className="px-8 py-3 bg-emerald-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:-translate-y-1 transition-all disabled:opacity-50"
+                                            >
+                                                Approve Order
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <button className="px-6 py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all">
+                                                Print Invoice
+                                            </button>
+                                            <button className="px-8 py-3 bg-black text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:shadow-black/20 hover:-translate-y-1 transition-all">
+                                                Update Status
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </motion.div>

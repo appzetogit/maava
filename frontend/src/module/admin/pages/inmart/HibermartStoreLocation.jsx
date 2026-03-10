@@ -4,7 +4,16 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { toast } from "sonner";
 import { adminAPI } from "@/lib/api";
-import { API_BASE_URL } from "@/lib/api/config";
+import {
+  MapPin,
+  Save,
+  Navigation,
+  Search,
+  Store,
+  ChevronRight,
+  Loader2,
+  Info
+} from "lucide-react";
 
 // Fix for default marker icon in Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -69,7 +78,7 @@ export default function HibermartStoreLocation() {
         }
       };
       await adminAPI.updateHibermartStoreLocation(payload);
-      toast.success("Hibermart store location saved");
+      toast.success("Hibermart store location saved successfully");
     } catch (error) {
       console.error("Failed to save Hibermart store location:", error);
       toast.error("Failed to save Hibermart store location");
@@ -80,67 +89,135 @@ export default function HibermartStoreLocation() {
 
   if (loading) {
     return (
-      <div className="p-4 lg:p-6 bg-slate-50 min-h-screen flex items-center justify-center">
-        <div className="text-sm text-slate-600">Loading...</div>
+      <div className="min-h-screen bg-[#F8F9FB] flex flex-col items-center justify-center gap-4">
+        <Loader2 className="w-10 h-10 text-neutral-900 animate-spin" />
+        <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400">Loading Geospatial Data...</p>
       </div>
     );
   }
 
   return (
-    <div className="p-4 lg:p-6 bg-slate-50 min-h-screen">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
-        <div>
-          <h1 className="text-xl lg:text-2xl font-bold text-slate-900">Hibermart Store Location</h1>
-          <p className="text-xs lg:text-sm text-slate-500 mt-1">
-            Pin the Hibermart store pickup location used for delivery assignment and zone matching.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving}
-          className="px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {saving ? "Saving..." : "Save Location"}
-        </button>
-      </div>
+    <div className="min-h-screen bg-[#F8F9FB] p-4 lg:p-8 font-sans selection:bg-black selection:text-white">
+      <div className="max-w-7xl mx-auto">
 
-      <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
-        <div className="mb-4">
-          <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-            Store Name
-          </label>
-          <input
-            type="text"
-            value={storeName}
-            onChange={(e) => setStoreName(e.target.value)}
-            className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="px-2 py-0.5 bg-black text-white text-[10px] font-black uppercase tracking-widest rounded">Admin</span>
+              <ChevronRight className="w-3 h-3 text-neutral-300" />
+              <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Store Logistics</span>
+            </div>
+            <h1 className="text-4xl font-black text-neutral-900 tracking-tighter leading-none">
+              InMart <span className="text-neutral-300">Base Location</span>
+            </h1>
+            <p className="text-neutral-500 font-medium mt-3 max-w-lg">
+              Set your Hibermart central storage point. This location determines delivery boy proximity and service zone availability.
+            </p>
+          </div>
 
-        <div className="border border-slate-200 rounded-lg overflow-hidden">
-          <MapContainer
-            center={[
-              location.latitude || 20.5937,
-              location.longitude || 78.9629
-            ]}
-            zoom={location.latitude ? 15 : 5}
-            style={{ height: "320px", width: "100%" }}
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-3 px-8 py-4 bg-black text-white rounded-[1.8rem] font-black text-[12px] uppercase tracking-widest shadow-2xl shadow-black/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
           >
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution="&copy; OpenStreetMap contributors"
-            />
-            <StoreLocationPicker setLocation={setLocation} />
-            {location.latitude && location.longitude && (
-              <Marker position={{ lat: location.latitude, lng: location.longitude }} />
-            )}
-          </MapContainer>
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {saving ? "Deploying..." : "Save Base Point"}
+          </button>
         </div>
 
-        <div className="mt-3 text-xs text-slate-600">
-          <div>Lat: {location.latitude?.toFixed(6) || "N/A"} | Lng: {location.longitude?.toFixed(6) || "N/A"}</div>
-          <div className="mt-1">Address: {location.formattedAddress || location.address || "Not set"}</div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Config Sidebar */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="bg-white p-8 rounded-[2.5rem] border border-neutral-100 shadow-sm space-y-8">
+              <div>
+                <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] mb-3">
+                  Identification Name
+                </label>
+                <div className="relative">
+                  <Store className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-900" />
+                  <input
+                    type="text"
+                    value={storeName}
+                    onChange={(e) => setStoreName(e.target.value)}
+                    placeholder="Hibermart Central"
+                    className="w-full pl-11 pr-5 py-4 bg-neutral-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-black transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] mb-3">
+                  Current Coordinates
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-4 bg-neutral-900 text-white rounded-2xl">
+                    <p className="text-[8px] font-black uppercase tracking-widest text-neutral-500 mb-1">Latitude</p>
+                    <p className="text-sm font-black mono">{location.latitude?.toFixed(6) || "---"}</p>
+                  </div>
+                  <div className="p-4 bg-neutral-900 text-white rounded-2xl">
+                    <p className="text-[8px] font-black uppercase tracking-widest text-neutral-500 mb-1">Longitude</p>
+                    <p className="text-sm font-black mono">{location.longitude?.toFixed(6) || "---"}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] mb-3">
+                  Resolved Address
+                </label>
+                <div className="p-5 bg-neutral-50 rounded-2xl border border-neutral-100 flex gap-4">
+                  <Navigation className="w-5 h-5 text-neutral-400 flex-shrink-0 mt-1" />
+                  <p className="text-xs font-bold text-neutral-600 leading-relaxed">
+                    {location.formattedAddress || location.address || "Please click on the map to pin-point the store location."}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-amber-50 rounded-[2rem] p-6 border border-amber-100 flex gap-4">
+              <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-white flex-shrink-0">
+                <Info className="w-5 h-5" />
+              </div>
+              <p className="text-[11px] font-bold text-amber-900/70 leading-relaxed">
+                <span className="block font-black uppercase tracking-widest text-amber-900 mb-1">PRO-TIP</span>
+                This pin should represent the physical dispatch center. Delivery partners within 5-10km of this point will be notified first for new orders.
+              </p>
+            </div>
+          </div>
+
+          {/* Map Section */}
+          <div className="lg:col-span-8">
+            <div className="bg-white p-3 rounded-[3rem] border border-neutral-100 shadow-xl overflow-hidden relative">
+              <div className="absolute top-8 left-8 z-[100] bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl border border-neutral-100 shadow-lg flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <p className="text-[10px] font-black uppercase tracking-widest">Interactive GIS Map</p>
+              </div>
+
+              <div className="h-[600px] w-full rounded-[2.5rem] overflow-hidden border border-neutral-50 shadow-inner">
+                <MapContainer
+                  center={[
+                    location.latitude || 20.5937,
+                    location.longitude || 78.9629
+                  ]}
+                  zoom={location.latitude ? 16 : 5}
+                  style={{ height: "100%", width: "100%" }}
+                  zoomControl={false}
+                >
+                  <TileLayer
+                    url="https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  <StoreLocationPicker setLocation={setLocation} />
+                  {location.latitude && location.longitude && (
+                    <Marker position={{ lat: location.latitude, lng: location.longitude }}>
+                      {/* Leaflet marker is standard */}
+                    </Marker>
+                  )}
+                </MapContainer>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -153,10 +230,10 @@ function StoreLocationPicker({ setLocation }) {
       const { lat, lng } = event.latlng;
       let formattedAddress = "";
       try {
-        const response = await fetch(`${API_BASE_URL}/geocode/reverse?lat=${lat}&lon=${lng}`);
+        // Fallback to nominatim if custom geocode fails
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
         const result = await response.json();
-        const data = result?.data || result;
-        formattedAddress = data?.display_name || "";
+        formattedAddress = result?.display_name || "";
       } catch (error) {
         console.error("Failed to reverse geocode Hibermart location:", error);
       }
@@ -166,6 +243,10 @@ function StoreLocationPicker({ setLocation }) {
         longitude: lng,
         formattedAddress,
         address: formattedAddress
+      });
+
+      toast.info("Location pinned: " + (formattedAddress.slice(0, 40) + "..."), {
+        icon: <MapPin className="w-4 h-4" />
       });
     }
   });

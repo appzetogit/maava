@@ -96,7 +96,11 @@ export function useFirebaseTracking(orderId) {
                 }
             },
             (error) => {
-                console.error('Firebase tracking error:', error.message);
+                // Silently handle permission_denied — this is normal for orders
+                // that don't have tracking data in Firebase yet (e.g. InMart orders or newly placed orders)
+                if (!error.message?.includes('permission_denied')) {
+                    console.error('Firebase tracking error:', error.message);
+                }
                 setIsLoading(false);
             }
         );

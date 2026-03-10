@@ -423,6 +423,58 @@ export const adminDeleteNavEntry = async (id) => {
 };
 
 /**
+ * Admin: Get Hibermart Zones
+ */
+export const adminGetZones = async () => {
+    try {
+        const response = await api.get('/admin/inmart/zones');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching zones:', error);
+        throw error;
+    }
+};
+
+/**
+ * Admin: Create Hibermart Zone
+ */
+export const adminCreateZone = async (zoneData) => {
+    try {
+        const response = await api.post('/admin/inmart/zones', zoneData);
+        return response.data;
+    } catch (error) {
+        console.error('Error creating zone:', error);
+        throw error;
+    }
+};
+
+/**
+ * Admin: Update Hibermart Zone
+ */
+export const adminUpdateZone = async (id, zoneData) => {
+    try {
+        const response = await api.put(`/admin/inmart/zones/${id}`, zoneData);
+        return response.data;
+    } catch (error) {
+        console.error('Error updating zone:', error);
+        throw error;
+    }
+};
+
+/**
+ * Admin: Delete Hibermart Zone
+ */
+export const adminDeleteZone = async (id) => {
+    try {
+        const response = await api.delete(`/admin/inmart/zones/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error deleting zone:', error);
+        throw error;
+    }
+};
+
+/**
  * Admin: Upload image
  */
 export const uploadImage = async (formData) => {
@@ -458,6 +510,58 @@ export const adminGetOrders = async (params = {}) => {
         return response.data;
     } catch (error) {
         console.error('Error fetching hibermart orders:', error);
+        throw error;
+    }
+};
+
+/**
+ * Admin: Approve Hibermart Order
+ */
+export const adminApproveOrder = async (orderId) => {
+    try {
+        const response = await api.post(`/admin/hibermart-orders/${orderId}/approve`);
+        return response.data;
+    } catch (error) {
+        console.error('Error approving order:', error);
+        throw error;
+    }
+};
+
+/**
+ * Admin: Reject Hibermart Order
+ */
+export const adminRejectOrder = async (orderId, reason = 'Rejected by admin') => {
+    try {
+        const response = await api.post(`/admin/hibermart-orders/${orderId}/reject`, { reason });
+        return response.data;
+    } catch (error) {
+        console.error('Error rejecting order:', error);
+        throw error;
+    }
+};
+
+/**
+ * Admin: Get Hibermart Store Location
+ */
+export const getHibermartStoreLocation = async () => {
+    try {
+        const response = await api.get('/admin/hibermart-store-location');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching store location:', error);
+        throw error;
+    }
+};
+
+/**
+ * Admin: Update Hibermart Store Location
+ */
+export const updateHibermartStoreLocation = async (locationData) => {
+    try {
+        const response = await api.put('/admin/hibermart-store-location', locationData);
+        return response.data;
+    } catch (error) {
+        console.error('Error updating store location:', error);
         throw error;
     }
 };
@@ -500,4 +604,12 @@ export default {
     uploadImage,
     adminToggleStoreStatus,
     adminGetOrders,
+    adminApproveOrder,
+    adminRejectOrder,
+    getHibermartStoreLocation,
+    updateHibermartStoreLocation,
+    adminGetZones,
+    adminCreateZone,
+    adminUpdateZone,
+    adminDeleteZone,
 };

@@ -1162,6 +1162,7 @@ export default function DeliveryHome() {
           setTimeout(() => reject(new Error('Audio load timeout')), 3000)
         })
 
+        const playPromise = audio.play()
         if (playPromise !== undefined) {
           await playPromise
         }
@@ -1179,6 +1180,7 @@ export default function DeliveryHome() {
         try {
           audio.load()
           await new Promise((resolve) => setTimeout(resolve, 100)) // Small delay
+          const playPromise = audio.play()
           if (playPromise !== undefined) {
             await playPromise
           }

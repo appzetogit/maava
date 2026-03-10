@@ -1,6 +1,7 @@
 import Delivery from '../../delivery/models/Delivery.js';
 import Order from '../models/Order.js';
 import Zone from '../../admin/models/Zone.js';
+import HibermartZone from '../../inmart/models/HibermartZone.js';
 import Restaurant from '../../restaurant/models/Restaurant.js';
 import mongoose from 'mongoose';
 
@@ -48,14 +49,31 @@ export async function findNearestDeliveryBoys(restaurantLat, restaurantLng, rest
 
     if (restaurantId) {
       try {
-        const restaurantIdObj = restaurantId.toString ? restaurantId.toString() : restaurantId;
-        zone = await Zone.findOne({
-          restaurantId: restaurantIdObj,
-          isActive: true
-        }).lean();
+        const restaurantIdStr = restaurantId.toString();
 
-        if (zone) {
-          console.log(`✅ Found zone: ${zone.name} for restaurant ${restaurantId}`);
+        if (restaurantIdStr === "hibermart-id") {
+          // Look for Hibermart zones. We find a zone that contains the store location
+          const hZones = await HibermartZone.find({ isActive: true }).lean();
+          zone = hZones.find(z => {
+            if (!z.coordinates || z.coordinates.length < 3) return false;
+            const [lat, lng] = [restaurantLat, restaurantLng];
+            const coords = z.coordinates;
+            let inside = false;
+            for (let i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+              const xi = coords[i].longitude, yi = coords[i].latitude;
+              const xj = coords[j].longitude, yj = coords[j].latitude;
+              const intersect = ((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+              if (intersect) inside = !inside;
+            }
+            return inside;
+          });
+          if (zone) console.log(`✅ Found Hibermart zone: ${zone.name}`);
+        } else {
+          zone = await Zone.findOne({
+            restaurantId: restaurantIdStr,
+            isActive: true
+          }).lean();
+          if (zone) console.log(`✅ Found restaurant zone: ${zone.name} for restaurant ${restaurantId}`);
         }
       } catch (zoneError) {
         console.warn(`⚠️ Error finding zone:`, zoneError.message);
@@ -181,33 +199,33 @@ export async function findNearestDeliveryBoy(restaurantLat, restaurantLng, resta
 
     if (restaurantId) {
       try {
-        // Try to find zone by restaurantId
-        const restaurantIdObj = restaurantId.toString ? restaurantId.toString() : restaurantId;
-        zone = await Zone.findOne({
-          restaurantId: restaurantIdObj,
-          isActive: true
-        }).lean();
+        const restaurantIdStr = restaurantId.toString();
 
-        if (zone) {
-          console.log(`✅ Found zone: ${zone.name} for restaurant ${restaurantId}`);
-
-          // Option A: Filter by zoneId if Delivery model has zoneId field
-          // Uncomment when zoneId is added to Delivery model
-          // deliveryQuery.zoneId = zone._id;
-
-          // Option B: Filter by geo-spatial query (if zone has boundary)
-          // This is more complex and slower, but works without modifying Delivery model
-          if (zone.boundary && zone.boundary.coordinates) {
-            // For now, we'll use distance-based with zone coordinate check
-            // In production, you can use $geoWithin for better accuracy
-            console.log(`📍 Zone boundary found, will filter by location after distance calculation`);
-          }
+        if (restaurantIdStr === "hibermart-id") {
+          const hZones = await HibermartZone.find({ isActive: true }).lean();
+          zone = hZones.find(z => {
+            if (!z.coordinates || z.coordinates.length < 3) return false;
+            const [lat, lng] = [restaurantLat, restaurantLng];
+            const coords = z.coordinates;
+            let inside = false;
+            for (let i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+              const xi = coords[i].longitude, yi = coords[i].latitude;
+              const xj = coords[j].longitude, yj = coords[j].latitude;
+              const intersect = ((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+              if (intersect) inside = !inside;
+            }
+            return inside;
+          });
+          if (zone) console.log(`✅ Found Hibermart zone: ${zone.name}`);
         } else {
-          console.log(`⚠️ No zone found for restaurant ${restaurantId}, using distance-based assignment`);
+          zone = await Zone.findOne({
+            restaurantId: restaurantIdStr,
+            isActive: true
+          }).lean();
+          if (zone) console.log(`✅ Found restaurant zone: ${zone.name} for restaurant ${restaurantId}`);
         }
       } catch (zoneError) {
         console.warn(`⚠️ Error finding zone for restaurant ${restaurantId}:`, zoneError.message);
-        // Continue with distance-based assignment
       }
     }
 

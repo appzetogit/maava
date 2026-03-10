@@ -7,6 +7,8 @@ import InMartStory from '../models/InMartStory.js';
 import InMartNavigation from '../models/InMartNavigation.js';
 import Order from '../../order/models/Order.js';
 import User from '../../auth/models/User.js';
+import Delivery from '../../delivery/models/Delivery.js';
+
 
 // ==================== PRODUCTS ====================
 
@@ -699,7 +701,8 @@ export const getDashboardStats = async (req, res) => {
             activeBanners,
             totalUsers,
             mainStore,
-            hibermartOrderStats
+            hibermartOrderStats,
+            activeCouriers
         ] = await Promise.all([
             InMartProduct.countDocuments(),
             InMartCategory.countDocuments(),
@@ -748,7 +751,8 @@ export const getDashboardStats = async (req, res) => {
                         ]
                     }
                 }
-            ])
+            ]),
+            Delivery.countDocuments({ 'availability.isOnline': true, isActive: true })
         ]);
 
         const orderStats = hibermartOrderStats[0]?.total[0] || { totalRevenue: 0, totalOrders: 0 };
@@ -769,7 +773,8 @@ export const getDashboardStats = async (req, res) => {
                     totalRevenue: orderStats.totalRevenue || 0,
                     monthlyRevenue: monthlyStats.monthlyRevenue || 0,
                     totalOrders: orderStats.totalOrders || 0,
-                    isStoreOpen: mainStore ? mainStore.isAcceptingOrders : true
+                    isStoreOpen: mainStore ? mainStore.isAcceptingOrders : true,
+                    activeCouriers
                 }
             }
         });

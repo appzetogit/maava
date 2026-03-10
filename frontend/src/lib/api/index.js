@@ -20,12 +20,13 @@
 
 import apiClient from './axios.js';
 import { API_ENDPOINTS } from './config.js';
+import inmartAPI from './inmartAPI.js';
 
 // Export the configured axios instance
 export default apiClient;
 
 // Export API endpoints for convenience
-export { API_ENDPOINTS };
+export { API_ENDPOINTS, inmartAPI };
 
 // Export helper functions for common operations
 export const api = {
