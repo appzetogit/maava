@@ -79,10 +79,9 @@ export const useRestaurantNotifications = () => {
     try {
       const urlTest = new URL(socketUrl); // This will throw if URL is invalid
       // Additional validation: ensure it's not localhost in production
-      if ((isProductionBuild || isProductionDeployment) && (urlTest.hostname === 'localhost' || urlTest.hostname === '127.0.0.1')) {
+      if (isProduction && !isLocalhost && (urlTest.hostname === 'localhost' || urlTest.hostname === '127.0.0.1')) {
         console.error('❌ CRITICAL: Socket URL contains localhost in production!');
         console.error('💡 Socket URL:', socketUrl);
-        console.error('💡 This should have been caught earlier, but blocking anyway');
         setIsConnected(false);
         return;
       }
