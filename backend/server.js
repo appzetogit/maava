@@ -113,6 +113,10 @@ const httpServer = createServer(app);
 // Initialize Socket.IO with proper CORS configuration
 const allowedSocketOrigins = [
   process.env.CORS_ORIGIN,
+  'https://maava.in',
+  'https://www.maava.in',
+  'http://maava.in',
+  'http://www.maava.in',
   'https://foozeto.appzeto.com',
   'http://foozeto.appzeto.com',
   'http://localhost:5173',
@@ -327,6 +331,10 @@ app.use(helmet());
 // CORS configuration - allow multiple origins
 const allowedOrigins = [
   process.env.CORS_ORIGIN,
+  'https://maava.in',
+  'https://www.maava.in',
+  'http://maava.in',
+  'http://www.maava.in',
   'https://foods.appzeto.com',
   'http://foods.appzeto.com',
   'https://foozeto.appzeto.com',

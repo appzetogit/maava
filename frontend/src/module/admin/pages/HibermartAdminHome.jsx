@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react"
 import { useLocation } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import inmartAPI from '@/lib/api/inmartAPI';
+import { API_BASE_URL } from '@/lib/api/config';
 import {
     ShoppingBag,
     Users,
@@ -604,7 +605,8 @@ export default function HibermartAdminHome() {
             const response = await inmartAPI.uploadImage(formData);
 
             if (response.success) {
-                const fullUrl = `http://localhost:5000${response.data.url}`;
+                const backendRoot = API_BASE_URL.replace('/api', '');
+                const fullUrl = `${backendRoot}${response.data.url}`;
                 setUploadedImageUrl(fullUrl);
 
                 // Update the image input field
