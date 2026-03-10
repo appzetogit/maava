@@ -745,7 +745,7 @@ export default function DeliveryHome() {
           return prev
         })
       } catch { }
-    }, 1000) // Check every second
+    }, 5000) // Check every 5 seconds (fallback)
 
     return () => {
       window.removeEventListener('storage', handleStorageChange)
@@ -6508,7 +6508,7 @@ export default function DeliveryHome() {
         }
         // Ignore other errors (network issues, etc.)
       }
-    }, 30000); // Check every 30 seconds
+    }, 45000); // Check every 45 seconds to verify order presence (minimal load)
 
     return () => {
       clearInterval(verifyOrderInterval);

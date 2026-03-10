@@ -95,7 +95,7 @@ function CompletedOrders({ onSelectOrder }) {
       if (isMounted) {
         fetchOrders()
       }
-    }, 10000)
+    }, 60000) // Poll completed orders every 60 seconds (reduced frequency)
 
     return () => {
       isMounted = false
@@ -696,8 +696,8 @@ export default function OrdersMain() {
       }
     }
 
-    // Check every 5 seconds for new confirmed orders (fallback mechanism)
-    const interval = setInterval(checkConfirmedOrders, 5000)
+    // Check every 60 seconds for new confirmed orders (fallback mechanism - reduced frequency)
+    const interval = setInterval(checkConfirmedOrders, 60000)
 
     // Check immediately on mount
     checkConfirmedOrders()
@@ -2128,12 +2128,12 @@ function PreparingOrders({ onSelectOrder, onCancel }) {
 
     fetchOrders()
 
-    // Refresh orders every 10 seconds
+    // Refresh orders every 45 seconds (reduced frequency)
     intervalId = setInterval(() => {
       if (isMounted) {
         fetchOrders()
       }
-    }, 10000)
+    }, 45000)
 
     // Update countdown every second
     countdownIntervalId = setInterval(() => {
@@ -2205,8 +2205,8 @@ function PreparingOrders({ onSelectOrder, onCancel }) {
       }
     }
 
-    // Check every 2 seconds for orders that need to be marked ready
-    const readyCheckInterval = setInterval(checkAndMarkReady, 2000)
+    // Check every 10 seconds for orders that need to be marked ready
+    const readyCheckInterval = setInterval(checkAndMarkReady, 10000)
 
     return () => {
       clearInterval(readyCheckInterval)
@@ -2358,12 +2358,12 @@ function ReadyOrders({ onSelectOrder }) {
 
     fetchOrders()
 
-    // Refresh every 10 seconds (reduced frequency to avoid spam if backend is down)
+    // Refresh every 60 seconds (reduced frequency to avoid spam if backend is down)
     intervalId = setInterval(() => {
       if (isMounted) {
         fetchOrders()
       }
-    }, 10000)
+    }, 60000)
 
     return () => {
       isMounted = false
@@ -2475,12 +2475,12 @@ const OutForDeliveryOrders = ({ onSelectOrder }) => {
 
     fetchOrders()
 
-    // Refresh every 10 seconds
+    // Refresh every 60 seconds (reduced frequency)
     intervalId = setInterval(() => {
       if (isMounted) {
         fetchOrders()
       }
-    }, 10000)
+    }, 60000)
 
     return () => {
       isMounted = false

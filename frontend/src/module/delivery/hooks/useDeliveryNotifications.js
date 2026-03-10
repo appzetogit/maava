@@ -160,73 +160,39 @@ export const useDeliveryNotifications = () => {
       return;
     }
 
-    // Normalize backend URL - use simpler, more robust approach
+    // Normalize backend URL
     let backendUrl = API_BASE_URL;
 
-    // Step 1: Extract protocol and hostname using URL parsing if possible
-    try {
-      const urlObj = new URL(backendUrl);
-      // Remove /api from pathname
-      let pathname = urlObj.pathname.replace(/^\/api\/?$/, '');
-      // Reconstruct clean URL
-      backendUrl = `${urlObj.protocol}//${urlObj.hostname}${urlObj.port ? `:${urlObj.port}` : ''}${pathname}`;
-    } catch (e) {
-      // If URL parsing fails, use regex-based normalization
-      // Remove /api suffix first
-      backendUrl = backendUrl.replace(/\/api\/?$/, '');
-      backendUrl = backendUrl.replace(/\/+$/, ''); // Remove trailing slashes
+    // Remove /api and trailing slashes reliably
+    backendUrl = backendUrl.replace(/\/api\/?$/, '');
+    backendUrl = backendUrl.replace(/\/+$/, '');
 
-      // Normalize protocol - ensure exactly two slashes after protocol
-      // Fix patterns: https:/, https:///, https://https://
-      if (backendUrl.startsWith('https:') || backendUrl.startsWith('http:')) {
-        // Extract protocol
-        const protocolMatch = backendUrl.match(/^(https?):/i);
-        if (protocolMatch) {
-          const protocol = protocolMatch[1].toLowerCase();
-          // Remove everything up to and including the first valid domain part
-          const afterProtocol = backendUrl.substring(protocol.length + 1);
-          // Remove leading slashes
-          const cleanPath = afterProtocol.replace(/^\/+/, '');
-          // Reconstruct with exactly two slashes
-          backendUrl = `${protocol}://${cleanPath}`;
-        }
-      }
+    // Safety check: ensure proto://
+    if (!backendUrl.includes('://') && (backendUrl.startsWith('http') || backendUrl.startsWith('https'))) {
+      backendUrl = backendUrl.replace(/^(https?):?\/?\/?/, '$1://');
     }
 
-    // Final cleanup: ensure exactly two slashes after protocol
-    backendUrl = backendUrl.replace(/^(https?):\/+/gi, '$1://');
-    backendUrl = backendUrl.replace(/\/+$/, ''); // Remove trailing slashes
+    // Detect environment
+    const isProduction = import.meta.env.PROD || import.meta.env.MODE === 'production';
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const backendIsLocalhost = backendUrl.includes('localhost') || backendUrl.includes('127.0.0.1');
 
-    const socketUrl = `${backendUrl}/delivery`;
-
-    console.log('🔌 Attempting to connect to Delivery Socket.IO:', socketUrl);
-    console.log('🔌 Backend URL:', backendUrl);
-    console.log('🔌 API_BASE_URL:', API_BASE_URL);
-    console.log('🔌 Delivery Partner ID:', deliveryPartnerId);
-    console.log('🔌 Environment:', import.meta.env.MODE);
-
-    // Warn if trying to connect to localhost in production
-    if (import.meta.env.MODE === 'production' && backendUrl.includes('localhost')) {
-      console.error('❌ CRITICAL: Trying to connect Socket.IO to localhost in production!');
-      console.error('💡 This means VITE_API_BASE_URL was not set during build time');
-      console.error('💡 Current socketUrl:', socketUrl);
-      console.error('💡 Current API_BASE_URL:', API_BASE_URL);
-      console.error('💡 Fix: Rebuild frontend with: VITE_API_BASE_URL=https://your-backend-domain.com/api npm run build');
-      console.error('💡 Note: Vite environment variables are embedded at BUILD TIME, not runtime');
-      console.error('💡 You must rebuild and redeploy the frontend with correct VITE_API_BASE_URL');
-
-      // Don't try to connect to localhost in production - it will fail
+    // Block localhost backend in production if frontend is not localhost
+    if (isProduction && backendIsLocalhost && !isLocalhost) {
+      console.error('❌ CRITICAL: Blocked Socket.IO connection to localhost in production.');
       setIsConnected(false);
       return;
     }
 
-    // Validate backend URL format
-    if (!backendUrl || !backendUrl.startsWith('http')) {
-      console.error('❌ CRITICAL: Invalid backend URL format:', backendUrl);
-      console.error('💡 API_BASE_URL:', API_BASE_URL);
-      console.error('💡 Expected format: https://your-domain.com or http://localhost:5000');
-      return; // Don't try to connect with invalid URL
+    if (!backendUrl.startsWith('http')) {
+      console.error('❌ CRITICAL: Invalid backend URL:', backendUrl);
+      setIsConnected(false);
+      return;
     }
+
+    // Construct Socket.IO URL
+    const socketUrl = `${backendUrl}/delivery`;
+
 
     // Validate socket URL format
     try {

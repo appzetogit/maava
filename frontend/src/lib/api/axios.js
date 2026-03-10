@@ -96,35 +96,35 @@ apiClient.interceptors.request.use(
     // Determine if this is an authenticated route
     const path = window.location.pathname;
     const requestUrl = config.url || '';
-    
+
     // Check if this is a public restaurant route (should not require authentication)
-    const isPublicRestaurantRoute = requestUrl.includes('/restaurant/list') || 
-                                    requestUrl.includes('/restaurant/under-250') ||
-                                    (requestUrl.includes('/restaurant/') && 
-                                     !requestUrl.includes('/restaurant/orders') &&
-                                     !requestUrl.includes('/restaurant/auth') &&
-                                     !requestUrl.includes('/restaurant/menu') &&
-                                     !requestUrl.includes('/restaurant/profile') &&
-                                     !requestUrl.includes('/restaurant/staff') &&
-                                     !requestUrl.includes('/restaurant/offers') &&
-                                     !requestUrl.includes('/restaurant/inventory') &&
-                                     !requestUrl.includes('/restaurant/categories') &&
-                                     !requestUrl.includes('/restaurant/onboarding') &&
-                                     !requestUrl.includes('/restaurant/delivery-status') &&
-                                     !requestUrl.includes('/restaurant/finance') &&
-                                     !requestUrl.includes('/restaurant/wallet') &&
-                                     !requestUrl.includes('/restaurant/analytics') &&
-                                     !requestUrl.includes('/restaurant/complaints') &&
-                                     (requestUrl.match(/\/restaurant\/[^/]+$/) || 
-                                      requestUrl.match(/\/restaurant\/[^/]+\/menu/) || 
-                                      requestUrl.match(/\/restaurant\/[^/]+\/addons/) || 
-                                      requestUrl.match(/\/restaurant\/[^/]+\/inventory/) || 
-                                      requestUrl.match(/\/restaurant\/[^/]+\/offers/)));
-    
-    const isAuthenticatedRoute = (path.startsWith('/admin') || 
-                                  (path.startsWith('/restaurant') && !path.startsWith('/restaurants') && !isPublicRestaurantRoute) || 
-                                  path.startsWith('/delivery')) && !isPublicRestaurantRoute;
-    
+    const isPublicRestaurantRoute = requestUrl.includes('/restaurant/list') ||
+      requestUrl.includes('/restaurant/under-250') ||
+      (requestUrl.includes('/restaurant/') &&
+        !requestUrl.includes('/restaurant/orders') &&
+        !requestUrl.includes('/restaurant/auth') &&
+        !requestUrl.includes('/restaurant/menu') &&
+        !requestUrl.includes('/restaurant/profile') &&
+        !requestUrl.includes('/restaurant/staff') &&
+        !requestUrl.includes('/restaurant/offers') &&
+        !requestUrl.includes('/restaurant/inventory') &&
+        !requestUrl.includes('/restaurant/categories') &&
+        !requestUrl.includes('/restaurant/onboarding') &&
+        !requestUrl.includes('/restaurant/delivery-status') &&
+        !requestUrl.includes('/restaurant/finance') &&
+        !requestUrl.includes('/restaurant/wallet') &&
+        !requestUrl.includes('/restaurant/analytics') &&
+        !requestUrl.includes('/restaurant/complaints') &&
+        (requestUrl.match(/\/restaurant\/[^/]+$/) ||
+          requestUrl.match(/\/restaurant\/[^/]+\/menu/) ||
+          requestUrl.match(/\/restaurant\/[^/]+\/addons/) ||
+          requestUrl.match(/\/restaurant\/[^/]+\/inventory/) ||
+          requestUrl.match(/\/restaurant\/[^/]+\/offers/)));
+
+    const isAuthenticatedRoute = (path.startsWith('/admin') ||
+      (path.startsWith('/restaurant') && !path.startsWith('/restaurants') && !isPublicRestaurantRoute) ||
+      path.startsWith('/delivery')) && !isPublicRestaurantRoute;
+
     // For authenticated routes, ALWAYS ensure Authorization header is set if we have a token
     // This ensures FormData requests and other requests always have the token
     if (isAuthenticatedRoute) {
@@ -249,6 +249,21 @@ apiClient.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+
+    // If error is 429 (Too Many Requests)
+    if (error.response?.status === 429) {
+      toast.error('Too Many Requests. Please wait a moment before trying again.', {
+        id: 'rate-limit-toast',
+        duration: 5000,
+        style: {
+          background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
+          color: '#ffffff',
+          borderRadius: '12px',
+          fontWeight: '500',
+        }
+      });
+      return Promise.reject(error);
+    }
 
     // If error is 401 and we haven't tried to refresh yet
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -497,9 +512,9 @@ apiClient.interceptors.response.use(
           // Only show error for critical restaurant endpoints like /restaurant/list
           // Individual restaurant lookups (like /restaurant/:id) can legitimately return 404 if restaurant doesn't exist
           // So we silently handle those 404s
-          const isIndividualRestaurantLookup = /\/restaurant\/[a-f0-9]{24}$/i.test(url) || 
-                                                (url.match(/\/restaurant\/[^/]+$/) && !url.includes('/restaurant/list'));
-          
+          const isIndividualRestaurantLookup = /\/restaurant\/[a-f0-9]{24}$/i.test(url) ||
+            (url.match(/\/restaurant\/[^/]+$/) && !url.includes('/restaurant/list'));
+
           if (!isIndividualRestaurantLookup && url.includes('/restaurant/list')) {
             toast.error('Restaurant API endpoint not found. Check backend routes.', {
               duration: 5000,
