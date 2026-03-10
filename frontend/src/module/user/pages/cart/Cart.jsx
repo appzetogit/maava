@@ -204,21 +204,24 @@ export default function Cart() {
   const isHibermartCart = cart[0]?.restaurantId === 'hibermart-id' || cart[0]?.restaurant === 'Hibermart'
   const savedAddress = getDefaultAddress()
   // Priority: Use live location if available, otherwise use saved address
-  const defaultAddress = currentLocation?.formattedAddress && currentLocation.formattedAddress !== "Select location"
-    ? {
-      ...savedAddress,
-      formattedAddress: currentLocation.formattedAddress,
-      address: currentLocation.address || currentLocation.formattedAddress,
-      street: currentLocation.street || currentLocation.address,
-      city: currentLocation.city,
-      state: currentLocation.state,
-      zipCode: currentLocation.postalCode,
-      area: currentLocation.area,
-      location: currentLocation.latitude && currentLocation.longitude ? {
-        coordinates: [currentLocation.longitude, currentLocation.latitude]
-      } : savedAddress?.location
+  const defaultAddress = useMemo(() => {
+    if (currentLocation?.formattedAddress && currentLocation.formattedAddress !== "Select location") {
+      return {
+        ...savedAddress,
+        formattedAddress: currentLocation.formattedAddress,
+        address: currentLocation.address || currentLocation.formattedAddress,
+        street: currentLocation.street || currentLocation.address,
+        city: currentLocation.city,
+        state: currentLocation.state,
+        zipCode: currentLocation.postalCode,
+        area: currentLocation.area,
+        location: currentLocation.latitude && currentLocation.longitude ? {
+          coordinates: [currentLocation.longitude, currentLocation.latitude]
+        } : savedAddress?.location
+      }
     }
-    : savedAddress
+    return savedAddress
+  }, [currentLocation, savedAddress])
   const activeAddress = selectedAddressForOrder || defaultAddress
   const defaultPayment = getDefaultPaymentMethod()
 
@@ -617,6 +620,7 @@ export default function Cart() {
     fetchLastOrderAddress()
   }, [])
 
+  const calculatingRef = useRef(false)
   // Calculate pricing from backend whenever cart, address, or coupon changes
   useEffect(() => {
     const calculatePricing = async () => {
@@ -625,7 +629,10 @@ export default function Cart() {
         return
       }
 
+      if (calculatingRef.current) return
+
       try {
+        calculatingRef.current = true
         setLoadingPricing(true)
         const items = cart.map(item => ({
           itemId: item.id,
@@ -665,6 +672,7 @@ export default function Cart() {
         setPricing(null)
       } finally {
         setLoadingPricing(false)
+        calculatingRef.current = false
       }
     }
 
