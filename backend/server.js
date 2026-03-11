@@ -583,7 +583,12 @@ io.on('connection', (socket) => {
         // Dynamic import to avoid circular dependencies
         const { default: Order } = await import('./modules/order/models/Order.js');
 
-        const order = await Order.findById(orderId)
+        const order = await Order.findOne({
+          $or: [
+            { _id: mongoose.Types.ObjectId.isValid(orderId) ? orderId : null },
+            { orderId: orderId }
+          ]
+        })
           .populate({
             path: 'deliveryPartnerId',
             select: 'availability',
@@ -621,7 +626,12 @@ io.on('connection', (socket) => {
       // Dynamic import to avoid circular dependencies
       const { default: Order } = await import('./modules/order/models/Order.js');
 
-      const order = await Order.findById(orderId)
+      const order = await Order.findOne({
+        $or: [
+          { _id: mongoose.Types.ObjectId.isValid(orderId) ? orderId : null },
+          { orderId: orderId }
+        ]
+      })
         .populate({
           path: 'deliveryPartnerId',
           select: 'availability'

@@ -184,7 +184,11 @@ export const sendPushNotification = async (tokens, title, body, data = {}) => {
                 tokens: chunk,
             };
 
-            const response = await admin.messaging().sendEachForMulticast(message);
+            const sendMethod = admin.messaging().sendEachForMulticast
+                ? admin.messaging().sendEachForMulticast.bind(admin.messaging())
+                : admin.messaging().sendMulticast.bind(admin.messaging());
+
+            const response = await sendMethod(message);
             totalSuccess += response.successCount;
             totalFailure += response.failureCount;
 
