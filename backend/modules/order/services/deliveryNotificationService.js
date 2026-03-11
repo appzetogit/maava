@@ -14,6 +14,11 @@ async function getIOInstance() {
   return getIO ? getIO() : null;
 }
 
+// Push notification import (dynamic)
+const getPushService = async () => {
+  return await import('../../notification/services/pushNotificationService.js');
+};
+
 /**
  * Check if delivery partner is connected to socket
  * @param {string} deliveryPartnerId - Delivery partner ID
@@ -339,6 +344,20 @@ export async function notifyDeliveryBoyNewOrder(order, deliveryPartnerId) {
       console.log(`✅ Notification emitted for order ${order.orderId} to delivery partner ${normalizedDeliveryPartnerId}`);
     } else {
       console.error(`❌ Failed to send notification - no sockets found and broadcast failed`);
+    }
+
+    // --- PUSH NOTIFICATION (AUTOMATED) ---
+    try {
+      const pushService = await getPushService();
+      await pushService.sendNotificationToUser(
+        normalizedDeliveryPartnerId,
+        'delivery',
+        '🚴 New Order Assigned!',
+        `New order #${order.orderId} assigned to you. Open the app to view details.`,
+        { orderId: order._id.toString(), type: 'ORDER_ASSIGNED' }
+      );
+    } catch (pushErr) {
+      console.warn('⚠️ Failed to send push notification to delivery boy:', pushErr.message);
     }
 
     return {
@@ -701,6 +720,20 @@ export async function notifyDeliveryBoyOrderReady(order, deliveryPartnerId) {
       console.warn(`⚠️ Delivery partner ${normalizedDeliveryPartnerId} not found in any room, broadcasting to all`);
       deliveryNamespace.emit('order_ready', orderReadyNotification);
       notificationSent = true;
+    }
+
+    // --- PUSH NOTIFICATION (AUTOMATED) ---
+    try {
+      const pushService = await getPushService();
+      await pushService.sendNotificationToUser(
+        normalizedDeliveryPartnerId,
+        'delivery',
+        '🥡 Order Ready for Pickup!',
+        `Order #${order.orderId} from ${orderReadyNotification.restaurantName} is ready for pickup.`,
+        { orderId: order._id.toString(), type: 'ORDER_READY' }
+      );
+    } catch (pushErr) {
+      console.warn('⚠️ Failed to send "ready" push notification to delivery boy:', pushErr.message);
     }
 
     return {

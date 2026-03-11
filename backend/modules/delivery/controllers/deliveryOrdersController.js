@@ -13,6 +13,7 @@ import AdminCommission from '../../admin/models/AdminCommission.js';
 import { calculateRoute } from '../../order/services/routeCalculationService.js';
 import mongoose from 'mongoose';
 import winston from 'winston';
+import { sendNotificationToUser } from '../../notification/services/pushNotificationService.js';
 
 const logger = winston.createLogger({
   level: 'info',
@@ -747,6 +748,20 @@ export const acceptOrder = asyncHandler(async (req, res) => {
     }
     const orderWithPayment = { ...updatedOrder, paymentMethod };
 
+    // --- USER PUSH NOTIFICATION (AUTOMATED) ---
+    try {
+      const { sendNotificationToUser } = await import('../../notification/services/pushNotificationService.js');
+      await sendNotificationToUser(
+        updatedOrder.userId._id?.toString() || updatedOrder.userId?.toString(),
+        'user',
+        '🛵 Delivery Partner Assigned!',
+        `Your order #${updatedOrder.orderId} has been accepted by ${delivery.name}. They are on their way to the restaurant!`,
+        { orderId: updatedOrder._id.toString(), type: 'ORDER_ACCEPTED' }
+      );
+    } catch (notifErr) {
+      console.error('Error sending acceptance push to user:', notifErr.message);
+    }
+
     return successResponse(res, 200, 'Order accepted successfully', {
       order: orderWithPayment,
       route: {
@@ -870,6 +885,20 @@ export const confirmReachedPickup = asyncHandler(async (req, res) => {
     await order.save();
 
     console.log(`✅ Delivery partner ${delivery._id} reached pickup for order ${order.orderId}`);
+
+    // --- USER PUSH NOTIFICATION (AUTOMATED) ---
+    try {
+      const { sendNotificationToUser } = await import('../../notification/services/pushNotificationService.js');
+      await sendNotificationToUser(
+        order.userId.toString(),
+        'user',
+        '👨‍🍳 Partner at Restaurant',
+        `Your delivery partner ${delivery.name} has reached the restaurant and is waiting for your order.`,
+        { orderId: order._id.toString(), type: 'REACHED_RESTAURANT' }
+      );
+    } catch (notifErr) {
+      console.error('Error sending reached restaurant push:', notifErr.message);
+    }
 
     // After 10 seconds, trigger order ID confirmation request
     // Use order._id (MongoDB ObjectId) instead of orderId string
@@ -1226,9 +1255,17 @@ export const confirmOrderId = asyncHandler(async (req, res) => {
         } else {
           console.warn('⚠️ Socket.IO not initialized, skipping customer notification');
         }
+
+        // --- USER PUSH NOTIFICATION (AUTOMATED) ---
+        await sendNotificationToUser(
+          updatedOrder.userId._id?.toString() || updatedOrder.userId?.toString(),
+          'user',
+          '🛵 Your Order is Out for Delivery!',
+          `Your delivery partner is on the way with your food from ${updatedOrder.restaurantId?.name || 'the restaurant'}.`,
+          { orderId: updatedOrder._id.toString(), type: 'OUT_FOR_DELIVERY' }
+        );
       } catch (notifError) {
         console.error('Error sending customer notification:', notifError);
-        // Don't fail the response if notification fails
       }
     })();
 
@@ -1392,6 +1429,20 @@ export const confirmReachedDrop = asyncHandler(async (req, res) => {
 
     const orderIdForLog = finalOrder.orderId || finalOrder._id?.toString() || orderId;
     console.log(`✅ Delivery partner ${delivery._id} reached drop location for order ${orderIdForLog}`);
+
+    // --- USER PUSH NOTIFICATION (AUTOMATED) ---
+    try {
+        const { sendNotificationToUser } = await import('../../notification/services/pushNotificationService.js');
+        await sendNotificationToUser(
+          finalOrder.userId?._id?.toString() || finalOrder.userId?.toString(),
+          'user',
+          '🏠 Rider is at your Location!',
+          `Your delivery partner ${delivery.name} has arrived at your location. Please be ready to collect your order #${orderIdForLog}.`,
+          { orderId: finalOrder._id.toString(), type: 'RIDER_AT_DROP' }
+        );
+    } catch (notifErr) {
+        console.error('Error sending reached drop push:', notifErr.message);
+    }
 
     return successResponse(res, 200, 'Reached drop confirmed', {
       order: finalOrder,
@@ -1930,6 +1981,15 @@ export const completeDelivery = asyncHandler(async (req, res) => {
           if (notifyUserOrderUpdate) {
             await notifyUserOrderUpdate(orderIdForNotification, 'delivered');
           }
+
+          // --- USER PUSH NOTIFICATION (AUTOMATED) ---
+          await sendNotificationToUser(
+            updatedOrder.userId._id?.toString() || updatedOrder.userId?.toString(),
+            'user',
+            '🍴 Order Delivered!',
+            `Enjoy your meal! Order #${updatedOrder.orderId} has been successfully delivered.`,
+            { orderId: updatedOrder._id.toString(), type: 'ORDER_DELIVERED' }
+          );
         } catch (notifError) {
           console.error('Error sending user notification:', notifError);
         }

@@ -15,6 +15,7 @@ import etaCalculationService from '../services/etaCalculationService.js';
 import etaWebSocketService from '../services/etaWebSocketService.js';
 import OrderEvent from '../models/OrderEvent.js';
 import UserWallet from '../../user/models/UserWallet.js';
+import { sendNotificationToUser } from '../../notification/services/pushNotificationService.js';
 
 const logger = winston.createLogger({
   level: 'info',
@@ -112,30 +113,30 @@ export const createOrder = async (req, res) => {
       // Skip restaurant lookup for Hibermart orders
       restaurant = null;
     } else {
-    // Try to find restaurant by restaurantId, _id, or slug
-    if (mongoose.Types.ObjectId.isValid(restaurantId) && restaurantId.length === 24) {
-      restaurant = await Restaurant.findById(restaurantId);
-      logger.info('🔍 Restaurant lookup by _id:', {
-        restaurantId: restaurantId,
-        found: !!restaurant,
-        restaurantName: restaurant?.name
-      });
-    }
-    if (!restaurant) {
-      restaurant = await Restaurant.findOne({
-        $or: [
-          { restaurantId: restaurantId },
-          { slug: restaurantId }
-        ]
-      });
-      logger.info('🔍 Restaurant lookup by restaurantId/slug:', {
-        restaurantId: restaurantId,
-        found: !!restaurant,
-        restaurantName: restaurant?.name,
-        restaurant_restaurantId: restaurant?.restaurantId,
-        restaurant__id: restaurant?._id?.toString()
-      });
-    }
+      // Try to find restaurant by restaurantId, _id, or slug
+      if (mongoose.Types.ObjectId.isValid(restaurantId) && restaurantId.length === 24) {
+        restaurant = await Restaurant.findById(restaurantId);
+        logger.info('🔍 Restaurant lookup by _id:', {
+          restaurantId: restaurantId,
+          found: !!restaurant,
+          restaurantName: restaurant?.name
+        });
+      }
+      if (!restaurant) {
+        restaurant = await Restaurant.findOne({
+          $or: [
+            { restaurantId: restaurantId },
+            { slug: restaurantId }
+          ]
+        });
+        logger.info('🔍 Restaurant lookup by restaurantId/slug:', {
+          restaurantId: restaurantId,
+          found: !!restaurant,
+          restaurantName: restaurant?.name,
+          restaurant_restaurantId: restaurant?.restaurantId,
+          restaurant__id: restaurant?._id?.toString()
+        });
+      }
     }
 
     if (!restaurant && !isHibermartRequest) {
@@ -779,6 +780,22 @@ export const createOrder = async (req, res) => {
       }
     }
 
+    // --- AUTOMATED NOTIFICATION ---
+    // If it's a COD order (cash), notify the restaurant immediately.
+    // Online payment orders are notified after payment verification.
+    if (order.payment?.method === 'cash') {
+      try {
+        await sendNotificationToUser(
+          order.restaurantId,
+          'restaurant',
+          '🔔 New COD Order!',
+          `New order #${order.orderId} received. Please approve to start preparation.`,
+          { orderId: order._id.toString(), type: 'NEW_ORDER' }
+        );
+      } catch (notifErr) {
+        logger.warn(`Failed to send initial COD push notification: ${notifErr.message}`);
+      }
+    }
     res.status(201).json({
       success: true,
       data: {
@@ -991,16 +1008,21 @@ export const verifyOrderPayment = async (req, res) => {
       } catch (notificationError) {
         logger.error(`❌ CRITICAL: Error notifying restaurant after payment verification:`, {
           error: notificationError.message,
-          stack: notificationError.stack,
-          orderId: order.orderId,
-          orderMongoId: order._id?.toString(),
-          restaurantId: order.restaurantId,
-          restaurantName: order.restaurantName,
-          orderStatus: order.status
+          orderId: order.orderId
         });
-        // Don't fail payment verification if notification fails
-        // Order is still saved and restaurant can fetch it via API
-        // But log it as critical for debugging
+      }
+
+      // --- USER PUSH NOTIFICATION (AUTOMATED) ---
+      try {
+        await sendNotificationToUser(
+          order.userId.toString(),
+          'user',
+          '✅ Order Confirmed!',
+          `Your payment was successful. Order #${order.orderId} is now being prepared!`,
+          { orderId: order._id.toString(), type: 'ORDER_CONFIRMED' }
+        );
+      } catch (userNotifErr) {
+        logger.warn(`Failed to send confirmation push to user: ${userNotifErr.message}`);
       }
     }
 

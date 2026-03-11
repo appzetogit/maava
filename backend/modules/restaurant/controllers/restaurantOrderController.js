@@ -7,6 +7,7 @@ import { notifyRestaurantOrderUpdate } from '../../order/services/restaurantNoti
 import { assignOrderToDeliveryBoy, findNearestDeliveryBoys, findNearestDeliveryBoy } from '../../order/services/deliveryAssignmentService.js';
 import { notifyDeliveryBoyNewOrder, notifyMultipleDeliveryBoys } from '../../order/services/deliveryNotificationService.js';
 import mongoose from 'mongoose';
+import { sendNotificationToUser } from '../../notification/services/pushNotificationService.js';
 
 /**
  * Get all orders for restaurant
@@ -313,6 +314,15 @@ export const acceptOrder = asyncHandler(async (req, res) => {
     // Notify about status update
     try {
       await notifyRestaurantOrderUpdate(order._id.toString(), 'preparing');
+
+      // --- USER PUSH NOTIFICATION (AUTOMATED) ---
+      await sendNotificationToUser(
+        order.userId.toString(),
+        'user',
+        '👨‍🍳 Preparing Your Order!',
+        `${restaurant.name || 'The restaurant'} has accepted your order and is now preparing your food.`,
+        { orderId: order._id.toString(), type: 'ORDER_PREPARING' }
+      );
     } catch (notifError) {
       console.error('Error sending notification:', notifError);
     }
@@ -591,6 +601,15 @@ export const rejectOrder = asyncHandler(async (req, res) => {
     // Notify about status update
     try {
       await notifyRestaurantOrderUpdate(order._id.toString(), 'cancelled');
+
+      // --- USER PUSH NOTIFICATION (AUTOMATED) ---
+      await sendNotificationToUser(
+        order.userId.toString(),
+        'user',
+        '❌ Order Cancelled',
+        `Your order #${order.orderId} was cancelled by the restaurant. Reason: ${reason || 'Not specified'}.`,
+        { orderId: order._id.toString(), type: 'ORDER_CANCELLED' }
+      );
     } catch (notifError) {
       console.error('Error sending notification:', notifError);
     }
