@@ -6,7 +6,10 @@ const sentHistory = new Map();
 const DUPLICATE_WINDOW_MS = 5000; // 5 seconds window to prevent double pops
 
 const isDuplicateNotification = (userId, title, body) => {
-    const key = `${userId}:${title}:${body}`;
+    // Normalize: remove emojis and extra spaces for more robust deduplication
+    // We now de-duplicate based on ONLY userId and Title (ignoring body) to catch overlapping notifications
+    const cleanTitle = (title || '').replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F100}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim() || title;
+    const key = `${userId}:${cleanTitle.toLowerCase()}`;
     const now = Date.now();
     if (sentHistory.has(key)) {
         const lastSent = sentHistory.get(key);
@@ -74,7 +77,7 @@ const INVALID_TOKEN_CODES = new Set([
 
 const getModelByTargetType = async (targetType) => {
     try {
-        if (targetType === 'customer') {
+        if (targetType === 'user' || targetType === 'customer') {
             return (await import('../../auth/models/User.js')).default;
         }
         if (targetType === 'delivery') {
@@ -145,44 +148,64 @@ export const sendPushNotification = async (tokens, title, body, data = {}) => {
 
         const normalizedData = normalizeDataPayload(data);
 
-        const message = {
-            notification: { title, body },
-            data: {
-                ...normalizedData,
-                click_action: 'FLUTTER_NOTIFICATION_CLICK',
-            },
-            android: {
-                priority: 'high',
-                notification: {
-                    channel_id: 'maava_channel',
-                    sound: 'default',
-                    priority: 'high'
-                }
-            },
-            apns: {
-                payload: {
-                    aps: { sound: 'default' }
-                }
-            },
-            tokens: validTokens,
-        };
-
-        const response = await admin.messaging().sendEachForMulticast(message);
+        // FCM sendEachForMulticast has a limit of 500 tokens per request.
+        // We must chunk the tokens into batches of 500.
+        const CHUNK_SIZE = 500;
+        let totalSuccess = 0;
+        let totalFailure = 0;
         const invalidTokensFound = [];
-        if (response.failureCount > 0) {
-            response.responses.forEach((res, idx) => {
-                if (!res.success && res.error) {
-                    if (INVALID_TOKEN_CODES.has(res.error.code)) {
-                        invalidTokensFound.push(validTokens[idx]);
+        const failedDetails = [];
+
+        for (let i = 0; i < validTokens.length; i += CHUNK_SIZE) {
+            const chunk = validTokens.slice(i, i + CHUNK_SIZE);
+            const message = {
+                notification: { title, body },
+                data: {
+                    ...normalizedData,
+                    click_action: 'FLUTTER_NOTIFICATION_CLICK',
+                },
+                android: {
+                    priority: 'high',
+                    collapseKey: (title || 'maava_update').substring(0, 64),
+                    notification: {
+                        channel_id: 'maava_channel',
+                        sound: 'default',
+                        priority: 'high'
                     }
-                }
-            });
+                },
+                apns: {
+                    headers: {
+                        'apns-collapse-id': (title || 'maava_update').substring(0, 64)
+                    },
+                    payload: {
+                        aps: { sound: 'default' }
+                    }
+                },
+                tokens: chunk,
+            };
+
+            const response = await admin.messaging().sendEachForMulticast(message);
+            totalSuccess += response.successCount;
+            totalFailure += response.failureCount;
+
+            if (response.failureCount > 0) {
+                response.responses.forEach((res, idx) => {
+                    if (!res.success && res.error) {
+                        failedDetails.push({ token: chunk[idx], code: res.error.code, message: res.error.message });
+                        if (INVALID_TOKEN_CODES.has(res.error.code)) {
+                            invalidTokensFound.push(chunk[idx]);
+                        }
+                    }
+                });
+            }
         }
 
         return {
-            ...response,
-            success: response.successCount > 0,
-            invalidTokens: invalidTokensFound
+            success: true,
+            successCount: totalSuccess,
+            failureCount: totalFailure,
+            invalidTokens: invalidTokensFound,
+            failedDetails: failedDetails
         };
 
     } catch (error) {
@@ -195,15 +218,11 @@ export const sendPushNotification = async (tokens, title, body, data = {}) => {
  * Send notification to a specific user role (all users in that role)
  */
 export const sendNotificationToTarget = async (target, title, body, data = {}) => {
-    const normalizedTarget = String(target || '').trim().toLowerCase();
-    const targetType =
-        normalizedTarget === 'customer' || normalizedTarget === 'user'
-            ? 'customer'
-            : normalizedTarget === 'delivery man' || normalizedTarget === 'delivery' || normalizedTarget === 'delivery_partner'
-                ? 'delivery'
-                : normalizedTarget === 'restaurant'
-                    ? 'restaurant'
-                    : null;
+    const normalizedTarget = (target || '').toLowerCase().trim();
+    const targetType = (normalizedTarget === 'customers' || normalizedTarget === 'customer' || normalizedTarget === 'user') ? 'user'
+        : (normalizedTarget === 'riders' || normalizedTarget === 'rider' || normalizedTarget === 'delivery' || normalizedTarget === 'delivery man') ? 'delivery'
+            : (normalizedTarget === 'restaurant' || normalizedTarget === 'restaurants') ? 'restaurant'
+                : null;
 
     if (!targetType) return { success: false, message: `Invalid target: ${target}`, successCount: 0 };
 
@@ -218,13 +237,15 @@ export const sendNotificationToTarget = async (target, title, body, data = {}) =
             ]
         }).select('fcmTokens fcmTokenMobile');
 
-        const tokens = entities.flatMap((e) => [
-            ...(e.fcmTokens || []).slice(-1), // Take ONLY the latest token per field type to prevent duplication
-            ...(e.fcmTokenMobile || []).slice(-1)
+        const allTokens = entities.flatMap((e) => [
+            ...(e.fcmTokens || []),
+            ...(e.fcmTokenMobile || [])
         ]);
 
-        const uniqueTokens = normalizeTokens(tokens);
+        const uniqueTokens = normalizeTokens(allTokens);
+
         if (uniqueTokens.length > 0) {
+            console.log(`🚀 [FCM Bulk] Sending to ${targetType} group. Total unique tokens: ${uniqueTokens.length}`);
             const result = await sendPushNotification(uniqueTokens, title, body, data);
             if (result?.invalidTokens?.length) {
                 await cleanupInvalidTokens(targetType, result.invalidTokens);
@@ -270,15 +291,21 @@ export const sendNotificationToUser = async (userId, role, title, body, data = {
 
         if (!entity) return { success: false, message: 'Entity not found' };
 
-        // Optimization: Take only the LATEST token from each category. 
-        // This ensures if a user logged into a new phone, they don't get notifications on old tokens.
-        const tokens = [
-            ...(entity.fcmTokenMobile || []).slice(-1),
-            ...(entity.fcmTokens || []).slice(-1)
+        // Aggressive Token Deduplication: Merge all sources and pick ONLY the absolute latest.
+        // This is the most effective way to prevent double popups on the same device.
+        const allTokens = [
+            ...(entity.fcmTokenMobile || []),
+            ...(entity.fcmTokens || [])
         ];
 
-        const uniqueTokens = normalizeTokens(tokens);
-        if (uniqueTokens.length === 0) return { success: false, message: 'No active device tokens' };
+        const uniqueTokens = normalizeTokens(allTokens);
+
+        if (uniqueTokens.length === 0) {
+            console.log(`ℹ️ [FCM] No tokens for user ${userId}`);
+            return { success: false, message: 'No active device tokens' };
+        }
+
+        console.log(`🚀 [FCM] Sending to ${role}:${userId} | Title: ${title} | Tokens: ${uniqueTokens.length}`);
 
         const result = await sendPushNotification(uniqueTokens, title, body, data);
         if (result?.invalidTokens?.length) {
