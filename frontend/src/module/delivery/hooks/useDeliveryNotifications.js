@@ -315,8 +315,29 @@ export const useDeliveryNotifications = () => {
 
     socketRef.current.on('order_ready', (orderData) => {
       console.log('✅ Order ready notification received via socket:', orderData);
-      setOrderReady(orderData);
-      playNotificationSound();
+      // Only set orderReady if the order isn't already out for delivery or delivered
+      const currentStatus = orderData?.status;
+      if (currentStatus === 'ready' || currentStatus === 'preparing') {
+        setOrderReady(orderData);
+        playNotificationSound();
+      }
+    });
+
+    socketRef.current.on('stop_notification_sound', (data) => {
+      console.log('🔇 Stopping notification sound:', data);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+      setNewOrder(null); // Clear the alert
+    });
+
+    socketRef.current.on('stop_sound', (data) => {
+      console.log('🔇 Stopping sound:', data);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
     });
 
     return () => {

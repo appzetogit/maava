@@ -751,15 +751,56 @@ export const acceptOrder = asyncHandler(async (req, res) => {
     // --- USER PUSH NOTIFICATION (AUTOMATED) ---
     try {
       const { sendNotificationToUser } = await import('../../notification/services/pushNotificationService.js');
+      const isHibermart = updatedOrder.isHibermartOrder ||
+        updatedOrder.restaurantId === 'hibermart-id' ||
+        updatedOrder.restaurantName?.toLowerCase?.() === 'hibermart';
+
       await sendNotificationToUser(
         updatedOrder.userId._id?.toString() || updatedOrder.userId?.toString(),
         'user',
         '🛵 Delivery Partner Assigned!',
-        `Your order #${updatedOrder.orderId} has been accepted by ${delivery.name}. They are on their way to the restaurant!`,
+        `Your order #${updatedOrder.orderId} has been accepted by ${delivery.name}. They are on their way to the ${isHibermart ? 'Hibermart store' : 'restaurant'}!`,
         { orderId: updatedOrder._id.toString(), type: 'ORDER_ACCEPTED' }
       );
     } catch (notifErr) {
       console.error('Error sending acceptance push to user:', notifErr.message);
+    }
+
+    // --- SOCKET NOTIFICATION TO STOP SOUND ---
+    try {
+      const serverModule = await import('../../../server.js');
+      const getIO = serverModule.getIO;
+      const io = getIO ? getIO() : null;
+      if (io) {
+        const deliveryNamespace = io.of('/delivery');
+        const normalizedId = delivery._id.toString();
+
+        // Stop sound for the delivery partner who accepted
+        const rooms = [
+          `delivery:${normalizedId}`,
+          `delivery:${delivery._id}`
+        ];
+
+        rooms.forEach(room => {
+          deliveryNamespace.to(room).emit('stop_notification_sound', {
+            orderId: order.orderId,
+            message: 'Order accepted'
+          });
+          deliveryNamespace.to(room).emit('stop_sound', {
+            orderId: order.orderId
+          });
+        });
+
+        // Also broadcast that this order is no longer available to others
+        deliveryNamespace.emit('order_accepted_by_other', {
+          orderId: order.orderId,
+          deliveryPartnerId: normalizedId
+        });
+
+        console.log(`📢 Stop sound events emitted for order ${order.orderId}`);
+      }
+    } catch (socketErr) {
+      console.warn('⚠️ Failed to emit stop sound socket event:', socketErr.message);
     }
 
     return successResponse(res, 200, 'Order accepted successfully', {
@@ -889,11 +930,15 @@ export const confirmReachedPickup = asyncHandler(async (req, res) => {
     // --- USER PUSH NOTIFICATION (AUTOMATED) ---
     try {
       const { sendNotificationToUser } = await import('../../notification/services/pushNotificationService.js');
+      const isHibermart = order.isHibermartOrder ||
+        order.restaurantId === 'hibermart-id' ||
+        order.restaurantName?.toLowerCase?.() === 'hibermart';
+
       await sendNotificationToUser(
         order.userId.toString(),
         'user',
-        '👨‍🍳 Partner at Restaurant',
-        `Your delivery partner ${delivery.name} has reached the restaurant and is waiting for your order.`,
+        `👨‍🍳 Partner at ${isHibermart ? 'Hibermart' : 'Restaurant'}`,
+        `Your delivery partner ${delivery.name} has reached the ${isHibermart ? 'Hibermart store' : 'restaurant'} and is waiting for your order.`,
         { orderId: order._id.toString(), type: 'REACHED_RESTAURANT' }
       );
     } catch (notifErr) {
@@ -1257,11 +1302,15 @@ export const confirmOrderId = asyncHandler(async (req, res) => {
         }
 
         // --- USER PUSH NOTIFICATION (AUTOMATED) ---
+        const isHibermart = updatedOrder.isHibermartOrder ||
+          updatedOrder.restaurantId === 'hibermart-id' ||
+          updatedOrder.restaurantName?.toLowerCase?.() === 'hibermart';
+
         await sendNotificationToUser(
           updatedOrder.userId._id?.toString() || updatedOrder.userId?.toString(),
           'user',
           '🛵 Your Order is Out for Delivery!',
-          `Your delivery partner is on the way with your food from ${updatedOrder.restaurantId?.name || 'the restaurant'}.`,
+          `Your delivery partner is on the way with your ${isHibermart ? 'order' : 'food'} from ${isHibermart ? 'Hibermart store' : (updatedOrder.restaurantId?.name || 'the restaurant')}.`,
           { orderId: updatedOrder._id.toString(), type: 'OUT_FOR_DELIVERY' }
         );
       } catch (notifError) {
@@ -1432,16 +1481,16 @@ export const confirmReachedDrop = asyncHandler(async (req, res) => {
 
     // --- USER PUSH NOTIFICATION (AUTOMATED) ---
     try {
-        const { sendNotificationToUser } = await import('../../notification/services/pushNotificationService.js');
-        await sendNotificationToUser(
-          finalOrder.userId?._id?.toString() || finalOrder.userId?.toString(),
-          'user',
-          '🏠 Rider is at your Location!',
-          `Your delivery partner ${delivery.name} has arrived at your location. Please be ready to collect your order #${orderIdForLog}.`,
-          { orderId: finalOrder._id.toString(), type: 'RIDER_AT_DROP' }
-        );
+      const { sendNotificationToUser } = await import('../../notification/services/pushNotificationService.js');
+      await sendNotificationToUser(
+        finalOrder.userId?._id?.toString() || finalOrder.userId?.toString(),
+        'user',
+        '🏠 Rider is at your Location!',
+        `Your delivery partner ${delivery.name} has arrived at your location. Please be ready to collect your order #${orderIdForLog}.`,
+        { orderId: finalOrder._id.toString(), type: 'RIDER_AT_DROP' }
+      );
     } catch (notifErr) {
-        console.error('Error sending reached drop push:', notifErr.message);
+      console.error('Error sending reached drop push:', notifErr.message);
     }
 
     return successResponse(res, 200, 'Reached drop confirmed', {
@@ -1983,11 +2032,15 @@ export const completeDelivery = asyncHandler(async (req, res) => {
           }
 
           // --- USER PUSH NOTIFICATION (AUTOMATED) ---
+          const isHibermart = updatedOrder.isHibermartOrder ||
+            updatedOrder.restaurantId === 'hibermart-id' ||
+            updatedOrder.restaurantName?.toLowerCase?.() === 'hibermart';
+
           await sendNotificationToUser(
             updatedOrder.userId._id?.toString() || updatedOrder.userId?.toString(),
             'user',
             '🍴 Order Delivered!',
-            `Enjoy your meal! Order #${updatedOrder.orderId} has been successfully delivered.`,
+            `${isHibermart ? 'Order successfully delivered!' : 'Enjoy your meal!'} Order #${updatedOrder.orderId} has been successfully delivered.`,
             { orderId: updatedOrder._id.toString(), type: 'ORDER_DELIVERED' }
           );
         } catch (notifError) {

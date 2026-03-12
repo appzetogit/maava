@@ -200,11 +200,17 @@ export async function notifyDeliveryBoyNewOrder(order, deliveryPartnerId) {
       restaurant?.address ||
       'Restaurant address';
 
+    const isHibermart = order.isHibermartOrder ||
+      order.restaurantId === 'hibermart-id' ||
+      (restaurantNameOverride || order.restaurantName || restaurant?.name)?.toLowerCase?.() === 'hibermart';
+
+    const finalRestaurantName = isHibermart ? 'Hibermart store' : (restaurantNameOverride || order.restaurantName || restaurant?.name);
+
     const orderNotification = {
       orderId: order.orderId,
       orderMongoId: order._id.toString(),
       restaurantId: order.restaurantId,
-      restaurantName: restaurantNameOverride || order.restaurantName || restaurant?.name,
+      restaurantName: finalRestaurantName,
       restaurantLocation: (restaurantLocationOverride || restaurant?.location) ? {
         latitude: (restaurantLocationOverride?.coordinates || restaurant?.location?.coordinates)?.[1],
         longitude: (restaurantLocationOverride?.coordinates || restaurant?.location?.coordinates)?.[0],
@@ -352,8 +358,8 @@ export async function notifyDeliveryBoyNewOrder(order, deliveryPartnerId) {
       await pushService.sendNotificationToUser(
         normalizedDeliveryPartnerId,
         'delivery',
-        '🚴 New Order Assigned!',
-        `New order #${order.orderId} assigned to you. Open the app to view details.`,
+        `🚴 New ${isHibermart ? 'Hibermart ' : ''}Order Assigned!`,
+        `New order #${order.orderId} from ${finalRestaurantName} assigned to you. Open the app to view details.`,
         { orderId: order._id.toString(), type: 'ORDER_ASSIGNED' }
       );
     } catch (pushErr) {
@@ -520,13 +526,19 @@ export async function notifyMultipleDeliveryBoys(order, deliveryPartnerIds, phas
       console.log(`⚠️ Using fallback earnings: ₹${typeof estimatedEarnings === 'object' ? estimatedEarnings.totalEarning : estimatedEarnings}`);
     }
 
+    const isHibermart = orderWithUser.isHibermartOrder ||
+      orderWithUser.restaurantId === 'hibermart-id' ||
+      (orderWithUser.restaurantId?.name || orderWithUser.restaurantName)?.toLowerCase?.() === 'hibermart';
+
+    const finalRestaurantName = isHibermart ? 'Hibermart store' : (orderWithUser.restaurantName || orderWithUser.restaurantId?.name);
+
     // Prepare notification payload
     const orderNotification = {
       orderId: orderWithUser.orderId || orderWithUser._id,
       mongoId: orderWithUser._id?.toString(),
       orderMongoId: orderWithUser._id?.toString(), // Also include orderMongoId for compatibility
       status: orderWithUser.status || 'preparing',
-      restaurantName: orderWithUser.restaurantName || orderWithUser.restaurantId?.name,
+      restaurantName: finalRestaurantName,
       restaurantAddress: restaurantAddress,
       restaurantLocation: restaurantLocation ? {
         latitude: restaurantLocation.coordinates?.[1],
@@ -571,10 +583,12 @@ export async function notifyMultipleDeliveryBoys(order, deliveryPartnerIds, phas
       hasCustomerLocation: !!orderNotification.customerLocation
     });
 
-    // Notify each delivery partner via targeted room
+    // Notify each delivery partner via targeted room AND Push Notification
     for (const deliveryPartnerId of deliveryPartnerIds) {
       try {
         const normalizedId = deliveryPartnerId?.toString() || deliveryPartnerId;
+
+        // 1. SOCKET.IO NOTIFICATION (For open apps)
         const roomVariations = [
           `delivery:${normalizedId}`,
           `delivery:${deliveryPartnerId}`,
@@ -583,7 +597,7 @@ export async function notifyMultipleDeliveryBoys(order, deliveryPartnerIds, phas
             : [])
         ];
 
-        let notificationSent = false;
+        let socketNotified = false;
         for (const room of roomVariations) {
           const sockets = await deliveryNamespace.in(room).fetchSockets();
           if (sockets.length > 0) {
@@ -595,22 +609,33 @@ export async function notifyMultipleDeliveryBoys(order, deliveryPartnerIds, phas
               message: `New order available: ${order.orderId}`,
               phase: phase
             });
-            notificationSent = true;
-            notifiedCount++;
-            console.log(`📤 Notified delivery partner ${normalizedId} in room: ${room} (phase: ${phase})`);
+            socketNotified = true;
+            console.log(`📤 Socket: Notified delivery partner ${normalizedId} (phase: ${phase})`);
             break;
           }
         }
 
-        if (!notificationSent) {
-          console.warn(`⚠️ Delivery partner ${normalizedId} not found in specific room, emitting to room anyway`);
-          // Still emit to all room variations (delivery boy may connect to room later)
-          roomVariations.forEach(room => {
-            deliveryNamespace.to(room).emit('new_order_available', orderNotification);
-            deliveryNamespace.to(room).emit('new_order', orderNotification);
-          });
-          notifiedCount++;
+        // 2. PUSH NOTIFICATION (For closed apps/background)
+        try {
+          const pushService = await getPushService();
+          await pushService.sendNotificationToUser(
+            normalizedId,
+            'delivery',
+            '🚚 New Order Available!',
+            `New order #${order.orderId} nearby at ${finalRestaurantName}. ₹${typeof estimatedEarnings === 'object' ? estimatedEarnings.totalEarning : estimatedEarnings} potential earning.`,
+            {
+              orderId: order._id.toString(),
+              type: 'NEW_ORDER_AVAILABLE',
+              click_action: 'FLUTTER_NOTIFICATION_CLICK' // Ensure mobile app opens
+            }
+          );
+          console.log(`📱 Push: Alert sent to delivery partner ${normalizedId}`);
+          notifiedCount++; // Count only if push was attempted or socket was sent
+        } catch (pushErr) {
+          console.warn(`⚠️ Push failed for partner ${normalizedId}:`, pushErr.message);
+          if (socketNotified) notifiedCount++;
         }
+
       } catch (partnerError) {
         console.error(`❌ Error notifying delivery partner ${deliveryPartnerId}:`, partnerError);
       }
@@ -618,8 +643,12 @@ export async function notifyMultipleDeliveryBoys(order, deliveryPartnerIds, phas
 
     // ─── MANDATORY BROADCAST FALLBACK ───────────────────────────────────────
     // ALWAYS broadcast to ALL connected delivery sockets as safety net.
-    // This ensures delivery boys receive the notification even if their socket room
-    // doesn't match their deliveryPartnerId, or they just connected without joining a room.
+    // BUT only do this if no delivery partner is assigned yet.
+    if (order.deliveryPartnerId) {
+      console.log(`ℹ️ Skipping safety broadcast for order ${order.orderId} - already assigned to ${order.deliveryPartnerId}`);
+      return { success: true, notified: notifiedCount };
+    }
+
     try {
       const allConnectedSockets = await deliveryNamespace.fetchSockets();
       console.log(`📡 Broadcasting new order to ALL ${allConnectedSockets.length} connected delivery sockets (safety broadcast)`);
@@ -673,15 +702,21 @@ export async function notifyDeliveryBoyOrderReady(order, deliveryPartnerId) {
     const deliveryNamespace = io.of('/delivery');
     const normalizedDeliveryPartnerId = deliveryPartnerId?.toString() || deliveryPartnerId;
 
+    const isHibermart = order.isHibermartOrder ||
+      order.restaurantId === 'hibermart-id' ||
+      (order.restaurantName || order.restaurantId?.name)?.toLowerCase?.() === 'hibermart';
+
+    const finalRestaurantName = isHibermart ? 'Hibermart store' : (order.restaurantName || order.restaurantId?.name);
+
     // Prepare order ready notification
     const coords = order.restaurantId?.location?.coordinates;
     const orderReadyNotification = {
       orderId: order.orderId || order._id,
       mongoId: order._id?.toString(),
       status: 'ready',
-      restaurantName: order.restaurantName || order.restaurantId?.name,
+      restaurantName: finalRestaurantName,
       restaurantAddress: order.restaurantId?.address || order.restaurantId?.location?.address,
-      message: `Order ${order.orderId} is ready for pickup`,
+      message: `Order ${order.orderId} from ${finalRestaurantName} is ready for pickup`,
       timestamp: new Date().toISOString(),
       // Include restaurant coords so delivery app can show Reached Pickup when rider is near (coordinates: [lng, lat])
       restaurantLat: coords?.[1],

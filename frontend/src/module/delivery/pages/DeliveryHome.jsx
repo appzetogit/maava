@@ -2332,10 +2332,16 @@ export default function DeliveryHome() {
                 responseEarnings: response.data.data.estimatedEarnings
               });
 
+              const isHibermart = (typeof order.restaurantId === 'string'
+                ? order.restaurantId === 'hibermart-id'
+                : (order.restaurantId?._id === 'hibermart-id' || order.restaurantId?.id === 'hibermart-id')) ||
+                order.restaurantName?.toLowerCase?.() === 'hibermart' ||
+                order.restaurant?.name?.toLowerCase?.() === 'hibermart';
+
               restaurantInfo = {
                 id: order._id || order.orderId,
                 orderId: order.orderId, // Correct order ID from backend
-                name: restaurantName, // Restaurant name from backend (priority: restaurantName > restaurantId.name)
+                name: isHibermart ? 'Hibermart store' : restaurantName, // Use Hibermart store for Hibermart orders
                 address: restaurantAddress, // Restaurant address from backend
                 lat: restaurantLat || selectedRestaurant?.lat,
                 lng: restaurantLng || selectedRestaurant?.lng,
@@ -2357,6 +2363,7 @@ export default function DeliveryHome() {
                 phone: order.restaurantId?.phone || order.restaurantId?.ownerPhone || null, // Restaurant phone number (prefer phone, fallback to ownerPhone)
                 ownerPhone: order.restaurantId?.ownerPhone || null, // Owner phone number (separate field for direct access)
                 orderStatus: order.status || 'preparing', // Store order status (pending, preparing, ready, out_for_delivery, delivered)
+                isHibermart: isHibermart, // Store whether this is a Hibermart order
                 deliveryState: {
                   ...(order.deliveryState || {}),
                   currentPhase: 'en_route_to_pickup', // CRITICAL: Set to en_route_to_pickup after order acceptance
@@ -4537,10 +4544,15 @@ export default function DeliveryHome() {
             pickupDistance = 'Calculating...';
           }
 
+          const isHibermartOrder = firstOrder.isHibermartOrder ||
+            firstOrder.restaurantId === 'hibermart-id' ||
+            firstOrder.restaurantName?.toLowerCase() === 'hibermart' ||
+            firstOrder.restaurantId?.name?.toLowerCase() === 'hibermart';
+
           const restaurantData = {
             id: firstOrder._id?.toString() || firstOrder.orderId,
             orderId: firstOrder.orderId,
-            name: firstOrder.restaurantId?.name || 'Restaurant',
+            name: isHibermartOrder ? 'Hibermart store' : (firstOrder.restaurantId?.name || 'Restaurant'),
             address: restaurantAddress,
             lat: firstOrder.restaurantId?.location?.coordinates?.[1],
             lng: firstOrder.restaurantId?.location?.coordinates?.[0],
@@ -6613,10 +6625,16 @@ export default function DeliveryHome() {
         restaurantAddress = orderReady.restaurantAddress
       }
 
+      const isHibermartOrder = order.isHibermartOrder ||
+        order.restaurantId === 'hibermart-id' ||
+        order.restaurantName?.toLowerCase() === 'hibermart' ||
+        orderReady.restaurantName?.toLowerCase() === 'hibermart' ||
+        order.restaurantId?.name?.toLowerCase() === 'hibermart';
+
       restaurantInfo = {
         ...selectedRestaurant,
         orderId: order.orderId || orderReady.orderId || selectedRestaurant?.orderId,
-        name: order.restaurantName || orderReady.restaurantName || order.restaurantId?.name || selectedRestaurant?.name,
+        name: isHibermartOrder ? 'Hibermart store' : (order.restaurantName || orderReady.restaurantName || order.restaurantId?.name || selectedRestaurant?.name),
         address: restaurantAddress,
         lat: order.restaurantId?.location?.coordinates?.[1] || orderReady.restaurantLat || selectedRestaurant?.lat,
         lng: order.restaurantId?.location?.coordinates?.[0] || orderReady.restaurantLng || selectedRestaurant?.lng,
@@ -9178,7 +9196,7 @@ export default function DeliveryHome() {
                     </div>
 
                     <h3 className="text-lg font-bold text-gray-900 mb-1">
-                      {newOrder?.restaurantName || selectedRestaurant?.name || 'Restaurant'}
+                      {newOrder?.isHibermart || (newOrder?.restaurantName?.toLowerCase() === 'hibermart' || newOrder?.restaurantId === 'hibermart-id') ? 'Hibermart store' : (newOrder?.restaurantName || selectedRestaurant?.name || 'Restaurant')}
                     </h3>
                     <p className="text-sm text-gray-600 mb-3 leading-relaxed">
                       {newOrder?.restaurantLocation?.address || selectedRestaurant?.address || 'Address'}
@@ -9741,7 +9759,7 @@ export default function DeliveryHome() {
               Confirm Order ID
             </h2>
             <p className="text-gray-600 text-sm mb-4">
-              Please verify the order ID with the restaurant before pickup
+              Please verify the order ID with the {selectedRestaurant?.isHibermart ? 'Hibermart store' : 'restaurant'} before pickup
             </p>
 
             {/* Order ID Display - single line, scroll horizontally if needed */}
