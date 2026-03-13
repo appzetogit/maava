@@ -1,0 +1,20 @@
+--- SMSIndia Hub Test Tool ---
+Connecting to MongoDB...
+Connected to MongoDB
+??? SMSIndia Hub credentials loaded successfully
+Configured: ??? Yes
+Using API Key: 14sz4...
+Using Sender ID: SNACCO
+Balance Status: ??? Success
+Current Balance: 5 INR
+Raw Balance Response: Success#Promotional:5|Transactional:9999
+
+Sending test OTP 123456 to 919109992290...
+???? SMSIndia Hub Response Status: 200
+???? SMSIndia Hub Response Data: {
+  ErrorCode: '006',
+  ErrorMessage: 'error:Invalid template text',
+  JobId: '',
+  MessageData: null
+}
+???? SMSIndia Hub Response Text: {"ErrorCode":"006","ErrorMessage":"error:Invalid template text","JobId":"","MessageData":null}

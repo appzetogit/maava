@@ -23,10 +23,13 @@ async function testSMS() {
 
         const isConfigured = await smsIndiaHubService.isConfigured();
         console.log(`Configured: ${isConfigured ? '✅ Yes' : '❌ No'}`);
+        console.log(`Using API Key: ${smsIndiaHubService.apiKey ? smsIndiaHubService.apiKey.substring(0, 5) + '...' : 'None'}`);
+        console.log(`Using Sender ID: ${smsIndiaHubService.senderId || 'None'}`);
 
         const balance = await smsIndiaHubService.getBalance();
         console.log(`Balance Status: ${balance.success ? '✅ Success' : '❌ Failed'}`);
         console.log(`Current Balance: ${balance.balance} ${balance.currency || 'INR'}`);
+        console.log(`Raw Balance Response: ${balance.response}`);
 
         // Take phone number from command line or default
         const testPhone = process.argv[2] || '919109992290'; // Replace with a real test number
