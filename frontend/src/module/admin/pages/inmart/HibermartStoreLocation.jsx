@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMapEvents, Polygon, Tooltip } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { toast } from "sonner";
@@ -33,6 +33,7 @@ export default function HibermartStoreLocation() {
     formattedAddress: "",
     address: ""
   });
+  const [zones, setZones] = useState([]);
 
   useEffect(() => {
     const fetchLocation = async () => {
@@ -58,6 +59,18 @@ export default function HibermartStoreLocation() {
       }
     };
     fetchLocation();
+
+    const fetchZones = async () => {
+      try {
+        const response = await adminAPI.getHibermartZones({ limit: 1000 });
+        if (response.data?.success && response.data.data?.zones) {
+          setZones(response.data.data.zones);
+        }
+      } catch (error) {
+        console.error("Failed to fetch Hibermart zones:", error);
+      }
+    };
+    fetchZones();
   }, []);
 
   const handleSave = async () => {
@@ -214,6 +227,32 @@ export default function HibermartStoreLocation() {
                       {/* Leaflet marker is standard */}
                     </Marker>
                   )}
+
+                  {/* Render existing zones for reference */}
+                  {zones.map((zone) => {
+                    if (zone.coordinates && zone.coordinates.length >= 3) {
+                      const path = zone.coordinates.map((c) => [c.latitude, c.longitude]);
+                      return (
+                        <Polygon
+                          key={zone._id}
+                          positions={path}
+                          pathOptions={{
+                            fillColor: "#f97316",
+                            fillOpacity: 0.1,
+                            color: "#ea580c",
+                            weight: 1.5,
+                            dashArray: "5, 5"
+                          }}
+                        >
+                          <Tooltip sticky>
+                            <div className="font-bold text-xs">{zone.name || "Hibermart Zone"}</div>
+                            {zone.serviceLocation && <div className="text-[10px] opacity-75">{zone.serviceLocation}</div>}
+                          </Tooltip>
+                        </Polygon>
+                      );
+                    }
+                    return null;
+                  })}
                 </MapContainer>
               </div>
             </div>
