@@ -136,14 +136,14 @@ class SMSIndiaHubService {
       // SMSIndia Hub requires DLT registered templates for transactional SMS
       // The message text MUST match the registered DLT template EXACTLY
       // Check if custom message template is provided (must match registered DLT template exactly)
-      const customTemplate = process.env.SMSINDIAHUB_MESSAGE_TEMPLATE?.trim();
-      
-      // Check if template ID is provided (for DLT registered templates)
-      const templateId = process.env.SMSINDIAHUB_TEMPLATE_ID?.trim();
+      // Use envService to get template settings (dynamic from DB or .env fallback)
+      const { getEnvVar } = await import('../../../shared/utils/envService.js');
+      const customTemplate = (await getEnvVar('SMSINDIAHUB_MESSAGE_TEMPLATE'))?.trim();
+      const templateId = (await getEnvVar('SMSINDIAHUB_TEMPLATE_ID'))?.trim();
       
       // Check if promotional SMS is enabled (temporary workaround for template issues)
       // ⚠️ WARNING: Promotional SMS is not recommended for OTP - use only for testing
-      const usePromotional = process.env.SMSINDIAHUB_USE_PROMOTIONAL === 'true';
+      const usePromotional = (await getEnvVar('SMSINDIAHUB_USE_PROMOTIONAL')) === 'true';
       // Always use transactional SMS (gwid=2) like RentYatra, unless promotional is explicitly enabled
       const gatewayId = usePromotional ? "1" : "2"; // 1 = promotional, 2 = transactional
       
