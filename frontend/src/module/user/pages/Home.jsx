@@ -1291,7 +1291,7 @@ export default function Home() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
-          <PageNavbar textColor="white" zIndex={20} />
+          <PageNavbar textColor="white" zIndex={20} hideLogo={true} />
         </motion.div>
 
         {/* Hero Section */}

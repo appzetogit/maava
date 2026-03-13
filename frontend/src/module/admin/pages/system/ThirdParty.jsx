@@ -40,15 +40,15 @@ const thirdPartyServices = [
   },
   {
     id: 4,
-    name: "Twilio",
+    name: "SMSIndia Hub",
     category: "SMS Service",
-    description: "SMS and messaging service",
+    description: "Indian SMS Gateway for OTP and Notifications",
     enabled: true,
     configured: true,
     fields: [
-      { key: "accountSid", label: "Account SID", value: "AC...", type: "text" },
-      { key: "authToken", label: "Auth Token", value: "...", type: "password" },
-      { key: "phoneNumber", label: "Phone Number", value: "+1234567890", type: "text" }
+      { key: "SMSINDIAHUB_API_KEY", label: "API Key", value: "14sz4JWct0y6Ol8vjQ296A", type: "password" },
+      { key: "SMSINDIAHUB_SENDER_ID", label: "Sender ID", value: "SMSHUB", type: "text" },
+      { key: "SMSINDIAHUB_TEMPLATE_ID", label: "DLT Template ID", value: "", type: "text" }
     ]
   },
   {
@@ -95,11 +95,10 @@ function ToggleSwitch({ enabled, onToggle }) {
     <button
       type="button"
       onClick={onToggle}
-      className={`inline-flex items-center w-11 h-6 rounded-full border transition-all ${
-        enabled
+      className={`inline-flex items-center w-11 h-6 rounded-full border transition-all ${enabled
           ? "bg-blue-600 border-blue-600 justify-end"
           : "bg-slate-200 border-slate-300 justify-start"
-      }`}
+        }`}
     >
       <span className="h-5 w-5 rounded-full bg-white shadow-sm" />
     </button>
@@ -120,7 +119,7 @@ export default function ThirdParty() {
   )
 
   const handleToggle = (id) => {
-    setServices(prev => prev.map(service => 
+    setServices(prev => prev.map(service =>
       service.id === id ? { ...service, enabled: !service.enabled } : service
     ))
   }
@@ -128,16 +127,16 @@ export default function ThirdParty() {
   const handleFieldChange = (serviceId, fieldKey, value) => {
     const key = `${serviceId}-${fieldKey}`
     setFieldValues(prev => ({ ...prev, [key]: value }))
-    
+
     // Mark as configured if at least one field has value
     const service = services.find(s => s.id === serviceId)
     const hasValue = service.fields.some(f => {
       const fieldKey = `${serviceId}-${f.key}`
       return fieldValues[fieldKey] || (f.key === fieldKey.split('-')[1] && value)
     })
-    
+
     if (hasValue && !service.configured) {
-      setServices(prev => prev.map(s => 
+      setServices(prev => prev.map(s =>
         s.id === serviceId ? { ...s, configured: true } : s
       ))
     }
@@ -159,8 +158,8 @@ export default function ThirdParty() {
     }))
     console.log("Saving service:", service.name, serviceFields)
     alert(`${service.name} configuration saved successfully!`)
-    
-    setServices(prev => prev.map(s => 
+
+    setServices(prev => prev.map(s =>
       s.id === serviceId ? { ...s, configured: true } : s
     ))
   }

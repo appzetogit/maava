@@ -1032,8 +1032,6 @@ export default function HibermartAdminHome() {
                     name,
                     icon: formData.get("icon"),
                     themeColor: formData.get("themeColor"),
-                    targetType: formData.get("targetType"),
-                    targetId: formData.get("targetId"),
                     featuredCategories: selectedFeaturedCats,
                     isActive: true,
                     displayOrder: editingItem?.displayOrder || 0
@@ -1426,31 +1424,6 @@ export default function HibermartAdminHome() {
                                                 </div>
                                             </div>
 
-                                            <div>
-                                                <label className="text-[10px] font-black uppercase text-neutral-400 tracking-widest block mb-2">TARGET LINK TYPE</label>
-                                                <select name="targetType" defaultValue={editingItem?.targetType || "category"} className="w-full bg-white border border-neutral-200 rounded-3xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all">
-                                                    <option value="category">Category</option>
-                                                    <option value="collection">Collection</option>
-                                                    <option value="external">External Link</option>
-                                                    <option value="none">None</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label className="text-[10px] font-black uppercase text-neutral-400 tracking-widest block mb-2">TARGET CATEGORY / COLLECTION</label>
-                                                <select name="targetId" defaultValue={editingItem?.targetId} className="w-full bg-white border border-neutral-200 rounded-3xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all">
-                                                    <option value="">Select Target...</option>
-                                                    <optgroup label="Categories">
-                                                        {allCategoriesList.map(c => (
-                                                            <option key={c.slug} value={c.name}>{c.name}</option>
-                                                        ))}
-                                                    </optgroup>
-                                                    <optgroup label="Collections">
-                                                        {allCollectionsList.map(c => (
-                                                            <option key={c.slug} value={c.slug}>{c.name}</option>
-                                                        ))}
-                                                    </optgroup>
-                                                </select>
-                                            </div>
 
                                             <div className="sm:col-span-2 mt-4">
                                                 <label className="text-[10px] font-black uppercase text-neutral-400 tracking-widest block mb-4">Featured Categories (Store Cards)</label>
