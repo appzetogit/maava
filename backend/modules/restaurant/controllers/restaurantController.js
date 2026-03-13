@@ -1058,3 +1058,25 @@ export const getRestaurantsWithDishesUnder250 = async (req, res) => {
     return errorResponse(res, 500, 'Failed to fetch restaurants with dishes under ₹250');
   }
 };
+/**
+ * Get zones assigned to the current restaurant
+ * GET /api/restaurant/zones
+ */
+export const getRestaurantZones = asyncHandler(async (req, res) => {
+  try {
+    const restaurantId = req.restaurant._id;
+
+    // For now, return ALL active zones so the restaurant can see all available boundaries
+    // This makes it easier for them to pin their location relative to any zone
+    const zones = await Zone.find({
+      isActive: true
+    }).lean();
+
+    return successResponse(res, 200, 'Zones retrieved successfully', {
+      zones
+    });
+  } catch (error) {
+    console.error('Error fetching restaurant zones:', error);
+    return errorResponse(res, 500, 'Failed to fetch zones');
+  }
+});

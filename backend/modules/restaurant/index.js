@@ -4,7 +4,7 @@ import { authenticate } from './middleware/restaurantAuth.js';
 import { uploadMiddleware } from '../../shared/utils/cloudinaryService.js';
 import restaurantAuthRoutes from './routes/restaurantAuthRoutes.js';
 import { getOnboarding, upsertOnboarding, createRestaurantFromOnboardingManual } from './controllers/restaurantOnboardingController.js';
-import { getRestaurants, getRestaurantById, getRestaurantByOwner, updateRestaurantProfile, uploadProfileImage, uploadMenuImage, deleteRestaurantAccount, updateDeliveryStatus, getRestaurantsWithDishesUnder250 } from './controllers/restaurantController.js';
+import { getRestaurants, getRestaurantById, getRestaurantByOwner, updateRestaurantProfile, uploadProfileImage, uploadMenuImage, deleteRestaurantAccount, updateDeliveryStatus, getRestaurantsWithDishesUnder250, getRestaurantZones } from './controllers/restaurantController.js';
 import { getRestaurantFinance } from './controllers/restaurantFinanceController.js';
 import { getWallet, getWalletTransactions, getWalletStats } from './controllers/restaurantWalletController.js';
 import { createWithdrawalRequest, getRestaurantWithdrawalRequests } from './controllers/withdrawalController.js';
@@ -93,6 +93,9 @@ router.get('/wallet/stats', authenticate, getWalletStats);
 // Withdrawal routes (authenticated - for restaurant module)
 router.post('/withdrawal/request', authenticate, createWithdrawalRequest);
 router.get('/withdrawal/requests', authenticate, getRestaurantWithdrawalRequests);
+
+// Zone routes (authenticated - for restaurant module)
+router.get('/zones', authenticate, getRestaurantZones);
 
 // Restaurant routes (public - for user module)
 router.get('/list', getRestaurants);

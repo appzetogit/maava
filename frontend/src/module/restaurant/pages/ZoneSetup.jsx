@@ -21,9 +21,13 @@ export default function ZoneSetup() {
   const [locationSearch, setLocationSearch] = useState("")
   const [selectedLocation, setSelectedLocation] = useState(null)
   const [selectedAddress, setSelectedAddress] = useState("")
+  const [zones, setZones] = useState([])
+  const zonePolygonsRef = useRef([])
+
 
   useEffect(() => {
     fetchRestaurantData()
+    fetchZones()
     loadGoogleMaps()
   }, [])
 
@@ -103,6 +107,17 @@ export default function ZoneSetup() {
       }
     } catch (error) {
       console.error("Error fetching restaurant data:", error)
+     }
+   }
+ 
+  const fetchZones = async () => {
+    try {
+      const response = await restaurantAPI.getZones()
+      if (response?.data?.success && response?.data?.data?.zones) {
+        setZones(response.data.data.zones)
+      }
+    } catch (error) {
+      console.error("Error fetching zones:", error)
     }
   }
 
@@ -245,16 +260,96 @@ export default function ZoneSetup() {
         })
       })
 
-      setMapLoading(false)
-      console.log("✅ Map loading complete")
-    } catch (error) {
+       setMapLoading(false)
+       console.log("✅ Map loading complete")
+      
+      // Draw zones if already fetched
+      if (zones.length > 0) {
+        drawZonesOnMap(google, map, zones)
+      }
+     } catch (error) {
+
       console.error("❌ Error in initializeMap:", error)
       setMapLoading(false)
       alert("Failed to initialize map. Please refresh the page.")
+     }
+   }
+
+  const drawZonesOnMap = (google, map, zonesData) => {
+    // Clear existing polygons
+    zonePolygonsRef.current.forEach(polygon => polygon.setMap(null))
+    zonePolygonsRef.current = []
+
+    zonesData.forEach(zone => {
+      if (!zone.coordinates || zone.coordinates.length < 3) return
+
+      const path = zone.coordinates.map(coord => ({
+        lat: coord.latitude || coord.lat,
+        lng: coord.longitude || coord.lng
+      }))
+
+      const polygon = new google.maps.Polygon({
+        paths: path,
+        strokeColor: "#9333ea",
+        strokeOpacity: 1.0,
+        strokeWeight: 3,
+        fillColor: "#9333ea",
+        fillOpacity: 0.2,
+        map: map,
+        clickable: true
+      })
+
+      const infoWindow = new google.maps.InfoWindow({
+        content: `
+          <div style="padding: 4px;">
+            <strong>${zone.name || "Delivery Zone"}</strong><br/>
+            <small>${zone.serviceLocation || ""}</small>
+          </div>
+        `
+      })
+
+      polygon.addListener('click', (event) => {
+        infoWindow.setPosition(event.latLng)
+        infoWindow.open(map)
+      })
+
+      zonePolygonsRef.current.push(polygon)
+    })
+
+    // Fit bounds if there are zones
+    if (zonesData.length > 0 && mapInstanceRef.current) {
+       const bounds = new google.maps.LatLngBounds()
+       
+       // Include zones in bounds
+       zonesData.forEach(zone => {
+         zone.coordinates.forEach(coord => {
+           bounds.extend({ lat: coord.latitude || coord.lat, lng: coord.longitude || coord.lng })
+         })
+       })
+
+       // Also include current restaurant location in bounds if it exists
+       if (selectedLocation) {
+         bounds.extend({ lat: selectedLocation.lat, lng: selectedLocation.lng })
+       } else if (restaurantData?.location?.latitude) {
+         bounds.extend({ 
+           lat: parseFloat(restaurantData.location.latitude), 
+           lng: parseFloat(restaurantData.location.longitude) 
+         })
+       }
+       
+       mapInstanceRef.current.fitBounds(bounds)
     }
   }
 
+  // Redraw zones when they are updated or map is ready
+  useEffect(() => {
+    if (!mapLoading && mapInstanceRef.current && zones.length > 0 && window.google) {
+      drawZonesOnMap(window.google, mapInstanceRef.current, zones)
+    }
+  }, [zones, mapLoading])
+ 
   const updateMarker = (lat, lng, address) => {
+
     if (!mapInstanceRef.current || !window.google) return
 
     // Remove existing marker

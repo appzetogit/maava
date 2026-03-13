@@ -7,6 +7,7 @@ import { errorResponse } from '../../../shared/utils/response.js';
  * Verifies JWT access token and attaches restaurant to request
  */
 export const authenticate = async (req, res, next) => {
+  console.log(`[Restaurant Auth] Checking: ${req.method} ${req.originalUrl || req.url}`);
   try {
     // Get token from Authorization header
     const authHeader = req.headers.authorization;
@@ -22,6 +23,7 @@ export const authenticate = async (req, res, next) => {
 
     // Ensure it's a restaurant token
     if (decoded.role !== 'restaurant') {
+      console.log('🚫 Auth failed: Not a restaurant token', decoded);
       return errorResponse(res, 403, 'Invalid token. Restaurant access required.');
     }
 
@@ -72,6 +74,12 @@ export const authenticate = async (req, res, next) => {
                             reqPath === '/inventory' ||
                             reqPath.startsWith('/inventory/');
     
+    // Check for zone routes - restaurants need to see zones during setup/onboarding
+    const isZoneRoute = requestPath.includes('/zones') || 
+                       reqPath === '/zones' ||
+                       reqPath.startsWith('/zones/');
+
+    
     // Debug logging for inactive restaurants
     if (!restaurant.isActive) {
       console.log('🔍 Inactive restaurant route check:', {
@@ -87,29 +95,19 @@ export const authenticate = async (req, res, next) => {
         isProfileRoute,
         isMenuRoute,
         isInventoryRoute,
-        willAllow: isOnboardingRoute || isProfileRoute || isMenuRoute || isInventoryRoute
+        isZoneRoute,
+        willAllow: isOnboardingRoute || isProfileRoute || isMenuRoute || isInventoryRoute || isZoneRoute
       });
     }
     
-    // Allow access to onboarding, profile, menu, and inventory routes even if inactive
+    // Allow access to onboarding, profile, menu, inventory, and zone routes even if inactive
     // These are essential for restaurant setup and management
     // Also allow access to getCurrentRestaurant endpoint (used to check status)
-    if (!restaurant.isActive && !isOnboardingRoute && !isProfileRoute && !isMenuRoute && !isInventoryRoute) {
-      console.error('❌ Restaurant account is inactive - access denied:', {
+    if (!restaurant.isActive && !isOnboardingRoute && !isProfileRoute && !isMenuRoute && !isInventoryRoute && !isZoneRoute) {
+      console.error('❌ Restaurant account is inactive - access denied (401)', {
         restaurantId: restaurant._id,
-        restaurantName: restaurant.name,
-        isActive: restaurant.isActive,
-        requestPath,
-        reqPath,
-        baseUrl,
-        originalUrl: req.originalUrl,
-        url: req.url,
-        routeChecks: {
-          isOnboardingRoute,
-          isProfileRoute,
-          isMenuRoute,
-          isInventoryRoute
-        }
+        isZoneRoute,
+        requestPath
       });
       return errorResponse(res, 401, 'Restaurant account is inactive. Please wait for admin approval.');
     }
@@ -120,7 +118,15 @@ export const authenticate = async (req, res, next) => {
     
     next();
   } catch (error) {
-    return errorResponse(res, 401, error.message || 'Invalid token');
+    console.error('🔥 Restaurant Auth Middleware Error:', error);
+    
+    // If it's a JWT error, it's a 401
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError' || error.message.includes('token')) {
+      return errorResponse(res, 401, error.message || 'Invalid token');
+    }
+    
+    // For other errors (like DB connection), return 500
+    return errorResponse(res, 500, 'Internal Server Error during authentication');
   }
 };
 

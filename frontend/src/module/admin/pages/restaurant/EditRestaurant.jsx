@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { adminAPI, uploadAPI } from "@/lib/api"
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap, Polygon, Tooltip } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { toast } from "sonner"
@@ -62,6 +62,22 @@ function MapUpdater({ center }) {
     return null
 }
 
+function MapBoundsFitter({ zones, hasRestaurantLocation }) {
+    const map = useMap()
+    useEffect(() => {
+        if (!hasRestaurantLocation && zones && zones.length > 0) {
+            const bounds = L.latLngBounds()
+            zones.forEach(zone => {
+                zone.coordinates.forEach(coord => {
+                    bounds.extend([coord.latitude || coord.lat, coord.longitude || coord.lng])
+                })
+            })
+            map.fitBounds(bounds, { padding: [50, 50] })
+        }
+    }, [zones, hasRestaurantLocation, map])
+    return null
+}
+
 export default function EditRestaurant() {
     const navigate = useNavigate()
     const { id } = useParams()
@@ -70,6 +86,8 @@ export default function EditRestaurant() {
     const [isLoading, setIsLoading] = useState(true)
     const [showSuccessDialog, setShowSuccessDialog] = useState(false)
     const [formErrors, setFormErrors] = useState({})
+    const [zones, setZones] = useState([])
+
 
     // Step 1: Basic Info
     const [step1, setStep1] = useState({
@@ -164,8 +182,6 @@ export default function EditRestaurant() {
                         closingTime: res.deliveryTimings?.closingTime || "22:00",
                         openDays: res.openDays || [],
                     })
-                    // ... Fill step 3 and 4 if needed, but usually docs are not editable or in separate view
-                    // For simplicity, let's just populate what we have
                     setStep4({
                         estimatedDeliveryTime: res.estimatedDeliveryTime || "25-30 mins",
                         featuredDish: res.featuredDish || "",
@@ -182,7 +198,22 @@ export default function EditRestaurant() {
                 setIsLoading(false)
             }
         }
-        fetchRestaurant()
+        
+        const fetchZones = async () => {
+            try {
+                const response = await adminAPI.getZones({ restaurantId: id })
+                if (response.data.success) {
+                    setZones(response.data.data.zones)
+                }
+            } catch (error) {
+                console.error("Error fetching zones:", error)
+            }
+        }
+
+        if (id) {
+            fetchRestaurant()
+            fetchZones()
+        }
     }, [id, navigate])
 
     const handleUpload = async (file, folder) => {
@@ -367,6 +398,24 @@ export default function EditRestaurant() {
                                             position={{ lat: step1.location.latitude, lng: step1.location.longitude }}
                                             setPosition={l => setStep1(prev => ({ ...prev, location: { ...prev.location, latitude: l.lat, longitude: l.lng } }))}
                                         />
+                                        <MapBoundsFitter zones={zones} hasRestaurantLocation={step1.location.latitude !== 20.5937} />
+                                        {zones.map(zone => (
+                                            <Polygon
+                                                key={zone._id}
+                                                positions={zone.coordinates.map(c => [c.latitude || c.lat, c.longitude || c.lng])}
+                                                pathOptions={{ 
+                                                    color: '#9333ea', 
+                                                    fillColor: '#9333ea', 
+                                                    fillOpacity: 0.1,
+                                                    dashArray: '5, 5'
+                                                }}
+                                            >
+                                                <Tooltip sticky>
+                                                    <div className="font-bold text-purple-700">{zone.name || zone.zoneName}</div>
+                                                    <div className="text-xs text-gray-600">{zone.serviceLocation}</div>
+                                                </Tooltip>
+                                            </Polygon>
+                                        ))}
                                     </MapContainer>
                                 </div>
                                 <div className="flex gap-4 text-xs font-mono text-gray-500 bg-gray-50 p-3 rounded-lg border border-gray-200">

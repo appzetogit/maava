@@ -619,6 +619,11 @@ export const restaurantAPI = {
   respondToComplaint: (id, response) => {
     return apiClient.put(API_ENDPOINTS.RESTAURANT.COMPLAINT_RESPOND.replace(':id', id), { response });
   },
+
+  // Get assigned zones
+  getZones: () => {
+    return apiClient.get('/restaurant/zones');
+  },
 };
 
 // Export delivery API helper functions
