@@ -196,7 +196,11 @@ export default function RestaurantsList() {
   }
 
   const renderStars = (rating) => {
-    return "★".repeat(rating) + "☆".repeat(5 - rating)
+    const safeRating = Math.max(0, Number(rating) || 0)
+    const fullStars = Math.floor(Math.min(5, safeRating))
+    const hasHalfStar = safeRating > fullStars && fullStars < 5
+    const emptyStars = Math.max(0, 5 - Math.ceil(safeRating))
+    return "★".repeat(fullStars) + (hasHalfStar ? "½" : "") + "☆".repeat(emptyStars)
   }
 
   // Handle view restaurant details

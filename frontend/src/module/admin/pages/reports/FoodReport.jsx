@@ -94,9 +94,11 @@ export default function FoodReport() {
     if (rating === 0) {
       return "★0"
     }
-    const fullStars = Math.floor(rating)
-    const hasHalfStar = rating % 1 !== 0
-    return "★".repeat(fullStars) + (hasHalfStar ? "½" : "") + "☆".repeat(5 - Math.ceil(rating)) + ` (${reviews})`
+    const safeRating = Math.max(0, Number(rating) || 0)
+    const fullStars = Math.floor(Math.min(5, safeRating))
+    const hasHalfStar = safeRating > fullStars && fullStars < 5
+    const emptyStars = Math.max(0, 5 - Math.ceil(safeRating))
+    return "★".repeat(fullStars) + (hasHalfStar ? "½" : "") + "☆".repeat(emptyStars) + ` (${reviews})`
   }
 
   const maxChartValue = Math.max(...yearlySalesData.chartData.map(d => d.amount))
