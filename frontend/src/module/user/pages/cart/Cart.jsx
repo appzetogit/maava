@@ -100,8 +100,16 @@ export default function Cart() {
   const { zoneId } = useZone(currentLocation) // Get user's zone
 
   const [showCoupons, setShowCoupons] = useState(false)
-  const [appliedCoupon, setAppliedCoupon] = useState(null)
-  const [couponCode, setCouponCode] = useState("")
+  const [appliedCoupon, setAppliedCoupon] = useState(() => {
+    if (typeof window === "undefined") return null
+    const saved = localStorage.getItem("applied_coupon")
+    return saved ? JSON.parse(saved) : null
+  })
+  const [couponCode, setCouponCode] = useState(() => {
+    if (typeof window === "undefined") return ""
+    const saved = localStorage.getItem("applied_coupon")
+    return saved ? JSON.parse(saved).code : ""
+  })
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("razorpay") // razorpay | cash | wallet
   const [walletBalance, setWalletBalance] = useState(0)
   const [isLoadingWallet, setIsLoadingWallet] = useState(false)
@@ -142,6 +150,15 @@ export default function Cart() {
     instructions: ''
   })
   const [lastOrderAddress, setLastOrderAddress] = useState(null)
+
+  // Clear coupon if cart becomes empty
+  useEffect(() => {
+    if (cart.length === 0) {
+      setAppliedCoupon(null)
+      setCouponCode("")
+      localStorage.removeItem("applied_coupon")
+    }
+  }, [cart.length])
 
   // Payment UI State
   const [showPaymentOptions, setShowPaymentOptions] = useState(false)
@@ -228,12 +245,19 @@ export default function Cart() {
   // Show Exclusive Offer Popup when coupons are available
   useEffect(() => {
     if (availableCoupons.length > 0 && !hasShownOfferPopup && !appliedCoupon && !loadingCoupons) {
+      console.log("[POPUP] Triggering exclusive offer popup", { available: availableCoupons.length })
       // Delay slightly for better UX
       const timer = setTimeout(() => {
         setShowExclusiveOfferPopup(true)
         setHasShownOfferPopup(true)
       }, 800)
       return () => clearTimeout(timer)
+    } else if (availableCoupons.length > 0) {
+      console.log("[POPUP] Popup suppressed", { 
+        hasShown: hasShownOfferPopup, 
+        applied: !!appliedCoupon, 
+        loading: loadingCoupons 
+      })
     }
   }, [availableCoupons, hasShownOfferPopup, appliedCoupon, loadingCoupons])
 
@@ -809,6 +833,10 @@ export default function Cart() {
       setAppliedCoupon(coupon)
       setCouponCode(coupon.code)
       setShowCoupons(false)
+      localStorage.setItem("applied_coupon", JSON.stringify(coupon))
+      if (!hasShownOfferPopup) {
+        setHasShownOfferPopup(true)
+      }
 
       // Trigger Celebration Shower
       triggerCelebration();
@@ -831,7 +859,7 @@ export default function Cart() {
             restaurantId: restaurantData?.restaurantId || restaurantData?._id || restaurantId || null,
             deliveryAddress: defaultAddress,
             couponCode: coupon.code,
-            deliveryFleet: deliveryFleet || 'standard'
+            deliveryFleet: 'standard'
           })
 
           if (response?.data?.success && response?.data?.data?.pricing) {
@@ -848,6 +876,7 @@ export default function Cart() {
   const handleRemoveCoupon = async () => {
     setAppliedCoupon(null)
     setCouponCode("")
+    localStorage.removeItem("applied_coupon")
 
     // Recalculate pricing without coupon
     if (cart.length > 0 && defaultAddress) {
@@ -867,7 +896,7 @@ export default function Cart() {
           restaurantId: restaurantData?.restaurantId || restaurantData?._id || restaurantId || null,
           deliveryAddress: defaultAddress,
           couponCode: null,
-          deliveryFleet: deliveryFleet || 'standard'
+          deliveryFleet: 'standard'
         })
 
         if (response?.data?.success && response?.data?.data?.pricing) {
@@ -1142,6 +1171,7 @@ export default function Cart() {
         setWasHibermartOrder(isHibermartCart)
         setShowOrderSuccess(true)
         clearCart()
+        localStorage.removeItem("applied_coupon")
         setIsPlacingOrder(false)
         return
       }
@@ -1153,6 +1183,7 @@ export default function Cart() {
         setWasHibermartOrder(isHibermartCart)
         setShowOrderSuccess(true)
         clearCart()
+        localStorage.removeItem("applied_coupon")
         setIsPlacingOrder(false)
         // Refresh wallet balance
         try {
@@ -2353,10 +2384,10 @@ export default function Cart() {
             </div>
           </div>
         )}
-      </AnimatePresence >
+      </AnimatePresence>
 
       {/* Bottom Sticky - CTA Area */}
-      < div className="bg-white dark:bg-[#1a1a1a] border-t dark:border-gray-800 shadow-lg z-30 flex-shrink-0 fixed bottom-0 left-0 right-0" >
+      <div className="bg-white dark:bg-[#1a1a1a] border-t dark:border-gray-800 shadow-lg z-30 flex-shrink-0 fixed bottom-0 left-0 right-0" >
         <div className="max-w-7xl mx-auto">
           <div className="px-4 md:px-6 py-3 md:py-4">
             <div className="w-full max-w-md md:max-w-lg mx-auto">
@@ -2420,10 +2451,10 @@ export default function Cart() {
             </div>
           </div>
         </div>
-      </div >
+      </div>
 
       {/* ===== Payment Options Sheet ===== */}
-      < AnimatePresence >
+      <AnimatePresence>
         {showPaymentOptions && (
           <div className="fixed inset-0 z-50 overflow-hidden">
             <motion.div
@@ -3176,7 +3207,7 @@ export default function Cart() {
           </div>
         )}
       </AnimatePresence>
-    </div >
+    </div>
   )
 }
 
