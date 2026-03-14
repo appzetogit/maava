@@ -405,7 +405,7 @@ app.get('/health', (req, res) => {
 });
 
 // API routes
-app.use('/api', authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/restaurant', restaurantRoutes);
 app.use('/api/delivery', deliveryRoutes);
@@ -500,22 +500,14 @@ app.use((req, res, next) => {
     return next();
   }
 
-  // Log 404 errors for debugging (especially for admin routes)
-  if (req.path.includes('/admin') || req.path.includes('refund')) {
-    console.error('❌ [404 HANDLER] Route not found:', {
+  // Log 404 errors for debugging
+  if (req.path.startsWith('/api')) {
+    console.error('❌ [404 HANDLER] API Route not found:', {
       method: req.method,
       path: req.path,
       url: req.url,
-      originalUrl: req.originalUrl,
-      baseUrl: req.baseUrl,
-      route: req.route?.path,
-      registeredRoutes: 'Check server startup logs for route registration'
+      headers: req.headers,
     });
-    console.error('💡 [404 HANDLER] Expected route: POST /api/admin/refund-requests/:orderId/process');
-    console.error('💡 [404 HANDLER] Make sure:');
-    console.error('   1. Backend server has been restarted');
-    console.error('   2. Route is registered (check startup logs)');
-    console.error('   3. Authentication token is valid');
   }
 
   res.status(404).json({

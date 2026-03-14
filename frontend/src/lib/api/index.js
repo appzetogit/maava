@@ -118,6 +118,16 @@ export const authAPI = {
   getCurrentUser: () => {
     return apiClient.get(API_ENDPOINTS.AUTH.ME);
   },
+
+  // Reset password
+  resetPassword: (email, otp, newPassword, role = 'user') => {
+    return apiClient.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, {
+      email,
+      otp,
+      newPassword,
+      role,
+    });
+  },
 };
 
 // Export user API helper functions
@@ -841,6 +851,14 @@ export const adminAPI = {
 
   getCurrentAdmin: () => {
     return apiClient.get(API_ENDPOINTS.ADMIN.AUTH.ME);
+  },
+
+  resetPassword: (email, otp, newPassword) => {
+    return apiClient.post(API_ENDPOINTS.ADMIN.AUTH.RESET_PASSWORD, {
+      email,
+      otp,
+      newPassword,
+    });
   },
 
   // Get admin profile

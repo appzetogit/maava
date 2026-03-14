@@ -64,7 +64,7 @@ export default function Navbar() {
       }
     }
     window.addEventListener('businessSettingsUpdated', handleSettingsUpdate)
-    
+
     return () => {
       window.removeEventListener('businessSettingsUpdated', handleSettingsUpdate)
     }
@@ -95,7 +95,7 @@ export default function Navbar() {
               onClick={handleLocationClick}
               disabled={loading}
             >
-              {loading ? ( 
+              {loading ? (
                 <span className="text-xs sm:text-sm font-semibold text-left text-black">
                   Loading...
                 </span>
@@ -140,7 +140,7 @@ export default function Navbar() {
             <Button
               variant="ghost"
 
-              
+
               size="icon"
               className="relative h-10 w-10 sm:h-11 sm:w-11 md:h-12 md:w-12 hover:bg-gray-100"
               title={`${userPoints} Points`}

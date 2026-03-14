@@ -103,6 +103,7 @@ export const API_ENDPOINTS = {
     REFRESH_TOKEN: '/auth/refresh-token',
     LOGOUT: '/auth/logout',
     ME: '/auth/me',
+    RESET_PASSWORD: '/auth/reset-password',
   },
   // User endpoints
   USER: {
@@ -234,6 +235,7 @@ export const API_ENDPOINTS = {
       LOGIN: '/admin/auth/login',
       LOGOUT: '/admin/auth/logout',
       ME: '/admin/auth/me',
+      RESET_PASSWORD: '/admin/auth/reset-password',
     },
     PROFILE: '/admin/profile',
     CHANGE_PASSWORD: '/admin/settings/change-password',

@@ -287,3 +287,52 @@ export const adminLogout = asyncHandler(async (req, res) => {
   return successResponse(res, 200, 'Logout successful');
 });
 
+/**
+ * Admin Reset Password with OTP verification
+ * POST /api/admin/auth/reset-password
+ */
+export const adminResetPassword = asyncHandler(async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+
+  if (!email || !otp || !newPassword) {
+    return errorResponse(res, 400, 'Email, OTP, and new password are required');
+  }
+
+  if (newPassword.length < 6) {
+    return errorResponse(res, 400, 'Password must be at least 6 characters long');
+  }
+
+  // Find admin by email
+  const searchEmail = email.toLowerCase().trim();
+  console.log('Admin Reset Password debug:', { 
+    receivedEmail: email, 
+    searchEmail: searchEmail 
+  });
+  
+  const allAdmins = await Admin.find({}, 'email role');
+  console.log('All admins in DB:', allAdmins);
+
+  const admin = await Admin.findOne({ email: searchEmail }).select('+password');
+  console.log('Admin find result:', admin ? 'Found' : 'Not Found');
+
+  if (!admin) {
+    return errorResponse(res, 404, 'No admin account found with this email.');
+  }
+
+  // Verify OTP for reset-password purpose
+  try {
+    await otpService.verifyOTP(null, otp, 'reset-password', email.toLowerCase());
+  } catch (error) {
+    logger.error(`OTP verification failed for admin password reset: ${error.message}`);
+    return errorResponse(res, 400, 'Invalid or expired OTP. Please request a new one.');
+  }
+
+  // Update password
+  admin.password = newPassword; // Will be hashed by pre-save hook
+  await admin.save();
+
+  logger.info(`Admin password reset successful: ${admin._id}`, { email: admin.email });
+
+  return successResponse(res, 200, 'Password reset successfully. Please login with your new password.');
+});
+

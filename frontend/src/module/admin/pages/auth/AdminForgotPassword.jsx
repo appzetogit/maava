@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Mail, ArrowLeft, Shield } from "lucide-react"
 import appzetoLogo from "@/assets/appzetologo.png"
-import { authAPI } from "@/lib/api"
+import { authAPI, adminAPI } from "@/lib/api"
 import apiClient from "@/lib/api/axios"
 import { useCompanyName } from "@/lib/hooks/useCompanyName"
 
@@ -182,12 +182,7 @@ export default function AdminForgotPassword() {
 
     setIsLoading(true)
     try {
-      const response = await apiClient.post("/auth/reset-password", {
-        email,
-        otp: otp.join(""),
-        newPassword,
-        role: "admin",
-      })
+      const response = await adminAPI.resetPassword(email, otp.join(""), newPassword)
 
       const data = response?.data || {}
       if (!data.success) {

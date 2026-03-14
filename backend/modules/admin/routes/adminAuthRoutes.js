@@ -4,7 +4,8 @@ import {
   adminLogin,
   adminSignupWithOTP,
   getCurrentAdmin,
-  adminLogout
+  adminLogout,
+  adminResetPassword
 } from '../controllers/adminAuthController.js';
 import { authenticateAdmin } from '../middleware/adminAuth.js';
 import { validate } from '../../../shared/middleware/validate.js';
@@ -37,6 +38,7 @@ const signupOTPSchema = Joi.object({
 router.post('/signup', validate(signupSchema), adminSignup);
 router.post('/signup/otp', validate(signupOTPSchema), adminSignupWithOTP);
 router.post('/login', validate(loginSchema), adminLogin);
+router.post('/reset-password', adminResetPassword);
 
 // Protected routes
 router.get('/me', authenticateAdmin, getCurrentAdmin);
