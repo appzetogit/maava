@@ -2631,18 +2631,6 @@ export default function Home() {
                 Apply Selection
               </button>
 
-              {/* More settings link */}
-              <button
-                onClick={() => {
-                  setShowVegModePopup(false)
-                  // Revert veg mode to OFF if popup is closed without applying
-                  setVegModeContext(false)
-                  setPrevVegMode(false)
-                }}
-                className="w-full text-green-600 dark:text-green-400 font-bold text-[10px] uppercase tracking-widest hover:text-green-700 dark:hover:text-green-500 transition-colors"
-              >
-                Go to settings
-              </button>
             </motion.div>
           </>
         )}
