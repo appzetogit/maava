@@ -798,7 +798,7 @@ export default function SignIn() {
                 onCheckedChange={(checked) =>
                   setFormData({ ...formData, rememberMe: checked })
                 }
-                className="w-4 h-4 border-2 border-gray-300 rounded data-[state=checked]:bg-black data-[state=checked]:border-black flex items-center justify-center"
+                className="w-4 h-4 border-2 border-black rounded data-[state=checked]:bg-white data-[state=checked]:text-black flex items-center justify-center transition-colors"
               />
               <label
                 htmlFor="rememberMe"

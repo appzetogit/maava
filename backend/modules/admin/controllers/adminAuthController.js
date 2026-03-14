@@ -86,11 +86,11 @@ export const adminSignup = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     logger.error(`Error in admin signup: ${error.message}`);
-    
+
     if (error.code === 11000) {
       return errorResponse(res, 400, 'Admin with this email already exists');
     }
-    
+
     return errorResponse(res, 500, 'Failed to register admin');
   }
 });
@@ -236,11 +236,11 @@ export const adminSignupWithOTP = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     logger.error(`Error in admin signup with OTP: ${error.message}`);
-    
+
     if (error.code === 11000) {
       return errorResponse(res, 400, 'Admin with this email already exists');
     }
-    
+
     return errorResponse(res, 500, 'Failed to register admin');
   }
 });
@@ -304,11 +304,11 @@ export const adminResetPassword = asyncHandler(async (req, res) => {
 
   // Find admin by email
   const searchEmail = email.toLowerCase().trim();
-  console.log('Admin Reset Password debug:', { 
-    receivedEmail: email, 
-    searchEmail: searchEmail 
+  console.log('Admin Reset Password debug:', {
+    receivedEmail: email,
+    searchEmail: searchEmail
   });
-  
+
   const allAdmins = await Admin.find({}, 'email role');
   console.log('All admins in DB:', allAdmins);
 
