@@ -44,6 +44,7 @@ import { useCart } from "../../context/CartContext"
 import { useProfile } from "../../context/ProfileContext"
 import AddToCartAnimation from "../../components/AddToCartAnimation"
 import { getCompanyNameAsync } from "@/lib/utils/businessSettings"
+import offersIcon from "@/assets/explore more icons/offers.png"
 
 
 
@@ -87,19 +88,22 @@ export default function RestaurantDetails() {
   const fetchedRestaurantRef = useRef(false) // Track if restaurant has been fetched for current slug
 
   const [currentOfferIndex, setCurrentOfferIndex] = useState(0)
+  const [publicOffers, setPublicOffers] = useState([])
 
   // Create normalized offers array for rotation
-  const offersList =
-    restaurant?.offers?.length > 0
-      ? restaurant.offers
-      : (restaurant?.offerText || restaurant?.offer)
-        ? [{ title: restaurant?.offerText || restaurant?.offer, name: restaurant?.offerText || restaurant?.offer }]
-        : []
+  const offersList = [
+    ...(restaurant?.offers?.length > 0 ? restaurant.offers : []),
+    ...(publicOffers.length > 0 ? publicOffers : []),
+    ...((!restaurant?.offers?.length && !publicOffers.length && (restaurant?.offerText || restaurant?.offer))
+      ? [{ title: restaurant?.offerText || restaurant?.offer, name: restaurant?.offerText || restaurant?.offer }]
+      : [])
+  ]
 
   useEffect(() => {
+    if (offersList.length === 0) return;
     const interval = setInterval(() => {
-      setCurrentOfferIndex((prev) => (offersList.length > 0 ? (prev + 1) % offersList.length : 0))
-    }, 3000) // Change offer every 3 seconds
+      setCurrentOfferIndex((prevIndex) => (prevIndex + 1) % offersList.length)
+    }, 3000)
     return () => clearInterval(interval)
   }, [offersList.length])
 
@@ -379,6 +383,27 @@ export default function RestaurantDetails() {
 
     fetchRestaurant()
   }, [slug, zoneId, loadingZone, restaurant?.slug])
+
+  // Fetch all public offers and filter for current restaurant
+  useEffect(() => {
+    const fetchPublicOffers = async () => {
+      try {
+        const response = await restaurantAPI.getPublicOffers()
+        const data = response?.data?.data?.allOffers || []
+        // Filter offers specifically for this restaurant
+        const filtered = data.filter(offer => offer.restaurantSlug === slug)
+        if (filtered.length > 0) {
+          setPublicOffers(filtered)
+        }
+      } catch (err) {
+        console.error('Error fetching public offers for ticker:', err)
+      }
+    }
+
+    if (slug) {
+      fetchPublicOffers()
+    }
+  }, [slug])
 
   // Track previous values to prevent unnecessary recalculations
   const prevCoordsRef = useRef({ userLat: null, userLng: null, restaurantLat: null, restaurantLng: null })
@@ -1140,19 +1165,22 @@ export default function RestaurantDetails() {
 
                 {/* Animated Offers Ticker */}
                 {offersList.length > 0 && (
-                  <div className="mt-0.5 h-4 overflow-hidden relative">
+                  <div className="mt-1 h-5 overflow-hidden relative">
                     <AnimatePresence mode="wait">
                       <motion.div
-                        key={`${currentOfferIndex}-${Math.floor(Date.now() / 3000)}`}
-                        initial={{ y: 15, opacity: 0 }}
+                        key={`${currentOfferIndex}-${offersList[currentOfferIndex]?.id || currentOfferIndex}`}
+                        initial={{ y: 20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: -15, opacity: 0 }}
-                        transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
-                        className="flex items-center gap-1 text-[11px] font-[1000] text-black dark:text-white uppercase italic tracking-wider leading-4"
+                        exit={{ y: -20, opacity: 0 }}
+                        transition={{ duration: 0.6, ease: "easeOut" }}
+                        className="flex items-center gap-1.5"
                       >
-                        <Percent className="h-2.5 w-2.5 fill-black dark:fill-white text-black dark:text-white flex-shrink-0" />
-                        <span className="truncate">
+                        <div className="flex-shrink-0 w-4 h-4 rounded-full overflow-hidden flex items-center justify-center">
+                          <img src={offersIcon} alt="Offer" className="w-full h-full object-contain" />
+                        </div>
+                        <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 truncate uppercase tracking-tight">
                           {offersList[currentOfferIndex]?.title ||
+                            offersList[currentOfferIndex]?.offer ||
                             offersList[currentOfferIndex]?.name ||
                             offersList[currentOfferIndex]}
                         </span>
