@@ -118,8 +118,11 @@ export default function GigBooking() {
       }
     })
 
-  // Categorize slots by meal time
-  const categorizedSlots = categorizeSlotsByMeal(availableSlots)
+  // Categorize slots: use single 'Full Day' category as per user request
+  const categorizedSlots = availableSlots.length > 0 ? [{
+    name: 'Full Day',
+    slots: availableSlots
+  }] : []
 
   // Calculate summary
   const totalHours = calculateTotalHours(selectedSlots)
@@ -312,7 +315,7 @@ export default function GigBooking() {
       <div className="px-4 pt-4 pb-4">
         <Button
           onClick={() => navigate("/delivery/offers")}
-          className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 rounded-lg shadow-md flex items-center justify-center gap-2"
+          className="w-full bg-black hover:bg-gray-900 text-white font-semibold py-3 rounded-lg shadow-md flex items-center justify-center gap-2"
         >
           <Gift className="w-5 h-5" />
           <span>View All Offers</span>
@@ -331,13 +334,13 @@ export default function GigBooking() {
             className={`relative flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
               activeTab === "book"
                 ? "text-white"
-                : "bg-white text-gray-900 hover:bg-orange-50"
+                : "bg-white text-gray-900 hover:bg-gray-100"
             }`}
           >
             {activeTab === "book" && (
               <motion.div
                 layoutId="activeGigTab"
-                className="absolute inset-0 bg-[#ff8100] rounded-lg z-0"
+                className="absolute inset-0 bg-black rounded-lg z-0"
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
               />
             )}
@@ -351,13 +354,13 @@ export default function GigBooking() {
             className={`relative flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
               activeTab === "history"
                 ? "text-white"
-                : "bg-white text-gray-900 hover:bg-orange-50"
+                : "bg-white text-gray-900 hover:bg-gray-100"
             }`}
           >
             {activeTab === "history" && (
               <motion.div
                 layoutId="activeGigTab"
-                className="absolute inset-0 bg-[#ff8100] rounded-lg z-0"
+                className="absolute inset-0 bg-black rounded-lg z-0"
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
               />
             )}
@@ -399,7 +402,7 @@ export default function GigBooking() {
                         {isSelected && (
                           <motion.div
                             layoutId="selectedDate"
-                            className="absolute inset-0 bg-[#ff8100] rounded-lg z-0"
+                            className="absolute inset-0 bg-black rounded-lg z-0"
                             transition={{ type: "spring", stiffness: 500, damping: 30 }}
                           />
                         )}
@@ -445,6 +448,7 @@ export default function GigBooking() {
                           
                           // Get icon based on category
                           const getCategoryIcon = () => {
+                            if (category.name === 'Full Day') return <Clock className="w-5 h-5 text-white" />
                             if (category.name.includes('Breakfast')) return <Sunrise className="w-5 h-5 text-yellow-400" />
                             if (category.name.includes('Lunch')) return <Sun className="w-5 h-5 text-yellow-400" />
                             return <Moon className="w-5 h-5 text-yellow-400" />
@@ -503,7 +507,7 @@ export default function GigBooking() {
                                             ? "opacity-60 cursor-not-allowed border-gray-200 bg-gray-50"
                                             : isSelected
                                             ? "border-[#10b981] bg-[#10b981] shadow-md"
-                                            : "border-gray-200 bg-white hover:border-[#ff8100] hover:shadow-md"
+                                            : "border-gray-200 bg-white hover:border-black hover:shadow-md"
                                         }`}
                                         whileHover={!isBooked ? { scale: 1.01, y: -1 } : {}}
                                         whileTap={!isBooked ? { scale: 0.99 } : {}}
@@ -580,10 +584,10 @@ export default function GigBooking() {
                       stiffness: 300,
                       damping: 25
                     }}
-                    className="bg-white rounded-xl p-4 border-2 border-[#ff8100] shadow-lg"
+                    className="bg-white rounded-xl p-4 border-2 border-black shadow-lg"
                   >
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="bg-[#ff8100] rounded-full p-2">
+                      <div className="bg-black rounded-full p-2">
                         <Calendar className="w-4 h-4 text-white" />
                       </div>
                       <h3 className="text-lg font-bold text-gray-800">Booking Summary</h3>
@@ -619,7 +623,7 @@ export default function GigBooking() {
                         className="flex justify-between items-center py-2"
                       >
                         <span className="text-gray-600">Slots Selected:</span>
-                        <span className="font-semibold text-[#ff8100] text-base">{selectedSlots.length} slot{selectedSlots.length > 1 ? 's' : ''}</span>
+                        <span className="font-semibold text-black text-base">{selectedSlots.length} slot{selectedSlots.length > 1 ? 's' : ''}</span>
                       </motion.div>
                     </div>
                   </motion.div>
@@ -640,7 +644,7 @@ export default function GigBooking() {
                   whileTap={canBook ? { scale: 0.98 } : {}}
                   className={`w-full py-4 text-lg font-semibold rounded-lg shadow-lg transition-all ${
                     canBook
-                      ? "bg-[#ff8100] hover:bg-[#e67300] text-white"
+                      ? "bg-black hover:bg-gray-900 text-white"
                       : "bg-gray-300 text-gray-500 cursor-not-allowed"
                   }`}
                 >
@@ -745,8 +749,8 @@ export default function GigBooking() {
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
-                              <div className="bg-[#ff8100]/10 rounded-lg p-1.5">
-                                <Calendar className="w-4 h-4 text-[#ff8100]" />
+                              <div className="bg-black/10 rounded-lg p-1.5">
+                                <Calendar className="w-4 h-4 text-black" />
                               </div>
                               <span className="font-bold text-gray-900 text-base">
                                 {new Date(gig.date).toLocaleDateString('en-US', {

@@ -7398,14 +7398,14 @@ export default function DeliveryHome() {
         ctx.lineTo(12, -8);
         ctx.lineTo(-12, -8);
         ctx.closePath();
-        ctx.fillStyle = '#15803d'; // Darker green for heading arrow
+        ctx.fillStyle = '#1d4ed8'; // Darker blue for heading arrow
         ctx.fill();
         ctx.restore();
 
         // 2. Draw Soft Outer Halo
         ctx.beginPath();
         ctx.arc(centerX, centerY, 18, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(34, 197, 94, 0.25)'; // Green-500 with opacity
+        ctx.fillStyle = 'rgba(59, 130, 246, 0.25)'; // Blue-500 with opacity
         ctx.fill();
 
         // 3. Draw White Border (Inner Ring)
@@ -7416,17 +7416,17 @@ export default function DeliveryHome() {
         ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
         ctx.fill();
 
-        // 4. Draw Main Green Dot
+        // 4. Draw Main Blue Dot
         ctx.beginPath();
         ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
-        ctx.fillStyle = '#22c55e'; // Bright green for the main dot
+        ctx.fillStyle = '#3b82f6'; // Bright blue for the main dot
         ctx.fill();
 
         const dataUrl = canvas.toDataURL();
         rotatedIconCache.current.set(cacheKey, dataUrl);
         resolve(dataUrl);
       } catch (error) {
-        console.warn('⚠️ Error drawing green dot marker:', error);
+        console.warn('⚠️ Error drawing blue dot marker:', error);
         resolve(bikeLogo); // Fallback to original image
       }
     });
