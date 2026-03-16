@@ -12,6 +12,8 @@ import {
   Package,
   Users,
   AlertCircle,
+  ArrowRight,
+  Loader2,
 } from "lucide-react";
 import {
   Dialog,
@@ -42,7 +44,10 @@ export default function AdminNavbar({ onMenuClick }) {
   const [adminData, setAdminData] = useState(null);
   const [businessSettings, setBusinessSettings] = useState(null);
   const [domain, setDomain] = useState("Maava");
+  const [searchResults, setSearchResults] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const searchInputRef = useRef(null);
+  const searchTimeoutRef = useRef(null);
 
   // Sync domain state with current route
   useEffect(() => {
@@ -146,17 +151,94 @@ export default function AdminNavbar({ onMenuClick }) {
     }
   }, [searchOpen]);
 
-  // Mock search results - replace with actual search logic
-  const searchResults = [
-    { type: "Order", title: "Order #12345", description: "Pending delivery", icon: Package },
-    { type: "User", title: "Sumit Jaiswal", description: "Customer profile", icon: Users },
-    { type: "Product", title: "Chicken Biryani", description: "Food item", icon: UtensilsCrossed },
-    { type: "Report", title: "Sales Report", description: "Monthly analytics", icon: FileText },
-  ].filter((item) =>
-    searchQuery.trim() === "" ||
-    item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Handle search with debouncing
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setSearchResults([]);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        // Fetch from multiple sources in parallel
+        const [ordersRes, usersRes, restaurantsRes] = await Promise.all([
+          adminAPI.getOrders({ search: searchQuery, limit: 5 }),
+          adminAPI.getUsers({ search: searchQuery, limit: 5 }),
+          adminAPI.getRestaurants({ search: searchQuery, limit: 5 })
+        ]);
+
+        const formattedResults = [];
+
+        // Format Order results
+        if (ordersRes.data?.success && ordersRes.data?.data?.orders) {
+          ordersRes.data.data.orders.forEach(order => {
+            formattedResults.push({
+              id: order.id || order._id,
+              type: "Order",
+              title: `Order #${order.orderId}`,
+              description: `${order.customerName} - ${order.orderStatus}`,
+              icon: Package,
+              link: `/admin/orders/all`
+            });
+          });
+        }
+
+        // Format User results
+        if (usersRes.data?.success && usersRes.data?.data?.users) {
+          usersRes.data.data.users.forEach(user => {
+            formattedResults.push({
+              id: user.id || user._id,
+              type: "User",
+              title: user.name,
+              description: `Customer - ${user.email}`,
+              icon: Users,
+              link: `/admin/customers`
+            });
+          });
+        }
+
+        // Format Restaurant results
+        if (restaurantsRes.data?.success && restaurantsRes.data?.data?.restaurants) {
+          restaurantsRes.data.data.restaurants.forEach(rest => {
+            formattedResults.push({
+              id: rest.id || rest._id,
+              type: "Restaurant",
+              title: rest.name,
+              description: `${rest.ownerName} - ${rest.isActive ? 'Active' : 'Inactive'}`,
+              icon: UtensilsCrossed,
+              link: `/admin/restaurants/edit/${rest.id || rest._id}`
+            });
+          });
+        }
+
+        setSearchResults(formattedResults);
+      } catch (error) {
+        console.error("Search error:", error);
+        setSearchResults([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 500);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  const handleResultClick = (link) => {
+    setSearchOpen(false);
+    setSearchQuery("");
+    navigate(link);
+  };
 
 
 
@@ -401,8 +483,13 @@ export default function AdminNavbar({ onMenuClick }) {
                 placeholder="Search orders, users, products, reports..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-3 text-base border-neutral-300 bg-white text-neutral-900 placeholder:text-neutral-500 focus:border-black focus:ring-black"
+                className="pl-10 pr-10 py-3 text-base border-neutral-300 bg-white text-neutral-900 placeholder:text-neutral-500 focus:border-black focus:ring-black"
               />
+              {isLoading && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <Loader2 className="w-5 h-5 text-neutral-400 animate-spin" />
+                </div>
+              )}
             </div>
 
             {searchQuery.trim() === "" ? (
@@ -456,6 +543,7 @@ export default function AdminNavbar({ onMenuClick }) {
                     {searchResults.map((result, idx) => (
                       <button
                         key={idx}
+                        onClick={() => handleResultClick(result.link)}
                         className="w-full flex items-center gap-4 p-4 rounded-lg border border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50 transition-all text-left"
                       >
                         <div className="flex-1">

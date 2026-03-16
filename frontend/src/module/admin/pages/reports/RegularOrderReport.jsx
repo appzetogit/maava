@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react"
-import { BarChart3, ChevronDown, Settings, FileText, FileSpreadsheet, Code, Loader2 } from "lucide-react"
+import { BarChart3, ChevronDown, FileText, FileSpreadsheet, Code, Loader2 } from "lucide-react"
 import { adminAPI } from "@/lib/api"
 import { toast } from "sonner"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -49,7 +49,6 @@ export default function RegularOrderReport() {
   const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
 
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   // Fetch zones, restaurants, and customers for filter dropdowns
   useEffect(() => {
@@ -400,18 +399,6 @@ export default function RegularOrderReport() {
           </div>
         </div>
 
-        {/* Status Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 mb-3">
-          {renderStatusRow("Scheduled")}
-          {renderStatusRow("Pending")}
-          {renderStatusRow("Processing")}
-          {renderStatusRow("Food On The Way")}
-          {renderStatusRow("Accepted")}
-          {renderStatusRow("Delivered")}
-          {renderStatusRow("Canceled")}
-          {renderStatusRow("Payment Failed")}
-          {renderStatusRow("Refunded")}
-        </div>
 
         {/* Total Orders & Table */}
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-3">
@@ -464,12 +451,7 @@ export default function RegularOrderReport() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <button 
-                onClick={() => setIsSettingsOpen(true)}
-                className="p-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition-all"
-              >
-                <Settings className="w-3 h-3" />
-              </button>
+
             </div>
           </div>
 
@@ -626,30 +608,7 @@ export default function RegularOrderReport() {
         </div>
       </div>
 
-      {/* Settings Dialog */}
-      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-        <DialogContent className="max-w-md bg-white p-0 opacity-0 data-[state=open]:opacity-100 data-[state=closed]:opacity-0 transition-opacity duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:scale-100 data-[state=closed]:scale-100">
-          <DialogHeader className="px-6 pt-6 pb-4">
-            <DialogTitle className="flex items-center gap-2">
-              <Settings className="w-5 h-5" />
-              Report Settings
-            </DialogTitle>
-          </DialogHeader>
-          <div className="px-6 pb-6">
-            <p className="text-sm text-slate-700">
-              Regular order report settings and preferences will be available here.
-            </p>
-          </div>
-          <div className="px-6 pb-6 flex items-center justify-end">
-            <button
-              onClick={() => setIsSettingsOpen(false)}
-              className="px-4 py-2 text-sm font-medium rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-all shadow-md"
-            >
-              Close
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
+
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { Mail, Phone, AlertCircle, Loader2 } from "lucide-react"
 import AnimatedPage from "../../components/AnimatedPage"
@@ -60,17 +60,16 @@ export default function SignIn() {
     name: "",
   })
   const [isLoading, setIsLoading] = useState(false)
-  const [apiError, setApiError] = useState("")
+  const [authError, setAuthError] = useState("")
   const redirectHandledRef = useRef(false)
-
-  // Helper function to process signed-in user
-  const processSignedInUser = async (user, source = "unknown") => {
+  // Handle sign-in result processing
+  const processSignedInUser = useCallback(async (user, source = "unknown") => {
     if (redirectHandledRef.current) {
-      console.log(`ℹ️ User already being processed, skipping (source: ${source})`)
+      console.log(`ℹ️ [Auth] User already being processed, skipping (source: ${source})`)
       return
     }
 
-    console.log(`✅ Processing signed-in user from ${source}:`, {
+    console.log(`✅ [Auth] Processing signed-in user from ${source}:`, {
       email: user.email,
       uid: user.uid,
       displayName: user.displayName
@@ -78,16 +77,16 @@ export default function SignIn() {
 
     redirectHandledRef.current = true
     setIsLoading(true)
-    setApiError("")
+    setAuthError("")
 
     try {
       const idToken = await user.getIdToken()
-      console.log(`✅ Got ID token from ${source}, calling backend...`)
+      console.log(`✅ [Auth] Got ID token from ${source}, calling backend...`)
 
       const response = await authAPI.firebaseGoogleLogin(idToken, "user")
       const data = response?.data?.data || {}
 
-      console.log(`✅ Backend response from ${source}:`, {
+      console.log(`✅ [Auth] Backend response from ${source}:`, {
         hasAccessToken: !!data.accessToken,
         hasUser: !!data.user,
         userEmail: data.user?.email
@@ -101,27 +100,18 @@ export default function SignIn() {
         window.dispatchEvent(new Event("userAuthChanged"))
 
         // Clear any URL hash or params
-        const hasHash = window.location.hash.length > 0
-        const hasQueryParams = window.location.search.length > 0
-        if (hasHash || hasQueryParams) {
+        if (window.location.hash.length > 0 || window.location.search.length > 0) {
           window.history.replaceState({}, document.title, window.location.pathname)
         }
 
-        console.log(`✅ Navigating to user dashboard from ${source}...`)
-        navigate("/user", { replace: true })
+        console.log(`✅ [Auth] Sign-in successful! Navigating to home...`)
+        // Direct navigation to home to avoid intermediate redirects
+        navigate("/", { replace: true })
       } else {
-        console.error(`❌ Invalid backend response from ${source}`)
-        redirectHandledRef.current = false
-        setIsLoading(false)
-        setApiError("Invalid response from server. Please try again.")
+        throw new Error("Invalid response from server. Missing access token or user data.")
       }
     } catch (error) {
-      console.error(`❌ Error processing user from ${source}:`, error)
-      console.error("Error details:", {
-        code: error?.code,
-        message: error?.message,
-        response: error?.response?.data
-      })
+      console.error(`❌ [Auth] Error processing user from ${source}:`, error)
       redirectHandledRef.current = false
       setIsLoading(false)
 
@@ -131,305 +121,66 @@ export default function SignIn() {
       } else if (error?.message) {
         errorMessage = error.message
       }
-      setApiError(errorMessage)
+      setAuthError(errorMessage)
     }
-  }
+  }, [navigate])
 
-  // Handle Firebase redirect result on component mount and URL changes
+  // Set up Firebase Auth listeners and handle redirect results
   useEffect(() => {
-    // Prevent multiple calls
-    if (redirectHandledRef.current) {
-      return
-    }
+    let unsubscribe = null
 
-    const handleRedirectResult = async () => {
+    const initAuth = async () => {
       try {
-        // Check if we're coming back from a redirect (URL might have hash or params)
-        const currentUrl = window.location.href
-        const hasHash = window.location.hash.length > 0
-        const hasQueryParams = window.location.search.length > 0
-
-        console.log("🔍 Checking for redirect result...", {
-          url: currentUrl,
-          hasHash,
-          hasQueryParams,
-          pathname: window.location.pathname,
-          hash: window.location.hash,
-          search: window.location.search
-        })
-
         const { getRedirectResult, onAuthStateChanged } = await import("firebase/auth")
-
-        // Ensure Firebase is initialized
         ensureFirebaseInitialized()
 
-        // Check current user immediately (before getRedirectResult)
-        const immediateUser = firebaseAuth.currentUser
-        console.log("🔍 Immediate current user check:", {
-          hasUser: !!immediateUser,
-          userEmail: immediateUser?.email
-        })
-
-        console.log("🔍 About to call getRedirectResult...", {
-          firebaseAuthExists: !!firebaseAuth,
-          firebaseAuthApp: firebaseAuth?.app?.name,
-          currentUser: firebaseAuth?.currentUser?.email || "none"
-        })
-
-        // First, try to get redirect result (non-blocking with timeout)
-        // Note: getRedirectResult returns null if there's no redirect result (normal on first load)
-        // We use a short timeout to avoid hanging, and rely on auth state listener as primary method
-        let result = null
-        try {
-          console.log("🔍 Calling getRedirectResult now...")
-
-          // Use a short timeout (3 seconds) - if it hangs, auth state listener will handle it
-          result = await Promise.race([
-            getRedirectResult(firebaseAuth),
-            new Promise((resolve) =>
-              setTimeout(() => {
-                console.log("ℹ️ getRedirectResult timeout (normal - no redirect result), relying on auth state listener")
-                resolve(null)
-              }, 3000)
-            )
-          ])
-
-          if (result !== null) {
-            console.log("✅ getRedirectResult completed, result found")
-          } else {
-            console.log("ℹ️ No redirect result (normal on first page load)")
-          }
-        } catch (redirectError) {
-          console.log("ℹ️ getRedirectResult error (will rely on auth state listener):", redirectError?.code || redirectError?.message)
-
-          // Don't throw - auth state listener will handle sign-in
-          result = null
-        }
-
-        console.log("🔍 Redirect result details:", {
-          hasResult: !!result,
-          hasUser: !!result?.user,
-          userEmail: result?.user?.email,
-          providerId: result?.providerId,
-          operationType: result?.operationType
-        })
-
-        if (result && result.user) {
-          // Process redirect result
-          await processSignedInUser(result.user, "redirect-result")
-        } else {
-          // No redirect result - check if user is already signed in
-          const currentUser = firebaseAuth.currentUser
-          console.log("🔍 Checking current user after redirect check:", {
-            hasCurrentUser: !!currentUser,
-            userEmail: currentUser?.email,
-            redirectHandled: redirectHandledRef.current
+        // 1. Set up Auth State Listener (Most reliable for session restoration)
+        unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
+          console.log("🔔 [Auth] State changed:", {
+            hasUser: !!user,
+            email: user?.email,
+            handled: redirectHandledRef.current
           })
 
-          if (currentUser && !redirectHandledRef.current) {
-            // Process current user
-            await processSignedInUser(currentUser, "current-user-check")
-          } else {
-            // No redirect result - this is normal on first load
-            console.log("ℹ️ No redirect result found (normal on first page load)")
-            setIsLoading(false)
+          if (user && !redirectHandledRef.current) {
+            await processSignedInUser(user, "auth-state-listener")
           }
-        }
-      } catch (error) {
-        console.error("❌ Google sign-in redirect error:", error)
-        console.error("Error details:", {
-          code: error?.code,
-          message: error?.message,
-          stack: error?.stack
         })
 
-        redirectHandledRef.current = false
-
-        // Show error to user
-        const errorCode = error?.code || ""
-        const errorMessage = error?.message || ""
-
-        // Don't show error for "no redirect result" - this is normal when page first loads
-        if (errorCode === "auth/no-auth-event" || errorCode === "auth/popup-closed-by-user") {
-          // These are expected cases, don't show error
-          console.log("ℹ️ Expected case - no auth event or popup closed")
-          setIsLoading(false)
+        // 2. Immediate check for current user
+        if (firebaseAuth.currentUser && !redirectHandledRef.current) {
+          console.log("🔍 [Auth] Current user found immediately")
+          await processSignedInUser(firebaseAuth.currentUser, "immediate-check")
           return
         }
 
-        // Handle backend errors (500, etc.)
-        let message = "Google sign-in failed. Please try again."
+        // 3. Check for redirect result (in case user arrives via redirect)
+        try {
+          const result = await Promise.race([
+            getRedirectResult(firebaseAuth),
+            new Promise(resolve => setTimeout(() => resolve(null), 5000))
+          ])
 
-        if (error?.response) {
-          // Axios error with response
-          const status = error.response.status
-          const responseData = error.response.data || {}
-
-          if (status === 500) {
-            message = responseData.message || responseData.error || "Server error. Please try again later."
-          } else if (status === 400 || status === 401) {
-            message = responseData.message || responseData.error || "Authentication failed. Please try again."
-          } else {
-            message = responseData.message || responseData.error || errorMessage || message
+          if (result?.user && !redirectHandledRef.current) {
+            console.log("✅ [Auth] Redirect result found")
+            await processSignedInUser(result.user, "redirect-result")
           }
-        } else if (errorMessage) {
-          message = errorMessage
-        } else if (errorCode) {
-          // Firebase auth error codes
-          if (errorCode === "auth/network-request-failed") {
-            message = "Network error. Please check your connection and try again."
-          } else if (errorCode === "auth/invalid-credential") {
-            message = "Invalid credentials. Please try again."
-          } else {
-            message = errorMessage || message
-          }
+        } catch (redirectError) {
+          console.warn("ℹ️ [Auth] getRedirectResult error (non-critical):", redirectError.message)
         }
 
-        setApiError(message)
-        setIsLoading(false)
-      }
-    }
-
-    // Helper function to process signed-in user
-    const processSignedInUser = async (user, source = "unknown") => {
-      if (redirectHandledRef.current) {
-        console.log(`ℹ️ User already being processed, skipping (source: ${source})`)
-        return
-      }
-
-      console.log(`✅ Processing signed-in user from ${source}:`, {
-        email: user.email,
-        uid: user.uid,
-        displayName: user.displayName
-      })
-
-      redirectHandledRef.current = true
-      setIsLoading(true)
-      setApiError("")
-
-      try {
-        const idToken = await user.getIdToken()
-        console.log(`✅ Got ID token from ${source}, calling backend...`)
-
-        const response = await authAPI.firebaseGoogleLogin(idToken, "user")
-        const data = response?.data?.data || {}
-
-        console.log(`✅ Backend response from ${source}:`, {
-          hasAccessToken: !!data.accessToken,
-          hasUser: !!data.user,
-          userEmail: data.user?.email
-        })
-
-        const accessToken = data.accessToken
-        const appUser = data.user
-
-        if (accessToken && appUser) {
-          setAuthData("user", accessToken, appUser)
-          window.dispatchEvent(new Event("userAuthChanged"))
-
-          // Clear any URL hash or params
-          const hasHash = window.location.hash.length > 0
-          const hasQueryParams = window.location.search.length > 0
-          if (hasHash || hasQueryParams) {
-            window.history.replaceState({}, document.title, window.location.pathname)
-          }
-
-          console.log(`✅ Navigating to user dashboard from ${source}...`)
-          navigate("/user", { replace: true })
-        } else {
-          console.error(`❌ Invalid backend response from ${source}`)
-          redirectHandledRef.current = false
-          setIsLoading(false)
-          setApiError("Invalid response from server. Please try again.")
-        }
       } catch (error) {
-        console.error(`❌ Error processing user from ${source}:`, error)
-        console.error("Error details:", {
-          code: error?.code,
-          message: error?.message,
-          response: error?.response?.data
-        })
-        redirectHandledRef.current = false
-        setIsLoading(false)
-
-        let errorMessage = "Failed to complete sign-in. Please try again."
-        if (error?.response?.data?.message) {
-          errorMessage = error.response.data.message
-        } else if (error?.message) {
-          errorMessage = error.message
-        }
-        setApiError(errorMessage)
+        console.error("❌ [Auth] Initialization error:", error)
       }
     }
 
-    // Set up auth state listener FIRST (before getRedirectResult)
-    // This ensures we catch auth state changes immediately
-    let unsubscribe = null
-    const setupAuthListener = async () => {
-      try {
-        const { onAuthStateChanged } = await import("firebase/auth")
-        ensureFirebaseInitialized()
-
-        console.log("🔔 Setting up auth state listener...")
-
-        unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
-          console.log("🔔 Auth state changed:", {
-            hasUser: !!user,
-            userEmail: user?.email,
-            redirectHandled: redirectHandledRef.current,
-            currentPath: window.location.pathname
-          })
-
-          // If user signed in and we haven't handled it yet
-          if (user && !redirectHandledRef.current) {
-            await processSignedInUser(user, "auth-state-listener")
-          } else if (!user) {
-            // User signed out
-            console.log("ℹ️ User signed out")
-            redirectHandledRef.current = false
-          } else if (user && redirectHandledRef.current) {
-            console.log("ℹ️ User already signed in and handled, skipping...")
-          }
-        })
-
-        console.log("✅ Auth state listener set up successfully")
-      } catch (error) {
-        console.error("❌ Error setting up auth state listener:", error)
-      }
-    }
-
-    // Set up auth listener first, then check redirect result
-    setupAuthListener()
-
-    // Also check current user immediately (in case redirect already completed)
-    const checkCurrentUser = async () => {
-      try {
-        ensureFirebaseInitialized()
-        const currentUser = firebaseAuth.currentUser
-        if (currentUser && !redirectHandledRef.current) {
-          console.log("✅ Current user found immediately, processing...")
-          await processSignedInUser(currentUser, "immediate-check")
-        }
-      } catch (error) {
-        console.error("❌ Error checking current user:", error)
-      }
-    }
-
-    // Check current user immediately
-    checkCurrentUser()
-
-    // Small delay to ensure Firebase is ready, then check redirect result
-    const timer = setTimeout(() => {
-      handleRedirectResult()
-    }, 500)
+    initAuth()
 
     return () => {
-      clearTimeout(timer)
-      if (unsubscribe) {
-        unsubscribe()
-      }
+      if (unsubscribe) unsubscribe()
     }
-  }, [navigate, searchParams])
+  }, [processSignedInUser])
+
 
   // Get selected country details dynamically
   const selectedCountry = countryCodes.find(c => c.code === formData.countryCode) || countryCodes[2] // Default to India (+91)
@@ -501,7 +252,7 @@ export default function SignIn() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)
-    setApiError("")
+    setAuthError("")
 
     // Validate based on auth method
     let hasErrors = false
@@ -557,14 +308,14 @@ export default function SignIn() {
         error?.response?.data?.message ||
         error?.response?.data?.error ||
         "Failed to send OTP. Please try again."
-      setApiError(message)
+      setAuthError(message)
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleGoogleSignIn = async () => {
-    setApiError("")
+    setAuthError("")
     setIsLoading(true)
     redirectHandledRef.current = false // Reset flag when starting new sign-in
 
@@ -577,53 +328,46 @@ export default function SignIn() {
         throw new Error("Firebase Auth is not initialized. Please check your Firebase configuration.")
       }
 
-      const { signInWithRedirect } = await import("firebase/auth")
+      console.log("🚀 Starting Google sign-in...")
 
-      // Log current origin for debugging
-      console.log("🚀 Starting Google sign-in redirect...", {
-        origin: window.location.origin,
-        hostname: window.location.hostname,
-        pathname: window.location.pathname
-      })
+      const { signInWithPopup, signInWithRedirect } = await import("firebase/auth")
 
-      // Use redirect directly to avoid COOP issues
-      // The redirect result will be handled by the useEffect hook above
-      await signInWithRedirect(firebaseAuth, googleProvider)
-
-      // Note: signInWithRedirect will cause a full page redirect to Google
-      // After user authenticates, they'll be redirected back to this page
-      // The useEffect hook will handle the result when the page loads again
-      console.log("✅ Redirect initiated, user will be redirected to Google...")
-      // Don't set loading to false here - page will redirect
+      try {
+        // 1. Try popup first (most reliable for session restoration on localhost)
+        const result = await signInWithPopup(firebaseAuth, googleProvider)
+        if (result?.user) {
+          console.log("✅ Popup sign-in successful")
+          await processSignedInUser(result.user, "popup")
+        }
+      } catch (popupError) {
+        console.warn("ℹ️ Popup failed or blocked, falling back to redirect:", popupError.code)
+        
+        // If popup was blocked or failed, fallback to redirect
+        if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/cancelled-popup-request' || popupError.code === 'auth/popup-closed-by-user') {
+          await signInWithRedirect(firebaseAuth, googleProvider)
+          console.log("✅ Redirect initiated...")
+          // Note: page will redirect, so we don't set loading to false
+        } else {
+          throw popupError
+        }
+      }
     } catch (error) {
-      console.error("❌ Google sign-in redirect error:", error)
-      console.error("Error code:", error?.code)
-      console.error("Error message:", error?.message)
+      console.error("❌ Google sign-in error:", error)
       setIsLoading(false)
       redirectHandledRef.current = false
 
       const errorCode = error?.code || ""
-      const errorMessage = error?.message || ""
-
       let message = "Google sign-in failed. Please try again."
 
       if (errorCode === "auth/configuration-not-found") {
-        message = "Firebase configuration error. Please ensure your domain is authorized in Firebase Console. Current domain: " + window.location.hostname
-      } else if (errorCode === "auth/popup-blocked") {
-        message = "Popup was blocked. Please allow popups and try again."
-      } else if (errorCode === "auth/popup-closed-by-user") {
-        message = "Sign-in was cancelled. Please try again."
+        message = "Firebase configuration error. Please ensure your domain is authorized in Firebase Console."
       } else if (errorCode === "auth/network-request-failed") {
         message = "Network error. Please check your connection and try again."
-      } else if (errorMessage) {
-        message = errorMessage
-      } else if (error?.response?.data?.message) {
-        message = error.response.data.message
-      } else if (error?.response?.data?.error) {
-        message = error.response.data.error
+      } else if (error?.message) {
+        message = error.message
       }
 
-      setApiError(message)
+      setAuthError(message)
     }
   }
 
@@ -743,10 +487,10 @@ export default function SignIn() {
                     <span>{errors.phone}</span>
                   </div>
                 )}
-                {apiError && authMethod === "phone" && (
+                {authError && authMethod === "phone" && (
                   <div className="flex items-center gap-1 text-xs text-red-600">
                     <AlertCircle className="h-3 w-3" />
-                    <span>{apiError}</span>
+                    <span>{authError}</span>
                   </div>
                 )}
               </div>
@@ -771,17 +515,17 @@ export default function SignIn() {
                     <span>{errors.email}</span>
                   </div>
                 )}
-                {apiError && authMethod === "email" && (
+                {authError && authMethod === "email" && (
                   <div className="flex items-center gap-1 text-xs text-red-600">
                     <AlertCircle className="h-3 w-3" />
-                    <span>{apiError}</span>
+                    <span>{authError}</span>
                   </div>
                 )}
                 <button
                   type="button"
                   onClick={() => {
                     setAuthMethod("phone")
-                    setApiError("")
+                    setAuthError("")
                   }}
                   className="text-xs text-black hover:underline text-left font-bold"
                 >
