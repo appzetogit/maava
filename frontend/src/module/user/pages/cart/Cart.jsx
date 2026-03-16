@@ -178,6 +178,7 @@ export default function Cart() {
 
   // Coupons state - fetched from backend
   const [availableCoupons, setAvailableCoupons] = useState([])
+  const [itemCoupons, setItemCoupons] = useState({}) // { itemId: [coupons] }
   const [loadingCoupons, setLoadingCoupons] = useState(false)
   const [showExclusiveOfferPopup, setShowExclusiveOfferPopup] = useState(false)
   const [hasShownOfferPopup, setHasShownOfferPopup] = useState(false)
@@ -599,33 +600,44 @@ export default function Cart() {
         const responses = await Promise.all(couponPromises)
         const allCoupons = []
         const uniqueCouponCodes = new Set()
+        const groupedCoupons = {}
 
         responses.forEach((response, index) => {
+          const cartItem = cart[index]
           if (response?.data?.success && response?.data?.data?.coupons) {
-            const coupons = response.data.data.coupons
-            const cartItem = cart[index]
+            const couponsData = response.data.data.coupons
+            const itemSpecificCoupons = []
 
-            coupons.forEach(coupon => {
+            couponsData.forEach(coupon => {
+              const couponObj = {
+                code: coupon.couponCode,
+                discount: coupon.originalPrice - coupon.discountedPrice,
+                discountPercentage: coupon.discountPercentage,
+                minOrder: coupon.minOrderValue || 0,
+                description: `Save ₹${coupon.originalPrice - coupon.discountedPrice} with '${coupon.couponCode}'`,
+                originalPrice: coupon.originalPrice,
+                discountedPrice: coupon.discountedPrice,
+                itemId: cartItem.id,
+                itemName: cartItem.name,
+              }
+
+              itemSpecificCoupons.push(couponObj)
+
               if (!uniqueCouponCodes.has(coupon.couponCode)) {
                 uniqueCouponCodes.add(coupon.couponCode)
-                allCoupons.push({
-                  code: coupon.couponCode,
-                  discount: coupon.originalPrice - coupon.discountedPrice,
-                  discountPercentage: coupon.discountPercentage,
-                  minOrder: coupon.minOrderValue || 0,
-                  description: `Save ₹${coupon.originalPrice - coupon.discountedPrice} with '${coupon.couponCode}'`,
-                  originalPrice: coupon.originalPrice,
-                  discountedPrice: coupon.discountedPrice,
-                  itemId: cartItem.id,
-                  itemName: cartItem.name,
-                })
+                allCoupons.push(couponObj)
               }
             })
+
+            if (itemSpecificCoupons.length > 0) {
+              groupedCoupons[cartItem.id] = itemSpecificCoupons
+            }
           }
         })
 
-        console.log(`[CART-COUPONS] Total unique coupons found: ${allCoupons.length}`)
+        console.log(`[CART-COUPONS] Total unique coupons: ${allCoupons.length}, Grouped for ${Object.keys(groupedCoupons).length} items`)
         setAvailableCoupons(allCoupons)
+        setItemCoupons(groupedCoupons)
         lastFetchedCouponsKeyRef.current = fetchKey
       } catch (error) {
         console.error(`[CART-COUPONS] Parallel fetch error:`, error)
@@ -1645,81 +1657,98 @@ export default function Cart() {
                 </div>
               )}
 
-              {/* Coupon Section */}
-              <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl">
-                {appliedCoupon ? (
-                  <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl p-3 md:p-4">
-                    <div className="flex items-center gap-2 md:gap-3">
-                      <Tag className="h-4 w-4 md:h-5 md:w-5 text-black dark:text-white" />
-                      <div>
-                        <p className="text-sm md:text-base font-medium text-black dark:text-white">'{appliedCoupon.code}' applied</p>
-                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">You saved ₹{discount}</p>
-                      </div>
-                    </div>
-                    <button onClick={handleRemoveCoupon} className="text-gray-500 dark:text-gray-400 text-xs md:text-sm font-medium">Remove</button>
-                  </div>
-                ) : loadingCoupons ? (
-                  <div className="flex items-center gap-2 md:gap-3">
-                    <Percent className="h-4 w-4 md:h-5 md:w-5 text-gray-600 dark:text-gray-400" />
-                    <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">Loading coupons...</p>
-                  </div>
-                ) : availableCoupons.length > 0 ? (
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 md:gap-3">
-                        <Percent className="h-4 w-4 md:h-5 md:w-5 text-gray-600 dark:text-gray-400" />
-                        <div>
-                          <p className="text-sm md:text-base font-medium text-gray-800 dark:text-gray-200">
-                            Save ₹{availableCoupons[0].discount} with '{availableCoupons[0].code}'
-                          </p>
-                          {availableCoupons.length > 1 && (
-                            <button onClick={() => setShowCoupons(!showCoupons)} className="text-xs md:text-sm text-blue-600 dark:text-blue-400 font-medium">
-                              View all coupons →
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 md:h-8 text-xs md:text-sm border-black dark:border-white text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                        onClick={() => handleApplyCoupon(availableCoupons[0])}
-                        disabled={subtotal < availableCoupons[0].minOrder}
-                      >
-                        {subtotal < availableCoupons[0].minOrder ? `Min ₹${availableCoupons[0].minOrder}` : 'APPLY'}
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 md:gap-3">
-                    <Percent className="h-4 w-4 md:h-5 md:w-5 text-gray-600 dark:text-gray-400" />
-                    <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">No coupons available</p>
-                  </div>
-                )}
+               <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl">
+                 <div className="flex items-center gap-2 md:gap-3 mb-3">
+                   <Tag className="h-4 w-4 md:h-5 md:w-5 text-black dark:text-white" />
+                   <span className="text-sm md:text-base font-semibold text-gray-800 dark:text-gray-200">Offers & Benefits</span>
+                 </div>
 
-                {/* Coupons List */}
-                {showCoupons && !appliedCoupon && availableCoupons.length > 0 && (
-                  <div className="mt-3 md:mt-4 space-y-2 md:space-y-3 border-t dark:border-gray-700 pt-3 md:pt-4">
-                    {availableCoupons.map((coupon) => (
-                      <div key={coupon.code} className="flex items-center justify-between py-2 md:py-3 border-b border-dashed dark:border-gray-700 last:border-0">
-                        <div>
-                          <p className="text-sm md:text-base font-medium text-gray-800 dark:text-gray-200">{coupon.code}</p>
-                          <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{coupon.description}</p>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-6 md:h-7 text-xs md:text-sm border-black dark:border-white text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                          onClick={() => handleApplyCoupon(coupon)}
-                          disabled={subtotal < coupon.minOrder}
-                        >
-                          {subtotal < coupon.minOrder ? `Min ₹${coupon.minOrder}` : 'APPLY'}
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                 {appliedCoupon ? (
+                   <div className="flex items-center justify-between bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/30 rounded-lg md:rounded-xl p-3 md:p-4">
+                     <div className="flex items-center gap-2 md:gap-3">
+                       <Check className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
+                       <div>
+                         <p className="text-sm md:text-base font-bold text-green-600">'{appliedCoupon.code}' applied</p>
+                         <p className="text-xs md:text-sm text-green-600/80 font-medium">You saved ₹{discount.toFixed(0)}</p>
+                       </div>
+                     </div>
+                     <button onClick={handleRemoveCoupon} className="text-gray-500 dark:text-gray-400 text-xs md:text-sm font-bold uppercase tracking-wider">Remove</button>
+                   </div>
+                 ) : loadingCoupons ? (
+                   <div className="flex items-center gap-2 md:gap-3 py-2">
+                     <div className="w-5 h-5 border-2 border-gray-300 border-t-black animate-spin rounded-full" />
+                     <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">Finding best offers for you...</p>
+                   </div>
+                 ) : Object.keys(itemCoupons).length > 0 ? (
+                   <div className="space-y-3">
+                     {cart.map((item) => {
+                       const coupons = itemCoupons[item.id];
+                       if (!coupons || coupons.length === 0) return null;
+
+                       return (
+                         <div key={item.id} className="border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden">
+                           <button
+                             onClick={() => setShowCoupons(showCoupons === item.id ? null : item.id)}
+                             className="w-full flex items-center justify-between p-3 md:p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                           >
+                             <div className="flex items-center gap-3">
+                               <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center p-1.5">
+                                 <Percent className="w-full h-full text-blue-600" />
+                               </div>
+                               <div className="text-left">
+                                 <p className="text-sm font-bold text-gray-900 dark:text-white">{item.name}</p>
+                                 <p className="text-[10px] md:text-xs text-blue-600 font-black uppercase tracking-widest">{coupons.length} {coupons.length === 1 ? 'Offer' : 'Offers'} available</p>
+                               </div>
+                             </div>
+                             {showCoupons === item.id ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                           </button>
+
+                           <AnimatePresence>
+                             {showCoupons === item.id && (
+                               <motion.div
+                                 initial={{ height: 0, opacity: 0 }}
+                                 animate={{ height: "auto", opacity: 1 }}
+                                 exit={{ height: 0, opacity: 0 }}
+                                 className="overflow-hidden bg-gray-50/50 dark:bg-gray-800/30"
+                               >
+                                 <div className="px-3 md:px-4 pb-4 space-y-2">
+                                   {coupons.map((coupon) => (
+                                     <div key={coupon.code} className="flex items-center justify-between p-3 bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-gray-800 rounded-lg shadow-sm">
+                                       <div className="flex-1 pr-4">
+                                         <div className="flex items-center gap-2 mb-1">
+                                           <span className="text-xs font-black bg-blue-600 text-white px-2 py-0.5 rounded tracking-wider uppercase">{coupon.code}</span>
+                                           <span className="text-[10px] font-bold text-green-600 bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded">SAVE ₹{coupon.discount.toFixed(0)}</span>
+                                         </div>
+                                         <p className="text-[11px] md:text-xs text-gray-500 font-medium leading-tight">{coupon.description}</p>
+                                       </div>
+                                       <Button
+                                         size="sm"
+                                         className={`h-8 px-4 font-black text-xs rounded-lg transition-all ${subtotal < coupon.minOrder
+                                           ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-none'
+                                           : 'bg-black dark:bg-white text-white dark:text-black hover:scale-105'
+                                           }`}
+                                         onClick={() => handleApplyCoupon(coupon)}
+                                         disabled={subtotal < coupon.minOrder}
+                                       >
+                                         {subtotal < coupon.minOrder ? `₹${coupon.minOrder}` : 'APPLY'}
+                                       </Button>
+                                     </div>
+                                   ))}
+                                 </div>
+                               </motion.div>
+                             )}
+                           </AnimatePresence>
+                         </div>
+                       );
+                     })}
+                   </div>
+                 ) : (
+                   <div className="flex items-center gap-2 md:gap-3 py-2">
+                     <Percent className="h-4 w-4 md:h-5 md:w-5 text-gray-300" />
+                     <p className="text-sm md:text-base text-gray-400">No applicable offers for items in cart</p>
+                   </div>
+                 )}
+               </div>
 
               {/* Delivery Time */}
               <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl">
