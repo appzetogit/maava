@@ -1,6 +1,6 @@
 {
     "delivery": {
-        "home_title": "Delivery Home",
+        "home_title": "Home",
         "change_language": "Change language",
         "select_preferred_language": "Select your preferred language",
         "app_will_restart": "The app will apply the language change immediately.",
