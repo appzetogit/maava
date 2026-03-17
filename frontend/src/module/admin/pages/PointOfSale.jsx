@@ -347,37 +347,34 @@ export default function PointOfSale() {
               )}
         </div>
 
-            {/* Alternative: Dropdown Selector */}
-            <div>
-                    <label className="block text-sm font-medium text-[#334257] mb-2">
-                Or Select from Dropdown
-                    </label>
-                    <div className="relative">
-                      <select 
-                  value={selectedRestaurant}
-                  onChange={(e) => {
-                    setSelectedRestaurant(e.target.value)
-                    const selected = restaurants.find(r => r._id === e.target.value)
-                    if (selected) {
-                      setSearchQuery(`${selected.name} (${selected.restaurantId || selected._id})`)
-                    }
-                  }}
-                        className="w-full h-11 rounded-md border border-[#e3e6ef] bg-white px-3 pr-10 text-sm text-[#4a5671] focus:outline-none focus:ring-1 focus:ring-[#006fbd]"
-                      >
-                  <option value="">Select Restaurant</option>
-                  {restaurants.map(restaurant => (
-                    <option key={restaurant._id} value={restaurant._id}>
-                      {restaurant.name} ({restaurant.restaurantId || restaurant._id})
-                          </option>
-                        ))}
-                      </select>
-                      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 text-xs">
-                        ▼
-                      </span>
-                    </div>
-                  </div>
-                  </div>
-                </div>
+        {/* Alternative: Dropdown Selector */}
+        <div>
+          <label className="block text-sm font-medium text-[#334257] mb-2">
+            Or Select from Dropdown
+          </label>
+          <div className="relative">
+            <select 
+              value={selectedRestaurant}
+              onChange={(e) => {
+                setSelectedRestaurant(e.target.value)
+                const selected = restaurants.find(r => r._id === e.target.value)
+                if (selected) {
+                  setSearchQuery(`${selected.name} (${selected.restaurantId || selected._id})`)
+                }
+              }}
+              className="w-full h-11 rounded-md border border-[#e3e6ef] bg-white px-3 pr-10 text-sm text-[#4a5671] focus:outline-none focus:ring-1 focus:ring-[#006fbd]"
+            >
+              <option value="">Select Restaurant</option>
+              {restaurants.map(restaurant => (
+                <option key={restaurant._id} value={restaurant._id}>
+                  {restaurant.name} ({restaurant.restaurantId || restaurant._id})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
 
         {/* Analytics Dashboard */}
         {selectedRestaurant && !loading ? (
