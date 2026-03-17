@@ -106,7 +106,7 @@ export default function AddDeliveryman() {
                   <input
                     type="text"
                     value={formData.firstName}
-                    onChange={(e) => handleInputChange("firstName", e.target.value)}
+                    onChange={(e) => handleInputChange("firstName", e.target.value.replace(/[^a-zA-Z\s]/g, ""))}
                     placeholder="Ex: Jhone"
                     className={`w-full px-4 py-2.5 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
                       formErrors.firstName ? "border-red-500" : "border-slate-300"
@@ -122,7 +122,7 @@ export default function AddDeliveryman() {
                   <input
                     type="text"
                     value={formData.lastName}
-                    onChange={(e) => handleInputChange("lastName", e.target.value)}
+                    onChange={(e) => handleInputChange("lastName", e.target.value.replace(/[^a-zA-Z\s]/g, ""))}
                     placeholder="Ex: Joe"
                     className={`w-full px-4 py-2.5 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
                       formErrors.lastName ? "border-red-500" : "border-slate-300"
@@ -276,6 +276,7 @@ export default function AddDeliveryman() {
                       type="date"
                       value={formData.birthdate}
                       onChange={(e) => handleInputChange("birthdate", e.target.value)}
+                      max={new Date().toISOString().split("T")[0]}
                       className="w-full px-4 py-2.5 pr-10 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     />
                     <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />

@@ -363,6 +363,7 @@ export default function OrderDetectDelivery() {
         activeFiltersCount={activeFiltersCount}
         onExport={handleExport}
         onSettingsClick={() => setIsSettingsOpen(true)}
+        showFilter={false}
       />
 
       {/* Statistics Cards */}

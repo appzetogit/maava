@@ -365,9 +365,12 @@ export default function ProfileDetails() {
             <input
               type="text"
               value={vehicleInput}
-              onChange={(e) => setVehicleInput(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "")
+                setVehicleInput(value)
+              }}
               placeholder="Enter vehicle number"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent uppercase"
               autoFocus
             />
           </div>
@@ -458,7 +461,8 @@ export default function ProfileDetails() {
               type="text"
               value={bankDetails.accountHolderName}
               onChange={(e) => {
-                setBankDetails(prev => ({ ...prev, accountHolderName: e.target.value }))
+                const value = e.target.value.replace(/[^a-zA-Z\s]/g, "")
+                setBankDetails(prev => ({ ...prev, accountHolderName: value }))
                 setBankDetailsErrors(prev => ({ ...prev, accountHolderName: "" }))
               }}
               placeholder="Enter account holder name"
@@ -528,7 +532,8 @@ export default function ProfileDetails() {
               type="text"
               value={bankDetails.bankName}
               onChange={(e) => {
-                setBankDetails(prev => ({ ...prev, bankName: e.target.value }))
+                const value = e.target.value.replace(/[^a-zA-Z\s]/g, "")
+                setBankDetails(prev => ({ ...prev, bankName: value }))
                 setBankDetailsErrors(prev => ({ ...prev, bankName: "" }))
               }}
               placeholder="Enter bank name"

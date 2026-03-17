@@ -489,9 +489,6 @@ export default function RestaurantsList() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <button className="p-2.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition-all">
-                <Settings className="w-4 h-4" />
-              </button>
             </div>
           </div>
 

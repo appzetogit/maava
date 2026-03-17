@@ -230,7 +230,21 @@ export default function EditRestaurant() {
     const validateStep1 = () => {
         const errors = []
         if (!step1.restaurantName?.trim()) errors.push("Restaurant name is required")
-        if (!step1.ownerName?.trim()) errors.push("Owner name is required")
+        if (!step1.ownerName?.trim()) {
+            errors.push("Owner name is required")
+        } else if (/[0-9]/.test(step1.ownerName)) {
+            errors.push("Owner name should not contain numbers")
+        }
+        if (!step1.ownerPhone?.trim()) {
+            errors.push("Owner phone number is required")
+        } else if (!/^\d{10}$/.test(step1.ownerPhone.trim())) {
+            errors.push("Owner phone number must be exactly 10 digits")
+        }
+        if (!step1.primaryContactNumber?.trim()) {
+            errors.push("Primary contact number is required")
+        } else if (!/^\d{10}$/.test(step1.primaryContactNumber.trim())) {
+            errors.push("Primary contact number must be exactly 10 digits")
+        }
         if (!step1.location?.area?.trim()) errors.push("Area is required")
         if (!step1.location?.city?.trim()) errors.push("City is required")
         return errors
@@ -332,8 +346,8 @@ export default function EditRestaurant() {
                                     <Input value={step1.restaurantName} onChange={e => setStep1({ ...step1, restaurantName: e.target.value })} className="bg-gray-50/50 border-gray-200 focus:bg-white transition-all" />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-xs uppercase tracking-wider text-gray-500 font-bold">Owner Name*</Label>
-                                    <Input value={step1.ownerName} onChange={e => setStep1({ ...step1, ownerName: e.target.value })} className="bg-gray-50/50 border-gray-200 focus:bg-white transition-all" />
+                                    <Label className="text-xs uppercase tracking-wider text-gray-500 font-bold">Owner Name* (Characters only)</Label>
+                                    <Input value={step1.ownerName} onChange={e => setStep1({ ...step1, ownerName: e.target.value.replace(/[^a-zA-Z\s]/g, "") })} className="bg-gray-50/50 border-gray-200 focus:bg-white transition-all" />
                                 </div>
                             </div>
                         </section>
@@ -494,12 +508,12 @@ export default function EditRestaurant() {
                             <h2 className="text-lg font-bold text-gray-900 mb-6">Contact & Operations</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <Label className="text-xs uppercase tracking-wider text-gray-500 font-bold">Owner Phone</Label>
-                                    <Input value={step1.ownerPhone} onChange={e => setStep1({ ...step1, ownerPhone: e.target.value })} className="bg-gray-50/50" />
+                                    <Label className="text-xs uppercase tracking-wider text-gray-500 font-bold">Owner Phone (10 Digits)</Label>
+                                    <Input value={step1.ownerPhone} onChange={e => setStep1({ ...step1, ownerPhone: e.target.value.replace(/\D/g, "").slice(0, 10) })} className="bg-gray-50/50" />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-xs uppercase tracking-wider text-gray-500 font-bold">Primary Contact</Label>
-                                    <Input value={step1.primaryContactNumber} onChange={e => setStep1({ ...step1, primaryContactNumber: e.target.value })} className="bg-gray-50/50" />
+                                    <Label className="text-xs uppercase tracking-wider text-gray-500 font-bold">Primary Contact (10 Digits)</Label>
+                                    <Input value={step1.primaryContactNumber} onChange={e => setStep1({ ...step1, primaryContactNumber: e.target.value.replace(/\D/g, "").slice(0, 10) })} className="bg-gray-50/50" />
                                 </div>
                             </div>
                         </section>

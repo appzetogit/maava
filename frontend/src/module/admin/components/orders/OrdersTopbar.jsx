@@ -18,6 +18,7 @@ export default function OrdersTopbar({
   activeFiltersCount,
   onExport,
   onSettingsClick,
+  showFilter = true,
 }) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
@@ -68,20 +69,22 @@ export default function OrdersTopbar({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <button 
-            onClick={onFilterClick}
-            className={`px-4 py-2.5 text-sm font-medium rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-2 transition-all relative ${
-              activeFiltersCount > 0 ? "border-emerald-500 bg-emerald-50" : ""
-            }`}
-          >
-            <Filter className="w-4 h-4" />
-            <span className="text-black font-bold">Filters</span>
-            {activeFiltersCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold">
-                {activeFiltersCount}
-              </span>
-            )}
-          </button>
+          {showFilter && (
+            <button 
+              onClick={onFilterClick}
+              className={`px-4 py-2.5 text-sm font-medium rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-2 transition-all relative ${
+                activeFiltersCount > 0 ? "border-emerald-500 bg-emerald-50" : ""
+              }`}
+            >
+              <Filter className="w-4 h-4" />
+              <span className="text-black font-bold">Filters</span>
+              {activeFiltersCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold">
+                  {activeFiltersCount}
+                </span>
+              )}
+            </button>
+          )}
           <button 
             onClick={onSettingsClick}
             className="p-2.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition-all"

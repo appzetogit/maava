@@ -7,7 +7,6 @@ import {
   Wallet,
   Tag,
   User,
-  Leaf,
   Palette,
   Bookmark,
   Building2,
@@ -45,12 +44,11 @@ import { firebaseApp, firebaseAuth } from "@/lib/firebase"
 import { clearModuleAuth } from "@/lib/utils/auth"
 
 export default function Profile() {
-  const { userProfile, vegMode, setVegMode } = useProfile()
+  const { userProfile } = useProfile()
   const navigate = useNavigate()
   const companyName = useCompanyName()
 
   // Popup states
-  const [vegModeOpen, setVegModeOpen] = useState(false)
   const [appearanceOpen, setAppearanceOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isTestingPush, setIsTestingPush] = useState(false)
@@ -161,70 +159,70 @@ export default function Profile() {
   const isComplete = profileCompletion === 100
 
   const ensureWebPushTokenRegistered = async () => {
-  const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY
-  if (!vapidKey) {
-    throw new Error("Missing VAPID key in frontend env")
+    const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY
+    if (!vapidKey) {
+      throw new Error("Missing VAPID key in frontend env")
+    }
+
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+      throw new Error("Push notifications are not supported in this browser")
+    }
+
+    const { isSupported, getMessaging, getToken } = await import("firebase/messaging")
+    const supported = await isSupported()
+    if (!supported) {
+      throw new Error("Firebase messaging is not supported in this browser")
+    }
+
+    if (Notification.permission === "denied") {
+      throw new Error("Notification permission is blocked")
+    }
+
+    if (Notification.permission !== "granted") {
+      const permission = await Notification.requestPermission()
+      if (permission !== "granted") {
+        throw new Error("Notification permission not granted")
+      }
+    }
+
+    const swRegistration = await navigator.serviceWorker.register("/firebase-messaging-sw.js")
+    const messaging = getMessaging(firebaseApp)
+    const token = await getToken(messaging, {
+      vapidKey,
+      serviceWorkerRegistration: swRegistration,
+    })
+
+    if (!token) {
+      throw new Error("Failed to generate FCM token")
+    }
+
+    console.log("[PushTest] FCM token generated", {
+      tokenPrefix: token.slice(0, 18),
+      tokenLength: token.length,
+    })
+
+    await notificationAPI.registerFCMToken(token, "web")
+    return token
   }
 
-  if (!("Notification" in window) || !("serviceWorker" in navigator)) {
-    throw new Error("Push notifications are not supported in this browser")
-  }
-
-  const { isSupported, getMessaging, getToken } = await import("firebase/messaging")
-  const supported = await isSupported()
-  if (!supported) {
-    throw new Error("Firebase messaging is not supported in this browser")
-  }
-
-  if (Notification.permission === "denied") {
-    throw new Error("Notification permission is blocked")
-  }
-
-  if (Notification.permission !== "granted") {
-    const permission = await Notification.requestPermission()
-    if (permission !== "granted") {
-      throw new Error("Notification permission not granted")
+  // Handle Test Push Notification
+  const handleTestNotification = async () => {
+    if (isTestingPush) return
+    setIsTestingPush(true)
+    try {
+      await ensureWebPushTokenRegistered()
+      toast.success("Push token registered. Admin can now send broadcast from main route.")
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to register push token"
+      )
+    } finally {
+      console.log("[PushTest] Test flow finished")
+      setIsTestingPush(false)
     }
   }
-
-  const swRegistration = await navigator.serviceWorker.register("/firebase-messaging-sw.js")
-  const messaging = getMessaging(firebaseApp)
-  const token = await getToken(messaging, {
-    vapidKey,
-    serviceWorkerRegistration: swRegistration,
-  })
-
-  if (!token) {
-    throw new Error("Failed to generate FCM token")
-  }
-
-  console.log("[PushTest] FCM token generated", {
-    tokenPrefix: token.slice(0, 18),
-    tokenLength: token.length,
-  })
-
-  await notificationAPI.registerFCMToken(token, "web")
-  return token
-}
-
-// Handle Test Push Notification
-const handleTestNotification = async () => {
-  if (isTestingPush) return
-  setIsTestingPush(true)
-  try {
-    await ensureWebPushTokenRegistered()
-    toast.success("Push token registered. Admin can now send broadcast from main route.")
-  } catch (error) {
-    toast.error(
-      error?.response?.data?.message ||
-      error?.message ||
-      "Failed to register push token"
-    )
-  } finally {
-    console.log("[PushTest] Test flow finished")
-    setIsTestingPush(false)
-  }
-}
 
   // Handle logout
   const handleLogout = async () => {
@@ -483,43 +481,6 @@ const handleTestNotification = async () => {
             </motion.div>
           </Link>
 
-          <motion.div
-            whileHover={{ x: 4, scale: 1.01 }}
-            transition={{ duration: 0.2, type: "spring", stiffness: 300 }}
-          >
-            <Card
-              className="bg-white dark:bg-[#1a1a1a] py-0 rounded-xl shadow-sm border-0 dark:border-gray-800 cursor-pointer"
-              onClick={() => setVegModeOpen(true)}
-            >
-              <CardContent className="p-4  flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <motion.div
-                    className="bg-gray-100 dark:bg-gray-800 rounded-full p-2"
-                    whileHover={{ rotate: 15, scale: 1.1 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <Leaf className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                  </motion.div>
-                  <span className="text-base font-medium text-gray-900 dark:text-white">Veg Mode</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <motion.span
-                    className="text-base font-medium text-gray-900 dark:text-white"
-                    whileHover={{ scale: 1.1 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {vegMode ? 'ON' : 'OFF'}
-                  </motion.span>
-                  <motion.div
-                    whileHover={{ x: 4 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <ChevronRight className="h-5 w-5 text-gray-400" />
-                  </motion.div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
 
           <motion.div
             whileHover={{ x: 4, scale: 1.01 }}
@@ -789,36 +750,6 @@ const handleTestNotification = async () => {
               </motion.div>
             </Link>
 
-            <motion.div
-              whileHover={{ x: 4, scale: 1.01 }}
-              transition={{ duration: 0.2, type: "spring", stiffness: 300 }}
-            >
-              <Card
-                className="bg-white dark:bg-[#1a1a1a] py-0 rounded-xl shadow-sm border-0 dark:border-gray-800 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={handleTestNotification}
-              >
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <motion.div
-                      className="bg-gray-100 dark:bg-gray-800 rounded-full p-2"
-                      whileHover={{ rotate: 15, scale: 1.1 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <BellRing className={`h-5 w-5 text-gray-700 dark:text-gray-300 ${isTestingPush ? 'animate-pulse' : ''}`} />
-                    </motion.div>
-                    <span className="text-base font-medium text-gray-900 dark:text-white">
-                      {isTestingPush ? 'Registering...' : 'Enable Push Notifications'}
-                    </span>
-                  </div>
-                  <motion.div
-                    whileHover={{ x: 4 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                  </motion.div>
-                </CardContent>
-              </Card>
-            </motion.div>
 
             <motion.div
               whileHover={{ x: 4, scale: 1.01 }}
@@ -854,62 +785,6 @@ const handleTestNotification = async () => {
         </div>
       </div>
 
-      {/* Veg Mode Popup */}
-      <Dialog open={vegModeOpen} onOpenChange={setVegModeOpen}>
-        <DialogContent className="max-w-sm md:max-w-md lg:max-w-lg w-[calc(100%-2rem)] rounded-2xl p-0 overflow-hidden">
-          <DialogHeader className="p-5 pb-3">
-            <DialogTitle className="text-lg font-bold text-gray-900">Veg Mode</DialogTitle>
-            <DialogDescription className="text-sm text-gray-500">
-              Filter restaurants and dishes based on your dietary preferences
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 px-5 pb-5">
-            <button
-              onClick={() => {
-                setVegMode(true)
-                setVegModeOpen(false)
-              }}
-              className={`w-full p-3 rounded-xl border-2 transition-all flex items-center justify-between ${vegMode
-                ? 'border-green-600 bg-green-50'
-                : 'border-gray-200 bg-white hover:border-gray-300'
-                }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${vegMode ? 'border-green-600 bg-green-600' : 'border-gray-300'
-                  }`}>
-                  {vegMode && <Check className="h-3 w-3 text-white" />}
-                </div>
-                <div className="text-left">
-                  <p className="font-medium text-gray-900 text-sm">Veg Mode ON</p>
-                  <p className="text-xs text-gray-500">Show only vegetarian options</p>
-                </div>
-              </div>
-              <Leaf className={`h-5 w-5 ${vegMode ? 'text-green-600' : 'text-gray-400'}`} />
-            </button>
-            <button
-              onClick={() => {
-                setVegMode(false)
-                setVegModeOpen(false)
-              }}
-              className={`w-full p-3 rounded-xl border-2 transition-all flex items-center justify-between ${!vegMode
-                ? 'border-red-600 bg-red-50'
-                : 'border-gray-200 bg-white hover:border-gray-300'
-                }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${!vegMode ? 'border-red-600 bg-red-600' : 'border-gray-300'
-                  }`}>
-                  {!vegMode && <Check className="h-3 w-3 text-white" />}
-                </div>
-                <div className="text-left">
-                  <p className="font-medium text-gray-900 text-sm">Veg Mode OFF</p>
-                  <p className="text-xs text-gray-500">Show all options</p>
-                </div>
-              </div>
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Appearance Popup */}
       <Dialog open={appearanceOpen} onOpenChange={setAppearanceOpen}>

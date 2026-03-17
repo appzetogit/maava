@@ -194,6 +194,14 @@ export default function EditProfile() {
     try {
       setIsSaving(true)
 
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (formData.email && !emailRegex.test(formData.email)) {
+        toast.error('Please enter a valid email address');
+        setIsSaving(false);
+        return;
+      }
+
       // Prepare data for API
       const updateData = {
         name: formData.name,
@@ -379,6 +387,8 @@ export default function EditProfile() {
                 <DatePicker
                   value={formData.dateOfBirth}
                   onChange={(newValue) => handleChange('dateOfBirth', newValue)}
+                  maxDate={dayjs()}
+                  disableFuture
                   slotProps={{
                     textField: {
                       className: "w-full",

@@ -109,7 +109,6 @@ export default function ContactMessages() {
         const itemNames = feedback.items?.map(item => item.name?.toLowerCase()).join(' ') || ''
         return (
           feedback.customer?.name?.toLowerCase().includes(query) ||
-          feedback.customer?.email?.toLowerCase().includes(query) ||
           feedback.comment?.toLowerCase().includes(query) ||
           feedback.orderId?.toLowerCase().includes(query) ||
           feedback.restaurantName?.toLowerCase().includes(query) ||
@@ -186,7 +185,7 @@ export default function ContactMessages() {
             <div className="relative flex-1 sm:flex-initial min-w-[250px]">
               <input
                 type="text"
-                placeholder="Ex: Search by name, email, order ID, restaurant, food items"
+                placeholder="Search by name, order id"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value)
@@ -215,12 +214,6 @@ export default function ContactMessages() {
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-700 uppercase tracking-wider">
                   <div className="flex items-center gap-2">
                     <span>Name</span>
-                    <ArrowUpDown className="w-3 h-3 text-slate-400 cursor-pointer hover:text-slate-600" />
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-700 uppercase tracking-wider">
-                  <div className="flex items-center gap-2">
-                    <span>Email</span>
                     <ArrowUpDown className="w-3 h-3 text-slate-400 cursor-pointer hover:text-slate-600" />
                   </div>
                 </th>
@@ -271,7 +264,7 @@ export default function ContactMessages() {
             <tbody className="bg-white divide-y divide-slate-100">
               {filteredFeedbacks.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-6 py-20">
+                  <td colSpan={9} className="px-6 py-20">
                     <div className="flex flex-col items-center justify-center">
                       <div className="relative mb-6">
                         <div className="w-32 h-32 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center shadow-inner">
@@ -301,9 +294,6 @@ export default function ContactMessages() {
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-sm font-medium text-slate-900">{feedback.customer?.name || 'N/A'}</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-slate-700">{feedback.customer?.email || 'N/A'}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm font-medium text-slate-900">{feedback.orderId || 'N/A'}</span>

@@ -23,7 +23,7 @@ export default function DeliveryEmergencyHelp() {
     try {
       setLoading(true)
       const response = await adminAPI.getEmergencyHelp()
-      
+
       if (response?.data?.success && response?.data?.data) {
         const data = response.data.data
         setFormData({
@@ -43,19 +43,17 @@ export default function DeliveryEmergencyHelp() {
 
   const validateForm = () => {
     const errors = {}
-    const phoneRegex = /^[\d\s\-\+\(\)]+$/
-
-    if (formData.medicalEmergency && !phoneRegex.test(formData.medicalEmergency.trim())) {
-      errors.medicalEmergency = "Invalid phone number format"
+    if (formData.medicalEmergency && (!/^\d+$/.test(formData.medicalEmergency.trim()) || formData.medicalEmergency.trim().length > 10)) {
+      errors.medicalEmergency = "Invalid phone number (max 10 digits)"
     }
-    if (formData.accidentHelpline && !phoneRegex.test(formData.accidentHelpline.trim())) {
-      errors.accidentHelpline = "Invalid phone number format"
+    if (formData.accidentHelpline && (!/^\d+$/.test(formData.accidentHelpline.trim()) || formData.accidentHelpline.trim().length > 10)) {
+      errors.accidentHelpline = "Invalid phone number (max 10 digits)"
     }
-    if (formData.contactPolice && !phoneRegex.test(formData.contactPolice.trim())) {
-      errors.contactPolice = "Invalid phone number format"
+    if (formData.contactPolice && (!/^\d+$/.test(formData.contactPolice.trim()) || formData.contactPolice.trim().length > 10)) {
+      errors.contactPolice = "Invalid phone number (max 10 digits)"
     }
-    if (formData.insurance && !phoneRegex.test(formData.insurance.trim())) {
-      errors.insurance = "Invalid phone number format"
+    if (formData.insurance && (!/^\d+$/.test(formData.insurance.trim()) || formData.insurance.trim().length > 10)) {
+      errors.insurance = "Invalid phone number (max 10 digits)"
     }
 
     setFormErrors(errors)
@@ -63,9 +61,12 @@ export default function DeliveryEmergencyHelp() {
   }
 
   const handleInputChange = (field, value) => {
+    // Only allow numbers and limit to 10 characters
+    const filteredValue = value.replace(/\D/g, "").slice(0, 10);
+ 
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: filteredValue
     }))
     // Clear error for this field when user starts typing
     if (formErrors[field]) {
@@ -79,7 +80,7 @@ export default function DeliveryEmergencyHelp() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
       toast.error("Please fix the errors in the form")
       return
@@ -176,7 +177,7 @@ export default function DeliveryEmergencyHelp() {
               <div className="text-sm text-blue-800">
                 <p className="font-semibold mb-1">Important Information</p>
                 <p>
-                  These phone numbers will be displayed to delivery partners in the emergency help section. 
+                  These phone numbers will be displayed to delivery partners in the emergency help section.
                   When a delivery partner clicks on any emergency option, it will automatically dial the corresponding number.
                 </p>
               </div>
@@ -198,11 +199,10 @@ export default function DeliveryEmergencyHelp() {
                     value={formData[field.id]}
                     onChange={(e) => handleInputChange(field.id, e.target.value)}
                     placeholder={field.placeholder}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      formErrors[field.id]
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors[field.id]
                         ? "border-red-300 focus:ring-red-500"
                         : "border-slate-300"
-                    }`}
+                      }`}
                   />
                   {formErrors[field.id] && (
                     <p className="mt-1 text-sm text-red-600 flex items-center gap-1">

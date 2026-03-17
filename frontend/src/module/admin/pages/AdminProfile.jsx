@@ -58,9 +58,19 @@ export default function AdminProfile() {
   };
 
   const handleInputChange = (field, value) => {
+    let filteredValue = value;
+
+    if (field === "name") {
+      // Only allow letters and spaces
+      filteredValue = value.replace(/[^a-zA-Z\s]/g, "");
+    } else if (field === "phone") {
+      // Only allow numbers
+      filteredValue = value.replace(/\D/g, "");
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [field]: value,
+      [field]: filteredValue,
     }));
   };
 

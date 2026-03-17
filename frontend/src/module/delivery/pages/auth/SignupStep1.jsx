@@ -22,7 +22,19 @@ export default function SignupStep1() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleChange = (e) => {
-    const { name, value } = e.target
+    let { name, value } = e.target
+    
+    // Apply field specific validation/formatting during typing
+    if (name === "name") {
+      value = value.replace(/[^a-zA-Z\s]/g, "")
+    } else if (name === "vehicleNumber") {
+      value = value.toUpperCase().replace(/[^A-Z0-9]/g, "")
+    } else if (name === "panNumber") {
+      value = value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10)
+    } else if (name === "aadharNumber") {
+      value = value.replace(/\D/g, "").slice(0, 12)
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -270,7 +282,7 @@ export default function SignupStep1() {
               name="vehicleNumber"
               value={formData.vehicleNumber}
               onChange={handleChange}
-              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 uppercase ${
                 errors.vehicleNumber ? "border-red-500" : "border-gray-300"
               }`}
               placeholder="e.g., MH12AB1234"
