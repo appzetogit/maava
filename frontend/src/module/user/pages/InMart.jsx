@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from "react"
-import { useNavigate, Link } from "react-router-dom"
+import { useNavigate, Link, useNavigationType } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Search,
@@ -958,6 +958,7 @@ const HibermartClosedPage = ({ onGoBack }) => (
 
 export default function InMart() {
   const navigate = useNavigate()
+  const navType = useNavigationType()
   const [heroSearch, setHeroSearch] = useState("")
   const [activeCategory, setActiveCategory] = useState("All")
   const [inlineProducts, setInlineProducts] = useState([])
@@ -1097,7 +1098,11 @@ export default function InMart() {
     return found || categoriesData[0] || { color: "#8B5CF6", themeColor: "#D3AEFE" };
   }, [activeCategory, categoriesData]);
 
-  const [showSplash, setShowSplash] = useState(true)
+  const [showSplash, setShowSplash] = useState(() => {
+    // Only show the splash screen if we are navigating to this page actively.
+    // navType === 'POP' means we are going Back in history (e.g. from Cart)
+    return navType !== "POP"
+  })
   const [isVoiceSearchOpen, setIsVoiceSearchOpen] = useState(false)
   const [isInMartSearchOpen, setIsInMartSearchOpen] = useState(false)
 
@@ -1167,11 +1172,13 @@ export default function InMart() {
 
   useEffect(() => {
     // Hide splash after 2.5 seconds
-    const timer = setTimeout(() => {
-      setShowSplash(false)
-    }, 2500)
-    return () => clearTimeout(timer)
-  }, [])
+    if (showSplash) {
+      const timer = setTimeout(() => {
+        setShowSplash(false)
+      }, 2500)
+      return () => clearTimeout(timer)
+    }
+  }, [showSplash])
 
 
   // Zepto-style rotating placeholder
