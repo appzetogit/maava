@@ -43,6 +43,7 @@ const orderSettlementSchema = new mongoose.Schema({
     platformFee: { type: Number, default: 0, min: 0 },
     gst: { type: Number, default: 0, min: 0 },
     packagingFee: { type: Number, default: 0, min: 0 },
+    tipAmount: { type: Number, default: 0, min: 0 },
     total: { type: Number, required: true, min: 0 }
   },
   
@@ -68,6 +69,7 @@ const orderSettlementSchema = new mongoose.Schema({
     distanceCommission: { type: Number, default: 0, min: 0 },
     surgeMultiplier: { type: Number, default: 1, min: 1 },
     surgeAmount: { type: Number, default: 0, min: 0 },
+    tipAmount: { type: Number, default: 0, min: 0 }, // 100% of tip goes to driver
     totalEarning: { type: Number, default: 0, min: 0 },
     status: {
       type: String,

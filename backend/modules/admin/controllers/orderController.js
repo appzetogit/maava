@@ -327,6 +327,7 @@ export const getOrders = asyncHandler(async (req, res) => {
         vatTax: vatTax,
         deliveryCharge: deliveryCharge,
         platformFee: platformFee,
+        deliveryTip: order.pricing?.deliveryTip || 0,
         totalAmount: orderAmount,
         // Original fields
         paymentStatus: paymentStatusDisplay,

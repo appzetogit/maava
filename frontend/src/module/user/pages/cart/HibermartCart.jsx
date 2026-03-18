@@ -961,13 +961,19 @@ export default function Cart() {
       console.log("📍 Delivery address:", defaultAddress?.label || defaultAddress?.city)
 
       // Ensure couponCode is included in pricing
-      const orderPricing = pricing || {
+      const orderPricing = pricing ? {
+        ...pricing,
+        deliveryTip: tipAmount,
+        total: pricing.total + tipAmount,
+        couponCode: appliedCoupon?.code || pricing.couponCode || null
+      } : {
         subtotal,
         deliveryFee,
         tax: gstCharges,
         platformFee,
         discount,
-        total,
+        deliveryTip: tipAmount,
+        total: total,
         couponCode: appliedCoupon?.code || null
       };
 

@@ -328,6 +328,12 @@ export default function HibermartOrderApproval() {
                                         {selectedOrder.payment?.status}
                                     </span>
                                 </div>
+                                {selectedOrder.pricing?.deliveryTip > 0 && (
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs text-neutral-500">Delivery Tip</span>
+                                        <span className="text-xs font-bold text-emerald-600 tracking-tight">Rs {selectedOrder.pricing.deliveryTip}.00</span>
+                                    </div>
+                                )}
                             </div>
                         </section>
 

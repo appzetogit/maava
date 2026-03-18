@@ -49,7 +49,7 @@ export const getDeliveryBoyWallets = asyncHandler(async (req, res) => {
       walletId: wallet._id,
       availableCashLimit,
       remainingCashLimit,
-      pocketBalance: Number(wallet.totalBalance) || 0,
+      pocketBalance: (Number(wallet.totalBalance) || 0) - (Number(wallet.cashInHand) || 0),
       cashCollected,
       totalEarning: Number(wallet.totalEarned) || 0,
       bonus: bonusTotal,
@@ -124,7 +124,7 @@ export const addWalletAdjustment = asyncHandler(async (req, res) => {
     walletId: wallet._id,
     type,
     amount: amt,
-    newPocketBalance: Number(wallet.totalBalance) || 0,
+    newPocketBalance: (Number(wallet.totalBalance) || 0) - (Number(wallet.cashInHand) || 0),
     newCashCollected: Number(wallet.cashInHand) || 0
   });
 });

@@ -1757,10 +1757,14 @@ export const completeDelivery = asyncHandler(async (req, res) => {
     try {
       // Use DeliveryBoyCommission model to calculate commission based on distance
       const commissionResult = await DeliveryBoyCommission.calculateCommission(deliveryDistance);
-      totalEarning = commissionResult.commission;
-      commissionBreakdown = commissionResult.breakdown;
+      const tipAmount = order.pricing?.deliveryTip || 0;
+      totalEarning = commissionResult.commission + tipAmount;
+      commissionBreakdown = {
+        ...commissionResult.breakdown,
+        tipAmount: tipAmount
+      };
 
-      console.log(`💰 Delivery earnings calculated using commission rules: ₹${totalEarning.toFixed(2)} for order ${orderIdForLog}`);
+      console.log(`💰 Delivery earnings calculated: ₹${totalEarning.toFixed(2)} (Commission: ₹${commissionResult.commission.toFixed(2)}, Tip: ₹${tipAmount.toFixed(2)}) for order ${orderIdForLog}`);
       console.log(`📊 Commission breakdown:`, {
         rule: commissionResult.rule.name,
         basePayout: commissionResult.breakdown.basePayout,
@@ -1793,13 +1797,20 @@ export const completeDelivery = asyncHandler(async (req, res) => {
       } else {
         // Add payment transaction (earning) with paymentCollected: false so cashInHand gets COD amount, not commission
         const isCOD = order.payment?.method === 'cash' || order.payment?.method === 'cod';
+        const tipAmount = order.pricing?.deliveryTip || 0;
+        const baseCommission = totalEarning - tipAmount;
         walletTransaction = wallet.addTransaction({
           amount: totalEarning,
           type: 'payment',
           status: 'Completed',
-          description: `Delivery earnings for Order #${orderIdForLog} (Distance: ${deliveryDistance.toFixed(2)} km)`,
+          description: `Delivery earnings for Order #${orderIdForLog} (Distance: ${deliveryDistance.toFixed(2)} km, Tip: ₹${tipAmount.toFixed(2)})`,
           orderId: orderMongoId || order._id,
-          paymentCollected: false
+          paymentCollected: false,
+          metadata: {
+            baseCommission: baseCommission,
+            tipAmount: tipAmount,
+            distance: deliveryDistance
+          }
         });
 
         await wallet.save();

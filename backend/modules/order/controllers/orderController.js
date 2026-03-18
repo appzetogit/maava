@@ -337,6 +337,7 @@ export const createOrder = async (req, res) => {
       platformFee: Number(pricing?.platformFee ?? 0) || 0,
       tax: Number(pricing?.tax ?? pricing?.gstCharges ?? 0) || 0,
       discount: Number(pricing?.discount ?? 0) || 0,
+      deliveryTip: Number(pricing?.deliveryTip ?? 0) || 0,
       total: Number(pricing?.total ?? 0) || 0,
       couponCode: pricing?.couponCode || null
     };

@@ -926,34 +926,34 @@ export default function PageNavbar({
     >
       <div className="flex items-center justify-between gap-2 sm:gap-3 md:gap-4 lg:gap-6 max-w-7xl mx-auto">
         {/* Left: Location - Hidden on desktop, shown on mobile */}
-        <div className="flex md:hidden items-center gap-3 sm:gap-4 min-w-0">
+        <div className="flex md:hidden items-center gap-2 sm:gap-4 flex-1 min-w-0 mr-2">
           {/* Location Button */}
           <Button
             variant="ghost"
             onClick={handleLocationClick}
             disabled={loading}
-            className="h-auto px-0 py-0 hover:bg-transparent transition-colors flex-shrink-0"
+            className="h-auto px-0 py-0 hover:bg-transparent transition-colors min-w-0 text-left justify-start w-full"
           >
             {loading ? (
-              <span className={`text-sm font-bold ${textColorClass} ${textColor === "white" ? "drop-shadow-lg" : ""}`}>
+              <span className={`text-sm font-bold ${textColorClass} truncate ${textColor === "white" ? "drop-shadow-lg" : ""}`}>
                 Loading...
               </span>
             ) : (
-              <div className="flex flex-col items-start min-w-0">
-                <div className="flex items-center gap-1.5">
+              <div className="flex flex-col items-start min-w-0 w-full overflow-hidden">
+                <div className="flex items-center gap-1.5 max-w-full">
                   <FaLocationDot
                     className={`h-6 w-6 sm:h-7 sm:w-7 ${textColorClass} flex-shrink-0 ${textColor === "white" ? "drop-shadow-lg" : ""}`}
                     fill={iconFill}
                     strokeWidth={2}
                   />
-                  <span className={`text-md sm:text-lg font-bold ${textColorClass} whitespace-nowrap ${textColor === "white" ? "drop-shadow-lg" : ""}`}>
+                  <span className={`text-md sm:text-lg font-bold ${textColorClass} truncate max-w-[160px] xs:max-w-[200px] sm:max-w-[240px] ${textColor === "white" ? "drop-shadow-lg" : ""}`}>
                     {mainLocationName}
                   </span>
                   <ChevronDown className={`h-4 w-4 sm:h-5 sm:w-5 ${textColorClass} flex-shrink-0 ${textColor === "white" ? "drop-shadow-lg" : ""}`} strokeWidth={2.5} />
                 </div>
                 {/* Show sub location (city, state) in second line */}
                 {subLocationName && (
-                  <span className={`text-xs font-medium ${textColor === "white" ? "text-white/80" : "text-black/60"} whitespace-nowrap mt-0.5 ${textColor === "white" ? "drop-shadow-md" : ""}`}>
+                  <span className={`text-xs font-medium ${textColor === "white" ? "text-white/80" : "text-black/60"} truncate max-w-[180px] xs:max-w-[220px] sm:max-w-[260px] mt-0.5 ${textColor === "white" ? "drop-shadow-md" : ""}`}>
                     {subLocationName}
                   </span>
                 )}

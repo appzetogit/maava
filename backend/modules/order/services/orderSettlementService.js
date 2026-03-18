@@ -80,6 +80,7 @@ export const calculateOrderSettlement = async (orderId) => {
       platformFee: order.pricing.platformFee || platformFee,
       gst: order.pricing.tax || 0,
       packagingFee: 0, 
+      tipAmount: order.pricing.deliveryTip || 0,
       total: order.pricing.total || 0
     };
 
@@ -108,6 +109,7 @@ export const calculateOrderSettlement = async (orderId) => {
       surgeMultiplier: 1,
       surgeAmount: 0,
       totalEarning: 0,
+      tipAmount: (order.pricing.deliveryTip || 0),
       status: 'pending'
     };
 
@@ -127,7 +129,8 @@ export const calculateOrderSettlement = async (orderId) => {
         distanceCommission: deliveryCommission.breakdown.distanceCommission,
         surgeMultiplier: surgeMultiplier,
         surgeAmount: surgeAmount,
-        totalEarning: baseEarning + surgeAmount,
+        tipAmount: (order.pricing.deliveryTip || 0),
+        totalEarning: baseEarning + surgeAmount + (order.pricing.deliveryTip || 0),
         status: 'pending'
       };
     }

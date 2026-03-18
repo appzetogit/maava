@@ -89,7 +89,8 @@ export const releaseEscrow = async (orderId) => {
         settlement.deliveryPartnerId,
         settlement.orderId,
         settlement.deliveryPartnerEarning.totalEarning,
-        settlement.orderNumber
+        settlement.orderNumber,
+        settlement
       );
       settlement.deliveryPartnerEarning.status = 'credited';
       settlement.deliveryPartnerEarning.creditedAt = new Date();
@@ -196,18 +197,29 @@ const creditRestaurantWallet = async (restaurantId, orderId, netAmount, orderNum
 /**
  * Credit delivery partner wallet
  */
-const creditDeliveryWallet = async (deliveryId, orderId, amount, orderNumber) => {
+const creditDeliveryWallet = async (deliveryId, orderId, amount, orderNumber, settlement = null) => {
   try {
     const DeliveryWallet = (await import('../../delivery/models/DeliveryWallet.js')).default;
     const wallet = await DeliveryWallet.findOrCreateByDeliveryId(deliveryId);
     
+    const tipAmount = settlement?.deliveryPartnerEarning?.tipAmount || 0;
+    const basePayout = (settlement?.deliveryPartnerEarning?.totalEarning || amount) - tipAmount;
+    
+    const finalDescription = tipAmount > 0 
+      ? `Payment for order ${orderNumber} (Payout: ₹${basePayout.toFixed(2)}, Tip: ₹${tipAmount.toFixed(2)})`
+      : `Payment for order ${orderNumber}`;
+
     wallet.addTransaction({
       amount: amount,
       type: 'payment',
       status: 'Completed',
-      description: `Payment for order ${orderNumber}`,
+      description: finalDescription,
       orderId: orderId,
-      paymentCollected: false // Will be updated when COD is collected
+      paymentCollected: false, // Will be updated when COD is collected
+      metadata: {
+        basePayout: basePayout,
+        tipAmount: tipAmount
+      }
     });
     
     await wallet.save();
