@@ -91,27 +91,55 @@ export function animateMarkerSmoothly(marker, currentPos, targetPos, duration = 
     // Update marker position
     marker.setPosition({ lat: currentLat, lng: currentLng });
     
-    // Calculate and update bearing (rotation)
-    if (progress < 1) {
-      const prevPos = progress > 0.1 
-        ? { lat: startLat + deltaLat * easeOutCubic(Math.max(0, progress - 0.1)), 
-            lng: startLng + deltaLng * easeOutCubic(Math.max(0, progress - 0.1)) }
-        : currentPos;
-      
-      const bearing = calculateBearing(prevPos, { lat: currentLat, lng: currentLng });
-      const currentRotation = marker.getRotation() || 0;
-      const smoothedBearing = smoothRotation(currentRotation, bearing, 0.4);
-      marker.setRotation(smoothedBearing);
-      
-      requestAnimationFrame(animate);
-    } else {
-      // Animation complete
-      marker.setPosition(targetPos);
-      const finalBearing = calculateBearing(currentPos, targetPos);
-      marker.setRotation(finalBearing);
-      
-      if (onComplete) onComplete();
-    }
+      // Calculate and update bearing (rotation) safely
+      if (progress < 1) {
+        const prevPos = progress > 0.1 
+          ? { lat: startLat + deltaLat * easeOutCubic(Math.max(0, progress - 0.1)), 
+              lng: startLng + deltaLng * easeOutCubic(Math.max(0, progress - 0.1)) }
+          : currentPos;
+        
+        const bearing = calculateBearing(prevPos, { lat: currentLat, lng: currentLng });
+        
+        // Safely get current rotation
+        let currentRotation = 0;
+        if (typeof marker.getRotation === 'function') {
+          currentRotation = marker.getRotation() || 0;
+        } else if (marker.getIcon && marker.getIcon() && marker.getIcon().rotation !== undefined) {
+          currentRotation = marker.getIcon().rotation;
+        }
+        
+        const smoothedBearing = smoothRotation(currentRotation, bearing, 0.4);
+        
+        // Safely set rotation
+        if (typeof marker.setRotation === 'function') {
+          marker.setRotation(smoothedBearing);
+        } else if (typeof marker.setIcon === 'function' && typeof marker.getIcon === 'function') {
+          const icon = marker.getIcon();
+          if (icon && typeof icon === 'object') {
+            const updatedIcon = { ...icon, rotation: smoothedBearing };
+            marker.setIcon(updatedIcon);
+          }
+        }
+        
+        requestAnimationFrame(animate);
+      } else {
+        // Animation complete
+        marker.setPosition(targetPos);
+        const finalBearing = calculateBearing(currentPos, targetPos);
+        
+        // Safely set final rotation
+        if (typeof marker.setRotation === 'function') {
+          marker.setRotation(finalBearing);
+        } else if (typeof marker.setIcon === 'function' && typeof marker.getIcon === 'function') {
+          const icon = marker.getIcon();
+          if (icon && typeof icon === 'object') {
+            const updatedIcon = { ...icon, rotation: finalBearing };
+            marker.setIcon(updatedIcon);
+          }
+        }
+        
+        if (onComplete) onComplete();
+      }
   };
   
   animate();
@@ -283,7 +311,15 @@ export class RouteBasedAnimationController {
       // First time - set position directly
       this.marker.setPosition(targetPos);
       if (bearing !== undefined) {
-        this.marker.setRotation(bearing);
+        if (typeof this.marker.setRotation === 'function') {
+          this.marker.setRotation(bearing);
+        } else if (typeof this.marker.setIcon === 'function' && typeof this.marker.getIcon === 'function') {
+          const icon = this.marker.getIcon();
+          if (icon && typeof icon === 'object') {
+            const updatedIcon = { ...icon, rotation: bearing };
+            this.marker.setIcon(updatedIcon);
+          }
+        }
       }
     }
     

@@ -1,5 +1,6 @@
 // src/context/cart-context.jsx
 import { createContext, useContext, useEffect, useMemo, useState } from "react"
+import { toast } from "sonner"
 
 // Default cart context value to prevent errors during initial render
 const defaultCartContext = {
@@ -59,70 +60,70 @@ export function CartProvider({ children }) {
   }, [cart])
 
   const addToCart = (item, sourcePosition = null) => {
-    setCart((prev) => {
-      // Completely block Hibermart items from entering the food cart
-      const isHibermartItem = item?.restaurantId === 'hibermart-id' || item?.restaurant?.toLowerCase().trim() === 'hibermart';
-      if (isHibermartItem) {
-        console.error('🚫 CartContext: Hibermart items must use HibermartCartContext. This item was rejected:', item?.name);
-        throw new Error('Use HibermartCartContext for Hibermart items');
+    // CRITICAL: Pre-validate restaurant consistency OUTSIDE of setCart to prevent Uncaught Errors
+    const isHibermartItem = item?.restaurantId === 'hibermart-id' || item?.restaurant?.toLowerCase().trim() === 'hibermart';
+
+    if (isHibermartItem) {
+      console.error('🚫 CartContext: Hibermart items must use HibermartCartContext. This item was rejected:', item?.name);
+      toast.error('Hibermart items should be added through the Hibermart cart.');
+      return false;
+    }
+
+    if (cart.length > 0) {
+      const firstItemRestaurantId = cart[0]?.restaurantId;
+      const firstItemRestaurantName = cart[0]?.restaurant;
+      const newItemRestaurantId = item?.restaurantId;
+      const newItemRestaurantName = item?.restaurant;
+
+      // Normalize restaurant names for comparison (trim and case-insensitive)
+      const normalizeName = (name) => name ? name.trim().toLowerCase() : '';
+      const firstRestaurantNameNormalized = normalizeName(firstItemRestaurantName);
+      const newRestaurantNameNormalized = normalizeName(newItemRestaurantName);
+
+      const isExistingHibermart =
+        firstItemRestaurantId === 'hibermart-id' ||
+        firstRestaurantNameNormalized === 'hibermart';
+
+      // If switching between Hibermart and Restaurant carts, block
+      if (isHibermartItem !== isExistingHibermart) {
+        toast.error('Hibermart items should be added through the Hibermart cart.');
+        return false;
       }
 
-      // CRITICAL: Validate restaurant consistency
-      // If cart already has items, ensure new item belongs to the same restaurant
-      if (prev.length > 0) {
-        const firstItemRestaurantId = prev[0]?.restaurantId;
-        const firstItemRestaurantName = prev[0]?.restaurant;
-        const newItemRestaurantId = item?.restaurantId;
-        const newItemRestaurantName = item?.restaurant;
-
-        // Normalize restaurant names for comparison (trim and case-insensitive)
-        const normalizeName = (name) => name ? name.trim().toLowerCase() : '';
-        const firstRestaurantNameNormalized = normalizeName(firstItemRestaurantName);
-        const newRestaurantNameNormalized = normalizeName(newItemRestaurantName);
-
-        const isHibermartItem =
-          newItemRestaurantId === 'hibermart-id' ||
-          newRestaurantNameNormalized === 'hibermart';
-        const isExistingHibermart =
-          firstItemRestaurantId === 'hibermart-id' ||
-          firstRestaurantNameNormalized === 'hibermart';
-
-        // If switching between Hibermart and Restaurant carts, block (use HibermartCartContext for Hibermart)
-        if (isHibermartItem !== isExistingHibermart) {
-          console.warn('🚫 Hibermart items should use HibermartCartContext, not CartContext', {
-            from: firstItemRestaurantName,
-            to: newItemRestaurantName
+      // Check restaurant name first (more reliable than IDs which can have different formats)
+      if (firstRestaurantNameNormalized && newRestaurantNameNormalized) {
+        if (firstRestaurantNameNormalized !== newRestaurantNameNormalized) {
+          toast.error(`Your cart already contains items from "${firstItemRestaurantName}". You can only order from one restaurant at a time.`, {
+            duration: 5000,
+            action: {
+              label: 'Clear Cart',
+              onClick: () => setCart([])
+            }
           });
-          throw new Error('Hibermart items should be added through the Hibermart cart.');
+          return false;
         }
-
-        // Check restaurant name first (more reliable than IDs which can have different formats)
-        // If names match, allow it even if IDs differ (same restaurant, different ID format)
-        if (firstRestaurantNameNormalized && newRestaurantNameNormalized) {
-          if (firstRestaurantNameNormalized !== newRestaurantNameNormalized) {
-            console.error('❌ Cannot add item: Restaurant name mismatch!', {
-              cartRestaurantId: firstItemRestaurantId,
-              cartRestaurantName: firstItemRestaurantName,
-              newItemRestaurantId: newItemRestaurantId,
-              newItemRestaurantName: newItemRestaurantName
-            });
-            throw new Error(`Cart already contains items from "${firstItemRestaurantName}". Please clear cart or complete order first.`);
-          }
-          // Names match - allow it (even if IDs differ, it's the same restaurant)
-        } else if (firstItemRestaurantId && newItemRestaurantId) {
-          // If names are not available, fallback to ID comparison
-          if (firstItemRestaurantId !== newItemRestaurantId) {
-            console.error('❌ Cannot add item: Cart contains items from different restaurant!', {
-              cartRestaurantId: firstItemRestaurantId,
-              cartRestaurantName: firstItemRestaurantName,
-              newItemRestaurantId: newItemRestaurantId,
-              newItemRestaurantName: newItemRestaurantName
-            });
-            throw new Error(`Cart already contains items from "${firstItemRestaurantName || 'another restaurant'}". Please clear cart or complete order first.`);
-          }
+      } else if (firstItemRestaurantId && newItemRestaurantId) {
+        // If names are not available, fallback to ID comparison
+        if (firstItemRestaurantId !== newItemRestaurantId) {
+          toast.error(`Your cart contains items from another restaurant. You can only order from one restaurant at a time.`, {
+            duration: 5000,
+            action: {
+              label: 'Clear Cart',
+              onClick: () => setCart([])
+            }
+          });
+          return false;
         }
       }
+    }
 
+    // Validate item has required restaurant info
+    if (!item.restaurantId && !item.restaurant) {
+      toast.error('Item is missing restaurant information. Please refresh the page.');
+      return false;
+    }
+
+    setCart((prev) => {
       const existing = prev.find((i) => i.id === item.id)
       if (existing) {
         // Set last add event for animation when incrementing existing item
@@ -141,12 +142,6 @@ export function CartProvider({ children }) {
         return prev.map((i) =>
           i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
         )
-      }
-
-      // Validate item has required restaurant info
-      if (!item.restaurantId && !item.restaurant) {
-        console.error('❌ Cannot add item: Missing restaurant information!', item);
-        throw new Error('Item is missing restaurant information. Please refresh the page.');
       }
 
       const newItem = { ...item, quantity: 1 }

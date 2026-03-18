@@ -578,7 +578,16 @@ const DeliveryTrackingMap = ({
                 // Fallback: Move to nearest point on polyline (STAY ON ROAD)
                 const nearestPosition = new window.google.maps.LatLng(nearest.nearestPoint.lat, nearest.nearestPoint.lng);
                 bikeMarkerRef.current.setPosition(nearestPosition);
-                bikeMarkerRef.current.setRotation(heading || 0);
+                // Safely update rotation
+                if (typeof bikeMarkerRef.current.setRotation === 'function') {
+                  bikeMarkerRef.current.setRotation(heading || 0);
+                } else if (typeof bikeMarkerRef.current.setIcon === 'function' && typeof bikeMarkerRef.current.getIcon === 'function') {
+                  const icon = bikeMarkerRef.current.getIcon();
+                  if (icon && typeof icon === 'object') {
+                    const updatedIcon = { ...icon, rotation: heading || 0 };
+                    bikeMarkerRef.current.setIcon(updatedIcon);
+                  }
+                }
                 console.log('🛣️ Bike snapped to nearest road point:', nearest.nearestPoint);
               }
             }
