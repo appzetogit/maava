@@ -22,14 +22,14 @@ export default function CreateSupportTicket() {
     
     if (!formData.subject.trim()) {
       newErrors.subject = "Subject is required"
-    } else if (formData.subject.trim().length < 3) {
-      newErrors.subject = "Subject must be at least 3 characters"
+    } else if (formData.subject.trim().length < 2) {
+      newErrors.subject = "Subject must be at least 2 characters"
     }
 
     if (!formData.description.trim()) {
       newErrors.description = "Description is required"
-    } else if (formData.description.trim().length < 10) {
-      newErrors.description = "Description must be at least 10 characters"
+    } else if (formData.description.trim().length < 5) {
+      newErrors.description = "Description must be at least 5 characters"
     }
 
     setErrors(newErrors)
@@ -177,12 +177,12 @@ export default function CreateSupportTicket() {
               Description <span className="text-red-500">*</span>
             </label>
             <p className="text-xs text-gray-600 mb-2">
-              Describe your issue in detail (minimum 10 characters)
+              Describe your issue in detail (minimum 5 characters)
             </p>
             <Textarea
               value={formData.description}
               onChange={(e) => handleInputChange("description", e.target.value)}
-              placeholder="Describe your issue in detail (minimum 10 characters)"
+              placeholder="Describe your issue in detail (minimum 5 characters)"
               rows={8}
               maxLength={2000}
               className={`w-full resize-none ${errors.description ? "border-red-500" : ""}`}
@@ -235,7 +235,7 @@ export default function CreateSupportTicket() {
           <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200">
             <button
               onClick={handleCreateTicket}
-              disabled={creating || !formData.subject.trim() || formData.description.trim().length < 10}
+              disabled={creating || !formData.subject.trim() || !formData.description.trim()}
               className="w-full sm:w-auto px-6 py-3 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
             >
               {creating ? (

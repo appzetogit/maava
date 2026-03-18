@@ -17,7 +17,7 @@ L.Icon.Default.mergeOptions({
 
 import AnimatedPage from "../../components/AnimatedPage"
 import { Button } from "@/components/ui/button"
-import { useCart } from "../../context/CartContext"
+import { useHibermartCart } from "../../context/HibermartCartContext"
 import { useProfile } from "../../context/ProfileContext"
 import { useOrders } from "../../context/OrdersContext"
 import { useLocation as useUserLocation } from "../../hooks/useLocation"
@@ -68,13 +68,12 @@ const formatFullAddress = (address) => {
 export default function Cart() {
   const navigate = useNavigate()
 
-  // Defensive check: Ensure CartProvider is available
+  // Defensive check: Ensure HibermartCartProvider is available
   let cartContext;
   try {
-    cartContext = useCart();
+    cartContext = useHibermartCart();
   } catch (error) {
-    console.error('❌ CartProvider not found. Make sure Cart component is rendered within UserLayout.');
-    // Return early with error message
+    console.error('❌ HibermartCartProvider not found.');
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f5f5f5] dark:bg-[#0a0a0a]">
         <div className="text-center p-8">
@@ -93,7 +92,7 @@ export default function Cart() {
     );
   }
 
-  const { cart, updateQuantity, addToCart, getCartCount, clearCart, cleanCartForRestaurant } = cartContext;
+  const { cart, updateQuantity, addToCart, getCartCount, clearCart } = cartContext;
   const { getDefaultAddress, getDefaultPaymentMethod, addresses, paymentMethods, userProfile } = useProfile()
   const { createOrder } = useOrders()
   const { location: currentLocation } = useUserLocation() // Get live location address
@@ -1396,10 +1395,10 @@ export default function Cart() {
           <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
             <Utensils className="h-10 w-10 text-gray-400" />
           </div>
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">Your cart is empty</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 text-center">Add items from a restaurant to start a new order</p>
-          <Link>
-            <Button className="bg-black hover:opacity-90 text-white">Browse Restaurants</Button>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">Your Hibermart cart is empty</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 text-center">Add items from Hibermart to start shopping</p>
+          <Link to="/in-mart">
+            <Button className="bg-black hover:opacity-90 text-white">Browse Hibermart</Button>
           </Link>
         </div>
       </AnimatedPage >
@@ -1531,35 +1530,6 @@ export default function Cart() {
               </div>
 
 
-              {/* Note & Cutlery */}
-              <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl flex flex-row gap-2 md:gap-3">
-                <button
-                  onClick={() => setShowNoteInput(!showNoteInput)}
-                  className="flex-1 flex items-center gap-1.5 px-2 md:px-4 py-2 md:py-3 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl text-[11px] md:text-base text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all active:scale-[0.98]"
-                >
-                  <FileText className="h-3.5 w-3.5 md:h-5 md:w-5 flex-shrink-0" />
-                  <span className="truncate">{note || "Add a note"}</span>
-                </button>
-                <button
-                  onClick={() => setSendCutlery(!sendCutlery)}
-                  className={`flex-shrink-0 flex items-center gap-1.5 px-2 md:px-4 py-2 md:py-3 border rounded-lg md:rounded-xl text-[11px] md:text-base transition-all active:scale-[0.98] ${sendCutlery ? 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300' : 'border-black dark:border-gray-600 text-black dark:text-white bg-gray-50 dark:bg-gray-800'}`}
-                >
-                  <Utensils className="h-3.5 w-3.5 md:h-5 md:w-5 flex-shrink-0" />
-                  <span className="whitespace-nowrap">{sendCutlery ? "No cutlery" : "Add cutlery"}</span>
-                </button>
-              </div>
-
-              {/* Note Input */}
-              {showNoteInput && (
-                <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl">
-                  <textarea
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    placeholder="Add cooking instructions, allergies, etc."
-                    className="w-full border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl p-3 md:p-4 text-sm md:text-base resize-none h-20 md:h-24 focus:outline-none focus:border-black dark:focus:border-white bg-white dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100"
-                  />
-                </div>
-              )}
 
               {/* Complete your meal section - Approved Addons */}
               {addons.length > 0 && (
@@ -1645,81 +1615,7 @@ export default function Cart() {
                 </div>
               )}
 
-              {/* Coupon Section */}
-              <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl">
-                {appliedCoupon ? (
-                  <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl p-3 md:p-4">
-                    <div className="flex items-center gap-2 md:gap-3">
-                      <Tag className="h-4 w-4 md:h-5 md:w-5 text-black dark:text-white" />
-                      <div>
-                        <p className="text-sm md:text-base font-medium text-black dark:text-white">'{appliedCoupon.code}' applied</p>
-                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">You saved ₹{discount}</p>
-                      </div>
-                    </div>
-                    <button onClick={handleRemoveCoupon} className="text-gray-500 dark:text-gray-400 text-xs md:text-sm font-medium">Remove</button>
-                  </div>
-                ) : loadingCoupons ? (
-                  <div className="flex items-center gap-2 md:gap-3">
-                    <Percent className="h-4 w-4 md:h-5 md:w-5 text-gray-600 dark:text-gray-400" />
-                    <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">Loading coupons...</p>
-                  </div>
-                ) : availableCoupons.length > 0 ? (
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 md:gap-3">
-                        <Percent className="h-4 w-4 md:h-5 md:w-5 text-gray-600 dark:text-gray-400" />
-                        <div>
-                          <p className="text-sm md:text-base font-medium text-gray-800 dark:text-gray-200">
-                            Save ₹{availableCoupons[0].discount} with '{availableCoupons[0].code}'
-                          </p>
-                          {availableCoupons.length > 1 && (
-                            <button onClick={() => setShowCoupons(!showCoupons)} className="text-xs md:text-sm text-blue-600 dark:text-blue-400 font-medium">
-                              View all coupons →
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 md:h-8 text-xs md:text-sm border-black dark:border-white text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                        onClick={() => handleApplyCoupon(availableCoupons[0])}
-                        disabled={subtotal < availableCoupons[0].minOrder}
-                      >
-                        {subtotal < availableCoupons[0].minOrder ? `Min ₹${availableCoupons[0].minOrder}` : 'APPLY'}
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 md:gap-3">
-                    <Percent className="h-4 w-4 md:h-5 md:w-5 text-gray-600 dark:text-gray-400" />
-                    <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">No coupons available</p>
-                  </div>
-                )}
 
-                {/* Coupons List */}
-                {showCoupons && !appliedCoupon && availableCoupons.length > 0 && (
-                  <div className="mt-3 md:mt-4 space-y-2 md:space-y-3 border-t dark:border-gray-700 pt-3 md:pt-4">
-                    {availableCoupons.map((coupon) => (
-                      <div key={coupon.code} className="flex items-center justify-between py-2 md:py-3 border-b border-dashed dark:border-gray-700 last:border-0">
-                        <div>
-                          <p className="text-sm md:text-base font-medium text-gray-800 dark:text-gray-200">{coupon.code}</p>
-                          <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{coupon.description}</p>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-6 md:h-7 text-xs md:text-sm border-black dark:border-white text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                          onClick={() => handleApplyCoupon(coupon)}
-                          disabled={subtotal < coupon.minOrder}
-                        >
-                          {subtotal < coupon.minOrder ? `Min ₹${coupon.minOrder}` : 'APPLY'}
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
 
               {/* Delivery Time */}
               <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl">

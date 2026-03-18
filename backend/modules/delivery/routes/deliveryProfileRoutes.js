@@ -54,15 +54,15 @@ router.post('/reverify', reverify);
 
 // Support tickets routes
 router.post('/support-tickets', validate(Joi.object({
-  subject: Joi.string().trim().min(3).max(200).required().messages({
+  subject: Joi.string().trim().min(2).max(200).required().messages({
     'string.empty': 'Subject is required',
-    'string.min': 'Subject must be at least 3 characters',
+    'string.min': 'Subject must be at least 2 characters',
     'string.max': 'Subject must not exceed 200 characters',
     'any.required': 'Subject is required'
   }),
-  description: Joi.string().trim().min(10).max(2000).required().messages({
+  description: Joi.string().trim().min(5).max(2000).required().messages({
     'string.empty': 'Description is required',
-    'string.min': 'Description must be at least 10 characters',
+    'string.min': 'Description must be at least 5 characters',
     'string.max': 'Description must not exceed 2000 characters',
     'any.required': 'Description is required'
   }),

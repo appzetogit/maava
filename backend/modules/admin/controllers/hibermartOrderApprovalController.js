@@ -259,20 +259,8 @@ export const approveHibermartOrder = asyncHandler(async (req, res) => {
           5
         );
 
-        // Try direct assignment to nearest delivery boy (same as restaurant flow fallback)
-        try {
-          const assignResult = await assignOrderToDeliveryBoy(order, location.lat, location.lng, order.restaurantId);
-          if (assignResult?.deliveryPartnerId) {
-            console.log(`✅ Hibermart order assigned to delivery partner ${assignResult.deliveryPartnerId}`);
-            const populatedOrder = await Order.findById(order._id)
-              .populate('userId', 'name phone')
-              .populate('restaurantId', 'name address location phone ownerPhone')
-              .lean();
-            await notifyDeliveryBoyNewOrder(orderForNotification, assignResult.deliveryPartnerId);
-          }
-        } catch (assignError) {
-          console.warn('⚠️ Hibermart direct assignment failed (continuing with notify flow):', assignError?.message || assignError);
-        }
+        // We skip direct assignment here and go straight to priority-based broadcast
+        // so that the first delivery partner to accept gets the order (first-come-first-serve).
 
         if (priorityDeliveryBoys?.length) {
           order.assignmentInfo = {

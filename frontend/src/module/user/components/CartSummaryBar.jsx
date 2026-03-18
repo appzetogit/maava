@@ -1,42 +1,61 @@
 import { Link, useLocation } from "react-router-dom"
 import { ChevronUp } from "lucide-react"
 import { useCart } from "../context/CartContext"
+import { useHibermartCart } from "../context/HibermartCartContext"
 import { motion, AnimatePresence } from "framer-motion"
 import { useScrollDirection } from "../hooks/useScrollDirection"
 
 export default function CartSummaryBar() {
-    const { cart, itemCount } = useCart()
+    const { cart: foodCart, itemCount: foodItemCount } = useCart()
+    const { cart: hibermartCart, itemCount: hibermartItemCount } = useHibermartCart()
     const scrollDirection = useScrollDirection()
     const location = useLocation()
 
-    if (itemCount === 0) return null
-
-    // Check cart type and page type
-    const isHibermartCart = cart[0]?.restaurantId === 'hibermart-id' || cart[0]?.restaurant === 'Hibermart'
     const isHibermartPage = location.pathname.startsWith("/in-mart") || location.pathname.startsWith("/user/in-mart")
     const isSearchPage = location.pathname.includes("/search")
 
-    // Logic: 
-    // 1. Hide Hibermart cart on non-Hibermart pages (like Home, Under 250)
-    // 2. Hide Food cart on Hibermart pages.
-    // 3. Search page can show either.
-    if (!isSearchPage) {
-        if (isHibermartCart && !isHibermartPage) return null
-        if (!isHibermartCart && isHibermartPage) return null
+    // On Hibermart pages, show hibermart cart; on food pages, show food cart
+    // On search page, show whichever cart has items (prefer hibermart if both have items and on hibermart-adjacent page)
+    let activeCart, activeItemCount, isHibermartCart
+
+    if (isSearchPage) {
+        // On search page show Hibermart cart if it has items, else food cart
+        if (hibermartItemCount > 0) {
+            activeCart = hibermartCart
+            activeItemCount = hibermartItemCount
+            isHibermartCart = true
+        } else {
+            activeCart = foodCart
+            activeItemCount = foodItemCount
+            isHibermartCart = false
+        }
+    } else if (isHibermartPage) {
+        activeCart = hibermartCart
+        activeItemCount = hibermartItemCount
+        isHibermartCart = true
+    } else {
+        activeCart = foodCart
+        activeItemCount = foodItemCount
+        isHibermartCart = false
     }
 
-    // Dynamic colors
+    if (activeItemCount === 0) return null
+
+    // Dynamic colors based on cart type
     const themeColor = isHibermartCart ? "text-blue-600" : "text-green-600"
     const buttonColor = isHibermartCart ? "bg-blue-600 hover:bg-blue-700" : "bg-green-600 hover:bg-green-700"
 
+    // Cart URL based on type
+    const cartUrl = isHibermartCart ? "/in-mart/cart" : "/cart"
+
     // Calculate total savings
-    const totalSavings = cart.reduce((sum, item) => {
+    const totalSavings = activeCart.reduce((sum, item) => {
         const originalPrice = item.originalPrice || item.price
         return sum + (originalPrice - item.price) * item.quantity
     }, 0)
 
     // Get first item image for the thumbnail
-    const firstItemImage = cart[0]?.image || cart[0]?.imageUrl
+    const firstItemImage = activeCart[0]?.image || activeCart[0]?.imageUrl
 
     // Determine if it should be in the "up" position (above nav) or "down" position (at bottom)
     const isNavVisible = scrollDirection === "up"
@@ -69,7 +88,7 @@ export default function CartSummaryBar() {
                         <div className="flex flex-col">
                             <div className="flex items-center gap-1">
                                 <span className="font-bold text-gray-900 dark:text-white text-sm">
-                                    {itemCount} {itemCount === 1 ? 'Item' : 'Items'}
+                                    {activeItemCount} {activeItemCount === 1 ? 'Item' : 'Items'}
                                 </span>
                                 <ChevronUp size={16} className={themeColor} />
                             </div>
@@ -83,7 +102,7 @@ export default function CartSummaryBar() {
 
                     {/* View Cart Button */}
                     <Link
-                        to="/user/cart"
+                        to={cartUrl}
                         className={`${buttonColor} text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-colors shadow-sm`}
                     >
                         View Cart

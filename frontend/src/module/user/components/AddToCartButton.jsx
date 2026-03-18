@@ -1,9 +1,13 @@
 import { Plus, Minus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCart } from "../context/CartContext"
+import { useHibermartCart } from "../context/HibermartCartContext"
 
 export default function AddToCartButton({ item, className = "", disabled = false }) {
-  const { addToCart, isInCart, getCartItem, updateQuantity } = useCart()
+  const isHibermartItem = item?.restaurantId === 'hibermart-id' || item?.restaurant === 'Hibermart'
+  const foodCart = useCart()
+  const hibermartCartCtx = useHibermartCart()
+  const { addToCart, isInCart, getCartItem, updateQuantity } = isHibermartItem ? hibermartCartCtx : foodCart
   const inCart = isInCart(item.id)
   const cartItem = getCartItem(item.id)
 

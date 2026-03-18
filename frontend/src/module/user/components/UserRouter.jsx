@@ -25,6 +25,7 @@ import ProductDetail from "../pages/ProductDetail"
 // Cart
 import Cart from "../pages/cart/Cart"
 import Checkout from "../pages/cart/Checkout"
+import HibermartCart from "../pages/cart/HibermartCart"
 
 // Orders
 import Orders from "../pages/orders/Orders"
@@ -106,10 +107,19 @@ export default function UserRouter() {
         <Route path="/in-mart/restaurants" element={<InMartRestaurants />} />
         <Route path="/in-mart/products/:categorySlug" element={<InMartProductCategory />} />
         <Route path="/in-mart/section/:sectionId" element={<ProductSectionPage />} />
-        <Route path="/in-mart/:category" element={<InMartCategory />} />
         <Route path="/in-mart/explore/upto50" element={<InMartExplore50 />} />
         <Route path="/in-mart/explore/near-rated" element={<InMartExploreNear />} />
         <Route path="/in-mart/coffee" element={<Coffee />} />
+        {/* /in-mart/cart MUST be before /in-mart/:category to avoid being matched as a category */}
+        <Route
+          path="/in-mart/cart"
+          element={
+            <ProtectedRoute requiredRole="user" loginPath="/user/auth/sign-in">
+              <HibermartCart />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/in-mart/:category" element={<InMartCategory />} />
         <Route path="/under-250" element={<Under250 />} />
         <Route path="/category/:category" element={<CategoryPage />} />
         <Route path="/restaurants" element={<Restaurants />} />

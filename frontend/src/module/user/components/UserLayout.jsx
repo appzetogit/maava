@@ -3,6 +3,7 @@ import { useEffect, useState, createContext, useContext } from "react"
 import { ProfileProvider } from "../context/ProfileContext"
 import LocationPrompt from "./LocationPrompt"
 import { CartProvider } from "../context/CartContext"
+import { HibermartCartProvider } from "../context/HibermartCartContext"
 import { OrdersProvider } from "../context/OrdersContext"
 import SearchOverlay from "./SearchOverlay"
 import LocationSelectorOverlay from "./LocationSelectorOverlay"
@@ -112,7 +113,9 @@ export default function UserLayout() {
   // UserLayout should not interfere with authentication redirects
 
   // Show bottom navigation only on home page, in-mart page, under-250 page, and profile page
-  const showBottomNav = location.pathname === "/" ||
+  const isCartPage = location.pathname.endsWith("/cart") || location.pathname.includes("/cart/");
+  const showBottomNav = !isCartPage && (
+    location.pathname === "/" ||
     location.pathname === "/user" ||
     location.pathname.startsWith("/in-mart") ||
     location.pathname.startsWith("/user/in-mart") ||
@@ -123,29 +126,32 @@ export default function UserLayout() {
     location.pathname.startsWith("/user/profile") ||
     location.pathname === "/search" ||
     location.pathname === "/user/search"
+  )
   const showCartSummary = showBottomNav && !location.pathname.includes("/profile")
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] dark:bg-[#0a0a0a] transition-colors duration-200">
       <CartProvider>
-        <ProfileProvider>
-          <OrdersProvider>
-            <SearchOverlayProvider>
-              <LocationSelectorProvider>
-                {/* <Navbar /> */}
-                {showBottomNav && <DesktopNavbar />}
-                <LocationPrompt />
-                <Outlet />
-                {showBottomNav && (
-                  <>
-                    {showCartSummary && <CartSummaryBar />}
-                    <BottomNavigation />
-                  </>
-                )}
-              </LocationSelectorProvider>
-            </SearchOverlayProvider>
-          </OrdersProvider>
-        </ProfileProvider>
+        <HibermartCartProvider>
+          <ProfileProvider>
+            <OrdersProvider>
+              <SearchOverlayProvider>
+                <LocationSelectorProvider>
+                  {/* <Navbar /> */}
+                  {showBottomNav && <DesktopNavbar />}
+                  <LocationPrompt />
+                  <Outlet />
+                  {showBottomNav && (
+                    <>
+                      {showCartSummary && <CartSummaryBar />}
+                      <BottomNavigation />
+                    </>
+                  )}
+                </LocationSelectorProvider>
+              </SearchOverlayProvider>
+            </OrdersProvider>
+          </ProfileProvider>
+        </HibermartCartProvider>
       </CartProvider>
     </div>
   )

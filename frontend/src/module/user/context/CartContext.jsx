@@ -60,6 +60,13 @@ export function CartProvider({ children }) {
 
   const addToCart = (item, sourcePosition = null) => {
     setCart((prev) => {
+      // Completely block Hibermart items from entering the food cart
+      const isHibermartItem = item?.restaurantId === 'hibermart-id' || item?.restaurant?.toLowerCase().trim() === 'hibermart';
+      if (isHibermartItem) {
+        console.error('🚫 CartContext: Hibermart items must use HibermartCartContext. This item was rejected:', item?.name);
+        throw new Error('Use HibermartCartContext for Hibermart items');
+      }
+
       // CRITICAL: Validate restaurant consistency
       // If cart already has items, ensure new item belongs to the same restaurant
       if (prev.length > 0) {
@@ -80,14 +87,13 @@ export function CartProvider({ children }) {
           firstItemRestaurantId === 'hibermart-id' ||
           firstRestaurantNameNormalized === 'hibermart';
 
-        // If switching between Hibermart and Restaurant carts, auto-reset cart
+        // If switching between Hibermart and Restaurant carts, block (use HibermartCartContext for Hibermart)
         if (isHibermartItem !== isExistingHibermart) {
-          console.warn('🧹 Switching cart between Hibermart and Restaurant. Resetting cart.', {
+          console.warn('🚫 Hibermart items should use HibermartCartContext, not CartContext', {
             from: firstItemRestaurantName,
             to: newItemRestaurantName
           });
-          const newItem = { ...item, quantity: 1 };
-          return [newItem];
+          throw new Error('Hibermart items should be added through the Hibermart cart.');
         }
 
         // Check restaurant name first (more reliable than IDs which can have different formats)
