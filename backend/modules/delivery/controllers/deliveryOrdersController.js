@@ -2054,6 +2054,19 @@ export const completeDelivery = asyncHandler(async (req, res) => {
       console.error('Error in notification promises:', error);
     });
 
+    // Recalculate restaurant aggregate rating asynchronously (non-blocking)
+    if (rating && !updatedOrder.isHibermartOrder) {
+      (async () => {
+        try {
+          const { updateRestaurantAverageRating } = await import('../../restaurant/services/restaurantRatingService.js');
+          await updateRestaurantAverageRating(updatedOrder.restaurantId?._id?.toString() || updatedOrder.restaurantId);
+          console.log(`⭐ Restaurant rating recalculated after delivery completion`);
+        } catch (ratingErr) {
+          console.error('⚠️ Could not recalculate restaurant rating on delivery completion:', ratingErr.message);
+        }
+      })();
+    }
+
     return response;
   } catch (error) {
     logger.error(`Error completing delivery: ${error.message}`);

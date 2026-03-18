@@ -1,6 +1,8 @@
+import mongoose from 'mongoose';
 import FeedbackExperience from '../models/FeedbackExperience.js';
 import User from '../../auth/models/User.js';
 import Restaurant from '../../restaurant/models/Restaurant.js';
+import Order from '../../order/models/Order.js';
 import { successResponse, errorResponse } from '../../../shared/utils/response.js';
 import asyncHandler from '../../../shared/middleware/asyncHandler.js';
 
@@ -80,6 +82,53 @@ export const createFeedbackExperience = asyncHandler(async (req, res) => {
       module: finalModule,
       metadata
     });
+
+    // CRITICAL: Update Order model's review subfield if this feedback is for an order
+    // This connects the generic FeedbackExperience with the restaurant's review system
+    if (finalModule === 'user' && (metadata?.orderId || metadata?.orderMongoId)) {
+      try {
+        const orderIdentifier = metadata.orderMongoId || metadata.orderId;
+        const comment = metadata.comment || metadata.feedbackText || '';
+        
+        // Find order by ID (ObjectId or string orderId)
+        let orderToUpdate = null;
+        if (mongoose.Types.ObjectId.isValid(orderIdentifier)) {
+          orderToUpdate = await Order.findById(orderIdentifier);
+        }
+        
+        if (!orderToUpdate) {
+          orderToUpdate = await Order.findOne({ orderId: orderIdentifier });
+        }
+
+        if (orderToUpdate) {
+          // Update order review fields
+          // Note: Feedback rating (0-10) is used directly if it's 1-5 from frontend
+          orderToUpdate.review = {
+            rating: rating,
+            comment: comment,
+            submittedAt: new Date(),
+            reviewedBy: userId
+          };
+          await orderToUpdate.save();
+          console.log(`✅ Order review updated for ${orderIdentifier} via FeedbackExperience`);
+
+          // Recalculate restaurant aggregate rating so listings stay up-to-date
+          const orderRestaurantId = orderToUpdate.restaurantId;
+          if (orderRestaurantId && !orderToUpdate.isHibermartOrder) {
+            try {
+              const { updateRestaurantAverageRating } = await import('../../restaurant/services/restaurantRatingService.js');
+              await updateRestaurantAverageRating(orderRestaurantId);
+            } catch (ratingErr) {
+              console.error('⚠️ Could not update restaurant average rating:', ratingErr.message);
+            }
+          }
+        } else {
+          console.warn(`⚠️ Could not find order ${orderIdentifier} to update review`);
+        }
+      } catch (orderUpdateError) {
+        console.error(`❌ Error updating order review from FeedbackExperience:`, orderUpdateError.message);
+      }
+    }
 
     return successResponse(res, 201, 'Feedback experience created successfully', {
       feedbackExperience
