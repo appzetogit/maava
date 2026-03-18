@@ -1887,26 +1887,82 @@ export default function InMart() {
                   </motion.h2>
                 </div>
 
-                {/* Product Carousel */}
-                <div className="relative mb-6 sm:mb-10 md:mb-14">
-                  <div
-                    className="flex items-center gap-4 sm:gap-6 md:gap-8 overflow-x-auto scrollbar-hide pb-4 px-1"
-                    style={{
-                      scrollbarWidth: 'none',
-                      msOverflowStyle: 'none',
-                      WebkitOverflowScrolling: 'touch'
-                    }}
-                  >
-                    {(apiData.collections?.find(c => c.slug === 'sale')?.products || []).map((product) => {
-                      // Ensure product has id field mapped from _id
-                      const productWithId = {
-                        ...product,
-                        id: product.id || product._id?.toString() || product._id
-                      };
-                      return <ProductCard key={productWithId.id} product={productWithId} themeColor={activeCategoryData.themeColor} />;
-                    })}
-                    <div className="min-w-[4px] h-full"></div>
-                  </div>
+                {/* Product Carousel / Auto Looping Marquee */}
+                <div className="relative mb-6 sm:mb-10 md:mb-14 overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent, black 1rem, black calc(100% - 1rem), transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 1rem, black calc(100% - 1rem), transparent)'}}>
+                  {(() => {
+                    // Extract and ensure minimum elements for infinite loop
+                    let saleProducts = apiData.collections?.find(c => c.slug === 'sale')?.products || [];
+                    if (saleProducts.length === 0) return null;
+                    
+                    let baseProducts = [...saleProducts];
+                    if (baseProducts.length > 0 && baseProducts.length < 8) {
+                       while (baseProducts.length < 8) {
+                          baseProducts = [...baseProducts, ...saleProducts];
+                       }
+                    }
+                    
+                    // Assign pure IDs
+                    baseProducts = baseProducts.map((product, idx) => ({
+                      ...product,
+                      id: product.id || product._id?.toString() || product._id,
+                      uniqueKey: `${product.id || product._id}-${idx}`
+                    }));
+
+                    return (
+                      <>
+                        <style>
+                          {`
+                            @keyframes marqueeLinear {
+                              from { transform: translateX(0); }
+                              to { transform: translateX(calc(-100% - 1rem)); } 
+                            }
+                            @media (min-width: 640px) {
+                              @keyframes marqueeLinear {
+                                from { transform: translateX(0); }
+                                to { transform: translateX(calc(-100% - 1.5rem)); } 
+                              }
+                            }
+                            @media (min-width: 768px) {
+                              @keyframes marqueeLinear {
+                                from { transform: translateX(0); }
+                                to { transform: translateX(calc(-100% - 2rem)); } 
+                              }
+                            }
+                            .marquee-track {
+                              display: flex;
+                              width: max-content;
+                              gap: 1rem;
+                              padding-bottom: 1rem;
+                              padding-left: 0.25rem;
+                            }
+                            @media (min-width: 640px) { .marquee-track { gap: 1.5rem; } }
+                            @media (min-width: 768px) { .marquee-track { gap: 2rem; } }
+                            
+                            .marquee-content {
+                              display: flex;
+                              gap: inherit;
+                              animation: marqueeLinear ${Math.max(25, baseProducts.length * 3.5)}s linear infinite;
+                            }
+                            .marquee-track:hover .marquee-content {
+                              animation-play-state: paused;
+                            }
+                          `}
+                        </style>
+                        <div className="marquee-track">
+                          <div className="marquee-content">
+                            {baseProducts.map((product) => (
+                              <ProductCard key={`orig-${product.uniqueKey}`} product={product} themeColor={activeCategoryData.themeColor} />
+                            ))}
+                          </div>
+                          <div className="marquee-content" aria-hidden="true">
+                            {baseProducts.map((product) => (
+                              <ProductCard key={`dup-${product.uniqueKey}`} product={product} themeColor={activeCategoryData.themeColor} />
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {/* See All Button */}
