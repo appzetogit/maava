@@ -881,7 +881,10 @@ export const confirmReachedPickup = asyncHandler(async (req, res) => {
     const isPastPickupPhase = order.deliveryState.currentPhase === 'en_route_to_delivery' ||
       order.deliveryState.currentPhase === 'picked_up' ||
       order.deliveryState.status === 'order_confirmed' ||
-      order.status === 'out_for_delivery';
+      order.status === 'out_for_delivery' ||
+      order.status === 'delivered' ||
+      order.status === 'cancelled' ||
+      order.deliveryState.currentPhase === 'completed';
 
     if (isPastPickupPhase) {
       console.log(`ℹ️ Order ${order.orderId} is already past pickup phase. Current phase: ${order.deliveryState?.currentPhase || 'unknown'}, Status: ${order.deliveryState?.status || 'unknown'}, Order status: ${order.status || 'unknown'}`);

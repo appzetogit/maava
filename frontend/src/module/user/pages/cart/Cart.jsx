@@ -150,6 +150,7 @@ export default function Cart() {
     instructions: ''
   })
   const [lastOrderAddress, setLastOrderAddress] = useState(null)
+  const [recentAddresses, setRecentAddresses] = useState([]) // Recently used addresses (Home, Office, Other)
 
   // Clear coupon if cart becomes empty
   useEffect(() => {
@@ -650,20 +651,50 @@ export default function Cart() {
   }, [cart, restaurantId])
 
 
-  // Fetch last order to get the last used delivery address
+  // Fetch last order(s) to get the last used delivery address(es)
   useEffect(() => {
-    const fetchLastOrderAddress = async () => {
+    const fetchRecentAddresses = async () => {
       try {
-        const response = await orderAPI.getOrders({ limit: 1 })
+        const response = await orderAPI.getOrders({ limit: 10 })
         const orders = response?.data?.data?.orders || response?.data?.orders || []
-        if (orders.length > 0 && orders[0].address) {
-          setLastOrderAddress(orders[0].address)
+
+        if (orders.length > 0) {
+          // Set absolute latest address
+          if (orders[0].address) {
+            setLastOrderAddress(orders[0].address)
+          }
+
+          // Extract unique addresses by their label (Home, Office, Other)
+          // Only take the most recent one for each label
+          const categorized = {}
+          orders.forEach(order => {
+            const addr = order.address
+            if (addr) {
+              const label = (addr.label || addr.saveAs || 'Other').toLowerCase()
+              if (!categorized[label]) {
+                categorized[label] = { ...addr, label: addr.label || addr.saveAs }
+              }
+            }
+          })
+
+          // Convert back to array (Home, Office, then others)
+          const result = []
+          if (categorized['home'] || categorized['house']) result.push(categorized['home'] || categorized['house'])
+          if (categorized['office']) result.push(categorized['office'])
+          // Add others except the ones already added
+          Object.keys(categorized).forEach(key => {
+            if (key !== 'home' && key !== 'house' && key !== 'office') {
+              result.push(categorized[key])
+            }
+          })
+
+          setRecentAddresses(result)
         }
       } catch (error) {
-        console.warn("⚠️ Failed to fetch last order address:", error)
+        console.warn("⚠️ Failed to fetch recent order addresses:", error)
       }
     }
-    fetchLastOrderAddress()
+    fetchRecentAddresses()
   }, [])
 
   const calculatingRef = useRef(false)
@@ -2084,31 +2115,115 @@ export default function Cart() {
                   </div>
                 </button>
               )}
+              <div className="space-y-6 mt-6">
+                {/* Categorized Recent Addresses */}
+                {recentAddresses.length > 0 && (
+                  <div className="space-y-3">
+                    {recentAddresses.map((addr, index) => {
+                      const label = addr.label || addr.saveAs || 'Recent'
+                      
+                      return (
+                        <button
+                          key={`recent-${index}`}
+                          onClick={() => {
+                            setSelectedAddressForOrder(addr)
+                            setIsAddressConfirmed(true)
+                            setCheckoutStage('payment')
+                          }}
+                          className="w-full flex items-start gap-4 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/40 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-left group"
+                        >
+                          <div className="w-10 h-10 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                            {(label.toLowerCase() === 'home' || label.toLowerCase() === 'house') ? (
+                              <MapPin className="h-5 w-5 text-gray-400 group-hover:text-black dark:group-hover:text-white" />
+                            ) : label.toLowerCase() === 'office' ? (
+                              <Briefcase className="h-5 w-5 text-gray-400 group-hover:text-black dark:group-hover:text-white" />
+                            ) : (
+                              <Navigation className="h-5 w-5 text-gray-400 group-hover:text-black dark:group-hover:text-white" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-gray-900 dark:text-white capitalize">{label}</p>
+                              <span className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-500 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-tighter">Recent</span>
+                            </div>
+                            <p className="text-sm text-gray-500 line-clamp-1 mt-0.5">{formatFullAddress(addr)}</p>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
 
-              <div className="space-y-4">
-                {addresses.map((addr) => (
-                  <button
-                    key={addr._id}
-                    onClick={() => {
-                      setSelectedAddressForOrder(addr)
-                      setIsAddressConfirmed(true)
-                      setCheckoutStage('payment')
-                    }}
-                    className="w-full flex items-start gap-4 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-left group"
-                  >
-                    <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                      {addr.label === 'Home' ? <MapPin className="h-6 w-6 text-gray-500" /> : <Navigation className="h-6 w-6 text-gray-500" />}
+                {/* Quick Select Address Types */}
+                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                  {['Home', 'Office', 'Other'].map((label) => {
+                    const addr = addresses.find(a => 
+                      (a.label?.toLowerCase() === label.toLowerCase()) || 
+                      (label === 'Home' && a.label?.toLowerCase() === 'house')
+                    );
+                    if (!addr) return null;
+                    
+                    return (
+                      <button
+                        key={label}
+                        onClick={() => {
+                          setSelectedAddressForOrder(addr)
+                          setIsAddressConfirmed(true)
+                          setCheckoutStage('payment')
+                        }}
+                        className="flex items-center gap-2 px-4 py-3 rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-black dark:hover:border-white transition-all whitespace-nowrap group"
+                      >
+                        {label === 'Home' && <MapPin className="h-4 w-4 text-gray-500 group-hover:text-black dark:group-hover:text-white" />}
+                        {label === 'Office' && <Briefcase className="h-4 w-4 text-gray-500 group-hover:text-black dark:group-hover:text-white" />}
+                        {label === 'Other' && <Navigation className="h-4 w-4 text-gray-500 group-hover:text-black dark:group-hover:text-white" />}
+                        <span className="font-bold text-sm text-gray-700 dark:text-gray-300 group-hover:text-black dark:group-hover:text-white">{label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {addresses.length > 0 && (
+                  <div className="mb-2">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="h-px bg-gray-100 dark:bg-gray-800 flex-1"></div>
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-2">Saved Addresses</span>
+                      <div className="h-px bg-gray-100 dark:bg-gray-800 flex-1"></div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-gray-900 dark:text-white capitalize">{addr.label || 'Other'}</p>
-                      <p className="text-sm text-gray-500 line-clamp-2 mt-1">{formatFullAddress(addr)}</p>
+                    <div className="space-y-4">
+                      {addresses.map((addr) => (
+                        <button
+                          key={addr._id}
+                          onClick={() => {
+                            setSelectedAddressForOrder(addr)
+                            setIsAddressConfirmed(true)
+                            setCheckoutStage('payment')
+                          }}
+                          className="w-full flex items-start gap-4 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-left group"
+                        >
+                          <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                            {(addr.label === 'Home' || addr.label === 'House') ? (
+                              <MapPin className="h-6 w-6 text-black dark:text-white" />
+                            ) : addr.label === 'Office' ? (
+                              <Briefcase className="h-6 w-6 text-black dark:text-white" />
+                            ) : (
+                              <Navigation className="h-6 w-6 text-black dark:text-white" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-gray-900 dark:text-white capitalize">{addr.label || 'Other'}</p>
+                            <p className="text-sm text-gray-500 line-clamp-2 mt-1">{formatFullAddress(addr)}</p>
+                          </div>
+                        </button>
+                      ))}
                     </div>
-                  </button>
-                ))}
-                {addresses.length === 0 && (
+                  </div>
+                )}
+                
+                {addresses.length === 0 && !lastOrderAddress && (
                   <div className="py-10 text-center">
                     <MapPin className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500 font-medium">No saved addresses found</p>
+                    <p className="text-gray-500 font-medium font-bold">No saved addresses found</p>
+                    <p className="text-xs text-gray-400 mt-1">Add a new address to get started</p>
                   </div>
                 )}
               </div>

@@ -6228,11 +6228,18 @@ export default function DeliveryHome() {
             return;
           }
 
-          const order = orderResponse.data.data;
+          const orderDataFromApi = orderResponse.data.data?.order || orderResponse.data.data;
 
-          // Check if order is cancelled or deleted
-          if (order.status === 'cancelled' || order.status === 'delivered') {
-            console.log(`⚠️ Order is ${order.status}, removing from localStorage`);
+          if (!orderDataFromApi) {
+            console.log('⚠️ Order data not found in API response, removing from localStorage');
+            localStorage.removeItem('deliveryActiveOrder');
+            setSelectedRestaurant(null);
+            return;
+          }
+
+          // Check if order is cancelled or delivered
+          if (orderDataFromApi.status === 'cancelled' || orderDataFromApi.status === 'delivered') {
+            console.log(`⚠️ Order is ${orderDataFromApi.status}, removing from localStorage`);
             localStorage.removeItem('deliveryActiveOrder');
             setSelectedRestaurant(null);
             return;
@@ -10314,6 +10321,36 @@ export default function DeliveryHome() {
                       // Show success message
                       if (earnings > 0) {
                         toast.success(`₹${earnings.toFixed(2)} added to your wallet! 💰`)
+                      }
+
+                      // Update local state to reflect the new status
+                      if (selectedRestaurant) {
+                        const updatedOrder = {
+                          ...selectedRestaurant,
+                          status: 'delivered',
+                          orderStatus: 'delivered',
+                          deliveryPhase: 'completed',
+                          deliveryState: {
+                            ...(selectedRestaurant.deliveryState || {}),
+                            currentPhase: 'completed',
+                            status: 'delivered'
+                          }
+                        };
+                        setSelectedRestaurant(updatedOrder);
+                        
+                        // Also update localStorage with the delivered status
+                        try {
+                          const activeOrderData = JSON.parse(localStorage.getItem('deliveryActiveOrder') || '{}');
+                          if (activeOrderData.restaurantInfo) {
+                            activeOrderData.restaurantInfo = {
+                              ...activeOrderData.restaurantInfo,
+                              ...updatedOrder
+                            };
+                            localStorage.setItem('deliveryActiveOrder', JSON.stringify(activeOrderData));
+                          }
+                        } catch (e) {
+                          console.error('Failed to update localStorage after delivery completion:', e);
+                        }
                       }
 
                       // Close review popup and show payment page
