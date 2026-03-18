@@ -1366,10 +1366,11 @@ export default function InMart() {
           >
 
             {/* Navbar */}
-            <div className="relative z-20 pt-1 sm:pt-3 lg:pt-4">
+            <div className="relative z-20 pt-3 sm:pt-4 lg:pt-6">
               <PageNavbar
                 textColor="black"
                 zIndex={20}
+                hideLogo={true}
               />
             </div>
 

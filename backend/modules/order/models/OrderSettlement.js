@@ -20,8 +20,7 @@ const orderSettlementSchema = new mongoose.Schema({
     index: true
   },
   restaurantId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Restaurant',
+    type: String, // Keep as String to support 'hibermart-id' and ObjectIds
     required: true,
     index: true
   },

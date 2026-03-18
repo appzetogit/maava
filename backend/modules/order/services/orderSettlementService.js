@@ -28,20 +28,48 @@ export const calculateOrderSettlement = async (orderId) => {
 
     // Get restaurant details
     let restaurant = null;
-    if (mongoose.Types.ObjectId.isValid(order.restaurantId) && order.restaurantId.length === 24) {
-      restaurant = await Restaurant.findById(order.restaurantId).lean();
-    }
-    if (!restaurant) {
-      restaurant = await Restaurant.findOne({
-        $or: [
-          { restaurantId: order.restaurantId },
-          { slug: order.restaurantId }
-        ]
-      }).lean();
-    }
+    let restaurantCommissionData = null;
 
-    if (!restaurant) {
-      throw new Error('Restaurant not found');
+    if (order.isHibermartOrder) {
+      // For Hibermart, we don't have a 3rd party restaurant.
+      // 100% of the food price is Admin Profit (Commission)
+      restaurant = {
+        _id: 'hibermart-id',
+        name: 'Hibermart',
+        restaurantId: 'hibermart-id'
+      };
+      // Virtual commission data (100% commission)
+      restaurantCommissionData = {
+        commission: (order.pricing.subtotal || 0) - (order.pricing.discount || 0),
+        type: 'percentage',
+        value: 100,
+        rule: 'Hibermart 100% internal'
+      };
+    } else {
+      // Normal restaurant order logic
+      if (mongoose.Types.ObjectId.isValid(order.restaurantId) && order.restaurantId.length === 24) {
+        restaurant = await Restaurant.findById(order.restaurantId).lean();
+      }
+      if (!restaurant) {
+        restaurant = await Restaurant.findOne({
+          $or: [
+            { restaurantId: order.restaurantId },
+            { slug: order.restaurantId }
+          ]
+        }).lean();
+      }
+
+      if (!restaurant) {
+        throw new Error('Restaurant not found');
+      }
+
+      // Calculate restaurant commission and earnings
+      // Commission is calculated on food price (subtotal - discount)
+      const foodPrice = (order.pricing.subtotal || 0) - (order.pricing.discount || 0);
+      restaurantCommissionData = await RestaurantCommission.calculateCommissionForOrder(
+        restaurant._id,
+        foodPrice
+      );
     }
 
     // Calculate user payment breakdown
@@ -51,29 +79,24 @@ export const calculateOrderSettlement = async (orderId) => {
       deliveryFee: order.pricing.deliveryFee || 0,
       platformFee: order.pricing.platformFee || platformFee,
       gst: order.pricing.tax || 0,
-      packagingFee: 0, // Can be added later if needed
+      packagingFee: 0, 
       total: order.pricing.total || 0
     };
 
-    // Calculate restaurant commission and earnings
-    // Commission is calculated on food price (subtotal - discount)
     const foodPrice = userPayment.subtotal - userPayment.discount;
-    const restaurantCommissionData = await RestaurantCommission.calculateCommissionForOrder(
-      restaurant._id,
-      foodPrice
-    );
-
     const commissionAmount = Math.round(restaurantCommissionData.commission * 100) / 100;
-    const restaurantNetEarning = Math.round((foodPrice - commissionAmount) * 100) / 100;
+    
+    // For Hibermart, restaurantNetEarning is 0 (as Admin is owner), otherwise normal calculation
+    const restaurantNetEarning = order.isHibermartOrder ? 0 : Math.round((foodPrice - commissionAmount) * 100) / 100;
 
     const restaurantEarning = {
-      foodPrice: foodPrice, // Full order value (₹200)
-      commission: commissionAmount, // Commission deducted (₹30 for 15%)
+      foodPrice: foodPrice,
+      commission: commissionAmount,
       commissionPercentage: restaurantCommissionData.type === 'percentage' 
         ? restaurantCommissionData.value 
         : (commissionAmount / foodPrice) * 100,
-      netEarning: restaurantNetEarning, // Amount restaurant receives (₹170)
-      status: 'pending'
+      netEarning: restaurantNetEarning,
+      status: order.isHibermartOrder ? 'credited' : 'pending' // Hibermart is "pre-credited" to Admin
     };
 
     // Calculate delivery partner earnings
