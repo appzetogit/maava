@@ -466,7 +466,7 @@ export default function HomePage() {
       {/* Toast Notification */}
       <Toast show={toast.show} message={toast.message} />
       {/* Top Header - Orange Bar - Reduced Size */}
-      <div className="bg-[#ff8100] w-full px-4 pt-[calc(env(safe-area-inset-top,24px)+20px)] pb-3 relative rounded-b-3xl">
+      <div className="bg-[#ff8100] w-full px-4 pt-5 pb-3 relative rounded-b-3xl">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <MapPin className="w-4 h-4 text-white flex-shrink-0" fill="red" />
