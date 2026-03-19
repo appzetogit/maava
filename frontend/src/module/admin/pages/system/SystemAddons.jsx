@@ -111,7 +111,7 @@ export default function SystemAddons() {
             onChange={(e) => handleInputChange(fieldKey, e.target.value)}
             placeholder={placeholder || `Enter ${label}`}
             rows={4}
-            className="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm resize-y"
+            className="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm resize-y"
           />
         ) : (
           <input
@@ -119,7 +119,7 @@ export default function SystemAddons() {
             value={envData[fieldKey] || ""}
             onChange={(e) => handleInputChange(fieldKey, e.target.value)}
             placeholder={placeholder || `Enter ${label}`}
-            className="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm"
+            className="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm"
           />
         )}
       </div>

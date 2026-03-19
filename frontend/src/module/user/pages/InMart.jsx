@@ -1371,6 +1371,7 @@ export default function InMart() {
                 textColor="black"
                 zIndex={20}
                 hideLogo={true}
+                showTimer={true}
               />
             </div>
 

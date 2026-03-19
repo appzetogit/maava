@@ -157,7 +157,10 @@ class SMSIndiaHubService {
       let message;
       if (customTemplate) {
         // Use custom template with OTP replacement only (don't change purpose text for DLT)
-        message = customTemplate.replace('{otp}', otp);
+        // Support both {otp} and ##var## formats
+        message = customTemplate
+          .replace('{otp}', otp)
+          .replace('##var##', otp);
       } else if (usePromotional) {
         // For promotional SMS, we can use dynamic purpose text
         let purposeText = 'registration';

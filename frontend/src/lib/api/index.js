@@ -479,6 +479,11 @@ export const restaurantAPI = {
     return apiClient.get(API_ENDPOINTS.RESTAURANT.LIST, { params });
   },
 
+  // Search food items/dishes (for user module)
+  searchFoods: (query, limit = 20) => {
+    return apiClient.get('/restaurant/search/food', { params: { q: query, limit } });
+  },
+
   // Get restaurants with dishes under ₹250
   getRestaurantsUnder250: (zoneId) => {
     const params = zoneId ? { zoneId } : {};

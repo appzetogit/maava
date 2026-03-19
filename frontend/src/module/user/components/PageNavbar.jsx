@@ -16,7 +16,8 @@ export default function PageNavbar({
   zIndex = 20,
   showProfile = false,
   onNavClick,
-  hideLogo = false
+  hideLogo = false,
+  showTimer = false
 }) {
   const { location, loading, requestLocation } = useLocation()
   const { getCartCount } = useCart()
@@ -24,6 +25,14 @@ export default function PageNavbar({
   const cartCount = getCartCount()
   const [logoUrl, setLogoUrl] = useState(null)
   const [companyName, setCompanyName] = useState(null)
+  const [deliveryTime, setDeliveryTime] = useState(8)
+
+  // Randomize delivery time on mount (between 8 and 14)
+  useEffect(() => {
+    if (showTimer) {
+      setDeliveryTime(Math.floor(Math.random() * (14 - 8 + 1)) + 8)
+    }
+  }, [showTimer])
 
   // Auto-trigger location fetch if we have placeholder values (only once on mount)
   useEffect(() => {
@@ -940,6 +949,16 @@ export default function PageNavbar({
               </span>
             ) : (
               <div className="flex flex-col items-start min-w-0 w-full overflow-hidden">
+                {showTimer && (
+                  <div className="flex items-center gap-2 mb-0.5 select-none">
+                    <span className={`text-[11px] font-[900] uppercase tracking-tighter opacity-70 ${textColorClass} transform -translate-y-[1px]`}>
+                      Delivery in
+                    </span>
+                    <span className={`text-xl font-[1000] tracking-tighter ${textColorClass}`}>
+                      {deliveryTime} minutes
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center gap-1.5 max-w-full">
                   <FaLocationDot
                     className={`h-6 w-6 sm:h-7 sm:w-7 ${textColorClass} flex-shrink-0 ${textColor === "white" ? "drop-shadow-lg" : ""}`}

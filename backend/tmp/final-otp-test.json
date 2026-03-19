@@ -1,0 +1,34 @@
+{
+  "timestamp": "2026-03-19T09:35:58.444Z",
+  "steps": [
+    "Connecting to MongoDB...",
+    "Connected to MongoDB",
+    "Sending Test OTP..."
+  ],
+  "isConfigured": true,
+  "credentials": {
+    "apiKeyLast4": "296A",
+    "senderId": "MAAVA"
+  },
+  "sendResult": {
+    "success": true,
+    "messageId": "fLiULkz5NUOe9WjIO8ezew",
+    "jobId": "105328687",
+    "status": "sent",
+    "to": "919109992290",
+    "body": "Your OTP for MAAVA is 123456. It will be valid for 30 minutes.- -Maava",
+    "provider": "SMSIndia Hub",
+    "response": {
+      "ErrorCode": "000",
+      "ErrorMessage": "Done",
+      "JobId": "105328687",
+      "MessageData": [
+        {
+          "Number": "919109992290",
+          "MessageId": "fLiULkz5NUOe9WjIO8ezew",
+          "Message": "Your OTP for MAAVA is 123456. It will be valid for 30 minutes.- -Maava"
+        }
+      ]
+    }
+  }
+}

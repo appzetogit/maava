@@ -8,7 +8,7 @@ import { getRestaurants, getRestaurantById, getRestaurantByOwner, updateRestaura
 import { getRestaurantFinance } from './controllers/restaurantFinanceController.js';
 import { getWallet, getWalletTransactions, getWalletStats } from './controllers/restaurantWalletController.js';
 import { createWithdrawalRequest, getRestaurantWithdrawalRequests } from './controllers/withdrawalController.js';
-import { getMenu, updateMenu, getMenuByRestaurantId, addSection, addItemToSection, addSubsectionToSection, addItemToSubsection, addAddon, getAddons, getAddonsByRestaurantId, updateAddon, deleteAddon } from './controllers/menuController.js';
+import { getMenu, updateMenu, getMenuByRestaurantId, addSection, addItemToSection, addSubsectionToSection, addItemToSubsection, addAddon, getAddons, getAddonsByRestaurantId, updateAddon, deleteAddon, searchFoodItems } from './controllers/menuController.js';
 import { scheduleItemAvailability, cancelScheduledAvailability, getItemSchedule } from './controllers/menuScheduleController.js';
 import { getInventory, updateInventory, getInventoryByRestaurantId } from './controllers/inventoryController.js';
 import { addStaff, getStaff, getStaffById, updateStaff, deleteStaff } from './controllers/staffManagementController.js';
@@ -99,6 +99,7 @@ router.get('/zones', authenticate, getRestaurantZones);
 
 // Restaurant routes (public - for user module)
 router.get('/list', getRestaurants);
+router.get('/search/food', searchFoodItems);
 router.get('/under-250', getRestaurantsWithDishesUnder250);
 // Menu and inventory routes must come before /:id to avoid route conflicts
 router.get('/:restaurantId/offers/item/:itemId/coupons', getCouponsByItemIdPublic);

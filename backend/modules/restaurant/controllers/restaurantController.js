@@ -144,6 +144,7 @@ export const getRestaurants = async (req, res) => {
       maxDistance,
       maxPrice,
       hasOffers,
+      search,
       zoneId // User's zone ID (optional - if provided, filters by zone)
     } = req.query;
 
@@ -159,6 +160,11 @@ export const getRestaurants = async (req, res) => {
 
     // Build query
     const query = { isActive: true };
+    
+    // Search filter
+    if (search) {
+      query.name = { $regex: search, $options: 'i' };
+    }
 
     // Cuisine filter
     if (cuisine) {

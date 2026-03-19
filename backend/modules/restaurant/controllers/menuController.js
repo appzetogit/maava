@@ -993,3 +993,81 @@ export const deleteAddon = asyncHandler(async (req, res) => {
   });
 });
 
+// Search food items (dishes) across all restaurants
+export const searchFoodItems = asyncHandler(async (req, res) => {
+  const { q, limit = 20 } = req.query;
+  
+  if (!q || !q.trim()) {
+    return successResponse(res, 200, 'Empty search query', { items: [] });
+  }
+
+  const searchTerm = q.trim();
+  const searchRegex = new RegExp(searchTerm, 'i');
+
+  // Find menus that contain matching items
+  const menus = await Menu.find({
+    isActive: true,
+    $or: [
+      { "sections.items.name": searchRegex },
+      { "sections.items.description": searchRegex },
+      { "sections.subsections.items.name": searchRegex },
+      { "sections.subsections.items.description": searchRegex }
+    ]
+  })
+    .populate({
+      path: 'restaurant',
+      select: 'name profileImage location rating estimatedDeliveryTime slug isActive isAcceptingOrders',
+      match: { isActive: true }
+    })
+    .lean();
+
+  const matchedItems = [];
+  
+  for (const menu of menus) {
+    if (!menu.restaurant) continue; // Skip if restaurant is not active or missing
+
+    const restaurantInfo = {
+      _id: menu.restaurant._id,
+      name: menu.restaurant.name,
+      image: menu.restaurant.profileImage?.url,
+      rating: menu.restaurant.rating,
+      deliveryTime: menu.restaurant.estimatedDeliveryTime,
+      slug: menu.restaurant.slug,
+      isAcceptingOrders: menu.restaurant.isAcceptingOrders
+    };
+
+    (menu.sections || []).forEach(section => {
+      // Search direct items
+      (section.items || []).forEach(item => {
+        if (item.approvalStatus === 'approved' && (searchRegex.test(item.name) || searchRegex.test(item.description || ''))) {
+          matchedItems.push({
+            ...item,
+            restaurant: restaurantInfo,
+            sectionName: section.name
+          });
+        }
+      });
+
+      // Search subsection items
+      (section.subsections || []).forEach(subsection => {
+        (subsection.items || []).forEach(item => {
+          if (item.approvalStatus === 'approved' && (searchRegex.test(item.name) || searchRegex.test(item.description || ''))) {
+            matchedItems.push({
+              ...item,
+              restaurant: restaurantInfo,
+              sectionName: section.name,
+              subsectionName: subsection.name
+            });
+          }
+        });
+      });
+    });
+  }
+
+  // Sort by rating or relevance (simple sort here)
+  matchedItems.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+
+  return successResponse(res, 200, 'Food items searched successfully', {
+    items: matchedItems.slice(0, Number(limit))
+  });
+});

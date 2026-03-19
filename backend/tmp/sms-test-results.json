@@ -1,0 +1,25 @@
+{
+  "timestamp": "2026-03-19T08:26:19.224Z",
+  "steps": [
+    "Connecting to MongoDB...",
+    "Connected to MongoDB",
+    "Checking Balance...",
+    "Testing Connectivity..."
+  ],
+  "isConfigured": true,
+  "credentials": {
+    "apiKeyLast4": "296A",
+    "senderId": "SNACCO"
+  },
+  "balance": {
+    "success": true,
+    "balance": 5,
+    "currency": "INR",
+    "response": "Success#Promotional:5|Transactional:9955"
+  },
+  "testConnection": {
+    "success": true,
+    "message": "SMSIndia Hub connection successful",
+    "response": "[object Object]"
+  }
+}
