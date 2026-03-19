@@ -23,6 +23,7 @@ export default function AddToCartAnimation({
   hideOnPages = true,
   linkTo = '/cart',
   dynamicBottom = null,
+  showPill = true,
 }) {
   const { items, itemCount, total, lastAddEvent, lastRemoveEvent } = useCart();
   const location = useLocation();
@@ -416,7 +417,7 @@ export default function AddToCartAnimation({
       )}
 
       <AnimatePresence>
-        {itemCount > 0 && !shouldHidePill && (
+        {itemCount > 0 && !shouldHidePill && showPill && (
           <motion.div
             initial={{ y: 60, opacity: 0, scale: 0.8 }}
             animate={{

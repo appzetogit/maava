@@ -1,3 +1,4 @@
+import OptimizedImage from "@/components/OptimizedImage"
 import { Link, useNavigate } from "react-router-dom"
 import { useState, useMemo, useCallback, useEffect, useRef } from "react"
 import { Star, Clock, MapPin, ArrowDownUp, Timer, ArrowRight, ChevronDown, Bookmark, Share2, Plus, Minus, X } from "lucide-react"
@@ -15,9 +16,8 @@ import { foodImages } from "@/constants/images"
 import appzetoFoodLogo from "@/assets/appzetologo.png"
 import offerImage from "@/assets/offerimage.png"
 import AddToCartAnimation from "../components/AddToCartAnimation"
-import OptimizedImage from "@/components/OptimizedImage"
-import api from "@/lib/api"
-import { restaurantAPI } from "@/lib/api"
+import StickyCartCard from "../components/StickyCartCard"
+import api, { restaurantAPI } from "@/lib/api"
 
 export default function Under250() {
   const { location } = useLocation()
@@ -942,7 +942,10 @@ export default function Under250() {
       </AnimatePresence>
 
       {/* Add to Cart Animation */}
-      <AddToCartAnimation />
+      <AddToCartAnimation showPill={false} />
+
+      {/* Desktop Sticky Cart */}
+      <StickyCartCard />
     </div>
   )
 }
