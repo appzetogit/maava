@@ -1500,27 +1500,25 @@ export default function Cart() {
             {/* Left Column - Cart Items and Details */}
             <div className="lg:col-span-2 space-y-2 md:space-y-4">
 
-              {/* ── Maava Gold Offers Card ── */}
-              <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#1a1200] via-[#2d2000] to-[#1a1200] border border-yellow-600/30 px-4 py-3 flex items-center gap-3 shadow-lg shadow-yellow-900/10 mb-2 md:mb-4">
+              {/* ── Maava Offers Card ── */}
+              <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#1a1200] via-[#2d2000] to-[#1a1200] border border-yellow-600/30 px-4 py-3 flex items-center justify-center shadow-lg shadow-yellow-900/10 mb-2 md:mb-4">
                 {/* Shimmer stripe */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/5 to-transparent pointer-events-none" />
-                {/* Crown icon */}
-                <div className="flex-shrink-0 w-9 h-9 rounded-full bg-yellow-500/15 border border-yellow-500/30 flex items-center justify-center">
-                  <span className="text-[18px] leading-none" role="img" aria-label="crown">👑</span>
+                
+                {/* Crown icon - Positioned absolute left */}
+                <div className="absolute left-4 flex-shrink-0 w-8 h-8 rounded-full bg-yellow-500/15 border border-yellow-500/30 flex items-center justify-center z-10">
+                  <span className="text-[16px] leading-none" role="img" aria-label="crown">👑</span>
                 </div>
-                {/* Text */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-black text-yellow-400 uppercase tracking-wider leading-none mb-0.5">
-                    Maava Gold Offers
+
+                {/* Text - Centered in container */}
+                <div className="text-center z-10">
+                  <p className="text-[13px] font-black text-yellow-400 uppercase tracking-wider leading-none mb-1">
+                    Maava Offers
                   </p>
-                  <p className="text-[12px] font-semibold text-yellow-200/80 leading-snug">
+                  <p className="text-[11px] font-semibold text-yellow-200/80 leading-snug">
                     Enjoy <span className="text-yellow-300 font-black">FREE delivery</span> above{' '}
                     <span className="text-yellow-300 font-black">₹{feeSettings.freeDeliveryThreshold}</span>
                   </p>
-                </div>
-                {/* Gold badge */}
-                <div className="flex-shrink-0 bg-yellow-500 text-black text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full">
-                  Gold
                 </div>
               </div>
 
