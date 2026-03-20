@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import { motion } from "framer-motion"
 import { useState, useEffect } from "react"
 import { ChevronDown, ShoppingCart, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -949,14 +950,45 @@ export default function PageNavbar({
             ) : (
               <div className="flex flex-col items-start min-w-0 w-full overflow-hidden">
                 {showTimer && (
-                  <div className="flex items-center gap-2 mb-0.5 select-none">
+                  <motion.div 
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 mb-0.5 select-none relative group"
+                  >
                     <span className={`text-[11px] font-[900] uppercase tracking-tighter opacity-70 ${textColorClass} transform -translate-y-[1px]`}>
                       Delivery in
                     </span>
-                    <span className={`text-lg font-extrabold tracking-tighter ${textColorClass}`}>
-                      {deliveryTime} minutes
-                    </span>
-                  </div>
+                    <div className="relative">
+                      <motion.span 
+                        animate={{ 
+                          scale: [1, 1.03, 1],
+                          opacity: [0.9, 1, 0.9]
+                        }}
+                        transition={{
+                          duration: 2.5,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                        className={`text-lg font-extrabold tracking-tighter ${textColorClass} relative z-10`}
+                      >
+                        {deliveryTime} minutes
+                      </motion.span>
+                      
+                      {/* Subtile Glow/Pulse */}
+                      <motion.div
+                        animate={{
+                          scale: [1, 1.5, 1],
+                          opacity: [0, 0.4, 0]
+                        }}
+                        transition={{
+                          duration: 2.5,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                        className={`absolute inset-0 rounded-full blur-md ${textColor === "white" ? "bg-white/20" : "bg-black/5"}`}
+                      />
+                    </div>
+                  </motion.div>
                 )}
                 <div className="flex items-center gap-1.5 max-w-full">
                   <FaLocationDot

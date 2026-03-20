@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react"
+import { useState, useCallback, useEffect, useMemo, memo } from "react"
 import { useNavigate, Link, useNavigationType } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -38,10 +38,62 @@ import AddToCartButton from "../components/AddToCartButton"
 import promoBanner from "@/assets/inmart/promo_banner.png"
 import mccainFries from "@/assets/inmart/mccain_fries.png"
 
+const FloatingElements = memo(({ count = 12 }) => {
+  const elementsData = useMemo(() =>
+    [...Array(count)].map(() => ({
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      duration: 5 + Math.random() * 8,
+      delay: Math.random() * 5,
+      scale: 0.3 + Math.random() * 0.7,
+      rotate: Math.random() * 360,
+      color: Math.random() > 0.5 ? '#FFE082' : 'white',
+      type: Math.floor(Math.random() * 3)
+    })), [count]);
 
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {elementsData.map((data, i) => (
+        <motion.div
+          key={i}
+          initial={{ x: `${data.left}%`, y: `${data.top}%`, opacity: 0, scale: 0 }}
+          animate={{
+            y: ["-10%", "110%"],
+            opacity: [0, 0.7, 0],
+            scale: [data.scale * 0.5, data.scale, data.scale * 0.5],
+            rotate: data.rotate
+          }}
+          transition={{
+            duration: data.duration,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: data.delay
+          }}
+          className="absolute"
+          style={{ color: data.color }}
+        >
+          {data.type === 0 ? <Sparkles size={16} /> : data.type === 1 ? <Heart size={14} fill="currentColor" /> : <div className="w-2 h-2 rounded-full bg-current opacity-60" />}
+        </motion.div>
+      ))}
+    </div>
+  );
+});
 
-const ProductCard = ({ product, themeColor }) => (
-  <div className="flex-shrink-0 w-[145px] sm:w-[175px] md:w-[200px] lg:w-[225px] bg-white dark:bg-[#1a1a1a] rounded-2xl p-2 md:p-3 relative shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100/50 dark:border-white/5 group">
+const iconMap = { ShoppingBag, Home, Gamepad2, Apple, Headphones, Smartphone, Sparkles, Shirt, Coffee, Compass };
+const placeholderItems = [
+  'Search for "Milk"',
+  'Search for "Bread"',
+  'Search for "Eggs"',
+  'Search for "Curd"',
+  'Search for "Atta"',
+  'Search for "Oil"',
+  'Search for "Sugar"',
+  'Search for "Tea"',
+  'Search for "Coffee"',
+];
+
+const ProductCard = memo(({ product, themeColor }) => (
+  <div className="flex-shrink-0 w-[145px] sm:w-[175px] md:w-[200px] lg:w-[225px] bg-white dark:bg-[#1a1a1a] rounded-2xl p-2 md:p-3 relative shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-yellow-500/20 dark:border-yellow-500/30 group transition-all duration-300 hover:border-yellow-500/50">
     {/* Discount Badge */}
     <div className="absolute top-0 left-0 z-10">
       <div className="relative">
@@ -106,10 +158,10 @@ const ProductCard = ({ product, themeColor }) => (
       </div>
     </div>
   </div>
-);
+));
 
-const NewlyLaunchedCard = ({ product, themeColor }) => (
-  <div className="flex-shrink-0 w-[150px] sm:w-[185px] md:w-[210px] bg-white dark:bg-[#1a1a1a] rounded-2xl overflow-hidden relative shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-gray-100 dark:border-white/5 group flex flex-col h-full">
+const NewlyLaunchedCard = memo(({ product, themeColor }) => (
+  <div className="flex-shrink-0 w-[150px] sm:w-[185px] md:w-[210px] bg-white dark:bg-[#1a1a1a] rounded-2xl overflow-hidden relative shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-yellow-500/20 dark:border-yellow-500/30 group flex flex-col h-full transition-all duration-300 hover:border-yellow-500/50">
     {/* Product Image Area */}
     <div className="relative aspect-square w-full bg-[#F5F5F5] dark:bg-white/5 flex items-center justify-center p-2 overflow-hidden">
       <img
@@ -180,12 +232,12 @@ const NewlyLaunchedCard = ({ product, themeColor }) => (
       </div>
     </div>
   </div>
-);
+));
 
-const CategoryCard = ({ category, onClick, themeColor }) => (
+const CategoryCard = memo(({ category, onClick, themeColor }) => (
   <motion.button
     onClick={onClick}
-    className="relative flex flex-col items-center rounded-[1.8rem] sm:rounded-[2.4rem] p-3.5 sm:p-4 overflow-hidden aspect-[0.78/1] transition-all border border-white/10"
+    className="relative flex flex-col items-center rounded-[1.8rem] sm:rounded-[2.4rem] p-3.5 sm:p-4 overflow-hidden aspect-[0.78/1] transition-all border border-yellow-400/40 dark:border-yellow-400/50 hover:border-yellow-400"
     style={{
       background: `linear-gradient(180deg, ${themeColor}cc 0%, ${themeColor}66 100%)`,
       boxShadow: `0 15px 30px -15px rgba(0,0,0,0.12)`,
@@ -216,22 +268,37 @@ const CategoryCard = ({ category, onClick, themeColor }) => (
     {/* Elegant Shine Overlay */}
     <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-0 transition-opacity duration-500" />
   </motion.button>
-);
+));
 
-const ProductSection = ({ title, products, onSeeAll, isNewlyLaunched = false, themeColor }) => {
-  // Ensure all products have id field mapped from _id
-  const productsWithIds = products.map(product => ({
+const ProductSection = memo(({ title, products, onSeeAll, isNewlyLaunched = false, themeColor }) => {
+  // Memoize products with IDs calculation
+  const productsWithIds = useMemo(() => products.map(product => ({
     ...product,
     id: product.id || product._id?.toString() || product._id
-  }));
+  })), [products]);
 
   return (
     <div className="mb-8">
       <div className="bg-white dark:bg-white/5 rounded-[2rem] sm:rounded-[3rem] p-4 sm:p-7 md:p-8 lg:p-10 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100/50 dark:border-white/5">
         <div className="flex items-center justify-between mb-6 sm:mb-8 md:mb-10 px-1">
-          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-            {title}
-          </h2>
+          <div className="relative">
+            <motion.h2
+              animate={{ backgroundPosition: ['200% 0', '-200% 0'] }}
+              transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+              style={{
+                background: 'linear-gradient(110deg, currentColor 45%, #FFD700 50%, currentColor 55%)',
+                backgroundSize: '200% 100%',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+              className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight"
+            >
+              {title}
+            </motion.h2>
+            {/* Subtle under-glow for premium feel */}
+            <div className="absolute -bottom-1 left-0 w-12 h-1 bg-gradient-to-r from-yellow-400 to-transparent rounded-full opacity-60" />
+          </div>
           <button
             onClick={onSeeAll}
             style={{ color: themeColor }}
@@ -262,43 +329,53 @@ const ProductSection = ({ title, products, onSeeAll, isNewlyLaunched = false, th
       </div>
     </div>
   );
-};
-const AnimatedCategoryHeader = ({ categoryName }) => {
+});
+const SnowShower = memo(({ count = 20, blur = "1px", opacity = 0.8 }) => {
+  const snowData = useMemo(() =>
+    [...Array(count)].map(() => ({
+      left: Math.random() * 100,
+      scale: 0.2 + Math.random() * 0.5,
+      duration: 4 + Math.random() * 6,
+      delay: Math.random() * 10,
+      size: Math.random() * 6 + 2,
+      drift: (Math.random() > 0.5 ? 5 : -5)
+    })), [count]);
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+      {snowData.map((data, i) => (
+        <motion.div
+          key={i}
+          initial={{ top: "-5%", left: `${data.left}%`, opacity: 0, scale: data.scale }}
+          animate={{
+            top: "105%",
+            left: [`${data.left}%`, `${data.left + data.drift}%`],
+            opacity: [0, opacity, opacity, 0],
+          }}
+          transition={{
+            duration: data.duration,
+            repeat: Infinity,
+            delay: data.delay,
+            ease: "linear"
+          }}
+          style={{
+            position: 'absolute',
+            width: `${data.size}px`,
+            height: `${data.size}px`,
+            background: 'white',
+            borderRadius: '50%',
+            filter: `blur(${blur}) drop-shadow(0 0 2px rgba(255,255,255,${opacity}))`
+          }}
+        />
+      ))}
+    </div>
+  );
+});
+
+const AnimatedCategoryHeader = memo(({ categoryName }) => {
   return (
     <div className="relative w-full flex flex-col items-center justify-center py-4 md:py-6 mb-2 text-center select-none overflow-visible">
-      {/* Cinematic Snow Shower Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        {[...Array(25)].map((_, i) => (
-          <motion.div
-            key={`snow-${i}`}
-            initial={{
-              top: "-5%",
-              left: `${Math.random() * 100}%`,
-              opacity: 0,
-              scale: 0.2 + Math.random() * 0.5
-            }}
-            animate={{
-              top: "105%",
-              left: [`${Math.random() * 100}%`, `${(Math.random() * 100) + (Math.random() > 0.5 ? 5 : -5)}%`],
-              opacity: [0, 0.8, 0.8, 0],
-            }}
-            transition={{
-              duration: 4 + Math.random() * 6,
-              repeat: Infinity,
-              delay: Math.random() * 10,
-              ease: "linear"
-            }}
-            style={{
-              position: 'absolute',
-              width: `${Math.random() * 6 + 2}px`,
-              height: `${Math.random() * 6 + 2}px`,
-              background: 'white',
-              borderRadius: '50%',
-              filter: 'blur(1px) drop-shadow(0 0 2px rgba(255,255,255,0.8))'
-            }}
-          />
-        ))}
-      </div>
+      <SnowShower count={25} />
 
       <style>
         {`
@@ -481,7 +558,7 @@ const AnimatedCategoryHeader = ({ categoryName }) => {
       </div>
     </div>
   );
-};
+});
 const VoiceSearchModal = ({ isOpen, onClose, onResult }) => {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
@@ -636,7 +713,7 @@ const VoiceSearchModal = ({ isOpen, onClose, onResult }) => {
   );
 };
 
-const InMartSearchOverlay = ({ isOpen, onClose, allProducts, searchCategories, themeColor, initialSearch }) => {
+const InMartSearchOverlay = memo(({ isOpen, onClose, allProducts, searchCategories, themeColor, initialSearch }) => {
   const [searchTerm, setSearchTerm] = useState(initialSearch || "");
   const [results, setResults] = useState({ products: [], categories: [] });
   const navigate = useNavigate();
@@ -805,7 +882,7 @@ const InMartSearchOverlay = ({ isOpen, onClose, allProducts, searchCategories, t
       </div>
     </motion.div>
   );
-};
+});
 
 const PartyCelebration = () => {
   const [trigger, setTrigger] = useState(0);
@@ -1039,7 +1116,6 @@ export default function InMart() {
     fetchInMartData()
   }, [])
 
-  const iconMap = { ShoppingBag, Home, Gamepad2, Apple, Headphones, Smartphone, Sparkles, Shirt, Coffee, Compass };
 
   const categoriesData = useMemo(() => {
     const base = [
@@ -1181,18 +1257,6 @@ export default function InMart() {
   }, [showSplash])
 
 
-  // Zepto-style rotating placeholder
-  const placeholderItems = useMemo(() => [
-    'Search for "Milk"',
-    'Search for "Bread"',
-    'Search for "Eggs"',
-    'Search for "Curd"',
-    'Search for "Atta"',
-    'Search for "Oil"',
-    'Search for "Sugar"',
-    'Search for "Tea"',
-    'Search for "Coffee"',
-  ], [])
   const [placeholderIndex, setPlaceholderIndex] = useState(0)
 
   useEffect(() => {
@@ -1423,38 +1487,7 @@ export default function InMart() {
             {/* Categories Section */}
             <section className="relative z-20 w-full mt-1 sm:mt-2 pb-2 px-0 overflow-hidden">
               {/* Subtle Snow Shower Background for Navigation */}
-              <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-                {[...Array(15)].map((_, i) => (
-                  <motion.div
-                    key={`nav-snow-${i}`}
-                    initial={{
-                      top: "-10%",
-                      left: `${Math.random() * 100}%`,
-                      opacity: 0,
-                      scale: 0.1 + Math.random() * 0.4
-                    }}
-                    animate={{
-                      top: "110%",
-                      left: [`${Math.random() * 100}%`, `${(Math.random() * 100) + (Math.random() > 0.5 ? 3 : -3)}%`],
-                      opacity: [0, 0.4, 0.4, 0],
-                    }}
-                    transition={{
-                      duration: 6 + Math.random() * 8,
-                      repeat: Infinity,
-                      delay: Math.random() * 10,
-                      ease: "linear"
-                    }}
-                    style={{
-                      position: 'absolute',
-                      width: `${Math.random() * 4 + 1}px`,
-                      height: `${Math.random() * 4 + 1}px`,
-                      background: 'white',
-                      borderRadius: '50%',
-                      filter: 'blur(0.5px) drop-shadow(0 0 1px rgba(255,255,255,0.5))'
-                    }}
-                  />
-                ))}
-              </div>
+              <SnowShower count={15} blur="0.5px" opacity={0.4} />
 
               <div className="max-w-7xl lg:max-w-[1400px] xl:max-w-[1600px] mx-auto relative z-10">
                 <div
@@ -1909,19 +1942,19 @@ export default function InMart() {
                 </div>
 
                 {/* Product Carousel / Auto Looping Marquee */}
-                <div className="relative mb-6 sm:mb-10 md:mb-14 overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent, black 1rem, black calc(100% - 1rem), transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 1rem, black calc(100% - 1rem), transparent)'}}>
+                <div className="relative mb-6 sm:mb-10 md:mb-14 overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent, black 1rem, black calc(100% - 1rem), transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 1rem, black calc(100% - 1rem), transparent)' }}>
                   {(() => {
                     // Extract and ensure minimum elements for infinite loop
                     let saleProducts = apiData.collections?.find(c => c.slug === 'sale')?.products || [];
                     if (saleProducts.length === 0) return null;
-                    
+
                     let baseProducts = [...saleProducts];
                     if (baseProducts.length > 0 && baseProducts.length < 8) {
-                       while (baseProducts.length < 8) {
-                          baseProducts = [...baseProducts, ...saleProducts];
-                       }
+                      while (baseProducts.length < 8) {
+                        baseProducts = [...baseProducts, ...saleProducts];
+                      }
                     }
-                    
+
                     // Assign pure IDs
                     baseProducts = baseProducts.map((product, idx) => ({
                       ...product,
@@ -2103,9 +2136,13 @@ export default function InMart() {
                   return (
                     <section key={header.id} className="w-full">
                       <div className="flex items-center justify-between mb-6 px-1">
-                        <h2 className="text-xl sm:text-2xl md:text-[23px] font-black text-[#1F2937] tracking-tight">
-                          {header.title}
-                        </h2>
+                        <div className="relative">
+                          <h2 className="text-xl sm:text-2xl md:text-[23px] font-black text-gray-900 dark:text-gray-100 tracking-tight">
+                            {header.title}
+                          </h2>
+                          {/* Vibrant Accent Line */}
+                          <div className="absolute -bottom-1.5 left-0 w-10 h-[2.5px] bg-gradient-to-r from-yellow-500 to-transparent rounded-full opacity-60 shadow-[0_0_8px_rgba(250,204,21,0.4)]" />
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4 md:gap-5">
@@ -2120,14 +2157,19 @@ export default function InMart() {
                               transition={{ type: "spring", stiffness: 400, damping: 25 }}
                               className="flex flex-col items-center gap-2"
                             >
-                              <div className="w-full aspect-square bg-[#ECF3FF] rounded-[2rem] overflow-hidden p-2 flex items-center justify-center transition-all group-hover:shadow-xl group-hover:shadow-blue-900/10">
+                              <div className="w-full aspect-square bg-[#ECF3FF] dark:bg-white/5 rounded-[2rem] overflow-hidden p-2 flex items-center justify-center transition-all border border-yellow-500/20 dark:border-yellow-500/30 group-hover:border-yellow-500/50 group-hover:shadow-xl group-hover:shadow-yellow-900/10">
                                 <img
                                   src={subCat.image || "https://via.placeholder.com/200"}
                                   alt={subCat.name}
                                   className="w-[85%] h-[85%] object-contain transform transition-transform duration-700 group-hover:scale-110"
                                 />
                               </div>
-                              <span className="text-[10px] sm:text-[11px] md:text-[12px] font-bold text-[#1F2937] text-center leading-[1.2] pt-1 px-1 line-clamp-2">
+                              <span
+                                className="text-[10px] sm:text-[11px] md:text-[12px] font-bold text-[#1F2937] dark:text-gray-200 text-center leading-[1.2] pt-1 px-1 line-clamp-2 transition-all duration-300 group-hover:text-yellow-600 dark:group-hover:text-yellow-400"
+                                style={{
+                                  textShadow: '0 0 1.5px rgba(255, 215, 0, 0.3), 0 0 3px rgba(255, 215, 0, 0.1)'
+                                }}
+                              >
                                 {subCat.name}
                               </span>
                             </motion.div>
