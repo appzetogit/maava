@@ -150,15 +150,16 @@ export default function Cart() {
   })
   const [lastOrderAddress, setLastOrderAddress] = useState(null)
   const [recentAddresses, setRecentAddresses] = useState([]) // Recently used addresses (Home, Office, Other)
+  const isHibermartCart = cart[0]?.restaurantId === 'hibermart-id' || cart[0]?.restaurant === 'Hibermart'
 
-  // Clear coupon if cart becomes empty
+  // Clear coupon if cart becomes empty or if it's a Hibermart order
   useEffect(() => {
-    if (cart.length === 0) {
+    if (cart.length === 0 || isHibermartCart) {
       setAppliedCoupon(null)
       setCouponCode("")
       localStorage.removeItem("applied_coupon")
     }
-  }, [cart.length])
+  }, [cart.length, isHibermartCart])
 
   // Payment UI State
   const [showPaymentOptions, setShowPaymentOptions] = useState(false)
@@ -218,7 +219,6 @@ export default function Cart() {
 
 
   const cartCount = getCartCount()
-  const isHibermartCart = cart[0]?.restaurantId === 'hibermart-id' || cart[0]?.restaurant === 'Hibermart'
   const savedAddress = getDefaultAddress()
   // Priority: Use live location if available, otherwise use saved address
   const defaultAddress = useMemo(() => {
@@ -569,7 +569,8 @@ export default function Cart() {
   // Fetch coupons for items in cart
   useEffect(() => {
     const fetchCouponsForCartItems = async () => {
-      if (cart.length === 0 || !restaurantId) {
+      // Disable restaurant coupons for Hibermart orders
+      if (cart.length === 0 || !restaurantId || isHibermartCart) {
         setAvailableCoupons([])
         return
       }
@@ -713,15 +714,15 @@ export default function Cart() {
           items,
           restaurantId: restaurantData?.restaurantId || restaurantData?._id || restaurantId || null,
           deliveryAddress: defaultAddress,
-          couponCode: appliedCoupon?.code || couponCode || null,
+          couponCode: isHibermartCart ? null : (appliedCoupon?.code || couponCode || null),
           deliveryFleet: 'standard'
         })
 
         if (response?.data?.success && response?.data?.data?.pricing) {
           setPricing(response.data.data.pricing)
 
-          // Update applied coupon if backend returns one
-          if (response.data.data.pricing.appliedCoupon && !appliedCoupon) {
+          // Update applied coupon if backend returns one (Except for Hibermart)
+          if (response.data.data.pricing.appliedCoupon && !appliedCoupon && !isHibermartCart) {
             const coupon = availableCoupons.find(c => c.code === response.data.data.pricing.appliedCoupon.code)
             if (coupon) {
               setAppliedCoupon(coupon)
@@ -789,10 +790,10 @@ export default function Cart() {
   const deliveryFee = pricing?.deliveryFee ?? (subtotal >= feeSettings.freeDeliveryThreshold || appliedCoupon?.freeDelivery ? 0 : feeSettings.deliveryFee)
   const platformFee = pricing?.platformFee || feeSettings.platformFee
   const gstCharges = pricing?.tax || Math.round(subtotal * (feeSettings.gstRate / 100))
-  const discount = pricing?.discount || (appliedCoupon ? Math.min(appliedCoupon.discount, subtotal * 0.5) : 0)
+  const discount = isHibermartCart ? 0 : (pricing?.discount || (appliedCoupon ? Math.min(appliedCoupon.discount, subtotal * 0.5) : 0))
   const totalBeforeDiscount = subtotal + deliveryFee + platformFee + gstCharges
   const total = (pricing?.total || (totalBeforeDiscount - discount)) + tipAmount
-  const savings = pricing?.savings || (discount + (subtotal > 500 ? 32 : 0))
+  const savings = isHibermartCart ? 0 : (pricing?.savings || (discount + (subtotal > 500 ? 32 : 0)))
 
   // Restaurant name from data or cart
   const restaurantName = restaurantData?.name || cart[0]?.restaurant || "Restaurant"
