@@ -700,7 +700,7 @@ const InMartSearchOverlay = ({ isOpen, onClose, allProducts, searchCategories, t
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}
-      className="fixed inset-0 z-[100] bg-white dark:bg-[#0a0a0a] flex flex-col pt-safe"
+      className="fixed inset-0 z-[100] bg-white dark:bg-[#0a0a0a] flex flex-col page-safe-top"
     >
       {/* Search Header */}
       <div className="flex items-center gap-3 p-4 border-b border-gray-100 dark:border-white/5 sticky top-0 bg-white dark:bg-[#0a0a0a] z-10 shadow-sm">
