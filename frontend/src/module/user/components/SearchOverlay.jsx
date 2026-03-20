@@ -97,7 +97,7 @@ export default function SearchOverlay({ isOpen, onClose, searchValue, onSearchCh
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex flex-col bg-white dark:bg-[#0a0a0a]"
+      className="fixed inset-0 z-[9999] flex flex-col bg-white dark:bg-[#0a0a0a] page-safe-top"
       style={{
         animation: 'fadeIn 0.3s ease-out'
       }}
