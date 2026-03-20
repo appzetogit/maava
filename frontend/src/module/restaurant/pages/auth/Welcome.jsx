@@ -33,6 +33,7 @@ const carouselData = [
 ]
 
 export default function RestaurantWelcome() {
+  const { companyName = "MAAVA" } = useCompanyName()
   const navigate = useNavigate()
   const [currentIndex, setCurrentIndex] = useState(0)
   const [direction, setDirection] = useState(0) // 1 for next, -1 for previous

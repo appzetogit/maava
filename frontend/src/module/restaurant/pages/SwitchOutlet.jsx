@@ -89,7 +89,7 @@ export default function SwitchOutlet() {
 
       // Small delay for UX, then navigate to welcome page
       setTimeout(() => {
-        navigate("/restaurant/welcome", { replace: true })
+      navigate("/restaurant/login", { replace: true })
       }, 300)
     } catch (error) {
       // Even if there's an error, we should still clear local data and logout
