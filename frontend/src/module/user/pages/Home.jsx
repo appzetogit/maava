@@ -1210,6 +1210,21 @@ export default function Home() {
               transform: translateY(0);
             }
           }
+          @keyframes shine {
+            0% {
+              transform: translateX(-100%) skewX(-15deg);
+            }
+            30% {
+              transform: translateX(200%) skewX(-15deg);
+            }
+            100% {
+              transform: translateX(200%) skewX(-15deg);
+            }
+          }
+          @keyframes gold-shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+          }
         `}</style>
       </div>
 
@@ -1295,7 +1310,7 @@ export default function Home() {
         </motion.div>
 
         {/* Hero Section */}
-        <section className="relative z-20 w-full py-4 sm:py-6 md:py-12 lg:py-12">
+        <section className="relative z-20 w-full pt-1 sm:pt-2 md:pt-3 lg:pt-4 pb-4 sm:pb-6 md:pb-12 lg:pb-12">
           {/* Content */}
           <div className="relative z-20 max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto px-3 sm:px-6 lg:px-8">
             {/* Search Bar and VEG MODE Container - Sticky */}
@@ -1453,7 +1468,7 @@ export default function Home() {
               whileTap={{ scale: 0.95 }}
               onClick={() => navigate("/user/under-250")}
             >
-              <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl overflow-hidden">
+              <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl overflow-hidden relative group">
                 <OptimizedImage
                   src={offerImage}
                   alt="Special Offer"
@@ -1462,6 +1477,10 @@ export default function Home() {
                   objectFit="cover"
                   placeholder="blur"
                 />
+                {/* Shine Effect Overlay */}
+                <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden z-10">
+                  <div className="absolute top-0 -left-[100%] w-full h-full bg-gradient-to-r from-transparent via-white/50 to-transparent skew-x-[-15deg] animate-[shine_3s_infinite] opacity-60" />
+                </div>
               </div>
             </motion.div>
             {loadingRealCategories ? (
@@ -1688,11 +1707,18 @@ export default function Home() {
           transition={{ duration: 0.5 }}
         >
           <motion.h2
-            className="text-xs sm:text-sm lg:text-base font-semibold text-gray-400 dark:text-gray-500 tracking-widest uppercase mb-2 sm:mb-3 lg:mb-4 px-1"
+            className="text-xs sm:text-sm lg:text-base font-bold tracking-[0.2em] uppercase mb-2 sm:mb-3 lg:mb-4 px-1"
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
+            style={{
+              background: 'linear-gradient(90deg, #1a1a1a 0%, #1a1a1a 40%, #FFD700 50%, #1a1a1a 60%, #1a1a1a 100%)',
+              backgroundSize: '200% auto',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              animation: 'gold-shimmer 4s linear infinite',
+            }}
           >
             {(!exploreMoreHeading || exploreMoreHeading.trim().toLowerCase() === "explore more") ? "More on Maava" : exploreMoreHeading}
           </motion.h2>
@@ -1713,28 +1739,28 @@ export default function Home() {
                 {
                   id: 'offers',
                   label: 'Offers',
-                  icon: <BadgePercent className="w-10 h-10 text-blue-600" />,
+                  icon: <BadgePercent className="w-6 h-6 text-blue-600" />,
                   bgColor: "bg-blue-50",
                   href: '/user/offers'
                 },
                 {
                   id: 'gourmet',
                   label: 'Gourmet',
-                  icon: <Sparkles className="w-10 h-10 text-purple-600" />,
+                  icon: <Sparkles className="w-6 h-6 text-purple-600" />,
                   bgColor: "bg-purple-50",
                   href: '/user/gourmet'
                 },
                 {
                   id: 'top10',
                   label: 'Top 10',
-                  icon: <Trophy className="w-10 h-10 text-yellow-600" />,
+                  icon: <Trophy className="w-6 h-6 text-yellow-600" />,
                   bgColor: "bg-yellow-50",
                   href: '/user/top-10'
                 },
                 {
                   id: 'collection',
                   label: 'Collections',
-                  icon: <Bookmark className="w-10 h-10 text-pink-600" />,
+                  icon: <Bookmark className="w-6 h-6 text-pink-600" />,
                   bgColor: "bg-pink-50",
                   href: '/user/profile/favorites'
                 },
@@ -1768,7 +1794,7 @@ export default function Home() {
                             <OptimizedImage
                               src={item.image}
                               alt={item.label}
-                              className="w-full h-full dark:rounded-md"
+                              className="w-[65%] h-[65%] dark:rounded-md"
                               sizes="(max-width: 640px) 80px, (max-width: 768px) 96px, 112px"
                               objectFit="contain"
                               placeholder="blur"
@@ -1813,7 +1839,7 @@ export default function Home() {
                             <OptimizedImage
                               src={item.imageUrl}
                               alt={item.label}
-                              className="w-full h-full"
+                              className="w-[65%] h-[65%]"
                               sizes="(max-width: 640px) 80px, (max-width: 768px) 96px, 112px"
                               objectFit="contain"
                               placeholder="blur"

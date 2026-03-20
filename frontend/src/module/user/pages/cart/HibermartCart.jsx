@@ -1515,16 +1515,27 @@ export default function Cart() {
                 <div className="space-y-3 md:space-y-4">
                   {cart.map((item) => (
                     <div key={item.id} className="flex items-start gap-3 md:gap-4">
-                      {/* Veg/Non-veg indicator */}
-                      <div className={`w-4 h-4 md:w-5 md:h-5 border-2 ${item.isVeg !== false ? 'border-green-600' : 'border-red-600'} flex items-center justify-center mt-1 flex-shrink-0`}>
-                        <div className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${item.isVeg !== false ? 'bg-green-600' : 'bg-red-600'}`} />
-                      </div>
 
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm md:text-base font-medium text-gray-800 dark:text-gray-200 leading-tight">{item.name}</p>
+                      <div className="flex-1 min-w-0 flex items-start gap-2.5 md:gap-4">
+                        {/* Product Image */}
+                        <div className="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700">
+                          <img 
+                            src={item.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop"} 
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop";
+                            }}
+                          />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm md:text-base font-medium text-gray-800 dark:text-gray-200 leading-tight">{item.name}</p>
                         <button className="text-xs md:text-sm text-blue-600 dark:text-blue-400 font-medium flex items-center gap-0.5 mt-0.5">
                           Edit <ChevronRight className="h-3 w-3 md:h-4 md:w-4" />
                         </button>
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-3 md:gap-4">

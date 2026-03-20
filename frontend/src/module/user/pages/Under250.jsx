@@ -346,6 +346,13 @@ export default function Under250() {
   return (
 
     <div className={`relative min-h-screen bg-white dark:bg-[#0a0a0a] ${shouldShowGrayscale ? 'grayscale opacity-75' : ''}`}>
+      <style>{`
+        @keyframes shine {
+          0% { transform: translateX(-100%) skewX(-15deg); }
+          30% { transform: translateX(200%) skewX(-15deg); }
+          100% { transform: translateX(200%) skewX(-15deg); }
+        }
+      `}</style>
       {/* Banner Section with Navbar */}
       <div className="relative w-full overflow-hidden min-h-[39vh] lg:min-h-[50vh] md:pt-16">
         {/* Banner Image */}
@@ -392,7 +399,7 @@ export default function Under250() {
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
               >
-                <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md transition-all">
+                <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md transition-all relative group">
                   <OptimizedImage
                     src={offerImage}
                     alt="All"
@@ -401,6 +408,10 @@ export default function Under250() {
                     sizes="(max-width: 640px) 62px, (max-width: 768px) 96px, 112px"
                     placeholder="blur"
                   />
+                  {/* Shine Effect Overlay */}
+                  <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden z-10">
+                    <div className="absolute top-0 -left-[100%] w-full h-full bg-gradient-to-r from-transparent via-white/50 to-transparent skew-x-[-15deg] animate-[shine_3s_infinite] opacity-60" />
+                  </div>
                 </div>
                 <span className="text-xs sm:text-sm md:text-base font-semibold text-gray-800 dark:text-gray-200 text-center pb-1">
                   All

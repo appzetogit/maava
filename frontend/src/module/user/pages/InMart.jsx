@@ -1376,7 +1376,7 @@ export default function InMart() {
             </div>
 
             {/* Hero Section with Search */}
-            <section className="relative z-20 w-full px-4 sm:px-6 lg:px-8 xl:px-12 mt-4 sm:mt-6 md:mt-8 py-4 sm:py-8">
+            <section className="relative z-20 w-full px-4 sm:px-6 lg:px-8 xl:px-12 mt-2 sm:mt-3 md:mt-4 py-3 sm:py-4">
               <div className="max-w-7xl lg:max-w-[1400px] xl:max-w-[1600px] mx-auto">
                 <div className="relative w-full overflow-hidden">
                   <div className="flex items-center gap-3 sm:gap-4 md:gap-5 lg:gap-6">
@@ -1482,20 +1482,40 @@ export default function InMart() {
                         }}
                         className="flex flex-col items-center gap-1 sm:gap-2 group relative pb-3 px-1 transition-all hover:translate-y-[-2px] min-w-[60px] sm:min-w-[80px]"
                       >
-                        <div
-                          className="p-2 sm:p-3 transition-all shadow-sm flex items-center justify-center overflow-hidden"
-                          style={{
-                            backgroundColor: isActive ? 'white' : 'transparent',
-                            clipPath: isActive ? 'polygon(50% 0%, 100% 35%, 100% 100%, 0 100%, 0 35%)' : 'none',
-                            borderRadius: isActive ? '0' : '1.2rem'
+                        <motion.div
+                          initial={{ y: 50, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{
+                            delay: 0.2,
+                            type: "spring",
+                            stiffness: 100,
+                            damping: 15
                           }}
                         >
-                          <Icon
-                            className="w-5 h-5 sm:w-7 sm:h-7 md:w-8 md:h-8 mb-[-2px]" // Adjusted for house shape bottom heavy
-                            color={isActive ? cat.themeColor : "black"}
-                            strokeWidth={isActive ? 3.5 : 2.5}
-                          />
-                        </div>
+                          <motion.div
+                            animate={{
+                              y: [0, -3.5, 0],
+                            }}
+                            transition={{
+                              duration: 4,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                              delay: 0.8 // All icons start floating at the same time
+                            }}
+                            className="p-2 sm:p-3 transition-all shadow-sm flex items-center justify-center overflow-hidden"
+                            style={{
+                              backgroundColor: isActive ? 'white' : 'transparent',
+                              clipPath: isActive ? 'polygon(50% 0%, 100% 35%, 100% 100%, 0 100%, 0 35%)' : 'none',
+                              borderRadius: isActive ? '0' : '1.2rem'
+                            }}
+                          >
+                            <Icon
+                              className="w-5 h-5 sm:w-7 sm:h-7 md:w-8 md:h-8 mb-[-2px]" // Adjusted for house shape bottom heavy
+                              color={isActive ? cat.themeColor : "black"}
+                              strokeWidth={isActive ? 3.5 : 2.5}
+                            />
+                          </motion.div>
+                        </motion.div>
                         <span
                           className={`text-[10px] sm:text-sm md:text-base font-bold transition-colors whitespace-nowrap text-center ${isActive ? 'opacity-100' : 'text-black opacity-60 group-hover:opacity-100'}`}
                           style={{ color: isActive ? cat.themeColor : undefined }}

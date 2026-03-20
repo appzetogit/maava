@@ -698,7 +698,6 @@ export default function PageNavbar({
               part.toLowerCase() !== "india") {
               mainLocation = `${part}, ${location.city}`
               debugLog("✅✅✅ Last resort: Extracted area from formattedAddress:", mainLocation)
-              break
             }
           }
         }
@@ -954,7 +953,7 @@ export default function PageNavbar({
                     <span className={`text-[11px] font-[900] uppercase tracking-tighter opacity-70 ${textColorClass} transform -translate-y-[1px]`}>
                       Delivery in
                     </span>
-                    <span className={`text-xl font-[1000] tracking-tighter ${textColorClass}`}>
+                    <span className={`text-lg font-extrabold tracking-tighter ${textColorClass}`}>
                       {deliveryTime} minutes
                     </span>
                   </div>
