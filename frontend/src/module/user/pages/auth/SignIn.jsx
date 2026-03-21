@@ -330,10 +330,40 @@ export default function SignIn() {
 
       console.log("🚀 Starting Google sign-in...")
 
-      const { signInWithPopup, signInWithRedirect } = await import("firebase/auth")
+      const { signInWithPopup, signInWithRedirect, signInWithCredential, GoogleAuthProvider } = await import("firebase/auth")
 
+      // 1. Check if we are inside the Flutter Mobile App (WebView)
+      if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
+        try {
+          console.log("📱 [Flutter] Detected Flutter WebView, using native bridge...")
+          
+          // 2. Call the Native Android/iOS Google Account List handled by Flutter
+          const result = await window.flutter_inappwebview.callHandler('nativeGoogleSignIn')
+          
+          if (result && result.success && result.idToken) {
+            console.log("✅ [Flutter] Received ID token from Flutter App")
+            
+            // 3. Authenticate with Firebase using the Flutter App's ID Token
+            const credential = GoogleAuthProvider.credential(result.idToken)
+            const userCredential = await signInWithCredential(firebaseAuth, credential)
+            
+            if (userCredential?.user) {
+              console.log("✅ [Flutter] Firebase login successful via native bridge")
+              await processSignedInUser(userCredential.user, "flutter-native-bridge")
+            }
+            return // Stop here, native login handled
+          } else {
+            console.log("ℹ️ [Flutter] Native sign-in canceled or failed. Falling back...")
+          }
+        } catch (bridgeError) {
+          console.error("❌ [Flutter] Native bridge error:", bridgeError)
+          // Fallback to normal flow if bridge fails
+        }
+      }
+
+      // 4. Normal Browser Flow (Chrome, Safari, etc.)
       try {
-        // 1. Try popup first (most reliable for session restoration on localhost)
+        // Try popup first (most reliable for session restoration on localhost)
         const result = await signInWithPopup(firebaseAuth, googleProvider)
         if (result?.user) {
           console.log("✅ Popup sign-in successful")
