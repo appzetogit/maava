@@ -232,30 +232,30 @@ export default function RestaurantLogin() {
     setIsSending(true)
 
     try {
-      const { signInWithPopup, signInWithCredential, GoogleAuthProvider } = await import("firebase/auth")
+      const { signInWithPopup, signInWithRedirect, signInWithCredential, GoogleAuthProvider } = await import("firebase/auth")
 
       // 1. Check if we are inside the Flutter Mobile App (WebView)
       if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
         try {
           console.log("📱 [Flutter] Detected Flutter WebView, using native bridge...")
-          
+
           // 2. Call the Native Android/iOS Google Account List handled by Flutter
           const result = await window.flutter_inappwebview.callHandler('nativeGoogleSignIn')
-          
+
           if (result && result.success && result.idToken) {
             console.log("✅ [Flutter] Received ID token from Flutter App")
-            
+
             // 3. Authenticate with Firebase using the Flutter App's ID Token
             const credential = GoogleAuthProvider.credential(result.idToken)
             const userCredential = await signInWithCredential(firebaseAuth, credential)
-            
+
             if (userCredential?.user) {
               console.log("✅ [Flutter] Firebase login successful via native bridge")
               // Proceed with backend login
               const idToken = await userCredential.user.getIdToken()
               const response = await restaurantAPI.firebaseGoogleLogin(idToken)
               const data = response?.data?.data || {}
-              
+
               if (data.accessToken && data.restaurant) {
                 setAuthData("restaurant", data.accessToken, data.restaurant)
                 window.dispatchEvent(new Event("restaurantAuthChanged"))
@@ -263,39 +263,47 @@ export default function RestaurantLogin() {
                 return
               }
             }
+          } else {
+            console.log("ℹ️ [Flutter] Native sign-in canceled or failed.")
           }
         } catch (bridgeError) {
           console.error("❌ [Flutter] Native bridge error:", bridgeError)
         }
       }
 
-      // 4. Normal Browser Flow
-      // Sign in with Google using Firebase Auth
-      const result = await signInWithPopup(firebaseAuth, googleProvider)
-      const user = result.user
+      // 4. Normal Browser Flow (Fallback)
+      try {
+        // Try popup first (most common for desktop)
+        const result = await signInWithPopup(firebaseAuth, googleProvider)
+        const user = result.user
 
-      // Get Firebase ID token
-      const idToken = await user.getIdToken()
+        // Get Firebase ID token
+        const idToken = await user.getIdToken()
 
-      // Call backend to login/register via Firebase Google
-      const response = await restaurantAPI.firebaseGoogleLogin(idToken)
-      const data = response?.data?.data || {}
+        // Call backend to login/register via Firebase Google
+        const response = await restaurantAPI.firebaseGoogleLogin(idToken)
+        const data = response?.data?.data || {}
 
-      const accessToken = data.accessToken
-      const restaurant = data.restaurant
+        const accessToken = data.accessToken
+        const restaurant = data.restaurant
 
-      if (!accessToken || !restaurant) {
-        throw new Error("Invalid response from server")
+        if (!accessToken || !restaurant) {
+          throw new Error("Invalid response from server")
+        }
+
+        // Store auth data for restaurant module using utility function
+        setAuthData("restaurant", accessToken, restaurant)
+        window.dispatchEvent(new Event("restaurantAuthChanged"))
+        navigate("/restaurant")
+      } catch (popupError) {
+        // If popup was blocked or failed, fallback to redirect
+        if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/cancelled-popup-request' || popupError.code === 'auth/popup-closed-by-user') {
+          console.log("ℹ️ Popup blocked or closed, falling back to redirect...")
+          await signInWithRedirect(firebaseAuth, googleProvider)
+        } else {
+          throw popupError
+        }
       }
-
-      // Store auth data for restaurant module using utility function
-      setAuthData("restaurant", accessToken, restaurant)
-
-      // Notify any listeners that auth state has changed
-      window.dispatchEvent(new Event("restaurantAuthChanged"))
-
-      // Navigate to restaurant home
-      navigate("/restaurant")
     } catch (error) {
       console.error("Firebase Google login error:", error)
       const message =
