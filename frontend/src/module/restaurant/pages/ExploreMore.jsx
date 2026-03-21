@@ -882,11 +882,10 @@ export default function ExploreMore() {
         >
           <Card className="overflow-hidden bg-white mb-8 rounded-[2rem] shadow-[0_15px_40px_-15px_rgba(0,0,0,0.08)] border-0">
             <CardContent className="p-0">
-              <button
-                onClick={() => navigate("/restaurant/switch-outlet")}
-                className="group w-full flex items-center justify-between p-5 hover:bg-gray-50 transition-all duration-500"
+              <div
+                className="group w-full flex items-center justify-between p-5 transition-all duration-500"
               >
-                <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className="flex items-center gap-4 flex-1 min-w-0 text-left">
                   <div className="relative">
                     <div className="absolute inset-0 bg-black blur-[8px] opacity-10 group-hover:opacity-20 transition-opacity" />
                     <div className="relative p-4 bg-black rounded-2xl shadow-lg transform group-hover:rotate-6 transition-transform duration-500">
@@ -907,10 +906,7 @@ export default function ExploreMore() {
                     )}
                   </div>
                 </div>
-                <div className="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center ml-2 border border-gray-100 transition-all duration-300 group-hover:bg-black group-hover:border-black">
-                  <ChevronRight className="w-5 h-5 text-black group-hover:text-white transition-colors" />
-                </div>
-              </button>
+              </div>
             </CardContent>
           </Card>
         </motion.div>

@@ -483,7 +483,7 @@ export default function SignIn() {
                   >
                     <SelectTrigger className="w-[100px] md:w-[120px] !h-12 md:!h-14 border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-black dark:text-white rounded-lg flex items-center transition-colors" size="default">
                       <SelectValue>
-                        <span className="flex items-center gap-2 text-sm md:text-base">
+                        <span className="flex items-center gap-2 text-sm md:text-base text-black dark:text-white">
                           <span>{selectedCountry.flag}</span>
                           <span>{selectedCountry.code}</span>
                         </span>
@@ -492,7 +492,7 @@ export default function SignIn() {
                     <SelectContent className="max-h-[300px] overflow-y-auto">
                       {countryCodes.map((country) => (
                         <SelectItem key={country.code} value={country.code}>
-                          <span className="flex items-center gap-2">
+                          <span className="flex items-center gap-2 text-black dark:text-white">
                             <span>{country.flag}</span>
                             <span>{country.code}</span>
                           </span>

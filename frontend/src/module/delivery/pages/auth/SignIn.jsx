@@ -178,7 +178,7 @@ export default function DeliverySignIn() {
               >
                 <SelectTrigger className="w-[100px] !h-12 border-gray-300 rounded-lg flex items-center shrink-0" size="default">
                   <SelectValue>
-                    <span className="flex items-center gap-2">
+                    <span className="flex items-center gap-2 text-black font-medium">
                       <span>{selectedCountry.flag}</span>
                       <span>{selectedCountry.code}</span>
                     </span>
@@ -187,7 +187,7 @@ export default function DeliverySignIn() {
                 <SelectContent className="max-h-[300px] overflow-y-auto">
                   {countryCodes.map((country) => (
                     <SelectItem key={country.code} value={country.code}>
-                      <span className="flex items-center gap-2">
+                      <span className="flex items-center gap-2 text-black font-medium">
                         <span>{country.flag}</span>
                         <span>{country.code}</span>
                       </span>
