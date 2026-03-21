@@ -21,6 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useSearchOverlay, useLocationSelector } from "../components/UserLayout"
 import PageNavbar from "../components/PageNavbar"
 
+
 // Import shared food images - prevents duplication
 import { foodImages } from "@/constants/images"
 

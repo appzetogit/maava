@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
-import { X, Search, Utensils, MapPin, Star, Clock } from "lucide-react"
+import { X, Search, Utensils, MapPin, Star, Clock, Mic } from "lucide-react"
+import VoiceSearchModal from "./VoiceSearchModal"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { restaurantAPI } from "@/lib/api"
-import { useDebounce } from "@/lib/hooks/use-debounce" 
+import { useDebounce } from "@/lib/hooks/use-debounce"
 
 export default function SearchOverlay({ isOpen, onClose, searchValue, onSearchChange }) {
   const navigate = useNavigate()
@@ -12,6 +14,12 @@ export default function SearchOverlay({ isOpen, onClose, searchValue, onSearchCh
   const debouncedSearch = useDebounce(searchValue, 300)
   const [results, setResults] = useState({ restaurants: [], foods: [] })
   const [isLoading, setIsLoading] = useState(false)
+  const [isVoiceSearchOpen, setIsVoiceSearchOpen] = useState(false)
+
+  const handleVoiceResult = (text) => {
+    onSearchChange(text)
+  }
+
 
 
 
@@ -113,8 +121,15 @@ export default function SearchOverlay({ isOpen, onClose, searchValue, onSearchCh
                 value={searchValue}
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder="Search for food, restaurants..."
-                className="pl-12 pr-4 h-12 w-full bg-white dark:bg-[#1a1a1a] border-gray-100 dark:border-gray-800 focus:border-primary-orange dark:focus:border-primary-orange rounded-full text-lg dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                className="pl-12 pr-12 h-12 w-full bg-white dark:bg-[#1a1a1a] border-gray-100 dark:border-gray-800 focus:border-primary-orange dark:focus:border-primary-orange rounded-full text-lg dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
               />
+              <button
+                type="button"
+                onClick={() => setIsVoiceSearchOpen(true)}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors z-20"
+              >
+                <Mic className="h-5 w-5 text-gray-400 dark:text-gray-500" strokeWidth={2.5} />
+              </button>
             </div>
             <Button
               type="button"
@@ -157,16 +172,16 @@ export default function SearchOverlay({ isOpen, onClose, searchValue, onSearchCh
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {results.restaurants.map((rest) => (
-                      <div 
-                        key={rest._id} 
+                      <div
+                        key={rest._id}
                         onClick={() => handleItemClick(rest, 'restaurant')}
                         className="group flex items-center gap-4 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 hover:border-primary-orange/30 dark:hover:border-primary-orange/30 hover:bg-orange-50/30 dark:hover:bg-orange-900/5 cursor-pointer transition-all shadow-sm hover:shadow-md"
                       >
                         <div className="relative w-20 h-20 flex-shrink-0">
-                          <img 
-                            src={rest.profileImage?.url || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=600&fit=crop'} 
-                            className="w-full h-full rounded-xl object-cover shadow-sm group-hover:scale-105 transition-transform" 
-                            alt={rest.name} 
+                          <img
+                            src={rest.profileImage?.url || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=600&fit=crop'}
+                            className="w-full h-full rounded-xl object-cover shadow-sm group-hover:scale-105 transition-transform"
+                            alt={rest.name}
                           />
                           {rest.rating > 0 && (
                             <div className="absolute -bottom-2 -right-2 bg-white dark:bg-gray-900 shadow-sm rounded-lg px-1.5 py-0.5 flex items-center gap-1 border border-gray-100 dark:border-gray-800">
@@ -200,8 +215,8 @@ export default function SearchOverlay({ isOpen, onClose, searchValue, onSearchCh
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {results.foods.map((food, idx) => (
-                      <div 
-                        key={food.id || idx} 
+                      <div
+                        key={food.id || idx}
                         onClick={() => handleItemClick(food, 'food')}
                         className="group flex gap-4 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 hover:border-primary-orange/30 dark:hover:border-primary-orange/30 hover:bg-orange-50/30 dark:hover:bg-orange-900/5 cursor-pointer transition-all shadow-sm hover:shadow-md"
                       >
@@ -216,8 +231,8 @@ export default function SearchOverlay({ isOpen, onClose, searchValue, onSearchCh
                         </div>
                         <div className="flex-1 min-w-0 flex flex-col justify-center">
                           <div className="flex justify-between items-start gap-2">
-                             <p className="font-bold text-gray-900 dark:text-white line-clamp-1 group-hover:text-primary-orange transition-colors">{food.name}</p>
-                             <p className="font-bold text-primary-orange">₹{food.price}</p>
+                            <p className="font-bold text-gray-900 dark:text-white line-clamp-1 group-hover:text-primary-orange transition-colors">{food.name}</p>
+                            <p className="font-bold text-primary-orange">₹{food.price}</p>
                           </div>
                           <p className="text-xs text-gray-500 line-clamp-1 mt-1">From: <span className="font-semibold">{food.restaurant?.name}</span></p>
                           <p className="text-[10px] text-gray-400 mt-2 italic">{food.sectionName}</p>
@@ -284,6 +299,11 @@ export default function SearchOverlay({ isOpen, onClose, searchValue, onSearchCh
             }
           }
         `}</style>
+      <VoiceSearchModal 
+        isOpen={isVoiceSearchOpen} 
+        onClose={() => setIsVoiceSearchOpen(false)} 
+        onResult={handleVoiceResult} 
+      />
     </div>
   )
 }
