@@ -356,7 +356,7 @@ export default function RestaurantLogin() {
   const isValidEmail = !errors.email && formData.email.trim().length > 0
 
   return (
-    <div className="max-h-screen h-screen bg-white flex flex-col overflow-y-auto">
+    <div className="max-h-screen h-screen bg-white flex flex-col overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       {/* Hero Image at Top */}
       <div className="w-full bg-white flex flex-col items-center justify-center p-4">
         <img
@@ -366,20 +366,9 @@ export default function RestaurantLogin() {
         />
       </div>
 
-      {/* Header with Back Button */}
-      <div className="relative flex items-center justify-center py-4 px-4 mt-2">
-
-        <button
-          onClick={() => navigate("/restaurant/welcome")}
-          className="absolute left-4 top-4"
-          aria-label="Go back"
-        >
-          <ArrowLeft className="h-5 w-5 text-black" />
-        </button>
-      </div>
 
       {/* Top Section - Logo and Badge */}
-      <div className="flex flex-col items-center pt-8 pb-8 px-6">
+      <div className="flex flex-col items-center pt-0 -mt-6 pb-6 px-6">
         {/* Appzeto Logo */}
         <div>
           <h1
@@ -403,7 +392,7 @@ export default function RestaurantLogin() {
       </div>
 
       {/* Main Content - Form Section */}
-      <div className="flex-1 flex flex-col px-6 overflow-y-auto">
+      <div className="flex-1 flex flex-col px-6">
         <div className="w-full max-w-md mx-auto space-y-6 py-4">
           {/* Instruction Text */}
           <div className="text-center">
@@ -545,7 +534,7 @@ export default function RestaurantLogin() {
                 }
               }}
               variant="outline"
-              className="w-full h-12 rounded-lg border border-gray- hover:border-gray-400 hover:bg-gray-50 text-gray-900 font-semibold text-base flex items-center justify-center gap-3"
+              className="w-full h-12 rounded-lg border border-gray-200 hover:border-gray-400 hover:bg-gray-50 text-gray-900 font-semibold text-base flex items-center justify-center gap-3"
             >
               {loginMethod === "email" ? <Phone className="w-5 h-5 mr-auto text-blue-600" /> : <Mail className="w-5 h-5 mr-auto text-blue-600" />}
               <span className="mr-auto text-gray-900">
@@ -557,7 +546,7 @@ export default function RestaurantLogin() {
             <Button
               onClick={handleGoogleLogin}
               variant="outline"
-              className="w-full h-12 rounded-lg border border-gray- hover:border-gray-400 hover:bg-gray-50 text-gray-900 font-semibold text-base flex items-center justify-center gap-3"
+              className="w-full h-12 rounded-lg border border-gray-200 hover:border-gray-400 hover:bg-gray-50 text-gray-900 font-semibold text-base flex items-center justify-center gap-3"
             >
               {/* Google Logo SVG */}
               <svg className="w-5 h-5 mr-auto" viewBox="0 0 24 24">
