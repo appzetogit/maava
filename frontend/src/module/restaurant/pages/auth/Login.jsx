@@ -356,7 +356,7 @@ export default function RestaurantLogin() {
   const isValidEmail = !errors.email && formData.email.trim().length > 0
 
   return (
-    <div className="max-h-screen h-screen bg-white flex flex-col overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+    <div className="h-[100dvh] bg-white flex flex-col overflow-hidden">
       {/* Hero Image at Top */}
       <div className="w-full bg-white flex flex-col items-center justify-center p-4">
         <img
@@ -392,7 +392,7 @@ export default function RestaurantLogin() {
       </div>
 
       {/* Main Content - Form Section */}
-      <div className="flex-1 flex flex-col px-6">
+      <div className="flex-1 flex flex-col px-6 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div className="w-full max-w-md mx-auto space-y-6 py-4">
           {/* Instruction Text */}
           <div className="text-center">

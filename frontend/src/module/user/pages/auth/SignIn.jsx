@@ -652,7 +652,7 @@ export default function SignIn() {
           </div>
 
           {/* Legal Disclaimer */}
-          <div className="text-center text-xs md:text-sm text-gray-500 dark:text-gray-400 pt-4 md:pt-6">
+          <div className="text-center text-xs md:text-sm text-gray-500 dark:text-gray-400 pt-1 md:pt-2">
             <p className="mb-1 md:mb-2">
               By continuing, you agree to our
             </p>
