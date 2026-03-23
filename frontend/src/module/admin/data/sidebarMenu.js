@@ -293,12 +293,7 @@ export const sidebarMenuData = [
         path: "/admin/hero-banner-management",
         icon: "Image",
       },
-      {
-        type: "link",
-        label: "Dining Management",
-        path: "/admin/dining-management",
-        icon: "UtensilsCrossed",
-      },
+
     ],
   },
   {
