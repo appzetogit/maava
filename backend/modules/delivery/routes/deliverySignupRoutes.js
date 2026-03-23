@@ -23,7 +23,8 @@ router.post('/signup/details', validate(Joi.object({
   vehicleName: Joi.string().trim().optional().allow(null, ''),
   vehicleNumber: Joi.string().trim().required(),
   panNumber: Joi.string().trim().required(),
-  aadharNumber: Joi.string().trim().required()
+  aadharNumber: Joi.string().trim().required(),
+  referralCode: Joi.string().trim().optional().allow(null, '')
 })), submitSignupDetails);
 
 router.post('/signup/documents', validate(Joi.object({

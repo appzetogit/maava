@@ -47,6 +47,7 @@ import { deliveryAPI, restaurantAPI, uploadAPI } from "@/lib/api"
 import { useDeliveryNotifications } from "../hooks/useDeliveryNotifications"
 import { getGoogleMapsApiKey } from "@/lib/utils/googleMapsApiKey"
 import { useCompanyName } from "@/lib/hooks/useCompanyName"
+import { useDeliverySettings } from "@/lib/hooks/useDeliverySettings"
 import { Loader } from "@googlemaps/js-api-loader"
 import {
   decodePolyline,
@@ -302,6 +303,7 @@ function animateMarkerSmoothly(marker, newPosition, duration = 1500, animationRe
 export default function DeliveryHome() {
   const { t } = useTranslation()
   const companyName = useCompanyName()
+  const { referralBonus, unlockBonus } = useDeliverySettings()
   const navigate = useNavigate()
   const location = useLocation()
   const [animationKey, setAnimationKey] = useState(0)
@@ -8663,7 +8665,7 @@ export default function DeliveryHome() {
                 }}
               >
                 <div className="relative z-10">
-                  <div className="text-white text-3xl font-bold mb-1">₹6,000                 <span className="text-white/90 text-base font-medium mb-1">referral bonus</span>
+                  <div className="text-white text-3xl font-bold mb-1">₹{referralBonus?.toLocaleString('en-IN') || '6,000'}                 <span className="text-white/90 text-base font-medium mb-1">referral bonus</span>
                   </div>
                   <div className="text-white/80 text-sm">Refer your friends now</div>
                 </div>
@@ -8677,13 +8679,13 @@ export default function DeliveryHome() {
                 className="w-full rounded-xl p-6 shadow-lg bg-black text-white"
               >
                 <div className="flex items-center text-center justify-center gap-2 mb-2">
-                  <div className="text-4xl font-bold text-center">₹100</div>
+                  <div className="text-4xl font-bold text-center">₹{unlockBonus || '100'}</div>
                   <Lock className="w-5 h-5 text-white" />
                 </div>
-                <p className="text-white/90 text-center text-sm mb-4">Complete 1 order to unlock ₹100</p>
+                <p className="text-white/90 text-center text-sm mb-4">Complete 1 order to unlock ₹{unlockBonus || '100'}</p>
                 <div className="flex items-center text-center justify-center gap-2 text-white/70 text-xs mb-4">
                   <Clock className="w-4 h-4" />
-                  <span className="text-center">Valid till 10 December 2025</span>
+                  <span className="text-center">Valid till 10 December {new Date().getFullYear()}</span>
                 </div>
                 <button
                   onClick={() => {

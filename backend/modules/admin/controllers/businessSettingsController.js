@@ -17,6 +17,8 @@ export const getBusinessSettingsPublic = asyncHandler(async (req, res) => {
       companyName: settings?.companyName || 'Appzeto Food',
       logo: settings?.logo || { url: '', publicId: '' },
       favicon: settings?.favicon || { url: '', publicId: '' },
+      deliveryReferralBonus: settings?.deliveryReferralBonus || 6000,
+      deliveryUnlockBonus: settings?.deliveryUnlockBonus || 100,
     });
   } catch (error) {
     console.error('Error fetching public business settings:', error);
@@ -57,7 +59,9 @@ export const updateBusinessSettings = asyncHandler(async (req, res) => {
       address,
       state,
       pincode,
-      maintenanceMode
+      maintenanceMode,
+      deliveryReferralBonus,
+      deliveryUnlockBonus
     } = req.body;
 
     // Get existing settings
@@ -83,6 +87,8 @@ export const updateBusinessSettings = asyncHandler(async (req, res) => {
     if (address !== undefined) settings.address = address;
     if (state !== undefined) settings.state = state;
     if (pincode !== undefined) settings.pincode = pincode;
+    if (deliveryReferralBonus !== undefined) settings.deliveryReferralBonus = Number(deliveryReferralBonus);
+    if (deliveryUnlockBonus !== undefined) settings.deliveryUnlockBonus = Number(deliveryUnlockBonus);
     if (maintenanceMode !== undefined) {
       settings.maintenanceMode.isEnabled = maintenanceMode.isEnabled || false;
       if (maintenanceMode.startDate) {

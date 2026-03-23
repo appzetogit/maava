@@ -256,7 +256,17 @@ const deliverySchema = new mongoose.Schema(
       ref: 'Admin'
     },
     fcmTokens: [String],
-    fcmTokenMobile: [String]
+    fcmTokenMobile: [String],
+    // Referral System
+    referredBy: {
+      type: String, // The deliveryId of the referrer
+      default: null
+    },
+    referralStatus: {
+      type: String, // 'pending' (before 1st order), 'completed'
+      enum: ['pending', 'completed'],
+      default: null
+    }
   },
   {
     timestamps: true

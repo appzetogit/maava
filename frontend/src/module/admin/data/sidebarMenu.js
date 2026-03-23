@@ -154,7 +154,7 @@ export const sidebarMenuData = [
     items: [
       {
         type: "link",
-        label: "Delivery Cash Limit",
+        label: "Delivery Global Settings",
         path: "/admin/delivery-cash-limit",
         icon: "IndianRupee",
       },

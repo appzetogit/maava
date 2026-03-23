@@ -50,7 +50,7 @@ export const sendOTP = asyncHandler(async (req, res) => {
  * POST /api/delivery/auth/verify-otp
  */
 export const verifyOTP = asyncHandler(async (req, res) => {
-  const { phone, otp, purpose = 'login', name } = req.body;
+  const { phone, otp, purpose = 'login', name, referralCode } = req.body;
 
   // Validate inputs
   if (!phone || !otp) {
@@ -81,13 +81,24 @@ export const verifyOTP = asyncHandler(async (req, res) => {
       // Verify OTP before creating delivery boy
       await otpService.verifyOTP(phone, otp, purpose, null);
 
+      let verifiedReferrer = null;
+      if (referralCode) {
+        // Find if referrer exists
+        const referrer = await Delivery.findOne({ deliveryId: referralCode.trim().toUpperCase() });
+        if (referrer) {
+          verifiedReferrer = referrer.deliveryId;
+        }
+      }
+
       const deliveryData = {
         name: normalizedName,
         phone,
         phoneVerified: true,
         signupMethod: 'phone',
         status: 'pending', // New delivery boys start as pending approval
-        isActive: true // Allow login to see verification message
+        isActive: true, // Allow login to see verification message
+        referredBy: verifiedReferrer,
+        referralStatus: verifiedReferrer ? 'pending' : null
       };
 
       try {
@@ -119,13 +130,23 @@ export const verifyOTP = asyncHandler(async (req, res) => {
       if (!delivery) {
         // New user - create minimal record for signup flow
         // Use provided name or placeholder
+        let verifiedReferrer = null;
+        if (referralCode) {
+          const referrer = await Delivery.findOne({ deliveryId: referralCode.trim().toUpperCase() });
+          if (referrer) {
+            verifiedReferrer = referrer.deliveryId;
+          }
+        }
+
         const deliveryData = {
           name: normalizedName || 'Delivery Partner', // Placeholder if not provided
           phone,
           phoneVerified: true,
           signupMethod: 'phone',
           status: 'pending', // New delivery boys start as pending approval
-          isActive: true // Allow login to see verification message
+          isActive: true, // Allow login to see verification message
+          referredBy: verifiedReferrer,
+          referralStatus: verifiedReferrer ? 'pending' : null
         };
 
         try {

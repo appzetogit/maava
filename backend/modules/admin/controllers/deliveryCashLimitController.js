@@ -11,7 +11,9 @@ export const getDeliveryCashLimit = asyncHandler(async (req, res) => {
     const settings = await BusinessSettings.getSettings();
     return successResponse(res, 200, 'Delivery cash limit retrieved successfully', {
       deliveryCashLimit: Number(settings?.deliveryCashLimit) || 0,
-      deliveryWithdrawalLimit: Number(settings?.deliveryWithdrawalLimit) ?? 100
+      deliveryWithdrawalLimit: Number(settings?.deliveryWithdrawalLimit) ?? 100,
+      deliveryReferralBonus: Number(settings?.deliveryReferralBonus) ?? 6000,
+      deliveryUnlockBonus: Number(settings?.deliveryUnlockBonus) ?? 100
     });
   } catch (error) {
     console.error('Error fetching delivery cash limit:', error);
@@ -26,7 +28,12 @@ export const getDeliveryCashLimit = asyncHandler(async (req, res) => {
  */
 export const updateDeliveryCashLimit = asyncHandler(async (req, res) => {
   try {
-    const { deliveryCashLimit, deliveryWithdrawalLimit } = req.body;
+    const { 
+      deliveryCashLimit, 
+      deliveryWithdrawalLimit,
+      deliveryReferralBonus,
+      deliveryUnlockBonus
+    } = req.body;
 
     let settings = await BusinessSettings.findOne();
     if (!settings) settings = await BusinessSettings.getSettings();
@@ -47,6 +54,22 @@ export const updateDeliveryCashLimit = asyncHandler(async (req, res) => {
       settings.deliveryWithdrawalLimit = parsed;
     }
 
+    if (deliveryReferralBonus !== undefined) {
+      const parsed = Number(deliveryReferralBonus);
+      if (!Number.isFinite(parsed) || parsed < 0) {
+        return errorResponse(res, 400, 'deliveryReferralBonus must be a number (>= 0)');
+      }
+      settings.deliveryReferralBonus = parsed;
+    }
+
+    if (deliveryUnlockBonus !== undefined) {
+      const parsed = Number(deliveryUnlockBonus);
+      if (!Number.isFinite(parsed) || parsed < 0) {
+        return errorResponse(res, 400, 'deliveryUnlockBonus must be a number (>= 0)');
+      }
+      settings.deliveryUnlockBonus = parsed;
+    }
+
     if (req.admin && req.admin._id) {
       settings.updatedBy = req.admin._id;
     }
@@ -55,7 +78,9 @@ export const updateDeliveryCashLimit = asyncHandler(async (req, res) => {
 
     return successResponse(res, 200, 'Delivery cash limit updated successfully', {
       deliveryCashLimit: Number(settings.deliveryCashLimit) || 0,
-      deliveryWithdrawalLimit: Number(settings.deliveryWithdrawalLimit) ?? 100
+      deliveryWithdrawalLimit: Number(settings.deliveryWithdrawalLimit) ?? 100,
+      deliveryReferralBonus: Number(settings.deliveryReferralBonus) ?? 6000,
+      deliveryUnlockBonus: Number(settings.deliveryUnlockBonus) ?? 100
     });
   } catch (error) {
     console.error('Error updating delivery cash limit:', error);

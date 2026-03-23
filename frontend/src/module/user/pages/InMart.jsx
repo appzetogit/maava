@@ -572,6 +572,47 @@ const VoiceSearchModal = ({ isOpen, onClose, onResult }) => {
       return;
     }
 
+    // --- FLUTTER BRIDGE SUPPORT START ---
+    // Make a global function available for Flutter to call with the result
+    window.onFlutterVoiceResult = (text) => {
+      if (text) {
+        setTranscript(text);
+        onResult(text);
+        setTimeout(onClose, 800);
+      } else {
+        setIsListening(false);
+        setErrorStatus("No speech detected");
+      }
+    };
+
+    window.onFlutterVoiceError = (errorMsg) => {
+      setIsListening(false);
+      setErrorStatus(errorMsg || "Voice search failed on mobile");
+    };
+
+    // Check if the app is running inside a Flutter WebView with a dedicated channel
+    if (window.VoiceSearchChannel) {
+      setIsListening(true);
+      setErrorStatus(null);
+      window.VoiceSearchChannel.postMessage("startVoiceSearch");
+      return; // Skip Web Speech API
+    }
+
+    // Alternative: check for flutter_inappwebview
+    if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
+      setIsListening(true);
+      setErrorStatus(null);
+      window.flutter_inappwebview.callHandler('startVoiceSearch').then((result) => {
+        if (result) {
+          window.onFlutterVoiceResult(result);
+        }
+      }).catch((e) => {
+        window.onFlutterVoiceError("Voice search failed");
+      });
+      return; // Skip Web Speech API
+    }
+    // --- FLUTTER BRIDGE SUPPORT END ---
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       setErrorStatus("Speech recognition not supported");

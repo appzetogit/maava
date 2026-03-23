@@ -647,11 +647,14 @@ export const deliveryAPI = {
   sendOTP: (phone, purpose = 'login') => {
     return apiClient.post(API_ENDPOINTS.DELIVERY.AUTH.SEND_OTP, { phone, purpose });
   },
-  verifyOTP: (phone, otp, purpose = 'login', name = null) => {
+  verifyOTP: (phone, otp, purpose = 'login', extraPayload = {}) => {
     const payload = { phone, otp, purpose };
-    // Only include name if it's provided and is a string
-    if (name && typeof name === 'string' && name.trim()) {
-      payload.name = name.trim();
+    // Maintain string check for name if extraPayload is just a string
+    if (typeof extraPayload === 'string') {
+      if (extraPayload.trim()) payload.name = extraPayload.trim();
+    } else if (typeof extraPayload === 'object' && extraPayload !== null) {
+      if (extraPayload.name && extraPayload.name.trim()) payload.name = extraPayload.name.trim();
+      if (extraPayload.referralCode && extraPayload.referralCode.trim()) payload.referralCode = extraPayload.referralCode.trim();
     }
     return apiClient.post(API_ENDPOINTS.DELIVERY.AUTH.VERIFY_OTP, payload);
   },

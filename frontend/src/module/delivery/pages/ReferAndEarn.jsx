@@ -4,6 +4,8 @@ import { motion } from "framer-motion"
 import { ArrowLeft, Headphones, ArrowRight, CheckCircle, Contact } from "lucide-react"
 import BottomPopup from "../components/BottomPopup"
 import { getCompanyNameAsync } from "@/lib/utils/businessSettings"
+import { useDeliverySettings } from "@/lib/hooks/useDeliverySettings"
+import { deliveryAPI } from "@/lib/api"
 
 const STORAGE_KEY = "appzeto_food_referrals"
 
@@ -13,6 +15,22 @@ export default function ReferAndEarn() {
   const [mobileNumber, setMobileNumber] = useState("")
   const [showSuccessPopup, setShowSuccessPopup] = useState(false)
   const [referralCount, setReferralCount] = useState(0)
+  const { referralBonus, unlockBonus } = useDeliverySettings()
+  const [deliveryPartner, setDeliveryPartner] = useState(null)
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await deliveryAPI.getCurrentDelivery();
+        if (res.data?.data?.user) {
+          setDeliveryPartner(res.data.data.user);
+        }
+      } catch (error) {
+        console.error("Error fetching delivery profile:", error);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   // Load referral count from localStorage on component mount
   useEffect(() => {
@@ -72,7 +90,10 @@ export default function ReferAndEarn() {
 
   const handleWhatsAppShare = async () => {
     const companyName = await getCompanyNameAsync()
-    const message = `Hey ${friendName}! Join ${companyName} as a delivery partner and earn together!`
+    const appLink = window.location.origin + "/delivery/auth/signup"; // Dummy or real signup link
+    const myCode = deliveryPartner?.deliveryId || "UNKNOWN";
+    const bonusText = unlockBonus ? ` Get an exclusive ₹${unlockBonus.toLocaleString('en-IN')} joining bonus!` : '';
+    const message = `Hey ${friendName}! Join ${companyName} as a delivery partner using my referral code *${myCode}* and earn together!${bonusText} Download now: ${appLink}`;
     const whatsappUrl = `https://wa.me/${mobileNumber}?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, '_blank')
   }
@@ -118,9 +139,15 @@ export default function ReferAndEarn() {
       <div className="bg-white px-4 py-6 pb-24 space-y-6">
         {/* Earning Potential */}
         <div>
-          <p className="text-2xl font-bold text-gray-900 mb-6">
-            Earn upto ₹6,000 extra per referral
+          <p className="text-2xl font-bold text-gray-900 mb-2">
+            Earn upto ₹{referralBonus?.toLocaleString('en-IN') || '6,000'} extra per referral
           </p>
+          <div className="bg-orange-50 rounded-lg p-3 mb-6 border border-orange-100 flex justify-between items-center">
+             <div>
+                <p className="text-xs text-primary-orange font-semibold uppercase mb-1">Your Referral Code</p>
+                <p className="text-xl font-bold font-mono tracking-wider">{deliveryPartner?.deliveryId || '...'}</p>
+             </div>
+          </div>
 
           {/* Friend's Name Input */}
           <div className="mb-4">
@@ -165,7 +192,7 @@ export default function ReferAndEarn() {
             <span className="text-2xl font-bold text-white">₹</span>
           </div>
           <p className="text-sm text-gray-900 flex-1">
-            Vijay Mourya from Indore has earned ₹6000 through referrals
+            Vijay Mourya from Indore has earned ₹{referralBonus?.toLocaleString('en-IN') || '6000'} through referrals
           </p>
         </div>
 
@@ -202,7 +229,7 @@ export default function ReferAndEarn() {
                 <div className="w-6 h-6 rounded-full border-6 border-black bg-white flex-shrink-0"></div>
               </div>
               <div className="flex-1 pt-1">
-                <p className="text-base text-gray-900 font-medium">You earn upto ₹6,000 bonus</p>
+                <p className="text-base text-gray-900 font-medium">You earn upto ₹{referralBonus?.toLocaleString('en-IN') || '6,000'} bonus</p>
               </div>
             </div>
           </div>

@@ -185,11 +185,21 @@ export default function DeliveryOTP() {
         return
       }
 
-      // First attempt: verify OTP for login
-      const response = await deliveryAPI.verifyOTP(phone, code, "login")
+      let purpose = "login"
+      const extraPayload = {}
+
+      // If authData indicates a signup flow, adjust purpose and add extra fields
+      if (authData?.isSignUp) {
+        purpose = "register"
+        if (authData.name) extraPayload.name = authData.name;
+        if (authData.referralCode) extraPayload.referralCode = authData.referralCode;
+      }
+
+      // First attempt: verify OTP for login or register
+      const response = await deliveryAPI.verifyOTP(phone, code, purpose, extraPayload)
       const data = response?.data?.data || {}
 
-      // Check if user needs to complete signup
+      // Check if user needs to complete signup (this is from server response, not authData)
       if (data.needsSignup) {
         // Store tokens for authenticated signup flow
         const accessToken = data.accessToken

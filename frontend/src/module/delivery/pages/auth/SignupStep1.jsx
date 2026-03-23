@@ -16,7 +16,8 @@ export default function SignupStep1() {
     vehicleName: "",
     vehicleNumber: "",
     panNumber: "",
-    aadharNumber: ""
+    aadharNumber: "",
+    referralCode: ""
   })
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -112,7 +113,8 @@ export default function SignupStep1() {
         vehicleName: formData.vehicleName.trim() || null,
         vehicleNumber: formData.vehicleNumber.trim(),
         panNumber: formData.panNumber.trim().toUpperCase(),
-        aadharNumber: formData.aadharNumber.replace(/\s/g, "")
+        aadharNumber: formData.aadharNumber.replace(/\s/g, ""),
+        referralCode: formData.referralCode?.trim()?.toUpperCase() || null
       })
 
       if (response?.data?.success) {
@@ -326,6 +328,22 @@ export default function SignupStep1() {
               placeholder="1234 5678 9012"
             />
             {errors.aadharNumber && <p className="text-red-500 text-sm mt-1">{errors.aadharNumber}</p>}
+          </div>
+
+          {/* Referral Code */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Referral Code (Optional)
+            </label>
+            <input
+              type="text"
+              name="referralCode"
+              value={formData.referralCode}
+              onChange={handleChange}
+              className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 uppercase`}
+              placeholder="e.g. DEL000001"
+            />
+            <p className="text-xs text-gray-500 mt-1">Got a code from a friend? Enter it here!</p>
           </div>
 
           {/* Submit Button */}

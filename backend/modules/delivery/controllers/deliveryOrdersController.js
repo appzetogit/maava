@@ -2022,6 +2022,27 @@ export const completeDelivery = asyncHandler(async (req, res) => {
       message: 'Delivery completed successfully'
     };
 
+    // --- REFERRAL SYSTEM: Check & Award Bonus ---
+    try {
+      if (delivery.referralStatus === 'pending' && delivery.referredBy) {
+         // Check total completed orders for this delivery boy (including the one just delivered)
+         const OrderModel = (await import('../../order/models/Order.js')).default;
+         const completedCount = await OrderModel.countDocuments({
+            deliveryPartnerId: delivery._id,
+            status: 'delivered'
+         });
+         
+         // If this was their very first order or later (we update to completed so it doesn't trigger again)
+         if (completedCount >= 1) {
+            // Award referral bonus to the referrer and unlock bonus to the referee
+            const { processReferralBonuses } = await import('../services/referralService.js');
+            await processReferralBonuses(delivery._id, delivery.referredBy);
+         }
+      }
+    } catch(refErr) {
+      console.error('Error processing referral bonus', refErr);
+    }
+
     // Send response immediately
     const response = successResponse(res, 200, 'Delivery completed successfully', responseData);
 

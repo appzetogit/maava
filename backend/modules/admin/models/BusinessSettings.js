@@ -90,6 +90,18 @@ const businessSettingsSchema = new mongoose.Schema(
       default: 100,
       min: 0
     },
+    // Referral Bonus for the Referrer (e.g. ₹6000)
+    deliveryReferralBonus: {
+      type: Number,
+      default: 6000,
+      min: 0
+    },
+    // Unlock Bonus for the new referred delivery boy (e.g. ₹100)
+    deliveryUnlockBonus: {
+      type: Number,
+      default: 100,
+      min: 0
+    },
     updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Admin',
@@ -117,7 +129,9 @@ businessSettingsSchema.statics.getSettings = async function() {
           number: ''
         },
         deliveryCashLimit: 750,
-        deliveryWithdrawalLimit: 100
+        deliveryWithdrawalLimit: 100,
+        deliveryReferralBonus: 6000,
+        deliveryUnlockBonus: 100
       });
     }
     return settings;
@@ -135,7 +149,9 @@ businessSettingsSchema.statics.getSettings = async function() {
           number: ''
         },
         deliveryCashLimit: 750,
-        deliveryWithdrawalLimit: 100
+        deliveryWithdrawalLimit: 100,
+        deliveryReferralBonus: 6000,
+        deliveryUnlockBonus: 100
       });
       await settings.save();
     }

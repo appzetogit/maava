@@ -24,7 +24,7 @@ export default function About() {
   const companyName = useCompanyName()
   const [loading, setLoading] = useState(true)
   const [aboutData, setAboutData] = useState({
-    appName: 'Appzeto Food',
+    appName: 'Maava Food',
     version: '1.0.0',
     description: 'Your trusted food delivery partner, bringing delicious meals right to your doorstep. Experience the convenience of ordering from your favorite restaurants with fast, reliable delivery.',
     logo: '',
@@ -89,7 +89,7 @@ export default function About() {
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
-                className="flex justify-center mb-6"
+                className="hidden" // Hiding the logo container as requested
               >
                 <div className="relative">
                   <div className="absolute inset-0 bg-green-400 rounded-full blur-2xl opacity-30 animate-pulse" />

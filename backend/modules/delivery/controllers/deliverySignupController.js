@@ -4,6 +4,7 @@ import Delivery from '../models/Delivery.js';
 import { validate } from '../../../shared/middleware/validate.js';
 import Joi from 'joi';
 import winston from 'winston';
+import { sendNotificationToUser } from '../../notification/services/pushNotificationService.js';
 
 const logger = winston.createLogger({
   level: 'info',
@@ -29,7 +30,8 @@ const signupDetailsSchema = Joi.object({
   vehicleName: Joi.string().trim().optional().allow(null, ''),
   vehicleNumber: Joi.string().trim().required(),
   panNumber: Joi.string().trim().required(),
-  aadharNumber: Joi.string().trim().required()
+  aadharNumber: Joi.string().trim().required(),
+  referralCode: Joi.string().trim().optional().allow(null, '')
 });
 
 export const submitSignupDetails = asyncHandler(async (req, res) => {
@@ -45,7 +47,8 @@ export const submitSignupDetails = asyncHandler(async (req, res) => {
       vehicleName,
       vehicleNumber,
       panNumber,
-      aadharNumber
+      aadharNumber,
+      referralCode
     } = req.body;
 
     // Validate input
@@ -81,6 +84,45 @@ export const submitSignupDetails = asyncHandler(async (req, res) => {
         }
       }
     };
+
+    let verifiedReferrer = null;
+    if (referralCode && !delivery.referredBy) {
+      const referrer = await Delivery.findOne({ deliveryId: referralCode.trim().toUpperCase() });
+      if (referrer) {
+        verifiedReferrer = referrer.deliveryId;
+      }
+    }
+
+    if (verifiedReferrer) {
+      updateData.referredBy = verifiedReferrer;
+      updateData.referralStatus = 'pending';
+
+      // Send initial push notifications to both referrer and referee
+      try {
+        const referrerDoc = await Delivery.findOne({ deliveryId: verifiedReferrer });
+        if (referrerDoc) {
+          // Notify Referrer
+          await sendNotificationToUser(
+            referrerDoc._id.toString(),
+            'delivery',
+            '🎁 Referral Code Used!',
+            `A new partner (${name.trim()}) signed up using your code! You will receive your bonus once they complete their first ride.`,
+            { type: 'REFERRAL_ADDED' }
+          );
+
+          // Notify Referee (New partner)
+          await sendNotificationToUser(
+            delivery._id.toString(),
+            'delivery',
+            '🎁 Referral Applied!',
+            `Referral code applied successfully. Complete your 1st ride to unlock your joining bonus!`,
+            { type: 'REFERRAL_APPLIED' }
+          );
+        }
+      } catch (notifErr) {
+        console.error('Error sending referral signup push notification:', notifErr);
+      }
+    }
 
     const updatedDelivery = await Delivery.findByIdAndUpdate(
       delivery._id,

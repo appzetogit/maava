@@ -40,10 +40,11 @@ const colorOptions = [
 ]
 
 export default function AboutUs() {
+  const companyName = useCompanyName()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [aboutData, setAboutData] = useState({
-    appName: 'Appzeto Food',
+    appName: 'Maava Food',
     version: '1.0.0',
     description: '',
     logo: '',
