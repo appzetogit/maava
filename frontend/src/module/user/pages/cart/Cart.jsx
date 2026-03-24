@@ -255,10 +255,10 @@ export default function Cart() {
       }, 800)
       return () => clearTimeout(timer)
     } else if (availableCoupons.length > 0) {
-      console.log("[POPUP] Popup suppressed", { 
-        hasShown: hasShownOfferPopup, 
-        applied: !!appliedCoupon, 
-        loading: loadingCoupons 
+      console.log("[POPUP] Popup suppressed", {
+        hasShown: hasShownOfferPopup,
+        applied: !!appliedCoupon,
+        loading: loadingCoupons
       })
     }
   }, [availableCoupons, hasShownOfferPopup, appliedCoupon, loadingCoupons])
@@ -1504,7 +1504,7 @@ export default function Cart() {
               <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#1a1200] via-[#2d2000] to-[#1a1200] border border-yellow-600/30 px-4 py-3 flex items-center justify-center shadow-lg shadow-yellow-900/10 mb-2 md:mb-4">
                 {/* Shimmer stripe */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/5 to-transparent pointer-events-none" />
-                
+
                 {/* Crown icon - Positioned absolute left */}
                 <div className="absolute left-4 flex-shrink-0 w-8 h-8 rounded-full bg-yellow-500/15 border border-yellow-500/30 flex items-center justify-center z-10">
                   <span className="text-[16px] leading-none" role="img" aria-label="crown">👑</span>
@@ -1692,98 +1692,98 @@ export default function Cart() {
                 </div>
               )}
 
-               <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl">
-                 <div className="flex items-center gap-2 md:gap-3 mb-3">
-                   <Tag className="h-4 w-4 md:h-5 md:w-5 text-black dark:text-white" />
-                   <span className="text-sm md:text-base font-semibold text-gray-800 dark:text-gray-200">Offers & Benefits</span>
-                 </div>
+              <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl">
+                <div className="flex items-center gap-2 md:gap-3 mb-3">
+                  <Tag className="h-4 w-4 md:h-5 md:w-5 text-black dark:text-white" />
+                  <span className="text-sm md:text-base font-semibold text-gray-800 dark:text-gray-200">Offers & Benefits</span>
+                </div>
 
-                 {appliedCoupon ? (
-                   <div className="flex items-center justify-between bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/30 rounded-lg md:rounded-xl p-3 md:p-4">
-                     <div className="flex items-center gap-2 md:gap-3">
-                       <Check className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
-                       <div>
-                         <p className="text-sm md:text-base font-bold text-green-600">'{appliedCoupon.code}' applied</p>
-                         <p className="text-xs md:text-sm text-green-600/80 font-medium">You saved ₹{discount.toFixed(0)}</p>
-                       </div>
-                     </div>
-                     <button onClick={handleRemoveCoupon} className="text-gray-500 dark:text-gray-400 text-xs md:text-sm font-bold uppercase tracking-wider">Remove</button>
-                   </div>
-                 ) : loadingCoupons ? (
-                   <div className="flex items-center gap-2 md:gap-3 py-2">
-                     <div className="w-5 h-5 border-2 border-gray-300 border-t-black animate-spin rounded-full" />
-                     <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">Finding best offers for you...</p>
-                   </div>
-                 ) : Object.keys(itemCoupons).length > 0 ? (
-                   <div className="space-y-3">
-                     {cart.map((item) => {
-                       const coupons = itemCoupons[item.id];
-                       if (!coupons || coupons.length === 0) return null;
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/30 rounded-lg md:rounded-xl p-3 md:p-4">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <Check className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
+                      <div>
+                        <p className="text-sm md:text-base font-bold text-green-600">'{appliedCoupon.code}' applied</p>
+                        <p className="text-xs md:text-sm text-green-600/80 font-medium">You saved ₹{discount.toFixed(0)}</p>
+                      </div>
+                    </div>
+                    <button onClick={handleRemoveCoupon} className="text-gray-500 dark:text-gray-400 text-xs md:text-sm font-bold uppercase tracking-wider">Remove</button>
+                  </div>
+                ) : loadingCoupons ? (
+                  <div className="flex items-center gap-2 md:gap-3 py-2">
+                    <div className="w-5 h-5 border-2 border-gray-300 border-t-black animate-spin rounded-full" />
+                    <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">Finding best offers for you...</p>
+                  </div>
+                ) : Object.keys(itemCoupons).length > 0 ? (
+                  <div className="space-y-3">
+                    {cart.map((item) => {
+                      const coupons = itemCoupons[item.id];
+                      if (!coupons || coupons.length === 0) return null;
 
-                       return (
-                         <div key={item.id} className="border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden">
-                           <button
-                             onClick={() => setShowCoupons(showCoupons === item.id ? null : item.id)}
-                             className="w-full flex items-center justify-between p-3 md:p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                           >
-                             <div className="flex items-center gap-3">
-                               <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center p-1.5">
-                                 <Percent className="w-full h-full text-blue-600" />
-                               </div>
-                               <div className="text-left">
-                                 <p className="text-sm font-bold text-gray-900 dark:text-white">{item.name}</p>
-                                 <p className="text-[10px] md:text-xs text-blue-600 font-black uppercase tracking-widest">{coupons.length} {coupons.length === 1 ? 'Offer' : 'Offers'} available</p>
-                               </div>
-                             </div>
-                             {showCoupons === item.id ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
-                           </button>
+                      return (
+                        <div key={item.id} className="border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden">
+                          <button
+                            onClick={() => setShowCoupons(showCoupons === item.id ? null : item.id)}
+                            className="w-full flex items-center justify-between p-3 md:p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center p-1.5">
+                                <Percent className="w-full h-full text-blue-600" />
+                              </div>
+                              <div className="text-left">
+                                <p className="text-sm font-bold text-gray-900 dark:text-white">{item.name}</p>
+                                <p className="text-[10px] md:text-xs text-blue-600 font-black uppercase tracking-widest">{coupons.length} {coupons.length === 1 ? 'Offer' : 'Offers'} available</p>
+                              </div>
+                            </div>
+                            {showCoupons === item.id ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                          </button>
 
-                           <AnimatePresence>
-                             {showCoupons === item.id && (
-                               <motion.div
-                                 initial={{ height: 0, opacity: 0 }}
-                                 animate={{ height: "auto", opacity: 1 }}
-                                 exit={{ height: 0, opacity: 0 }}
-                                 className="overflow-hidden bg-gray-50/50 dark:bg-gray-800/30"
-                               >
-                                 <div className="px-3 md:px-4 pb-4 space-y-2">
-                                   {coupons.map((coupon) => (
-                                     <div key={coupon.code} className="flex items-center justify-between p-3 bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-gray-800 rounded-lg shadow-sm">
-                                       <div className="flex-1 pr-4">
-                                         <div className="flex items-center gap-2 mb-1">
-                                           <span className="text-xs font-black bg-blue-600 text-white px-2 py-0.5 rounded tracking-wider uppercase">{coupon.code}</span>
-                                           <span className="text-[10px] font-bold text-green-600 bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded">SAVE ₹{coupon.discount.toFixed(0)}</span>
-                                         </div>
-                                         <p className="text-[11px] md:text-xs text-gray-500 font-medium leading-tight">{coupon.description}</p>
-                                       </div>
-                                       <Button
-                                         size="sm"
-                                         className={`h-8 px-4 font-black text-xs rounded-lg transition-all ${subtotal < coupon.minOrder
-                                           ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-none'
-                                           : 'bg-black dark:bg-white text-white dark:text-black hover:scale-105'
-                                           }`}
-                                         onClick={() => handleApplyCoupon(coupon)}
-                                         disabled={subtotal < coupon.minOrder}
-                                       >
-                                         {subtotal < coupon.minOrder ? `₹${coupon.minOrder}` : 'APPLY'}
-                                       </Button>
-                                     </div>
-                                   ))}
-                                 </div>
-                               </motion.div>
-                             )}
-                           </AnimatePresence>
-                         </div>
-                       );
-                     })}
-                   </div>
-                 ) : (
-                   <div className="flex items-center gap-2 md:gap-3 py-2">
-                     <Percent className="h-4 w-4 md:h-5 md:w-5 text-gray-300" />
-                     <p className="text-sm md:text-base text-gray-400">No applicable offers for items in cart</p>
-                   </div>
-                 )}
-               </div>
+                          <AnimatePresence>
+                            {showCoupons === item.id && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="overflow-hidden bg-gray-50/50 dark:bg-gray-800/30"
+                              >
+                                <div className="px-3 md:px-4 pb-4 space-y-2">
+                                  {coupons.map((coupon) => (
+                                    <div key={coupon.code} className="flex items-center justify-between p-3 bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-gray-800 rounded-lg shadow-sm">
+                                      <div className="flex-1 pr-4">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <span className="text-xs font-black bg-blue-600 text-white px-2 py-0.5 rounded tracking-wider uppercase">{coupon.code}</span>
+                                          <span className="text-[10px] font-bold text-green-600 bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded">SAVE ₹{coupon.discount.toFixed(0)}</span>
+                                        </div>
+                                        <p className="text-[11px] md:text-xs text-gray-500 font-medium leading-tight">{coupon.description}</p>
+                                      </div>
+                                      <Button
+                                        size="sm"
+                                        className={`h-8 px-4 font-black text-xs rounded-lg transition-all ${subtotal < coupon.minOrder
+                                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-none'
+                                          : 'bg-black dark:bg-white text-white dark:text-black hover:scale-105'
+                                          }`}
+                                        onClick={() => handleApplyCoupon(coupon)}
+                                        disabled={subtotal < coupon.minOrder}
+                                      >
+                                        {subtotal < coupon.minOrder ? `₹${coupon.minOrder}` : 'APPLY'}
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 md:gap-3 py-2">
+                    <Percent className="h-4 w-4 md:h-5 md:w-5 text-gray-300" />
+                    <p className="text-sm md:text-base text-gray-400">No applicable offers for items in cart</p>
+                  </div>
+                )}
+              </div>
 
               {/* Delivery Time */}
               <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl">
@@ -2125,7 +2125,7 @@ export default function Cart() {
                   <div className="space-y-3">
                     {recentAddresses.map((addr, index) => {
                       const label = addr.label || addr.saveAs || 'Recent'
-                      
+
                       return (
                         <button
                           key={`recent-${index}`}
@@ -2161,12 +2161,12 @@ export default function Cart() {
                 {/* Quick Select Address Types */}
                 <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                   {['Home', 'Office', 'Other'].map((label) => {
-                    const addr = addresses.find(a => 
-                      (a.label?.toLowerCase() === label.toLowerCase()) || 
+                    const addr = addresses.find(a =>
+                      (a.label?.toLowerCase() === label.toLowerCase()) ||
                       (label === 'Home' && a.label?.toLowerCase() === 'house')
                     );
                     if (!addr) return null;
-                    
+
                     return (
                       <button
                         key={label}
@@ -2222,7 +2222,7 @@ export default function Cart() {
                     </div>
                   </div>
                 )}
-                
+
                 {addresses.length === 0 && !lastOrderAddress && (
                   <div className="py-10 text-center">
                     <MapPin className="h-12 w-12 text-gray-300 mx-auto mb-3" />
@@ -2261,18 +2261,29 @@ export default function Cart() {
                 <MapEventsHandler setCoords={setTempMapCoords} setAddressInfo={setTempAddressInfo} />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1000]">
                   <div className="relative w-0 h-0 flex items-center justify-center">
-                    {/* Pulsing Blue Location Dot */}
-                    <div className="absolute flex items-center justify-center z-10">
-                      <div className="absolute w-24 h-24 bg-[#4285F4] rounded-full animate-ping opacity-20" style={{ animationDuration: '2s' }}></div>
-                      <div className="absolute w-16 h-16 bg-[#4285F4] rounded-full opacity-15"></div>
-                      <div className="w-5 h-5 bg-[#4285F4] rounded-full border-[3px] border-white shadow-sm z-20"></div>
-                    </div>
-                    {/* Original Black Map Pin */}
-                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex flex-col items-center z-30 animate-bounce" style={{ animationDuration: '2s' }}>
-                      <div className="bg-black w-12 h-12 rounded-full flex items-center justify-center border-4 border-white shadow-xl">
-                        <MapPin className="h-6 w-6 text-white" />
+                    {/* Modern Tear-drop Map Pin Design (Black) */}
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                      {/* Pulsing Blue Location Effect underneath the pin */}
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                        <div className="w-16 h-16 bg-[#4285F4] rounded-full animate-ping opacity-20" />
+                        <div className="absolute inset-0 w-16 h-16 bg-[#4285F4] rounded-full opacity-10" />
                       </div>
-                      <div className="w-1 h-8 bg-black rounded-b-full" />
+
+                      {/* Main Pin Body */}
+                      <motion.div 
+                        initial={{ y: -20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        className="relative z-10"
+                      >
+                        {/* Tear-drop shape using rounded corners and rotation */}
+                        <div className="relative w-12 h-12 bg-black rounded-full rounded-bl-none rotate-[-45deg] flex items-center justify-center border-2 border-white shadow-xl">
+                          {/* Inner white circle (Google Style) */}
+                          <div className="w-4 h-4 bg-white rounded-full rotate-[45deg]" />
+                        </div>
+                      </motion.div>
+
+                      {/* Ripple Animation at the point */}
+                      <div className="absolute bottom-0 w-8 h-8 bg-[#4285F4] rounded-full animate-ping opacity-30" style={{ animationDuration: '2.5s' }} />
                     </div>
                   </div>
                 </div>
