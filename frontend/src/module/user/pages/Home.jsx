@@ -1573,7 +1573,7 @@ export default function Home() {
                   >
                     <Link to={`/user/category/${category.slug || category.label.toLowerCase().replace(/\s+/g, '-')}`}>
                       <div className="flex flex-col items-center gap-2 w-[62px] sm:w-24 md:w-28">
-                        <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md transition-all">
+                        <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md transition-all premium-gold-border">
                           <OptimizedImage
                             src={category.imageUrl}
                             alt={category.label}
@@ -1604,7 +1604,7 @@ export default function Home() {
                     onClick={() => setShowAllCategoriesModal(true)}
                   >
                     <div className="flex flex-col items-center gap-2 w-[62px] sm:w-24 md:w-28">
-                      <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md transition-all bg-gradient-to-br from-pink-100 to-pink-200 dark:from-pink-900 dark:to-pink-800 flex items-center justify-center">
+                      <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md transition-all bg-gradient-to-br from-pink-100 to-pink-200 dark:from-pink-900 dark:to-pink-800 flex items-center justify-center premium-gold-border">
                         <div className="flex items-center justify-center w-full h-full">
                           <UtensilsCrossed className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-pink-600 dark:text-pink-300" />
                         </div>
@@ -1783,7 +1783,7 @@ export default function Home() {
                   <Link to={item.href} className="flex-shrink-0 bg-white  dark:bg-[#1a1a1a]/80 dark:text-white">
                     <div className="flex flex-col items-center gap-2.5 w-24 sm:w-28 md:w-32 group">
                       <motion.div
-                        className={`w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-2xl ${item.bgColor || 'bg-white'} dark:bg-[#1a1a1a]/80 dark:text-white flex items-center justify-center shadow-sm group-hover:shadow-lg transition-all duration-300 overflow-visible p-2.5`}
+                        className={`w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-2xl ${item.bgColor || 'bg-white'} dark:bg-[#1a1a1a]/80 dark:text-white flex items-center justify-center shadow-sm group-hover:shadow-lg transition-all duration-300 overflow-visible p-2.5 premium-gold-border`}
                         whileHover={{ rotate: [0, -10, 10, -10, 0], transition: { duration: 0.5 } }}
                       >
                         <motion.div
@@ -1831,7 +1831,7 @@ export default function Home() {
                     <Link to={item.link} className="flex-shrink-0 bg-white dark:bg-[#1a1a1a]/80 dark:text-white">
                       <div className="flex flex-col items-center gap-2.5 w-24 sm:w-28 md:w-32 group">
                         <motion.div
-                          className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-2xl bg-white dark:bg-[#1a1a1a]/80 dark:text-white  flex items-center justify-center shadow-sm group-hover:shadow-lg transition-all duration-300 overflow-visible p-2.5"
+                          className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-2xl bg-white dark:bg-[#1a1a1a]/80 dark:text-white  flex items-center justify-center shadow-sm group-hover:shadow-lg transition-all duration-300 overflow-visible p-2.5 premium-gold-border"
                           whileHover={{ rotate: [0, -10, 10, -10, 0], transition: { duration: 0.5 } }}
                         >
                           <motion.div
@@ -2055,7 +2055,7 @@ export default function Home() {
                               <div className="flex items-start justify-between gap-2 mb-2 lg:mb-3">
                                 <div className="flex-1 min-w-0">
                                   <motion.h3
-                                    className="text-md sm:text-md lg:text-xl font-bold text-gray-900 dark:text-white line-clamp-1 lg:line-clamp-2"
+                                    className="text-md sm:text-md lg:text-xl font-bold line-clamp-1 lg:line-clamp-2 gold-shine-text"
                                     variants={{
                                       rest: {},
                                       hover: { color: "rgb(34, 197, 94)" }
@@ -2074,7 +2074,7 @@ export default function Home() {
                                   transition={{ duration: 0.3, type: "spring", stiffness: 400 }}
                                 >
                                   <span className="text-sm lg:text-base font-bold">{restaurant.rating}</span>
-                                  <Star className="h-3 w-3 lg:h-4 lg:w-4 fill-white text-white" />
+                                  <Star className="h-3 w-3 lg:h-4 lg:w-4 fill-white text-white star-shine" />
                                 </motion.div>
                               </div>
 
@@ -2115,12 +2115,12 @@ export default function Home() {
                             className="absolute inset-0 rounded-md pointer-events-none z-0"
                             variants={{
                               rest: {
-                                boxShadow: "inset 0 0 0 0px rgba(34, 197, 94, 0)",
+                                boxShadow: "inset 0 0 0 0px rgba(212, 175, 55, 0)",
                                 border: "1px solid transparent"
                               },
                               hover: {
-                                boxShadow: "inset 0 0 0 1px rgba(34, 197, 94, 0.2)",
-                                border: "1px solid rgba(34, 197, 94, 0.3)"
+                                boxShadow: "inset 0 0 0 1px rgba(212, 175, 55, 0.2)",
+                                border: "1px solid rgba(212, 175, 55, 0.4)"
                               }
                             }}
                             transition={{ duration: 0.4 }}

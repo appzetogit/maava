@@ -702,8 +702,8 @@ export default function CategoryPage() {
                     }`}
                   >
                     {cat.image ? (
-                      <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden border-2 transition-all ${
-                        isSelected ? 'border-green-600 shadow-lg' : 'border-transparent'
+                    <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden transition-all ${
+                        isSelected ? 'border-2 border-green-600 shadow-lg' : 'premium-gold-border'
                       }`}>
                         <img 
                           src={cat.image} 
@@ -716,8 +716,8 @@ export default function CategoryPage() {
                         />
                       </div>
                     ) : (
-                      <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border-2 transition-all ${
-                        isSelected ? 'border-green-600 shadow-lg bg-green-50 dark:bg-green-900/20' : 'border-transparent'
+                        <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center transition-all ${
+                        isSelected ? 'border-2 border-green-600 shadow-lg bg-green-50 dark:bg-green-900/20' : 'premium-gold-border'
                       }`}>
                         <span className="text-xl md:text-2xl">🍽️</span>
                       </div>
@@ -895,12 +895,12 @@ export default function CategoryPage() {
                         {/* Rating Badge (NOW ON IMAGE, bottom-left with white border) */}
                         <div className="absolute bottom-0 left-0 bg-green-600 border-[4px] rounded-md border-white text-white text-[11px] md:text-xs font-bold px-1.5 py-0.5 flex items-center gap-0.5">
                           {restaurant.rating}
-                          <Star className="h-2.5 w-2.5 md:h-3 md:w-3 fill-white" />
+                          <Star className="h-2.5 w-2.5 md:h-3 md:w-3 fill-white star-shine" />
                         </div>
                       </div>
 
                       {/* Restaurant Info - Show category dish name if available, otherwise restaurant name */}
-                      <h3 className="font-semibold text-gray-900 dark:text-white text-xs md:text-sm line-clamp-1">
+                      <h3 className="font-semibold text-xs md:text-sm line-clamp-1 gold-shine-text">
                         {restaurant.categoryDishName || restaurant.name}
                       </h3>
                       <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-[10px] md:text-xs">
@@ -939,7 +939,7 @@ export default function CategoryPage() {
 
                 return (
                   <Link key={restaurant.id} to={`/user/restaurants/${restaurantSlug}`} className="h-full flex">
-                    <Card className={`overflow-hidden cursor-pointer gap-0 border-0 dark:border-gray-800 group bg-white dark:bg-[#1a1a1a] shadow-md hover:shadow-xl transition-all duration-300 py-0 rounded-md h-full flex flex-col w-full ${
+                    <Card className={`overflow-hidden cursor-pointer gap-0 border-0 dark:border-gray-800 group bg-white dark:bg-[#1a1a1a] shadow-md hover:shadow-xl transition-all duration-300 py-0 rounded-md h-full flex flex-col w-full premium-gold-border ${
                       shouldShowGrayscale ? 'grayscale opacity-75' : ''
                     }`}>
                       {/* Image Section */}
@@ -1020,13 +1020,13 @@ export default function CategoryPage() {
                         {/* Restaurant Name & Rating */}
                         <div className="flex items-start justify-between gap-2 mb-2 lg:mb-3">
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-md md:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white line-clamp-1 lg:line-clamp-2">
+                            <h3 className="text-md md:text-xl lg:text-2xl font-bold line-clamp-1 lg:line-clamp-2 gold-shine-text">
                               {restaurant.name}
                             </h3>
                           </div>
                           <div className="flex-shrink-0 bg-green-600 text-white px-2 md:px-3 lg:px-4 py-1 lg:py-1.5 rounded-lg flex items-center gap-1">
                             <span className="text-sm md:text-base lg:text-lg font-bold">{restaurant.rating}</span>
-                            <Star className="h-3 w-3 md:h-4 md:w-4 lg:h-5 lg:w-5 fill-white text-white" />
+                            <Star className="h-3 w-3 md:h-4 md:w-4 lg:h-5 lg:w-5 fill-white text-white star-shine" />
                           </div>
                         </div>
                         

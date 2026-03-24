@@ -696,7 +696,8 @@ export default function SearchResults() {
                     }`}
                 >
                   {cat.image ? (
-                    <div className={`w-16 h-16 rounded-full overflow-hidden border-2 transition-all ${isSelected ? 'border-green-600 dark:border-green-500 shadow-lg' : 'border-transparent'
+                    <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden transition-all ${
+                        isSelected ? 'border-2 border-green-600 shadow-lg' : 'premium-gold-border'
                       }`}>
                       <img
                         src={cat.image}
@@ -705,7 +706,8 @@ export default function SearchResults() {
                       />
                     </div>
                   ) : (
-                    <div className={`w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border-2 transition-all ${isSelected ? 'border-green-600 dark:border-green-500 shadow-lg bg-green-50 dark:bg-green-900/20' : 'border-transparent'
+                    <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center transition-all ${
+                        isSelected ? 'border-2 border-green-600 shadow-lg bg-green-50 dark:bg-green-900/20' : 'premium-gold-border'
                       }`}>
                       <span className="text-xl">🍽️</span>
                     </div>
@@ -820,13 +822,13 @@ export default function SearchResults() {
                         <div className="flex items-center gap-1 mb-1">
                           <div className="bg-green-600 text-white text-[11px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
                             {restaurant.rating}
-                            <Star className="h-2.5 w-2.5 fill-white" />
+                            <Star className="h-2.5 w-2.5 fill-white star-shine" />
                           </div>
                         </div>
                       )}
 
                       {/* Restaurant Info */}
-                      <h3 className="font-semibold text-gray-900 dark:text-white text-xs line-clamp-1">
+                      <h3 className="font-semibold text-xs line-clamp-1 gold-shine-text">
                         {restaurant.name}
                       </h3>
                       {restaurant.deliveryTime && (
@@ -857,7 +859,7 @@ export default function SearchResults() {
 
               return (
                 <Link key={restaurant.id} to={`/user/restaurants/${restaurant.slug || restaurantSlug}`} className="h-full flex">
-                  <Card className={`overflow-hidden cursor-pointer border-0 dark:border-gray-800 group bg-white dark:bg-[#1a1a1a] shadow-md hover:shadow-xl transition-all duration-300 py-0 rounded-md flex flex-col h-full w-full ${shouldShowGrayscale ? 'grayscale opacity-75' : ''
+                  <Card className={`overflow-hidden cursor-pointer border-0 dark:border-gray-800 group bg-white dark:bg-[#1a1a1a] shadow-md hover:shadow-xl transition-all duration-300 py-0 rounded-md flex flex-col h-full w-full premium-gold-border ${shouldShowGrayscale ? 'grayscale opacity-75' : ''
                     }`}>
                     {/* Image Section */}
                     <div className="relative h-44 sm:h-52 md:h-60 lg:h-64 xl:h-72 w-full overflow-hidden rounded-t-md flex-shrink-0 bg-gray-200 dark:bg-gray-800">
@@ -929,14 +931,14 @@ export default function SearchResults() {
                       {/* Restaurant Name & Rating */}
                       <div className="flex items-start justify-between gap-2 mb-2 lg:mb-3">
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white line-clamp-1 lg:line-clamp-2">
+                          <h3 className="text-lg sm:text-xl lg:text-2xl font-bold line-clamp-1 lg:line-clamp-2 gold-shine-text">
                             {restaurant.name}
                           </h3>
                         </div>
                         {restaurant.rating && (
                           <div className="flex-shrink-0 bg-green-600 text-white px-2 py-1 lg:px-3 lg:py-1.5 rounded-lg flex items-center gap-1">
                             <span className="text-sm lg:text-base font-bold">{restaurant.rating}</span>
-                            <Star className="h-3 w-3 lg:h-4 lg:w-4 fill-white text-white" />
+                            <Star className="h-3 w-3 lg:h-4 lg:w-4 fill-white text-white star-shine" />
                           </div>
                         )}
                       </div>
