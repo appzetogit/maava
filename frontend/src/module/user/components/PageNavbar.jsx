@@ -969,7 +969,7 @@ export default function PageNavbar({
                           repeat: Infinity,
                           ease: "easeInOut"
                         }}
-                        className={`text-lg font-extrabold tracking-tighter ${textColorClass} relative z-10`}
+                        className={`text-sm font-bold tracking-tight ${textColorClass} relative z-10`}
                       >
                         {deliveryTime} minutes
                       </motion.span>
