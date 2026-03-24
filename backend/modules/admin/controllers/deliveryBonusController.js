@@ -265,6 +265,9 @@ export const getBonusTransactions = asyncHandler(async (req, res) => {
     // Extract all bonus transactions
     let allTransactions = [];
     wallets.forEach(wallet => {
+      // Safety check: skip wallets without populated deliveryId or missing transactions
+      if (!wallet.deliveryId || !wallet.transactions) return;
+
       wallet.transactions
         .filter(t => t.type === 'bonus')
         .forEach(transaction => {
@@ -301,19 +304,25 @@ export const getBonusTransactions = asyncHandler(async (req, res) => {
     const paginatedTransactions = allTransactions.slice(skip, skip + parseInt(limit));
 
     // Format response
-    const formattedTransactions = paginatedTransactions.map((transaction, index) => ({
-      sl: skip + index + 1,
-      transactionId: transaction._id.toString(),
-      deliveryman: transaction.deliveryPartner.name,
-      deliveryPartnerId: transaction.deliveryPartner._id.toString(),
-      deliveryId: transaction.deliveryPartner.deliveryId,
-      bonus: `₹${transaction.amount.toFixed(2)}`,
-      amount: transaction.amount,
-      reference: transaction.metadata?.reference || transaction.description || 'N/A',
-      createdAt: transaction.createdAt,
-      status: transaction.status,
-      processedBy: transaction.processedBy
-    }));
+    const formattedTransactions = paginatedTransactions.map((transaction, index) => {
+      const transactionId = transaction._id ? transaction._id.toString() : 'N/A';
+      const deliveryPartnerId = transaction.deliveryPartner?._id ? transaction.deliveryPartner._id.toString() : 'N/A';
+      const amount = Number(transaction.amount) || 0;
+      
+      return {
+        sl: skip + index + 1,
+        transactionId,
+        deliveryman: transaction.deliveryPartner?.name || 'Unknown',
+        deliveryPartnerId,
+        deliveryId: transaction.deliveryPartner?.deliveryId || 'N/A',
+        bonus: `₹${amount.toFixed(2)}`,
+        amount: amount,
+        reference: transaction.metadata?.reference || transaction.description || 'N/A',
+        createdAt: transaction.createdAt,
+        status: transaction.status,
+        processedBy: transaction.processedBy
+      };
+    });
 
     return successResponse(res, 200, 'Bonus transactions retrieved successfully', {
       transactions: formattedTransactions,
