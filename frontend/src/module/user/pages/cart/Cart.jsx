@@ -2357,7 +2357,7 @@ export default function Cart() {
       <AnimatePresence>
         {checkoutStage === 'address_details' && (
           <div className="fixed inset-0 z-[60] bg-white dark:bg-[#0a0a0a] flex flex-col overflow-y-auto">
-            <div className="p-4 flex items-center gap-4 sticky top-0 bg-white dark:bg-[#0a0a0a] border-b dark:border-gray-800 z-10">
+            <div className="p-4 pt-10 flex items-center gap-4 sticky top-0 bg-white dark:bg-[#0a0a0a] border-b dark:border-gray-800 z-10">
               <button onClick={() => setCheckoutStage('map_picker')} className="p-2">
                 <ArrowLeft className="h-6 w-6 text-gray-800 dark:text-gray-200" />
               </button>
