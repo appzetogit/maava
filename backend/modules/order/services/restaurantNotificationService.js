@@ -210,11 +210,28 @@ export async function notifyRestaurantNewOrder(order, restaurantId, paymentMetho
     // --- PUSH NOTIFICATION (AUTOMATED) ---
     try {
       const pushService = await getPushService();
+      
+      // Get customer name for the message
+      let customerName = 'a customer';
+      if (order.userId && typeof order.userId === 'object' && (order.userId.name || order.userId.fullName)) {
+        customerName = order.userId.name || order.userId.fullName;
+      } else if (order.userId) {
+        try {
+          const User = (await import('../../auth/models/User.js')).default;
+          const userEntity = await User.findById(order.userId).select('name fullName').lean();
+          if (userEntity) {
+            customerName = userEntity.name || userEntity.fullName || 'a customer';
+          }
+        } catch (err) {
+          console.warn('⚠️ Could not fetch user name for restaurant notification:', err.message);
+        }
+      }
+
       await pushService.sendNotificationToUser(
         normalizedRestaurantId,
         'restaurant',
         '🔔 New Order Received!',
-        `Order #${order.orderId} is ready for review. Total: ₹${order.pricing.total}`,
+        `You have a new order from ${customerName}. Total: ₹${order.pricing.total}`,
         { orderId: order._id.toString(), type: 'NEW_ORDER' }
       );
     } catch (pushErr) {

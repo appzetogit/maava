@@ -582,9 +582,24 @@ export const createOrder = async (req, res) => {
               restaurantId: assignedRestaurantId,
               notifyRestaurantResult
             });
+            
           } catch (notifyError) {
             logger.error('❌ Error notifying restaurant about wallet payment order:', notifyError);
           }
+        }
+        
+        // --- USER PUSH NOTIFICATION (AUTOMATED) ---
+        // Send to user regardless of whether it's Hibermart or standard restaurant
+        try {
+          await sendNotificationToUser(
+            userId.toString(),
+            'user',
+            '✅ Order Placed!',
+            `Order placed to ${assignedRestaurantName}. Total: ₹${pricing.total}`,
+            { orderId: order._id.toString(), type: 'ORDER_PLACED' }
+          );
+        } catch (userNotifErr) {
+          logger.warn(`Failed to send initial wallet push to user: ${userNotifErr.message}`);
         }
 
         // Respond to client
@@ -686,11 +701,26 @@ export const createOrder = async (req, res) => {
           restaurantId: assignedRestaurantId,
           notifyRestaurantResult
         });
+        
       } catch (notifyError) {
         logger.error('❌ Error notifying restaurant about COD order (order still created):', {
           error: notifyError.message,
           stack: notifyError.stack
         });
+      }
+
+      // --- USER PUSH NOTIFICATION (AUTOMATED) ---
+      // Send to user regardless of whether it's Hibermart or standard restaurant
+      try {
+        await sendNotificationToUser(
+          userId.toString(),
+          'user',
+          '✅ Order Placed (COD)!',
+          `Order placed to ${assignedRestaurantName}. Total: ₹${pricing.total}`,
+          { orderId: order._id.toString(), type: 'ORDER_PLACED' }
+        );
+      } catch (userNotifErr) {
+        logger.warn(`Failed to send initial COD push to user: ${userNotifErr.message}`);
       }
 
       // Respond to client (no Razorpay details for COD)
@@ -1018,8 +1048,8 @@ export const verifyOrderPayment = async (req, res) => {
         await sendNotificationToUser(
           order.userId.toString(),
           'user',
-          '✅ Order Confirmed!',
-          `Your payment was successful. Order #${order.orderId} is now being prepared!`,
+          '✅ Order Placed!',
+          `Order placed to ${order.restaurantName}. Total: ₹${order.pricing.total}`,
           { orderId: order._id.toString(), type: 'ORDER_CONFIRMED' }
         );
       } catch (userNotifErr) {
