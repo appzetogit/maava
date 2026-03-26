@@ -51,11 +51,7 @@ export default function SignupStep2() {
       formData.append('folder', 'appzeto/delivery/documents')
 
       // Upload to Cloudinary via backend
-      const response = await apiClient.post('/upload/media', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      })
+      const response = await apiClient.post('/upload/media', formData)
 
       if (response?.data?.success && response?.data?.data) {
         const { url, publicId } = response.data.data

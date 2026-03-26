@@ -479,11 +479,7 @@ export const adminDeleteZone = async (id) => {
  */
 export const uploadImage = async (formData) => {
     try {
-        const response = await api.post('/admin/inmart/upload', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
+        const response = await api.post('/admin/inmart/upload', formData);
         return response.data;
     } catch (error) {
         console.error('Error uploading image:', error);

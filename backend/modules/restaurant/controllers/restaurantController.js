@@ -551,9 +551,18 @@ export const updateRestaurantProfile = asyncHandler(async (req, res) => {
     const restaurantId = req.restaurant._id;
     const { profileImage, menuImages, name, cuisines, location, ownerName, ownerEmail, ownerPhone } = req.body;
 
+    console.log('📝 Updating restaurant profile:', {
+      restaurantId,
+      name,
+      cuisinesCount: cuisines?.length,
+      hasLocation: !!location,
+      ownerName
+    });
+
     const restaurant = await Restaurant.findById(restaurantId);
 
     if (!restaurant) {
+      console.error('❌ Restaurant not found for update:', restaurantId);
       return errorResponse(res, 404, 'Restaurant not found');
     }
 
@@ -572,6 +581,9 @@ export const updateRestaurantProfile = asyncHandler(async (req, res) => {
     // Update name if provided
     if (name) {
       updateData.name = name;
+      // Also sync with onboarding step 1
+      updateData['onboarding.step1.restaurantName'] = name;
+      
       // Regenerate slug if name changed
       if (name !== restaurant.name) {
         let baseSlug = name
@@ -592,12 +604,15 @@ export const updateRestaurantProfile = asyncHandler(async (req, res) => {
           slug = uniqueSlug;
         }
         updateData.slug = slug;
+        console.log('🔗 Regenerated slug:', slug);
       }
     }
 
     // Update cuisines if provided
     if (cuisines !== undefined) {
       updateData.cuisines = cuisines;
+      // Also sync with onboarding step 2
+      updateData['onboarding.step2.cuisines'] = cuisines;
     }
 
     // Update location if provided
@@ -629,17 +644,36 @@ export const updateRestaurantProfile = asyncHandler(async (req, res) => {
     // Update owner details if provided
     if (ownerName !== undefined) {
       updateData.ownerName = ownerName;
+      updateData['onboarding.step1.ownerName'] = ownerName;
     }
     if (ownerEmail !== undefined) {
       updateData.ownerEmail = ownerEmail;
+      updateData['onboarding.step1.ownerEmail'] = ownerEmail;
     }
     if (ownerPhone !== undefined) {
       updateData.ownerPhone = ownerPhone;
+      updateData['onboarding.step1.ownerPhone'] = ownerPhone;
     }
 
     // Update restaurant
-    Object.assign(restaurant, updateData);
+    // Use set() for dot notation paths or Mongoose won't handle them correctly with Object.assign on document
+    for (const [key, value] of Object.entries(updateData)) {
+      restaurant.set(key, value);
+    }
+    
+    // Explicitly sync profile image to onboarding step 2 if provided
+    if (profileImage) {
+      restaurant.set('onboarding.step2.profileImageUrl', profileImage);
+    }
+
+    // Explicitly sync menu images to onboarding step 2 if provided
+    if (menuImages !== undefined) {
+      restaurant.set('onboarding.step2.menuImageUrls', menuImages);
+    }
+    
     await restaurant.save();
+
+    console.log('✅ Restaurant profile saved successfully:', restaurant._id);
 
     return successResponse(res, 200, 'Restaurant profile updated successfully', {
       restaurant: {
@@ -657,10 +691,11 @@ export const updateRestaurantProfile = asyncHandler(async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error updating restaurant profile:', error);
+    console.error('❌ Error updating restaurant profile:', error);
     return errorResponse(res, 500, 'Failed to update restaurant profile');
   }
 });
+
 
 /**
  * Upload restaurant profile image
@@ -698,7 +733,15 @@ export const uploadProfileImage = asyncHandler(async (req, res) => {
       url: result.secure_url,
       publicId: result.public_id
     };
+
+    // Also sync with onboarding step 2
+    restaurant.set('onboarding.step2.profileImageUrl', {
+      url: result.secure_url,
+      publicId: result.public_id
+    });
+
     await restaurant.save();
+
 
     return successResponse(res, 200, 'Profile image uploaded successfully', {
       profileImage: restaurant.profileImage
@@ -779,9 +822,19 @@ export const uploadMenuImage = asyncHandler(async (req, res) => {
     if (restaurant.menuImages.length > 0) {
       // Replace the first image (main banner)
       restaurant.menuImages[0] = newMenuImage;
+      
+      // Also sync with onboarding step 2 if it exists
+      if (restaurant.onboarding?.step2?.menuImageUrls) {
+        restaurant.set('onboarding.step2.menuImageUrls.0', newMenuImage);
+      }
     } else {
       // Add as first image if array is empty
       restaurant.menuImages.push(newMenuImage);
+      
+      // Also sync with onboarding step 2 if it exists
+      if (restaurant.onboarding?.step2?.menuImageUrls) {
+        restaurant.set('onboarding.step2.menuImageUrls', [newMenuImage]);
+      }
     }
 
     await restaurant.save();

@@ -146,11 +146,7 @@ export const userAPI = {
   uploadProfileImage: (file) => {
     const formData = new FormData();
     formData.append('image', file);
-    return apiClient.post('/user/profile/avatar', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    return apiClient.post('/user/profile/avatar', formData);
   },
 
   // Get user addresses
@@ -340,35 +336,20 @@ export const restaurantAPI = {
   uploadProfileImage: (file) => {
     const formData = new FormData();
     formData.append('file', file);
-    return apiClient.post(`${API_ENDPOINTS.RESTAURANT.PROFILE}/image`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    return apiClient.post(`${API_ENDPOINTS.RESTAURANT.PROFILE}/image`, formData);
   },
 
   // Upload menu image
   uploadMenuImage: (file) => {
     const formData = new FormData();
     formData.append('file', file);
-    return apiClient.post(`${API_ENDPOINTS.RESTAURANT.PROFILE}/menu-image`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    return apiClient.post(`${API_ENDPOINTS.RESTAURANT.PROFILE}/menu-image`, formData);
   },
 
   // Staff Management
   addStaff: (data) => {
     // If data is FormData, set appropriate headers
-    const config = data instanceof FormData
-      ? {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-      : {};
-    return apiClient.post(API_ENDPOINTS.RESTAURANT.STAFF, data, config);
+    return apiClient.post(API_ENDPOINTS.RESTAURANT.STAFF, data);
   },
   getStaff: (role) => {
     const url = role ? `${API_ENDPOINTS.RESTAURANT.STAFF}?role=${role}` : API_ENDPOINTS.RESTAURANT.STAFF;
@@ -1531,11 +1512,7 @@ export const uploadAPI = {
       formData.append('folder', options.folder);
     }
 
-    return apiClient.post(API_ENDPOINTS.UPLOAD.MEDIA, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    return apiClient.post(API_ENDPOINTS.UPLOAD.MEDIA, formData);
   },
 };
 

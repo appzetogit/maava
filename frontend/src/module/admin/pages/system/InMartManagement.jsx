@@ -81,9 +81,7 @@ export default function InMartManagement() {
             formData.append('name', categoryName)
             formData.append('image', categoryFile)
 
-            const response = await api.post('/admin/inmart/categories', formData, getAuthConfig({
-                headers: { 'Content-Type': 'multipart/form-data' }
-            }))
+            const response = await api.post('/admin/inmart/categories', formData, getAuthConfig())
 
             if (response.data.success) {
                 setSuccess("Category created successfully")
@@ -141,13 +139,9 @@ export default function InMartManagement() {
 
             let response;
             if (editingBannerId) {
-                response = await api.put(`/admin/inmart/offer-banners/${editingBannerId}`, formData, getAuthConfig({
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                }))
+                response = await api.put(`/admin/inmart/offer-banners/${editingBannerId}`, formData, getAuthConfig())
             } else {
-                response = await api.post('/admin/inmart/offer-banners', formData, getAuthConfig({
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                }))
+                response = await api.post('/admin/inmart/offer-banners', formData, getAuthConfig())
             }
 
             if (response.data.success) {
@@ -209,13 +203,9 @@ export default function InMartManagement() {
 
             let response;
             if (editingStoryId) {
-                response = await api.put(`/admin/inmart/stories/${editingStoryId}`, formData, getAuthConfig({
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                }))
+                response = await api.put(`/admin/inmart/stories/${editingStoryId}`, formData, getAuthConfig())
             } else {
-                response = await api.post('/admin/inmart/stories', formData, getAuthConfig({
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                }))
+                response = await api.post('/admin/inmart/stories', formData, getAuthConfig())
             }
 
             if (response.data.success) {

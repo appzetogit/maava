@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { ArrowLeft, Mail, ChevronDown, Phone } from "lucide-react"
 import { setAuthData } from "@/lib/utils/auth"
@@ -58,6 +58,110 @@ export default function RestaurantLogin() {
   })
   const [isSending, setIsSending] = useState(false)
   const [apiError, setApiError] = useState("")
+  const redirectHandledRef = useRef(false)
+
+  // Handle sign-in result processing
+  const processSignedInUser = useCallback(async (user, source = "unknown") => {
+    if (redirectHandledRef.current) {
+      console.log(`ℹ️ [Auth] Restaurant already being processed, skipping (source: ${source})`)
+      return
+    }
+
+    console.log(`✅ [Auth] Processing restaurant signed-in user from ${source}:`, {
+      email: user.email,
+      uid: user.uid
+    })
+
+    redirectHandledRef.current = true
+    setIsSending(true)
+    setApiError("")
+
+    try {
+      const idToken = await user.getIdToken()
+      console.log(`✅ [Auth] Got ID token from ${source}, calling backend...`)
+
+      // Call the specialized restaurant google login endpoint
+      const response = await restaurantAPI.firebaseGoogleLogin(idToken)
+      const data = response?.data?.data || {}
+
+      if (data.accessToken && data.restaurant) {
+        setAuthData("restaurant", data.accessToken, data.restaurant)
+        window.dispatchEvent(new Event('restaurantAuthChanged'))
+
+        console.log(`✅ [Auth] Sign-in successful! Navigating to restaurant dashboard...`)
+        navigate("/restaurant", { replace: true })
+      } else {
+        throw new Error("Invalid response from server. Missing access token or restaurant data.")
+      }
+    } catch (error) {
+      console.error(`❌ [Auth] Error processing restaurant from ${source}:`, error)
+      redirectHandledRef.current = false
+      setIsSending(false)
+
+      let errorMessage = "Failed to complete sign-in. Please try again."
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error?.message) {
+        errorMessage = error.message
+      }
+      setApiError(errorMessage)
+    }
+  }, [navigate])
+
+  // Set up Firebase Auth listeners and handle redirect results
+  useEffect(() => {
+    let unsubscribe = null
+
+    const initAuth = async () => {
+      try {
+        const { getRedirectResult, onAuthStateChanged } = await import("firebase/auth")
+
+        // 1. Set up Auth State Listener (Most reliable for session restoration)
+        unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
+          console.log("🔔 [Auth] Restaurant State changed:", {
+            hasUser: !!user,
+            email: user?.email,
+            handled: redirectHandledRef.current
+          })
+
+          if (user && !redirectHandledRef.current) {
+            await processSignedInUser(user, "auth-state-listener")
+          }
+        })
+
+        // 2. Immediate check for current user
+        if (firebaseAuth.currentUser && !redirectHandledRef.current) {
+          console.log("🔍 [Auth] Current restaurant user found immediately")
+          await processSignedInUser(firebaseAuth.currentUser, "immediate-check")
+          return
+        }
+
+        // 3. Check for redirect result (in case user arrives via redirect)
+        try {
+          const result = await Promise.race([
+            getRedirectResult(firebaseAuth),
+            new Promise(resolve => setTimeout(() => resolve(null), 5000))
+          ])
+
+          if (result?.user && !redirectHandledRef.current) {
+            console.log("✅ [Auth] Redirect result found for restaurant")
+            await processSignedInUser(result.user, "redirect-result")
+          }
+        } catch (redirectError) {
+          console.warn("ℹ️ [Auth] getRedirectResult error (non-critical):", redirectError.message)
+        }
+
+      } catch (error) {
+        console.error("❌ [Auth] Initialization error:", error)
+      }
+    }
+
+    initAuth()
+
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
+  }, [processSignedInUser])
 
   // Get selected country details dynamically
   const selectedCountry = countryCodes.find(c => c.code === formData.countryCode) || countryCodes[2] // Default to India (+91)
@@ -230,6 +334,7 @@ export default function RestaurantLogin() {
   const handleGoogleLogin = async () => {
     setApiError("")
     setIsSending(true)
+    redirectHandledRef.current = false // Reset flat for new attempt
 
     try {
       const { signInWithPopup, signInWithRedirect, signInWithCredential, GoogleAuthProvider } = await import("firebase/auth")
@@ -251,20 +356,11 @@ export default function RestaurantLogin() {
 
             if (userCredential?.user) {
               console.log("✅ [Flutter] Firebase login successful via native bridge")
-              // Proceed with backend login
-              const idToken = await userCredential.user.getIdToken()
-              const response = await restaurantAPI.firebaseGoogleLogin(idToken)
-              const data = response?.data?.data || {}
-
-              if (data.accessToken && data.restaurant) {
-                setAuthData("restaurant", data.accessToken, data.restaurant)
-                window.dispatchEvent(new Event("restaurantAuthChanged"))
-                navigate("/restaurant")
-                return
-              }
+              await processSignedInUser(userCredential.user, "flutter-native-bridge")
+              return
             }
           } else {
-            console.log("ℹ️ [Flutter] Native sign-in canceled or failed.")
+            console.log("ℹ️ [Flutter] Native sign-in canceled or failed. Result:", result)
           }
         } catch (bridgeError) {
           console.error("❌ [Flutter] Native bridge error:", bridgeError)
@@ -273,28 +369,12 @@ export default function RestaurantLogin() {
 
       // 4. Normal Browser Flow (Fallback)
       try {
+        console.log("🚀 Starting Google sign-in (Web/Popup)...")
         // Try popup first (most common for desktop)
         const result = await signInWithPopup(firebaseAuth, googleProvider)
-        const user = result.user
-
-        // Get Firebase ID token
-        const idToken = await user.getIdToken()
-
-        // Call backend to login/register via Firebase Google
-        const response = await restaurantAPI.firebaseGoogleLogin(idToken)
-        const data = response?.data?.data || {}
-
-        const accessToken = data.accessToken
-        const restaurant = data.restaurant
-
-        if (!accessToken || !restaurant) {
-          throw new Error("Invalid response from server")
+        if (result?.user) {
+          await processSignedInUser(result.user, "popup")
         }
-
-        // Store auth data for restaurant module using utility function
-        setAuthData("restaurant", accessToken, restaurant)
-        window.dispatchEvent(new Event("restaurantAuthChanged"))
-        navigate("/restaurant")
       } catch (popupError) {
         // If popup was blocked or failed, fallback to redirect
         if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/cancelled-popup-request' || popupError.code === 'auth/popup-closed-by-user') {
@@ -306,14 +386,14 @@ export default function RestaurantLogin() {
       }
     } catch (error) {
       console.error("Firebase Google login error:", error)
+      setIsSending(false)
+      redirectHandledRef.current = false
       const message =
         error?.response?.data?.message ||
         error?.response?.data?.error ||
         error?.message ||
         "Failed to login with Google. Please try again."
       setApiError(message)
-    } finally {
-      setIsSending(false)
     }
   }
 

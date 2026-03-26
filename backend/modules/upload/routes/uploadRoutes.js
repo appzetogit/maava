@@ -115,6 +115,13 @@ router.post(
   '/media',
   authenticateFlexible,
   (req, res, next) => {
+    console.log('📬 [UploadRoute] Media upload attempt:', {
+      contentType: req.headers['content-type'],
+      contentLength: req.headers['content-length'],
+      hasAuth: !!req.headers.authorization,
+      bodyKeys: Object.keys(req.body || {})
+    });
+
     uploadMiddleware.single('file')(req, res, (err) => {
       if (err) {
         console.error('❌ Multer upload error:', err);

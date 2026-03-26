@@ -468,7 +468,7 @@ export default function OrdersMain() {
   const [popupOrder, setPopupOrder] = useState(null) // Store order for popup (from Socket.IO or API)
   const [isMuted, setIsMuted] = useState(false)
   const [prepTime, setPrepTime] = useState(11)
-  const [countdown, setCountdown] = useState(240) // 4 minutes in seconds
+  const [countdown, setCountdown] = useState(600) // 10 minutes in seconds
   const [isDetailsExpanded, setIsDetailsExpanded] = useState(true)
   const [showRejectPopup, setShowRejectPopup] = useState(false)
   const [rejectReason, setRejectReason] = useState("")
@@ -625,7 +625,12 @@ export default function OrdersMain() {
         shownOrdersRef.current.add(orderId)
         setPopupOrder(newOrder)
         setShowNewOrderPopup(true)
-        setCountdown(240) // Reset countdown to 4 minutes
+        // Calculate remaining seconds based on when order was created/confirmed
+        const orderTime = new Date(newOrder.createdAt || new Date()).getTime();
+        const now = Date.now();
+        const elapsedSeconds = Math.floor((now - orderTime) / 1000);
+        const remainingSeconds = Math.max(0, 600 - elapsedSeconds);
+        setCountdown(remainingSeconds);
       }
     }
   }, [newOrder])
@@ -684,7 +689,13 @@ export default function OrdersMain() {
             shownOrdersRef.current.add(orderId)
             setPopupOrder(orderForPopup)
             setShowNewOrderPopup(true)
-            setCountdown(240)
+            
+            // Calculate remaining seconds based on order creation
+            const orderTime = new Date(orderForPopup.createdAt || new Date()).getTime();
+            const now = Date.now();
+            const elapsedSeconds = Math.floor((now - orderTime) / 1000);
+            const remainingSeconds = Math.max(0, 600 - elapsedSeconds);
+            setCountdown(remainingSeconds);
           }
         }
       } catch (error) {
@@ -773,7 +784,7 @@ export default function OrdersMain() {
     setShowNewOrderPopup(false)
     setPopupOrder(null)
     clearNewOrder()
-    setCountdown(240)
+    setCountdown(600)
     setPrepTime(11)
 
     // Note: PreparingOrders component will automatically refresh orders via its own useEffect

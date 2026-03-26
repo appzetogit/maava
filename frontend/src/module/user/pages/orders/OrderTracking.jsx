@@ -870,8 +870,8 @@ export default function OrderTracking() {
             order?.status === 'out_for_delivery' ||
             order?.status === 'ready'
 
-          // Show "Food is Cooking" until delivery partner accepts pickup (Skip for Hibermart)
-          if (!hasAcceptedPickup && !isHibermart) {
+          // Show "Food is Cooking" until delivery partner accepts pickup (Skip for Hibermart and cancelled orders)
+          if (!hasAcceptedPickup && !isHibermart && order?.status !== 'cancelled') {
             return (
               <motion.div
                 className="bg-white rounded-xl p-4 shadow-sm"

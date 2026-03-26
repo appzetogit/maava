@@ -8,11 +8,19 @@ export const uploadSingleMedia = async (req, res) => {
     await initializeCloudinary();
 
     if (!req.file) {
+      console.warn('⚠️ [UploadController] No file object in request!', {
+        bodyKeys: Object.keys(req.body || {}),
+        filesCount: req.files ? Object.keys(req.files).length : (req.file ? 1 : 0)
+      });
       return errorResponse(res, 400, 'No file provided');
     }
 
     // Validate file buffer
     if (!req.file.buffer || req.file.buffer.length === 0) {
+      console.warn('⚠️ [UploadController] File buffer is empty!', {
+        fileName: req.file.originalname,
+        size: req.file.size
+      });
       return errorResponse(res, 400, 'File buffer is empty or invalid');
     }
 

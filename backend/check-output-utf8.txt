@@ -1,0 +1,24 @@
+﻿
+Order: 69c3c6df0ed7061778ab22f5
+  orderId: ORD-1774438111630-825
+  status: cancelled
+  cancelledBy: restaurant
+  cancellationReason: Order not accepted within time limit. Restaurant did not respond in time.
+  createdAt (UTC): 2026-03-25T11:28:31.798Z
+  confirmedAt (UTC): 2026-03-25T11:28:56.702Z
+  cancelledAt (UTC): 2026-03-25T11:56:00.459Z
+  seconds from confirmed to cancelled: 1623
+  restaurantId: 6982f0e9b6968ce39cab42f1
+  paymentMethod: razorpay
+
+Order: 69c3cb560ed7061778ab25e5
+  orderId: ORD-1774439254690-526
+  status: cancelled
+  cancelledBy: restaurant
+  cancellationReason: Order not accepted within time limit. Restaurant did not respond in time.
+  createdAt (UTC): 2026-03-25T11:47:35.200Z
+  confirmedAt (UTC): 2026-03-25T11:47:58.487Z
+  cancelledAt (UTC): 2026-03-25T12:15:00.888Z
+  seconds from confirmed to cancelled: 1622
+  restaurantId: 6982f0e9b6968ce39cab42f1
+  paymentMethod: razorpay

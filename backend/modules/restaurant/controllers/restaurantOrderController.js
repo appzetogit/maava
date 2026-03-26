@@ -29,30 +29,23 @@ export const getRestaurantOrders = asyncHandler(async (req, res) => {
     }
 
     // Query orders by restaurantId (stored as String in Order model)
-    // Try multiple restaurantId formats to handle different storage formats
-    const restaurantIdVariations = [restaurantIdString];
+    // Try ALL restaurantId formats to handle different storage formats and profile updates
+    const restaurantIdVariations = [
+      restaurant._id?.toString(),
+      restaurant.restaurantId,
+      restaurant.id
+    ].filter(Boolean);
 
-    // Also add ObjectId string format if valid (both directions)
-    if (mongoose.Types.ObjectId.isValid(restaurantIdString)) {
-      const objectIdString = new mongoose.Types.ObjectId(restaurantIdString).toString();
-      if (!restaurantIdVariations.includes(objectIdString)) {
-        restaurantIdVariations.push(objectIdString);
-      }
-
-      // Also try the original ObjectId if restaurantIdString is already a string
-      try {
-        const objectId = new mongoose.Types.ObjectId(restaurantIdString);
-        const objectIdStr = objectId.toString();
+    // Also add ObjectId variations if applicable for broader matching
+    const currentVariations = [...restaurantIdVariations];
+    for (const rid of currentVariations) {
+      if (mongoose.Types.ObjectId.isValid(rid)) {
+        const objectIdStr = new mongoose.Types.ObjectId(rid).toString();
         if (!restaurantIdVariations.includes(objectIdStr)) {
           restaurantIdVariations.push(objectIdStr);
         }
-      } catch (e) {
-        // Ignore if not a valid ObjectId
       }
     }
-
-    // Also try direct match without ObjectId conversion
-    restaurantIdVariations.push(restaurantIdString);
 
     // Build query - search for orders with any matching restaurantId variation
     // Use $in for multiple variations and also try direct match as fallback
@@ -166,28 +159,29 @@ export const getRestaurantOrderById = asyncHandler(async (req, res) => {
     const restaurant = req.restaurant;
     const { id } = req.params;
 
-    const restaurantId = restaurant._id?.toString() ||
-      restaurant.restaurantId ||
-      restaurant.id;
 
-    // Try to find order by MongoDB _id or orderId (custom order ID)
+    // Support both MongoDB _id and custom restaurantId for robust lookup
+    const restaurantIdVariants = [
+      restaurant._id?.toString(),
+      restaurant.restaurantId,
+      restaurant.id
+    ].filter(Boolean);
+
     let order = null;
-
-    // First try MongoDB _id if it's a valid ObjectId
+    // Try by MongoDB _id
     if (mongoose.Types.ObjectId.isValid(id) && id.length === 24) {
       order = await Order.findOne({
         _id: id,
-        restaurantId
+        restaurantId: { $in: restaurantIdVariants }
       })
         .populate('userId', 'name email phone')
         .lean();
     }
-
-    // If not found, try by orderId (custom order ID like "ORD-123456-789")
+    // Try by orderId (custom order ID like "ORD-123456-789")
     if (!order) {
       order = await Order.findOne({
         orderId: id,
-        restaurantId
+        restaurantId: { $in: restaurantIdVariants }
       })
         .populate('userId', 'name email phone')
         .lean();
@@ -215,37 +209,61 @@ export const acceptOrder = asyncHandler(async (req, res) => {
     const restaurant = req.restaurant;
     const { id } = req.params;
     const { preparationTime } = req.body;
+    const restaurantId = restaurant._id.toString();
 
-    const restaurantId = restaurant._id?.toString() ||
-      restaurant.restaurantId ||
-      restaurant.id;
+    console.log(`[AcceptOrder] Request received:`, {
+      orderIdParam: id,
+      restaurantId: restaurantId,
+      restaurantName: restaurant.name
+    });
 
-    // Try to find order by MongoDB _id or orderId (custom order ID)
+    // Support both MongoDB _id and custom restaurantId for robust lookup
+    const restaurantIdVariants = [
+      restaurant._id?.toString(),
+      restaurant.restaurantId,
+      restaurant.id
+    ].filter(Boolean);
+
+    console.log(`[AcceptOrder] Restaurant ID variants:`, restaurantIdVariants);
+
     let order = null;
-
-    // First try MongoDB _id if it's a valid ObjectId
+    // Try by MongoDB _id
     if (mongoose.Types.ObjectId.isValid(id) && id.length === 24) {
       order = await Order.findOne({
         _id: id,
-        restaurantId
+        restaurantId: { $in: restaurantIdVariants }
       });
+      if (order) console.log(`[AcceptOrder] Found order by _id: ${order.orderId}`);
     }
-
-    // If not found, try by orderId (custom order ID like "ORD-123456-789")
+    
+    // Try by orderId (custom order ID like "ORD-123456-789")
     if (!order) {
       order = await Order.findOne({
         orderId: id,
-        restaurantId
+        restaurantId: { $in: restaurantIdVariants }
       });
+      if (order) console.log(`[AcceptOrder] Found order by custom orderId: ${order.orderId}`);
     }
 
     if (!order) {
+      // Diagnostic check: find order without restaurant constraint to see what's wrong
+      const anyOrder = await Order.findOne({ _id: mongoose.Types.ObjectId.isValid(id) ? id : undefined });
+      console.warn(`[AcceptOrder] Order NOT FOUND for restaurant!`, {
+        orderExistsAtAll: !!anyOrder,
+        orderRestaurantId: anyOrder?.restaurantId,
+        orderStatus: anyOrder?.status
+      });
       return errorResponse(res, 404, 'Order not found');
     }
 
     // Allow accepting orders with status 'pending' or 'confirmed'
-    // 'confirmed' status means payment is verified, restaurant can still accept
     if (!['pending', 'confirmed'].includes(order.status)) {
+      console.warn(`[AcceptOrder] Status mismatch for order ${order.orderId}:`, {
+        currentStatus: order.status,
+        expected: 'pending/confirmed',
+        orderConfirmedAt: order.tracking?.confirmed?.timestamp,
+        now: new Date()
+      });
       return errorResponse(res, 400, `Order cannot be accepted. Current status: ${order.status}`);
     }
 

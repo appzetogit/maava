@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { setAuthData } from "@/lib/utils/auth"
 import { Mail, User, Lock, Eye, EyeOff, ArrowLeft, UtensilsCrossed } from "lucide-react"
@@ -29,6 +29,58 @@ export default function RestaurantSignupEmail() {
   const [resendTimer, setResendTimer] = useState(0)
   const inputRefs = useRef(Array(6).fill(null).map(() => null))
   const redirectHandledRef = useRef(false)
+ 
+  // Handle redirect results from Firebase Google Sign-in
+  useEffect(() => {
+    let unsubscribe = null
+
+    const initAuth = async () => {
+      try {
+        const { getRedirectResult, onAuthStateChanged } = await import("firebase/auth")
+        ensureFirebaseInitialized()
+
+        if (!firebaseAuth) return
+
+        // 1. Set up Auth State Listener
+        unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
+          if (user && !redirectHandledRef.current) {
+            console.log("🔔 [Auth] Restaurant Signup state changed:", user.email)
+            await processSignedInUser(user, "auth-state-listener")
+          }
+        })
+
+        // 2. Immediate check for current user
+        if (firebaseAuth.currentUser && !redirectHandledRef.current) {
+          await processSignedInUser(firebaseAuth.currentUser, "immediate-check")
+          return
+        }
+
+        // 3. Check for redirect result
+        try {
+          const result = await Promise.race([
+            getRedirectResult(firebaseAuth),
+            new Promise(resolve => setTimeout(() => resolve(null), 4000))
+          ])
+
+          if (result?.user && !redirectHandledRef.current) {
+            console.log("✅ [Auth] Redirect result found in Restaurant Signup")
+            await processSignedInUser(result.user, "redirect-result")
+          }
+        } catch (redirectError) {
+          console.warn("ℹ️ [Auth] getRedirectResult error (non-critical):", redirectError.message)
+        }
+
+      } catch (error) {
+        console.error("❌ [Auth] Initialization error:", error)
+      }
+    }
+
+    initAuth()
+
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
+  }, [processSignedInUser])
 
   const processSignedInUser = useCallback(async (user, source = "unknown") => {
     if (redirectHandledRef.current) return
