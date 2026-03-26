@@ -197,6 +197,12 @@ const orderSchema = new mongoose.Schema({
     delivered: {
       status: { type: Boolean, default: false },
       timestamp: { type: Date }
+    },
+    cancelled: {
+      status: { type: Boolean, default: false },
+      timestamp: { type: Date },
+      reason: { type: String },
+      cancelledBy: { type: String, enum: ['user', 'restaurant', 'admin', 'system'] }
     }
   },
   deliveryFleet: {
@@ -258,7 +264,7 @@ const orderSchema = new mongoose.Schema({
   },
   cancelledBy: {
     type: String,
-    enum: ['user', 'restaurant', 'admin'],
+    enum: ['user', 'restaurant', 'admin', 'system'],
     default: null
   },
   // Customer Review and Rating
