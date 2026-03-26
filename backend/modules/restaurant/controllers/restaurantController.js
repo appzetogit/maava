@@ -500,8 +500,11 @@ export const createRestaurantFromOnboarding = async (onboardingData, restaurantI
       if (step4.offer) existing.offer = step4.offer;
     }
 
-    existing.isActive = true; // Ensure it's active
-    existing.isAcceptingOrders = true; // Ensure it's accepting orders
+    // Keep inactive until admin approval, unless already active
+    if (existing.isActive !== true) {
+      existing.isActive = false;
+    }
+    existing.isAcceptingOrders = true; // Still allow setting order acceptance if admin activates it later
 
     try {
       await existing.save();

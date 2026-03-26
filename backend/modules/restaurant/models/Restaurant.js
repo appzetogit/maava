@@ -129,7 +129,7 @@ const restaurantSchema = new mongoose.Schema(
     },
     isActive: {
       type: Boolean,
-      default: true,
+      default: false,
     },
     isAcceptingOrders: {
       type: Boolean,

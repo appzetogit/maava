@@ -411,6 +411,21 @@ export default function RestaurantStatus() {
         </div>
       </div>
 
+      {/* Pending Approval Banner */}
+      {!loading && restaurantData && !restaurantData.isActive && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex items-start gap-3">
+          <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center shrink-0 mt-0.5">
+            <span className="text-white text-xs font-bold">!</span>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-900">Pending Admin Approval</p>
+            <p className="text-xs text-amber-800 mt-0.5">
+              Your account is being verified. You will be able to receive orders once an admin approves your request.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <div className="px-4 py-6">
         {/* Restaurant Information Card */}

@@ -1225,6 +1225,21 @@ export default function ToHub() {
       </div>
 
 
+      {/* Pending Approval Banner */}
+      {!loadingRestaurant && restaurantData && !restaurantData.isActive && (
+        <div className="bg-amber-50 border-b border-amber-100 px-4 py-3 flex items-start gap-3 shadow-inner">
+          <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center shrink-0 mt-0.5">
+            <span className="text-white text-xs font-bold">!</span>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-900">Pending Admin Approval</p>
+            <p className="text-xs text-amber-800 mt-0.5">
+              Your restaurant is currently under review by our team. It will be visible to customers once approved (usually within 24 hours).
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Sales card */}
       <div className="px-4">
         <motion.div
