@@ -114,7 +114,10 @@ export default function RestaurantSignIn() {
         window.dispatchEvent(new Event('restaurantAuthChanged'))
         
         console.log(`✅ [Auth] Sign-in successful! Navigating to restaurant dashboard...`)
-        navigate("/restaurant", { replace: true })
+        // Small delay to ensure localStorage is fully committed before ProtectedRoute checks auth
+        setTimeout(() => {
+          navigate("/restaurant", { replace: true })
+        }, 150)
       } else {
         throw new Error("Invalid response from server. Missing access token or restaurant data.")
       }
@@ -164,16 +167,24 @@ export default function RestaurantSignIn() {
               await processSignedInUser(userCredential.user, "flutter-native-bridge")
               return
             }
-          } else {
-            // ✨ FIX: User cancelled the popup. Do NOTHING here. ✨
-            // DO NOT fall back to web popup. Just log it and stop.
+          } else if (result && result.cancelled === true) {
+            // Pure user cancellation — do nothing, stay on page silently
             console.log("ℹ️ [Flutter] User cancelled native sign in. Staying on login page.")
             setIsLoading(false)
-            return // <--- This stops the function from continuing
+            return
+          } else {
+            // System error (e.g. ApiException 10 = SHA-1 mismatch, network error, etc.)
+            const errMsg = result?.error || result?.message || "Native Google sign-in failed"
+            console.error("❌ [Flutter] Native sign-in error (not a cancellation):", errMsg)
+            setError("Google sign-in failed on this device. Please try email/password login or contact support.")
+            setIsLoading(false)
+            return
           }
         } catch (bridgeError) {
           console.error("❌ [Flutter] Flutter Bridge Error", bridgeError)
-          // Fall through to web flow if bridge fails completely
+          setError("Google sign-in failed. Please use email/password to login.")
+          setIsLoading(false)
+          return
         }
       }
 
