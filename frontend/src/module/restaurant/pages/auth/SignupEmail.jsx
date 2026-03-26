@@ -316,7 +316,7 @@ export default function RestaurantSignupEmail() {
   }
 
   return (
-    <div className="h-screen w-full flex bg-white overflow-hidden">
+    <div className="min-h-screen w-full flex flex-col bg-white overflow-y-auto">
       {/* Left image section */}
       <div className="hidden lg:flex lg:w-1/2 relative">
         <img
