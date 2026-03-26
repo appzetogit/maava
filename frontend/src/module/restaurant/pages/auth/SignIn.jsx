@@ -147,46 +147,56 @@ export default function RestaurantSignIn() {
 
       const { signInWithPopup, signInWithRedirect, signInWithCredential, GoogleAuthProvider } = await import("firebase/auth")
 
-      // Check if inside Flutter Mobile App (WebView)
+      // 1. Check if inside Flutter Mobile App (WebView)
       if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
         try {
-          console.log("📱 [Flutter] Detected Flutter WebView, using native bridge...")
+          console.log("📱 [Flutter] Starting Google sign-in via Flutter native bridge...")
+          
           const result = await window.flutter_inappwebview.callHandler('nativeGoogleSignIn')
           
           if (result && result.success && result.idToken) {
+            console.log("✅ [Flutter] Received ID token from Flutter App")
             const credential = GoogleAuthProvider.credential(result.idToken)
             const userCredential = await signInWithCredential(firebaseAuth, credential)
             
             if (userCredential?.user) {
+              console.log("✅ [Flutter] Firebase login successful via native bridge")
               await processSignedInUser(userCredential.user, "flutter-native-bridge")
+              return
             }
-            return
+          } else {
+            // ✨ FIX: User cancelled the popup. Do NOTHING here. ✨
+            // DO NOT fall back to web popup. Just log it and stop.
+            console.log("ℹ️ [Flutter] User cancelled native sign in. Staying on login page.")
+            setIsLoading(false)
+            return // <--- This stops the function from continuing
           }
         } catch (bridgeError) {
-          console.error("❌ [Flutter] Native bridge error:", bridgeError)
+          console.error("❌ [Flutter] Flutter Bridge Error", bridgeError)
+          // Fall through to web flow if bridge fails completely
         }
       }
 
-      // Normal browser flow
+      // 2. Normal Browser Flow
+      console.log("🚀 Starting Google sign-in (Web/Popup)...")
+      
+      // Check if we are in a WebView that might not support popups
+      const isWebView = /wv|Android.*Version\/[\d.]+/i.test(navigator.userAgent) || 
+                       (navigator.userAgent.includes('Mobile') && !navigator.userAgent.includes('Safari'));
+
+      if (isWebView) {
+        console.log("📱 WebView detected, skipping popup. Using redirect...")
+        await signInWithRedirect(firebaseAuth, googleProvider)
+        return
+      }
+
       try {
-        console.log("🚀 Starting Google sign-in check...")
-        
-        // Check if we are in a WebView that might not support popups
-        const isWebView = /wv|Android.*Version\/[\d.]+/i.test(navigator.userAgent) || 
-                         (navigator.userAgent.includes('Mobile') && !navigator.userAgent.includes('Safari')) || 
-                         window.flutter_inappwebview;
-
-        if (isWebView) {
-          console.log("📱 WebView detected, skipping popup to avoid 'supportMultipleWindows' issues. Using redirect...")
-          await signInWithRedirect(firebaseAuth, googleProvider)
-          return
-        }
-
-        console.log("🚀 Starting Google sign-in (Web/Popup)...")
         // Try popup first (most common for desktop)
         const result = await signInWithPopup(firebaseAuth, googleProvider)
         if (result?.user) {
           await processSignedInUser(result.user, "popup")
+        } else {
+          setIsLoading(false)
         }
       } catch (popupError) {
         // If popup was blocked or failed, fallback to redirect

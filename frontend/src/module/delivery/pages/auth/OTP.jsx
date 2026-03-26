@@ -86,23 +86,26 @@ export default function DeliveryOTP() {
   }, [otp])
 
   const handleChange = (index, value) => {
+    // Take only the last digit if multiple characters are present (allows overwriting)
+    const digit = value.length > 0 ? value[value.length - 1] : ""
+    
     // Only allow digits
-    if (value && !/^\d$/.test(value)) {
+    if (digit && !/^\d$/.test(digit)) {
       return
     }
 
     const newOtp = [...otp]
-    newOtp[index] = value
+    newOtp[index] = digit
     setOtp(newOtp)
     setError("")
 
     // Auto-focus next input
-    if (value && index < 5) {
+    if (digit && index < 5) {
       inputRefs.current[index + 1]?.focus()
     }
 
     // Auto-submit when all 6 digits are entered and we are in OTP step
-    if (!showNameInput && newOtp.every((digit) => digit !== "") && newOtp.length === 6) {
+    if (!showNameInput && newOtp.every((d) => d !== "") && newOtp.length === 6) {
       handleVerify(newOtp.join(""))
     }
   }
@@ -518,8 +521,8 @@ export default function DeliveryOTP() {
                     onPaste={index === 0 ? handlePaste : undefined}
                     disabled={isLoading}
                     autoComplete="off"
-                    autoFocus={false}
-                    className="w-12 h-12 text-center text-lg font-semibold p-0 border border-black rounded-md focus-visible:ring-0 focus-visible:border-black bg-white"
+                    className="w-12 h-12 text-center text-lg font-semibold p-0 border border-black rounded-md focus-visible:ring-0 focus-visible:border-black bg-white cursor-text"
+                    onFocus={(e) => e.target.select()}
                   />
                 ))}
               </div>

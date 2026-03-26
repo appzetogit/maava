@@ -10339,7 +10339,7 @@ export default function DeliveryHome() {
                           }
                         };
                         setSelectedRestaurant(updatedOrder);
-                        
+
                         // Also update localStorage with the delivered status
                         try {
                           const activeOrderData = JSON.parse(localStorage.getItem('deliveryActiveOrder') || '{}');

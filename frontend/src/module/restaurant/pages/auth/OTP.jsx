@@ -72,18 +72,21 @@ export default function RestaurantOTP() {
   }, [])
 
   const handleChange = (index, value) => {
+    // Take only the last digit if multiple characters are present (allows overwriting)
+    const digit = value.length > 0 ? value[value.length - 1] : ""
+    
     // Only allow digits
-    if (value && !/^\d$/.test(value)) {
+    if (digit && !/^\d$/.test(digit)) {
       return
     }
 
     const newOtp = [...otp]
-    newOtp[index] = value
+    newOtp[index] = digit
     setOtp(newOtp)
     setError("")
 
     // Auto-focus next input
-    if (value && index < 5) {
+    if (digit && index < 5) {
       inputRefs.current[index + 1]?.focus()
     }
 
