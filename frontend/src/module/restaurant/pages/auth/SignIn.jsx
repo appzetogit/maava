@@ -169,12 +169,33 @@ export default function RestaurantSignIn() {
 
       // Normal browser flow
       try {
+        console.log("🚀 Starting Google sign-in check...")
+        
+        // Check if we are in a WebView that might not support popups
+        const isWebView = /wv|Android.*Version\/[\d.]+/i.test(navigator.userAgent) || 
+                         (navigator.userAgent.includes('Mobile') && !navigator.userAgent.includes('Safari')) || 
+                         window.flutter_inappwebview;
+
+        if (isWebView) {
+          console.log("📱 WebView detected, skipping popup to avoid 'supportMultipleWindows' issues. Using redirect...")
+          await signInWithRedirect(firebaseAuth, googleProvider)
+          return
+        }
+
+        console.log("🚀 Starting Google sign-in (Web/Popup)...")
+        // Try popup first (most common for desktop)
         const result = await signInWithPopup(firebaseAuth, googleProvider)
         if (result?.user) {
           await processSignedInUser(result.user, "popup")
         }
       } catch (popupError) {
-        if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/cancelled-popup-request') {
+        // If popup was blocked or failed, fallback to redirect
+        if (popupError.code === 'auth/popup-blocked' || 
+            popupError.code === 'auth/cancelled-popup-request' || 
+            popupError.code === 'auth/popup-closed-by-user' ||
+            popupError.code === 'auth/internal-error' ||
+            popupError.message?.includes('popup')) {
+          console.log("ℹ️ Popup error detected, falling back to redirect...", popupError.code)
           await signInWithRedirect(firebaseAuth, googleProvider)
         } else {
           throw popupError
