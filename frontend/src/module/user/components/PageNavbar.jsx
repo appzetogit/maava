@@ -930,7 +930,7 @@ export default function PageNavbar({
 
   return (
     <nav
-      className={`relative pt-6 sm:pt-4 pb-1 sm:pb-2 lg:pb-4 ${zIndexClass} w-full px-1 pr-2 sm:px-2 sm:pr-3 md:px-3 lg:px-6 xl:px-8`}
+      className={`relative pt-3 sm:pt-2 pb-1 sm:pb-2 lg:pb-4 ${zIndexClass} w-full px-1 pr-2 sm:px-2 sm:pr-3 md:px-3 lg:px-6 xl:px-8`}
       onClick={onNavClick}
     >
       <div className="flex items-center justify-between gap-2 sm:gap-3 md:gap-4 lg:gap-6 max-w-7xl mx-auto">
