@@ -9,6 +9,7 @@ import { adminAPI, uploadAPI, locationAPI } from "@/lib/api"
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 
 const cuisinesOptions = [
@@ -181,8 +182,20 @@ export default function AddRestaurant() {
       errors.push("Primary contact number must be exactly 10 digits")
     }
 
-    if (!step1.location?.area?.trim()) errors.push("Area/Sector/Locality is required")
-    if (!step1.location?.city?.trim()) errors.push("City is required")
+    if (!step1.location?.area?.trim()) {
+      errors.push("Area/Sector/Locality is required")
+    }
+    if (!step1.location?.city?.trim()) {
+      errors.push("City is required")
+    } else if (/[0-9]/.test(step1.location.city)) {
+      errors.push("City should not contain numbers")
+    }
+    if (step1.location?.state?.trim() && /[0-9]/.test(step1.location.state)) {
+      errors.push("State should not contain numbers")
+    }
+    if (step1.location?.pincode?.trim() && !/^\d{6}$/.test(step1.location.pincode.trim())) {
+      errors.push("Pin Code must be exactly 6 digits if provided")
+    }
     return errors
   }
 
@@ -220,7 +233,16 @@ export default function AddRestaurant() {
       errors.push("FSSAI number must be exactly 14 digits")
     }
 
-    if (!step3.fssaiExpiry?.trim()) errors.push("FSSAI expiry date is required")
+    if (!step3.fssaiExpiry?.trim()) {
+      errors.push("FSSAI expiry date is required")
+    } else {
+      const expiryDate = new Date(step3.fssaiExpiry)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      if (expiryDate < today) {
+        errors.push("FSSAI expiry date cannot be in the past")
+      }
+    }
     if (!step3.fssaiImage) errors.push("FSSAI image is required")
 
     if (step3.gstRegistered) {
@@ -269,8 +291,8 @@ export default function AddRestaurant() {
 
     if (!step3.accountType?.trim()) {
       errors.push("Account type is required")
-    } else if (!/^\d+$/.test(step3.accountType)) {
-      errors.push("Account type must be a number as per requirement")
+    } else if (!["savings", "current"].includes(step3.accountType.toLowerCase())) {
+      errors.push("Account type must be either 'savings' or 'current'")
     }
     return errors
   }
@@ -507,9 +529,14 @@ export default function AddRestaurant() {
           />
           <Input
             value={step1.location?.city || ""}
-            onChange={(e) => setStep1({ ...step1, location: { ...step1.location, city: e.target.value } })}
+            onChange={(e) =>
+              setStep1({
+                ...step1,
+                location: { ...step1.location, city: e.target.value.replace(/[^a-zA-Z\s]/g, "") },
+              })
+            }
             className="bg-white text-sm"
-            placeholder="City*"
+            placeholder="City (Characters only)*"
           />
           <Input
             value={step1.location?.addressLine1 || ""}
@@ -525,15 +552,25 @@ export default function AddRestaurant() {
           />
           <Input
             value={step1.location?.state || ""}
-            onChange={(e) => setStep1({ ...step1, location: { ...step1.location, state: e.target.value } })}
+            onChange={(e) =>
+              setStep1({
+                ...step1,
+                location: { ...step1.location, state: e.target.value.replace(/[^a-zA-Z\s]/g, "") },
+              })
+            }
             className="bg-white text-sm"
-            placeholder="State (optional)"
+            placeholder="State (Characters only)"
           />
           <Input
             value={step1.location?.pincode || ""}
-            onChange={(e) => setStep1({ ...step1, location: { ...step1.location, pincode: e.target.value } })}
+            onChange={(e) =>
+              setStep1({
+                ...step1,
+                location: { ...step1.location, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) },
+              })
+            }
             className="bg-white text-sm"
-            placeholder="Pin code (optional)"
+            placeholder="Pin Code (6 Digits)"
           />
           <Input
             value={step1.location?.landmark || ""}
@@ -916,6 +953,7 @@ export default function AddRestaurant() {
               type="date"
               value={step3.fssaiExpiry || ""}
               onChange={(e) => setStep3({ ...step3, fssaiExpiry: e.target.value })}
+              min={new Date().toISOString().split("T")[0]}
               className="bg-white text-sm"
             />
           </div>
@@ -954,12 +992,21 @@ export default function AddRestaurant() {
             className="bg-white text-sm"
             placeholder="IFSC code* (e.g. SBIN0001234)"
           />
-          <Input
-            value={step3.accountType || ""}
-            onChange={(e) => setStep3({ ...step3, accountType: e.target.value.replace(/\D/g, "") })}
-            className="bg-white text-sm"
-            placeholder="Account type (Number only as per request)*"
-          />
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs text-gray-700">Account type*</Label>
+            <Select
+              value={step3.accountType || ""}
+              onValueChange={(value) => setStep3({ ...step3, accountType: value })}
+            >
+              <SelectTrigger className="bg-white text-sm">
+                <SelectValue placeholder="Select account type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="savings">Savings</SelectItem>
+                <SelectItem value="current">Current</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <Input
           value={step3.accountHolderName || ""}

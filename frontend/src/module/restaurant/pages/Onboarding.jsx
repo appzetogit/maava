@@ -188,6 +188,8 @@ export default function RestaurantOnboarding() {
       addressLine2: "",
       area: "",
       city: "",
+      state: "",
+      pincode: "",
       landmark: "",
     },
   })
@@ -253,6 +255,8 @@ export default function RestaurantOnboarding() {
             addressLine2: localData.step1.location?.addressLine2 || "",
             area: localData.step1.location?.area || "",
             city: localData.step1.location?.city || "",
+            state: localData.step1.location?.state || "",
+            pincode: localData.step1.location?.pincode || "",
             landmark: localData.step1.location?.landmark || "",
           },
         })
@@ -326,6 +330,8 @@ export default function RestaurantOnboarding() {
                 addressLine2: data.step1.location?.addressLine2 || "",
                 area: data.step1.location?.area || "",
                 city: data.step1.location?.city || "",
+                state: data.step1.location?.state || "",
+                pincode: data.step1.location?.pincode || "",
                 landmark: data.step1.location?.landmark || "",
               },
             }))
@@ -447,6 +453,18 @@ export default function RestaurantOnboarding() {
     }
     if (!step1.location?.city?.trim()) {
       errors.push("City is required")
+    } else if (/[0-9]/.test(step1.location.city)) {
+      errors.push("City should not contain numbers")
+    }
+    if (!step1.location?.state?.trim()) {
+      errors.push("State is required")
+    } else if (/[0-9]/.test(step1.location.state)) {
+      errors.push("State should not contain numbers")
+    }
+    if (!step1.location?.pincode?.trim()) {
+      errors.push("Pin Code is required")
+    } else if (!/^\d{6}$/.test(step1.location.pincode.trim())) {
+      errors.push("Pin Code must be exactly 6 digits")
     }
     
     return errors
@@ -1136,12 +1154,36 @@ export default function RestaurantOnboarding() {
             onChange={(e) =>
               setStep1({
                 ...step1,
-                location: { ...step1.location, city: e.target.value },
+                location: { ...step1.location, city: e.target.value.replace(/[^a-zA-Z\s]/g, "") },
               })
             }
             className="bg-white text-sm"
-            placeholder="City"
+            placeholder="City (Characters only)*"
           />
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              value={step1.location?.state || ""}
+              onChange={(e) =>
+                setStep1({
+                  ...step1,
+                  location: { ...step1.location, state: e.target.value.replace(/[^a-zA-Z\s]/g, "") },
+                })
+              }
+              className="bg-white text-sm"
+              placeholder="State (Characters only)*"
+            />
+            <Input
+              value={step1.location?.pincode || ""}
+              onChange={(e) =>
+                setStep1({
+                  ...step1,
+                  location: { ...step1.location, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) },
+                })
+              }
+              className="bg-white text-sm"
+              placeholder="Pin Code (6 Digits)*"
+            />
+          </div>
           <Input
             value={step1.location?.addressLine1 || ""}
             onChange={(e) =>

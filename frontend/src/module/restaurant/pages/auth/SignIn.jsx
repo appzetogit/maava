@@ -459,16 +459,6 @@ export default function RestaurantSignIn() {
             Sign in with Google
           </button>
 
-          {/* Sign up link */}
-          <div className="mt-6 text-center text-sm text-gray-600">
-            Don't have an account?{" "}
-            <button
-              onClick={() => navigate("/restaurant/signup-email")}
-              className="text-primary-orange hover:underline font-medium"
-            >
-              Sign up
-            </button>
-          </div>
 
           {/* Demo credentials / info bar */}
           <div className="mt-8 w-full max-w-lg rounded-lg border border-orange-100 bg-orange-50 px-4 py-3 text-xs sm:text-sm text-gray-800 flex items-start gap-3">

@@ -197,14 +197,6 @@ export default function AdminLogin() {
           </CardContent>
 
           <CardFooter className="flex-col items-start gap-2 text-sm text-gray-500">
-            <span>Don't have an account?{" "}
-              <button
-                onClick={() => navigate("/admin/signup")}
-                className="text-black hover:underline font-medium"
-              >
-                Sign up
-              </button>
-            </span>
             <span>Secure sign-in helps protect admin tools.</span>
           </CardFooter>
         </Card>

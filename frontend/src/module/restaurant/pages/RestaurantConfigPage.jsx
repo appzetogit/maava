@@ -211,10 +211,6 @@ export default function RestaurantConfigPage() {
                 <ToggleSwitch enabled={instanceOrder} onChange={setInstanceOrder} />
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm md:text-base text-gray-700">Schedule Order</span>
-                <ToggleSwitch enabled={scheduleOrder} onChange={setScheduleOrder} />
-              </div>
-              <div className="flex items-center justify-between">
                 <span className="text-sm md:text-base text-gray-700">Subscription Order</span>
                 <ToggleSwitch enabled={subscriptionOrder} onChange={setSubscriptionOrder} />
               </div>

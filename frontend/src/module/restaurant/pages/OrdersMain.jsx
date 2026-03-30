@@ -20,7 +20,6 @@ const filterTabs = [
   { id: "preparing", label: "Preparing" },
   { id: "ready", label: "Ready" },
   { id: "out-for-delivery", label: "Out for delivery" },
-  { id: "scheduled", label: "Scheduled" },
   { id: "completed", label: "Completed" },
   { id: "cancelled", label: "Cancelled" },
 ]
@@ -1136,8 +1135,6 @@ export default function OrdersMain() {
         return <ReadyOrders onSelectOrder={handleSelectOrder} />
       case "out-for-delivery":
         return <OutForDeliveryOrders onSelectOrder={handleSelectOrder} />
-      case "scheduled":
-        return <EmptyState message="Scheduled orders will appear here" />
       case "completed":
         return <CompletedOrders onSelectOrder={handleSelectOrder} />
       case "cancelled":

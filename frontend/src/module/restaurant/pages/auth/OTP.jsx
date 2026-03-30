@@ -16,9 +16,6 @@ export default function RestaurantOTP() {
   const [contactInfo, setContactInfo] = useState("") // Can be phone or email
   const [contactType, setContactType] = useState("phone") // "phone" or "email"
   const [focusedIndex, setFocusedIndex] = useState(null)
-  const [name, setName] = useState("")
-  const [nameError, setNameError] = useState("")
-  const [showNameInput, setShowNameInput] = useState(false)
   const inputRefs = useRef([])
 
   useEffect(() => {
@@ -149,32 +146,45 @@ export default function RestaurantOTP() {
     }
   }
 
+  const handleSuccess = (accessToken, restaurant, isSignUp) => {
+    // Store auth data using utility function to ensure proper module-specific token storage
+    setRestaurantAuthData("restaurant", accessToken, restaurant)
+    
+    // Dispatch custom event for same-tab updates
+    window.dispatchEvent(new Event("restaurantAuthChanged"))
+
+    sessionStorage.removeItem("restaurantAuthData")
+
+    setTimeout(async () => {
+      // After signup, send to onboarding
+      if (isSignUp) {
+        navigate("/restaurant/onboarding", { replace: true })
+      } else {
+        // After login, check if onboarding is incomplete
+        try {
+          const incompleteStep = await checkOnboardingStatus()
+          if (incompleteStep) {
+            // Navigate to onboarding with the incomplete step
+            navigate(`/restaurant/onboarding?step=${incompleteStep}`, { replace: true })
+          } else {
+            // Onboarding is complete, go to restaurant home
+            navigate("/restaurant", { replace: true })
+          }
+        } catch (err) {
+          console.error("Failed to check onboarding status:", err)
+          // Fallback to restaurant home
+          navigate("/restaurant", { replace: true })
+        }
+      }
+    }, 500)
+  }
+
   const handleVerify = async (otpValue = null) => {
     const code = otpValue || otp.join("")
     
     if (code.length !== 6) {
       setError("Please enter the complete 6-digit code")
       return
-    }
-
-    // For email-based signup, use a two-step UX:
-    // 1) First validate OTP format and show name input
-    // 2) Then, once name is provided, call the backend
-    // For email-based login, skip name input and go directly to verification
-    if (contactType === "email" && authData?.isSignUp && !showNameInput) {
-      // First step: show name input, don't hit backend yet (only for signups)
-      setShowNameInput(true)
-      setError("")
-      return
-    }
-
-    // If we are on step 2 for email signup (or any flow where name input is visible), require name
-    if (showNameInput) {
-      if (!name.trim()) {
-        setNameError("Please enter your name to continue")
-        return
-      }
-      setNameError("")
     }
 
     setIsLoading(true)
@@ -191,44 +201,46 @@ export default function RestaurantOTP() {
       const purpose = authData.isSignUp ? "register" : "login"
 
       // Decide which name to send:
-      // - If we're currently showing the name input (either because backend returned needsName
-      //   or because this is an email/phone signup flow), always send the typed name.
-      // - Otherwise, for explicit signup flows where a name was already collected earlier,
-      //   send that stored name.
-      let nameToSend = null
-      if (showNameInput) {
-        nameToSend = name.trim()
-      } else if (authData.isSignUp && authData.name) {
-        nameToSend = authData.name
-      }
+      // - If we have a name from a previous signup page, send that.
+      // - If the backend requires a name (new user login), we'll handle it below.
+      let nameToSend = authData.name || null
 
       const response = await restaurantAPI.verifyOTP(phone, code, purpose, nameToSend, email)
 
       // Extract restaurant and token or special flags (like needsName) from backend response
       const data = response?.data?.data || response?.data
 
-      // If backend says we need a name (restaurant not found on login), treat this as a new signup:
-      // - flip authData.isSignUp -> true so subsequent verify calls use "register"
-      // - persist this updated state back to sessionStorage
-      // - show the name input instead of erroring
+      // If backend says we need a name (restaurant not found on login), handle it automatically:
+      // We'll use a default name (the phone or email) and retry once to complete registration.
+      // The user will be able to update their real restaurant name in the onboarding step 1.
       if (data?.needsName) {
+        const defaultName = contactInfo.split("-")[1] || contactInfo || "New Restaurant"
+        
+        // Update authData to reflect it's now a signup flow
         setAuthData((prev) => {
           const updated = {
             ...prev,
             isSignUp: true,
-            // Preserve any existing name, but prefer the typed one if present
-            name: name?.trim() || prev?.name,
+            name: defaultName,
           }
           try {
             sessionStorage.setItem("restaurantAuthData", JSON.stringify(updated))
           } catch {
-            // Ignore storage errors; state is enough for this flow
+            // Ignore storage errors
           }
           return updated
         })
-        setShowNameInput(true)
-        setError("")
-        setNameError("")
+
+        // Immediate retry with the default name
+        const retryResponse = await restaurantAPI.verifyOTP(phone, code, purpose, defaultName, email)
+        const retryData = retryResponse?.data?.data || retryResponse?.data
+
+        const accessToken = retryData?.accessToken
+        const restaurant = retryData?.restaurant
+
+        if (accessToken && restaurant) {
+          handleSuccess(accessToken, restaurant, true) // Pass true because it's now a signup
+        }
         return
       }
 
@@ -236,37 +248,7 @@ export default function RestaurantOTP() {
       const restaurant = data?.restaurant
 
       if (accessToken && restaurant) {
-        // Store auth data using utility function to ensure proper module-specific token storage
-        setRestaurantAuthData("restaurant", accessToken, restaurant)
-        
-        // Dispatch custom event for same-tab updates
-        window.dispatchEvent(new Event("restaurantAuthChanged"))
-
-        sessionStorage.removeItem("restaurantAuthData")
-
-        setTimeout(async () => {
-          console.log({authData})
-          // After signup, send to onboarding
-          if (authData?.isSignUp) {
-            navigate("/restaurant/onboarding", { replace: true })
-          } else {
-            // After login, check if onboarding is incomplete
-            try {
-              const incompleteStep = await checkOnboardingStatus()
-              if (incompleteStep) {
-                // Navigate to onboarding with the incomplete step
-                navigate(`/restaurant/onboarding?step=${incompleteStep}`, { replace: true })
-              } else {
-                // Onboarding is complete, go to restaurant home
-                navigate("/restaurant", { replace: true })
-              }
-            } catch (err) {
-              console.error("Failed to check onboarding status:", err)
-              // Fallback to restaurant home
-              navigate("/restaurant", { replace: true })
-            }
-          }
-        }, 500)
+        handleSuccess(accessToken, restaurant, authData?.isSignUp)
       }
     } catch (err) {
       const message =
@@ -398,41 +380,6 @@ export default function RestaurantOTP() {
               )
             })}
           </div>
-
-          {/* Name input:
-              - Email-based signup (existing behavior)
-              - Phone-based login when backend returns needsName=true (auto-registration)
-          */}
-          {showNameInput && (
-            <div className="mt-6 max-w-sm mx-auto text-left">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {authData?.method === "phone" ? "Restaurant name" : "Your name"}
-              </label>
-              <input
-                type="text"
-                value={name || ""}
-                onChange={(e) => {
-                  setName(e.target.value)
-                  if (nameError) setNameError("")
-                }}
-                placeholder="Enter your full name"
-                className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 ${
-                  nameError
-                    ? "border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:ring-blue-500"
-                }`}
-                disabled={isLoading}
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                If you&apos;re new, we&apos;ll use this to create your restaurant account.
-              </p>
-              {nameError && (
-                <p className="mt-1 text-xs text-red-600">
-                  {nameError}
-                </p>
-              )}
-            </div>
-          )}
 
           {/* Error Message */}
           {error && (
