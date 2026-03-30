@@ -35,6 +35,8 @@ import {
   Eye,
   Users,
   AlertCircle,
+  Bookmark,
+  ChevronUp,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -383,6 +385,36 @@ export default function RestaurantDetails() {
 
     fetchRestaurant()
   }, [slug, zoneId, loadingZone, restaurant?.slug])
+
+  // Check for dish parameter in URL to show dish detail automatically
+  useEffect(() => {
+    if (!loadingRestaurant && restaurant?.menuSections && searchParams.get('dish')) {
+      const dishId = searchParams.get('dish')
+      // Search for the dish in all sections and subsections
+      let foundItem = null
+      restaurant.menuSections.forEach(section => {
+        if (foundItem) return
+        if (section.items) {
+          const item = section.items.find(i => (i.id || i._id) === dishId)
+          if (item) foundItem = item
+        }
+        if (!foundItem && section.subsections) {
+          section.subsections.forEach(subsection => {
+            if (foundItem) return
+            if (subsection.items) {
+              const item = subsection.items.find(i => (i.id || i._id) === dishId)
+              if (item) foundItem = item
+            }
+          })
+        }
+      })
+
+      if (foundItem) {
+        setSelectedItem(foundItem)
+        setShowItemDetail(true)
+      }
+    }
+  }, [loadingRestaurant, restaurant?.menuSections, searchParams])
 
   // Fetch all public offers and filter for current restaurant
   useEffect(() => {
@@ -793,15 +825,29 @@ export default function RestaurantDetails() {
 
 
 
-  // Handle share click
-  const handleShareClick = async (item) => {
+  // Handle share click for individual dishes
+  const handleShareClick = async (item, e) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    
+    if (!item) return;
+    
     const restaurantId = restaurant?.restaurantId || restaurant?._id || restaurant?.id
     const dishId = item.id || item._id
+    
+    if (!dishId) {
+      toast.error("Could not share this item")
+      return;
+    }
+    
     const restaurantSlug = restaurant?.slug || slug || ""
+    const companyName = await getCompanyNameAsync()
 
-    // Create share URL
+    // Create share URL with deep link to the dish
     const shareUrl = `${window.location.origin}/user/restaurants/${restaurantSlug}?dish=${dishId}`
-    const shareText = `Check out ${item.name} from ${restaurant?.name || "this restaurant"}! ${shareUrl}`
+    const shareText = `Check out ${item.name} from ${restaurant?.name || "this restaurant"} on ${companyName}! ${shareUrl}`
 
     // Try Web Share API first (mobile)
     if (navigator.share) {
@@ -817,11 +863,13 @@ export default function RestaurantDetails() {
         if (error.name !== "AbortError") {
           // Fallback to copy to clipboard
           await copyToClipboard(shareUrl)
+          toast.info("Link copied to clipboard")
         }
       }
     } else {
       // Fallback to copy to clipboard
       await copyToClipboard(shareUrl)
+      toast.success("Link copied to clipboard")
     }
   }
 
@@ -1663,7 +1711,7 @@ export default function RestaurantDetails() {
                                               />
                                             </button>
                                             <button
-                                              onClick={(e) => e.stopPropagation()}
+                                              onClick={(e) => handleShareClick(item, e)}
                                               className="p-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                                             >
                                               <Send size={18} />
@@ -2012,27 +2060,8 @@ export default function RestaurantDetails() {
                       </button>
                     </div>
 
-                    {/* Dietary preference */}
-                    <div className="space-y-2">
-                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Dietary preference:</h3>
-                      <button
-                        onClick={() =>
-                          setFilters((prev) => ({
-                            ...prev,
-                            spicy: !prev.spicy,
-                          }))
-                        }
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all w-full ${filters.spicy
-                          ? "border-red-500 dark:border-red-400 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400"
-                          : "border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
-                          }`}
-                      >
-                        <Flame className="h-4 w-4" />
-                        <span className="font-medium">Spicy</span>
-                      </button>
                     </div>
-                  </div>
-
+                  
                   {/* Bottom Action Bar */}
                   <div className="border-t border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center justify-between bg-white dark:bg-[#1a1a1a]">
                     <button
@@ -2041,7 +2070,6 @@ export default function RestaurantDetails() {
                           sortBy: null,
                           vegNonVeg: null,
                           highlyReordered: false,
-                          spicy: false,
                         })
                       }}
                       className="text-red-600 dark:text-red-400 font-medium text-sm hover:text-red-700 dark:hover:text-red-500"
@@ -2353,7 +2381,10 @@ export default function RestaurantDetails() {
                             }`}
                         />
                       </button>
-                      <button className="h-10 w-10 rounded-full border border-white dark:border-gray-800 bg-white/90 dark:bg-[#1a1a1a]/90 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-[#2a2a2a] flex items-center justify-center transition-colors">
+                      <button
+                        onClick={(e) => handleShareClick(selectedItem, e)}
+                        className="h-10 w-10 rounded-full border border-white dark:border-gray-800 bg-white/90 dark:bg-[#1a1a1a]/90 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-[#2a2a2a] flex items-center justify-center transition-colors"
+                      >
                         <Send className="h-5 w-5" />
                       </button>
                     </div>
@@ -2388,7 +2419,10 @@ export default function RestaurantDetails() {
                               }`}
                           />
                         </button>
-                        <button className="h-8 w-8 rounded-full border border-gray-300 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 flex items-center justify-center transition-colors">
+                        <button
+                          onClick={(e) => handleShareClick(selectedItem, e)}
+                          className="h-8 w-8 rounded-full border border-gray-300 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 flex items-center justify-center transition-colors"
+                        >
                           <Send className="h-4 w-4" />
                         </button>
                       </div>

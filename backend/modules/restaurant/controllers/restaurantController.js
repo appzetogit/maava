@@ -160,7 +160,7 @@ export const getRestaurants = async (req, res) => {
 
     // Build query
     const query = { isActive: true };
-    
+
     // Search filter
     if (search) {
       query.name = { $regex: search, $options: 'i' };
@@ -586,7 +586,7 @@ export const updateRestaurantProfile = asyncHandler(async (req, res) => {
       updateData.name = name;
       // Also sync with onboarding step 1
       updateData['onboarding.step1.restaurantName'] = name;
-      
+
       // Regenerate slug if name changed
       if (name !== restaurant.name) {
         let baseSlug = name
@@ -663,7 +663,7 @@ export const updateRestaurantProfile = asyncHandler(async (req, res) => {
     for (const [key, value] of Object.entries(updateData)) {
       restaurant.set(key, value);
     }
-    
+
     // Explicitly sync profile image to onboarding step 2 if provided
     if (profileImage) {
       restaurant.set('onboarding.step2.profileImageUrl', profileImage);
@@ -673,7 +673,7 @@ export const updateRestaurantProfile = asyncHandler(async (req, res) => {
     if (menuImages !== undefined) {
       restaurant.set('onboarding.step2.menuImageUrls', menuImages);
     }
-    
+
     await restaurant.save();
 
     console.log('✅ Restaurant profile saved successfully:', restaurant._id);
@@ -825,7 +825,7 @@ export const uploadMenuImage = asyncHandler(async (req, res) => {
     if (restaurant.menuImages.length > 0) {
       // Replace the first image (main banner)
       restaurant.menuImages[0] = newMenuImage;
-      
+
       // Also sync with onboarding step 2 if it exists
       if (restaurant.onboarding?.step2?.menuImageUrls) {
         restaurant.set('onboarding.step2.menuImageUrls.0', newMenuImage);
@@ -833,7 +833,7 @@ export const uploadMenuImage = asyncHandler(async (req, res) => {
     } else {
       // Add as first image if array is empty
       restaurant.menuImages.push(newMenuImage);
-      
+
       // Also sync with onboarding step 2 if it exists
       if (restaurant.onboarding?.step2?.menuImageUrls) {
         restaurant.set('onboarding.step2.menuImageUrls', [newMenuImage]);
@@ -1006,11 +1006,11 @@ export const getRestaurantsWithDishesUnder250 = async (req, res) => {
     const filterItemsUnder250 = (items) => {
       return items.filter(item => {
         if (item.isAvailable === false) return false;
-        
+
         // CRITICAL: Only include approved items (or those without status for legacy compatibility)
-        const isApproved = item.approvalStatus === 'approved' || !item.approvalStatus;
+        const isApproved = item.approvalStatus === 'approved';
         if (!isApproved) return false;
-        
+
         const finalPrice = getFinalPrice(item);
         return finalPrice <= MAX_PRICE;
       });

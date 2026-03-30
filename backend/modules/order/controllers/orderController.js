@@ -161,18 +161,17 @@ export const createOrder = async (req, res) => {
       // Still proceed but log the mismatch
     }
 
-    // Note: Removed isAcceptingOrders check - orders can come even when restaurant is offline
-    // Restaurant can accept/reject orders manually, or orders will auto-reject after accept time expires
-    // if (!restaurant.isAcceptingOrders) {
-    //   logger.warn('⚠️ Restaurant not accepting orders:', {
-    //     restaurantId: restaurant._id?.toString() || restaurant.restaurantId,
-    //     restaurantName: restaurant.name
-    //   });
-    //   return res.status(403).json({
-    //     success: false,
-    //     message: 'Restaurant is currently not accepting orders'
-    //   });
-    // }
+    // CRITICAL: Validate restaurant is accepting orders
+    if (!isHibermartRequest && !restaurant.isAcceptingOrders) {
+      logger.warn('⚠️ Restaurant not accepting orders:', {
+        restaurantId: restaurant._id?.toString() || restaurant.restaurantId,
+        restaurantName: restaurant.name
+      });
+      return res.status(403).json({
+        success: false,
+        message: 'Restaurant is currently not accepting orders'
+      });
+    }
 
     if (!isHibermartRequest && !restaurant.isActive) {
       logger.warn('⚠️ Restaurant is inactive:', {

@@ -49,7 +49,7 @@ export default function AdminLayout() {
         <AdminNavbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
 
         {/* Page Content */}
-        <main className="flex-1  w-full max-w-full overflow-x-hidden bg-neutral-100">
+        <main className="flex-1 w-full max-w-full overflow-x-hidden bg-neutral-100 admin-panel">
           <Outlet />
         </main>
       </div>

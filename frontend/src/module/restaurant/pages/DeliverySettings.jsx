@@ -5,9 +5,11 @@ import Lenis from "lenis"
 import { ArrowLeft, Truck, X, CheckCircle, AlertCircle } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardContent } from "@/components/ui/card"
+import { restaurantAPI } from "@/lib/api"
+import { toast } from "sonner"
 
 const STORAGE_KEY = "restaurant_outlet_timings"
-const DELIVERY_STATUS_KEY = "restaurant_delivery_status"
+const DELIVERY_STATUS_KEY = "restaurant_online_status"
 
 export default function DeliverySettings() {
   const navigate = useNavigate()
@@ -38,19 +40,42 @@ export default function DeliverySettings() {
     }
   }, [])
 
-  // Load delivery status from localStorage on mount
+  // Load delivery status from backend and sync with localStorage
   useEffect(() => {
-    try {
-      const savedStatus = localStorage.getItem(DELIVERY_STATUS_KEY)
-      if (savedStatus !== null) {
-        setDeliveryStatus(JSON.parse(savedStatus))
-      }
-    } catch (error) {
-      // Only log error if it's not a network/timeout error (backend might be down/slow)
-      if (error.code !== 'ERR_NETWORK' && error.code !== 'ECONNABORTED' && !error.message?.includes('timeout')) {
-        console.error("Error loading delivery status:", error)
+    const loadDeliveryStatus = async () => {
+      try {
+        // First try to get from backend
+        const response = await restaurantAPI.getCurrentRestaurant()
+        const restaurant = response?.data?.data?.restaurant || response?.data?.restaurant
+        if (restaurant?.isAcceptingOrders !== undefined) {
+          setDeliveryStatus(restaurant.isAcceptingOrders)
+          // Sync localStorage with backend
+          localStorage.setItem(DELIVERY_STATUS_KEY, JSON.stringify(restaurant.isAcceptingOrders))
+          // Dispatch event to update other components (like Navbar)
+          window.dispatchEvent(new CustomEvent('restaurantStatusChanged', { 
+            detail: { isOnline: restaurant.isAcceptingOrders } 
+          }))
+        } else {
+          // Fallback to localStorage
+          const savedStatus = localStorage.getItem(DELIVERY_STATUS_KEY)
+          if (savedStatus !== null) {
+            setDeliveryStatus(JSON.parse(savedStatus))
+          }
+        }
+      } catch (error) {
+        // Only log error if it's not a network/timeout error
+        if (error.code !== 'ERR_NETWORK' && error.code !== 'ECONNABORTED' && !error.message?.includes('timeout')) {
+          console.error("Error loading delivery status:", error)
+        }
+        // Fallback to localStorage
+        const savedStatus = localStorage.getItem(DELIVERY_STATUS_KEY)
+        if (savedStatus !== null) {
+          setDeliveryStatus(JSON.parse(savedStatus))
+        }
       }
     }
+
+    loadDeliveryStatus()
   }, [])
 
   // Prevent body scroll when dialog is open
@@ -123,15 +148,30 @@ export default function DeliverySettings() {
     setTimeout(() => setShowSuccessToast(false), 3000)
   }
 
-  const saveDeliveryStatus = (status) => {
+  const saveDeliveryStatus = async (status) => {
     try {
-      localStorage.setItem(DELIVERY_STATUS_KEY, JSON.stringify(status))
+      // Update local state
       setDeliveryStatus(status)
+      // Save to localStorage
+      localStorage.setItem(DELIVERY_STATUS_KEY, JSON.stringify(status))
       
-      if (status) {
-        showToast("Delivery is now ON - You're receiving orders")
-      } else {
-        showToast("Delivery is now OFF - Not receiving orders")
+      // Update backend
+      try {
+        await restaurantAPI.updateDeliveryStatus(status)
+        
+        // Dispatch custom event for navbar and other components to listen
+        window.dispatchEvent(new CustomEvent('restaurantStatusChanged', { 
+          detail: { isOnline: status } 
+        }))
+        
+        if (status) {
+          showToast("Delivery is now ON - You're receiving orders")
+        } else {
+          showToast("Delivery is now OFF - Not receiving orders")
+        }
+      } catch (apiError) {
+        console.error("Error updating delivery status in backend:", apiError)
+        toast.error("Failed to sync status with server, but saved locally")
       }
     } catch (error) {
       console.error("Error saving delivery status:", error)

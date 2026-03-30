@@ -76,7 +76,7 @@ export default function EarningAddon() {
     if (!searchQuery.trim()) {
       return earningAddons
     }
-    
+
     const query = searchQuery.toLowerCase().trim()
     return earningAddons.filter(addon =>
       addon.title?.toLowerCase().includes(query) ||
@@ -127,7 +127,7 @@ export default function EarningAddon() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     // Validation
     if (!formData.title || !formData.title.trim()) {
       toast.error("Title is required")
@@ -151,7 +151,7 @@ export default function EarningAddon() {
 
     const startDate = new Date(formData.startDate)
     const endDate = new Date(formData.endDate)
-    
+
     if (endDate <= startDate) {
       toast.error("End date must be after start date")
       return
@@ -192,15 +192,15 @@ export default function EarningAddon() {
         method: error.config?.method,
         data: error.config?.data
       })
-      
+
       // Show detailed error message
-      const errorMessage = error.response?.data?.message 
-        || error.response?.data?.error 
-        || error.message 
+      const errorMessage = error.response?.data?.message
+        || error.response?.data?.error
+        || error.message
         || "Failed to save earning addon"
-      
+
       toast.error(errorMessage)
-      
+
       // If it's a validation error, show field-specific errors
       if (error.response?.data?.errors) {
         const errors = error.response.data.errors
@@ -311,7 +311,7 @@ export default function EarningAddon() {
                 <Plus className="w-4 h-4" />
                 <span>Create Offer</span>
               </button>
-              <button 
+              <button
                 onClick={() => setIsSettingsOpen(true)}
                 className="p-2.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition-all"
               >
@@ -549,7 +549,7 @@ export default function EarningAddon() {
                     step="0.01"
                     value={formData.earningAmount}
                     onChange={(e) => setFormData({ ...formData, earningAmount: e.target.value })}
-                    className="w-full pl-9 pr-3 py-2.5 border-2 border-slate-200 rounded-lg bg-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm"
+                    className="w-full pl-9 pr-3 py-2.5 border-2 border-slate-200 rounded-lg bg-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm text-black"
                     placeholder="e.g., 500.00"
                   />
                 </div>

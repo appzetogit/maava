@@ -5,8 +5,42 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
+import { useProfile } from "../../context/ProfileContext"
+import { toast } from "sonner"
+import { useState, useEffect } from "react"
 
 export default function Settings() {
+  const { userProfile, updateUserProfile } = useProfile()
+  const [pushEnabled, setPushEnabled] = useState(true)
+
+  // Sync state with user profile on load
+  useEffect(() => {
+    if (userProfile?.preferences?.notifications) {
+      setPushEnabled(userProfile.preferences.notifications.orders !== false)
+    }
+  }, [userProfile])
+
+  const handleTogglePush = (checked) => {
+    setPushEnabled(checked)
+    
+    // Update profile in context (and hopefully backend will handle it in the future)
+    updateUserProfile({
+      preferences: {
+        ...userProfile?.preferences,
+        notifications: {
+          ...userProfile?.preferences?.notifications,
+          orders: checked
+        }
+      }
+    })
+
+    if (checked) {
+      toast.success("Push notifications enabled")
+    } else {
+      toast.info("Push notifications disabled")
+    }
+  }
+
   return (
     <AnimatedPage className="min-h-screen bg-[#f5f5f5] dark:bg-[#0a0a0a] p-4">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -25,12 +59,15 @@ export default function Settings() {
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Push Notifications</Label>
+                <Label className="text-gray-900 dark:text-white">Push Notifications</Label>
                 <p className="text-sm text-muted-foreground">
                   Receive push notifications on your device
                 </p>
               </div>
-              <Switch defaultChecked />
+              <Switch 
+                checked={pushEnabled} 
+                onCheckedChange={handleTogglePush}
+              />
             </div>
           </CardContent>
         </Card>

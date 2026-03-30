@@ -30,7 +30,7 @@ export default function AddMoneyModal({ open, onOpenChange, onSuccess }) {
 
   const handleAddMoney = async () => {
     const amountNum = parseFloat(amount)
-    
+
     if (!amount || isNaN(amountNum) || amountNum < 1) {
       toast.error("Please enter a valid amount (minimum ₹1)")
       return
@@ -48,7 +48,7 @@ export default function AddMoneyModal({ open, onOpenChange, onSuccess }) {
       console.log('Creating wallet top-up order for amount:', amountNum)
       const orderResponse = await userAPI.createWalletTopupOrder(amountNum)
       console.log('Order response:', orderResponse)
-      
+
       const { razorpay } = orderResponse.data.data
 
       if (!razorpay || !razorpay.orderId || !razorpay.key) {
@@ -57,13 +57,13 @@ export default function AddMoneyModal({ open, onOpenChange, onSuccess }) {
       }
 
       setLoading(false)
-      
+
       // Close the modal before opening Razorpay to avoid z-index conflicts
       onOpenChange(false)
-      
+
       // Small delay to ensure modal is closed
       await new Promise(resolve => setTimeout(resolve, 100))
-      
+
       setProcessing(true)
 
       // Get user info for Razorpay prefill
@@ -113,12 +113,12 @@ export default function AddMoneyModal({ open, onOpenChange, onSuccess }) {
             })
 
             toast.success(`₹${amountNum} added to wallet successfully!`)
-            
+
             // Reset form
             setAmount("")
             setProcessing(false)
             onOpenChange(false)
-            
+
             // Refresh wallet data
             if (onSuccess) {
               onSuccess()
@@ -143,10 +143,10 @@ export default function AddMoneyModal({ open, onOpenChange, onSuccess }) {
       console.error("Error creating payment order:", error)
       console.error("Error response:", error?.response)
       console.error("Error response data:", error?.response?.data)
-      
+
       // Extract error message from response
       let errorMessage = "Failed to initialize payment. Please try again."
-      
+
       if (error?.response?.data) {
         if (error.response.data.message) {
           errorMessage = error.response.data.message
@@ -158,7 +158,7 @@ export default function AddMoneyModal({ open, onOpenChange, onSuccess }) {
       } else if (error?.message) {
         errorMessage = error.message
       }
-      
+
       console.error("Final error message:", errorMessage)
       toast.error(errorMessage)
       setLoading(false)
@@ -175,7 +175,7 @@ export default function AddMoneyModal({ open, onOpenChange, onSuccess }) {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md dark:bg-[#1a1a1a] dark:border-gray-800">
         <DialogHeader>
           <DialogTitle className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
             Add Money to Wallet
@@ -200,7 +200,7 @@ export default function AddMoneyModal({ open, onOpenChange, onSuccess }) {
                 value={amount}
                 onChange={handleAmountChange}
                 placeholder="Enter amount"
-                className="pl-10 h-12 text-lg dark:bg-gray-800 dark:text-white dark:border-gray-700"
+                className="pl-10 h-12 text-lg text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:ring-green-500"
                 disabled={loading || processing}
               />
             </div>
@@ -224,9 +224,9 @@ export default function AddMoneyModal({ open, onOpenChange, onSuccess }) {
                     variant={isSelected ? "default" : "outline"}
                     className={cn(
                       "h-10 transition-all",
-                      isSelected 
-                        ? "bg-green-600 hover:bg-green-700 text-white border-transparent" 
-                        : "dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                      isSelected
+                        ? "bg-green-600 hover:bg-green-700 text-white border-transparent"
+                        : "bg-transparent text-gray-600 border-gray-200 hover:bg-gray-50 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-800"
                     )}
                     onClick={() => handleAmountSelect(quickAmount)}
                     disabled={loading || processing}

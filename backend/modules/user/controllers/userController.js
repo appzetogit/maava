@@ -56,41 +56,41 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
     if (name !== undefined && name !== null) {
       user.name = name.trim();
     }
-    
+
     if (email !== undefined && email !== null && email.trim() !== '') {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
       if (!emailRegex.test(email.trim())) {
         return errorResponse(res, 400, 'Invalid email format');
       }
-      
+
       // Check if email already exists for another user
-      const existingUser = await User.findOne({ 
+      const existingUser = await User.findOne({
         email: email.toLowerCase().trim(),
         _id: { $ne: user._id },
         role: 'user'
       });
-      
+
       if (existingUser) {
         return errorResponse(res, 400, 'Email already in use');
       }
-      
+
       user.email = email.toLowerCase().trim();
     }
-    
+
     if (phone !== undefined && phone !== null) {
       // Check if phone already exists for another user
       if (phone.trim() !== '') {
-        const existingUser = await User.findOne({ 
+        const existingUser = await User.findOne({
           phone: phone.trim(),
           _id: { $ne: user._id },
           role: 'user'
         });
-        
+
         if (existingUser) {
           return errorResponse(res, 400, 'Phone number already in use');
         }
       }
-      
+
       user.phone = phone ? phone.trim() : null;
     }
 
@@ -187,13 +187,13 @@ export const uploadProfileImage = asyncHandler(async (req, res) => {
  */
 export const updateUserLocation = asyncHandler(async (req, res) => {
   try {
-    const { 
-      latitude, 
-      longitude, 
-      address, 
-      city, 
-      state, 
-      area, 
+    const {
+      latitude,
+      longitude,
+      address,
+      city,
+      state,
+      area,
       formattedAddress,
       accuracy,
       postalCode,
