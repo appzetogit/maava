@@ -519,7 +519,11 @@ export const createAdmin = asyncHandler(async (req, res) => {
     };
 
     if (phone) {
-      adminData.phone = phone;
+      const cleanedPhone = phone.trim().replace(/\D/g, '');
+      if (cleanedPhone && cleanedPhone.length !== 10) {
+        return errorResponse(res, 400, 'Phone number must be exactly 10 digits');
+      }
+      adminData.phone = cleanedPhone || undefined;
     }
 
     const admin = await Admin.create(adminData);
@@ -567,7 +571,17 @@ export const updateAdmin = asyncHandler(async (req, res) => {
     // Update fields
     if (name) admin.name = name;
     if (email) admin.email = email.toLowerCase();
-    if (phone !== undefined) admin.phone = phone;
+    if (phone !== undefined) {
+      if (!phone) {
+        admin.phone = null;
+      } else {
+        const cleanedPhone = phone.trim().replace(/\D/g, '');
+        if (cleanedPhone.length !== 10) {
+          return errorResponse(res, 400, 'Phone number must be exactly 10 digits');
+        }
+        admin.phone = cleanedPhone;
+      }
+    }
     if (isActive !== undefined) admin.isActive = isActive;
 
     await admin.save();
@@ -664,8 +678,16 @@ export const updateAdminProfile = asyncHandler(async (req, res) => {
     }
 
     if (phone !== undefined) {
-      // Allow empty string to clear phone number
-      admin.phone = phone ? phone.trim() : null;
+      // Allow empty string or null to clear phone number
+      if (!phone) {
+        admin.phone = null;
+      } else {
+        const cleanedPhone = phone.trim().replace(/\D/g, '');
+        if (cleanedPhone.length !== 10) {
+          return errorResponse(res, 400, 'Phone number must be exactly 10 digits');
+        }
+        admin.phone = cleanedPhone;
+      }
     }
 
     if (profileImage !== undefined) {

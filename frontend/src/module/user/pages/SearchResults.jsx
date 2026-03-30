@@ -700,7 +700,7 @@ export default function SearchResults() {
                         isSelected ? 'border-2 border-green-600 shadow-lg' : 'premium-gold-border'
                       }`}>
                       <img
-                        src={cat.image}
+                        src={cat.image || null}
                         alt={cat.name}
                         className="w-full h-full object-cover"
                       />
@@ -797,7 +797,7 @@ export default function SearchResults() {
                       <div className="relative aspect-square rounded-xl overflow-hidden mb-2 bg-gray-200 dark:bg-gray-800">
                         {restaurant.image ? (
                           <img
-                            src={restaurant.image}
+                            src={restaurant.image || null}
                             alt={restaurant.name}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             onError={(e) => {

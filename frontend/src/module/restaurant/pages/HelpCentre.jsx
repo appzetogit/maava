@@ -9,9 +9,7 @@ import {
   Building2, 
   FileText, 
   Wallet,
-  ChevronRight,
-  Languages,
-  ClipboardList
+  ChevronRight
 } from "lucide-react"
 import BottomNavOrders from "../components/BottomNavOrders"
 
@@ -77,12 +75,8 @@ export default function HelpCentre() {
             <h1 className="text-lg font-bold text-gray-900">Help centre</h1>
           </div>
           <div className="flex items-center gap-4">
-            <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
-              <Languages className="w-6 h-6 text-gray-700" />
-            </button>
-            <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
-              <ClipboardList className="w-6 h-6 text-gray-700" />
-            </button>
+
+
           </div>
         </div>
       </div>

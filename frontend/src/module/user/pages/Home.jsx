@@ -1708,18 +1708,11 @@ export default function Home() {
           transition={{ duration: 0.5 }}
         >
           <motion.h2
-            className="text-xs sm:text-sm lg:text-base font-bold tracking-[0.2em] uppercase mb-2 sm:mb-3 lg:mb-4 px-1"
+            className="text-xs sm:text-sm lg:text-base font-bold tracking-[0.2em] uppercase mb-2 sm:mb-3 lg:mb-4 px-1 gold-shine-text"
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            style={{
-              background: 'linear-gradient(90deg, #1a1a1a 0%, #1a1a1a 40%, #FFD700 50%, #1a1a1a 60%, #1a1a1a 100%)',
-              backgroundSize: '200% auto',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              animation: 'gold-shimmer 4s linear infinite',
-            }}
           >
             {(!exploreMoreHeading || exploreMoreHeading.trim().toLowerCase() === "explore more") ? "More on Maava" : exploreMoreHeading}
           </motion.h2>

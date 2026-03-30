@@ -396,6 +396,7 @@ export default function EditProfile() {
                         '& .MuiOutlinedInput-root': {
                           height: '48px',
                           borderRadius: '8px',
+                          color: 'inherit',
                           '& fieldset': {
                             borderColor: '#d1d5db',
                           },
@@ -406,11 +407,32 @@ export default function EditProfile() {
                             borderColor: '#16a34a',
                             borderWidth: '1px',
                           },
+                          '.dark &': {
+                            backgroundColor: '#1a1a1a',
+                            color: '#ffffff',
+                            '& fieldset': {
+                              borderColor: '#374151',
+                            },
+                          }
                         },
                         '& .MuiInputBase-input': {
                           padding: '12px 14px',
                           fontSize: '16px',
+                          color: 'inherit',
+                          '.dark &': {
+                            color: '#ffffff',
+                          }
                         },
+                        '& .MuiPickersSectionList-sectionContent': {
+                          '.dark &': {
+                            color: '#ffffff',
+                          }
+                        },
+                        '& .MuiSvgIcon-root': {
+                          '.dark &': {
+                            color: '#ffffff',
+                          }
+                        }
                       },
                     },
                   }}
@@ -434,6 +456,7 @@ export default function EditProfile() {
                         '& .MuiOutlinedInput-root': {
                           height: '48px',
                           borderRadius: '8px',
+                          color: 'inherit',
                           '& fieldset': {
                             borderColor: '#d1d5db',
                           },
@@ -444,11 +467,32 @@ export default function EditProfile() {
                             borderColor: '#16a34a',
                             borderWidth: '1px',
                           },
+                          '.dark &': {
+                            backgroundColor: '#1a1a1a',
+                            color: '#ffffff',
+                            '& fieldset': {
+                              borderColor: '#374151',
+                            },
+                          }
                         },
                         '& .MuiInputBase-input': {
                           padding: '12px 14px',
                           fontSize: '16px',
+                          color: 'inherit',
+                          '.dark &': {
+                            color: '#ffffff',
+                          }
                         },
+                        '& .MuiPickersSectionList-sectionContent': {
+                          '.dark &': {
+                            color: '#ffffff',
+                          }
+                        },
+                        '& .MuiSvgIcon-root': {
+                          '.dark &': {
+                            color: '#ffffff',
+                          }
+                        }
                       },
                     },
                   }}

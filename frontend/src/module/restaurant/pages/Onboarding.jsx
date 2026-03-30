@@ -495,6 +495,19 @@ export default function RestaurantOnboarding() {
     if (!step2.closingTime?.trim()) {
       errors.push("Closing time is required")
     }
+    
+    // Check if closing time is after opening time
+    if (step2.openingTime?.trim() && step2.closingTime?.trim()) {
+      const opening = step2.openingTime.split(":").map(Number)
+      const closing = step2.closingTime.split(":").map(Number)
+      
+      const openMins = opening[0] * 60 + opening[1]
+      const closeMins = closing[0] * 60 + closing[1]
+      
+      if (closeMins <= openMins) {
+        errors.push("Closing time must be after the opening time")
+      }
+    }
     if (!step2.openDays || step2.openDays.length === 0) {
       errors.push("Please select at least one open day")
     }
@@ -553,6 +566,13 @@ export default function RestaurantOnboarding() {
     }
     if (!step3.fssaiExpiry?.trim()) {
       errors.push("FSSAI expiry date is required")
+    } else {
+      const expiryDate = new Date(step3.fssaiExpiry)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0) // Set to start of today to compare date only
+      if (expiryDate < today) {
+        errors.push("FSSAI expiry date cannot be in the past")
+      }
     }
     // Validate FSSAI image - must be a File or existing URL
     if (!step3.fssaiImage) {

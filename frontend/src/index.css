@@ -267,19 +267,22 @@
 
 /* Gold Shine Effect for Restaurant Names */
 @keyframes gold-shine {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
 }
 
 .gold-shine-text {
-  background: linear-gradient(
-    90deg, 
-    #111827 0%, 
-    #111827 40%, 
-    #D4AF37 50%, 
-    #111827 60%, 
-    #111827 100%
-  );
+  background: linear-gradient(90deg,
+      #111827 0%,
+      #111827 40%,
+      #D4AF37 50%,
+      #111827 60%,
+      #111827 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
@@ -289,22 +292,34 @@
 }
 
 .dark .gold-shine-text {
-  background: linear-gradient(
-    90deg, 
-    #ffffff 0%, 
-    #ffffff 40%, 
-    #FFD700 50%, 
-    #ffffff 60%, 
-    #ffffff 100%
-  );
+  background: linear-gradient(90deg,
+      #ffffff 0%,
+      #ffffff 42%,
+      #EAB308 50%,
+      #ffffff 58%,
+      #ffffff 100%);
   background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Star Shine Effect */
 @keyframes star-shine-pulse {
-  0% { filter: brightness(1) drop-shadow(0 0 0px transparent); transform: scale(1); }
-  50% { filter: brightness(1.5) drop-shadow(0 0 5px rgba(255, 255, 255, 0.9)); transform: scale(1.15); }
-  100% { filter: brightness(1) drop-shadow(0 0 0px transparent); transform: scale(1); }
+  0% {
+    filter: brightness(1) drop-shadow(0 0 0px transparent);
+    transform: scale(1);
+  }
+
+  50% {
+    filter: brightness(1.5) drop-shadow(0 0 5px rgba(255, 255, 255, 0.9));
+    transform: scale(1.15);
+  }
+
+  100% {
+    filter: brightness(1) drop-shadow(0 0 0px transparent);
+    transform: scale(1);
+  }
 }
 
 .star-shine {

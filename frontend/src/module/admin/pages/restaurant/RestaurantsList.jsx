@@ -628,8 +628,8 @@ export default function RestaurantsList() {
                             <button
                               onClick={() => handleBanRestaurant(restaurant)}
                               className={`p-1.5 rounded transition-colors ${!restaurant.status
-                                  ? "text-green-600 hover:bg-green-50"
-                                  : "text-red-600 hover:bg-red-50"
+                                ? "text-green-600 hover:bg-green-50"
+                                : "text-red-600 hover:bg-red-50"
                                 }`}
                               title={!restaurant.status ? "Unban Restaurant" : "Ban Restaurant"}
                             >
@@ -1337,8 +1337,8 @@ export default function RestaurantsList() {
                   onClick={confirmBanRestaurant}
                   disabled={banning}
                   className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${banConfirmDialog.action === 'ban'
-                      ? 'bg-red-600 hover:bg-red-700'
-                      : 'bg-green-600 hover:bg-green-700'
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : 'bg-green-600 hover:bg-green-700'
                     }`}
                 >
                   {banning ? (

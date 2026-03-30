@@ -1006,6 +1006,11 @@ export const getRestaurantsWithDishesUnder250 = async (req, res) => {
     const filterItemsUnder250 = (items) => {
       return items.filter(item => {
         if (item.isAvailable === false) return false;
+        
+        // CRITICAL: Only include approved items (or those without status for legacy compatibility)
+        const isApproved = item.approvalStatus === 'approved' || !item.approvalStatus;
+        if (!isApproved) return false;
+        
         const finalPrice = getFinalPrice(item);
         return finalPrice <= MAX_PRICE;
       });

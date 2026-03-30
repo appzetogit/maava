@@ -780,39 +780,48 @@ export default function HubMenu() {
     setIsCategoryOptionsOpen(false)
   }
 
-  const handleSaveCategoryName = () => {
+  const handleSaveCategoryName = async () => {
     if (!editCategoryName.trim() || !selectedCategory) return
 
     const newCategoryName = editCategoryName.trim()
     if (newCategoryName === selectedCategory.name) {
       setIsEditCategoryOpen(false)
       setSelectedCategory(null)
+      setEditCategoryName("")
       return
     }
 
-    // Update all foods in this category
-    const allFoods = getAllFoods()
-    const updatedFoods = allFoods.map(food => {
-      if (food.category === selectedCategory.name) {
-        return { ...food, category: newCategoryName }
-      }
-      return food
-    })
-
-    // Save updated foods
     try {
-      localStorage.setItem('restaurant_foods', JSON.stringify(updatedFoods))
-      window.dispatchEvent(new CustomEvent('foodsChanged'))
-      window.dispatchEvent(new Event('storage'))
+      // Find the menu section by name or id and update it
+      const updatedSections = menuData.map(section => {
+        if (section.id === selectedCategory.id || section.name === selectedCategory.name) {
+          // Update the section name and all items in it
+          const updatedItems = (section.items || []).map(item => ({
+            ...item,
+            category: newCategoryName
+          }))
+          return { ...section, name: newCategoryName, items: updatedItems }
+        }
+        return section
+      })
+
+      // Send the whole updated sections to avoid partial updates that might cause issues
+      const response = await restaurantAPI.updateMenu({ sections: updatedSections })
+
+      if (response.data && response.data.success) {
+        setMenuData(updatedSections)
+        toast.success('Category name updated successfully')
+      } else {
+        toast.error(response.data?.message || 'Failed to update category name')
+      }
     } catch (error) {
       console.error('Error updating category:', error)
-      alert('Error updating category name')
-      return
+      toast.error('Error updating category name')
+    } finally {
+      setIsEditCategoryOpen(false)
+      setSelectedCategory(null)
+      setEditCategoryName("")
     }
-
-    setIsEditCategoryOpen(false)
-    setSelectedCategory(null)
-    setEditCategoryName("")
   }
 
   // Sub-category handlers
@@ -1504,7 +1513,7 @@ export default function HubMenu() {
                       <span className="text-sm font-medium text-gray-900">I will turn it on myself</span>
                     </label>
                     <p className="text-xs text-gray-500 ml-8">
-                      This item will not be visible to customers on the Zomato app till you switch it on.
+                      This item will not be visible to customers on the Maava app till you switch it on.
                     </p>
                   </div>
                 </div>
@@ -1548,7 +1557,7 @@ export default function HubMenu() {
               type="button"
               whileTap={{ scale: 0.96 }}
               onClick={() => setIsMenuOpen((prev) => !prev)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-800 bg-white text-sm font-medium shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-800 bg-white text-sm font-medium text-gray-900 shadow-sm"
             >
               <span className="w-5 h-5 flex items-center justify-center">
                 {isMenuOpen ? (

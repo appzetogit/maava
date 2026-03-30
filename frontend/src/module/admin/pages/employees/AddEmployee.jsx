@@ -18,7 +18,11 @@ export default function AddEmployee() {
   })
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    let filteredValue = value;
+    if (field === "phone") {
+      filteredValue = value.replace(/\D/g, "").slice(0, 10);
+    }
+    setFormData(prev => ({ ...prev, [field]: filteredValue }))
   }
 
   const handleFileUpload = (field, file) => {

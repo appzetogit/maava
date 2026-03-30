@@ -73,6 +73,7 @@ export default function InviteUser() {
   const [addMethod, setAddMethod] = useState("phone") // "phone" or "email"
   const [photo, setPhoto] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
 
   // Lenis smooth scrolling
   useEffect(() => {
@@ -208,8 +209,9 @@ export default function InviteUser() {
       isValid = validateEmail(email)
     }
 
-    if (!isValid) return
+    if (!isValid || submitting) return
 
+    setSubmitting(true)
     try {
       // Prepare FormData for API (to support file upload)
       const formData = new FormData()
@@ -242,6 +244,8 @@ export default function InviteUser() {
       console.error("Error adding user:", error)
       const errorMessage = error.response?.data?.message || error.message || "Failed to add user. Please try again."
       alert(errorMessage)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -289,7 +293,7 @@ export default function InviteUser() {
             value={name}
             onChange={handleNameChange}
             placeholder="Enter full name"
-            className={`w-full h-12 border-gray-200 rounded-lg ${nameError ? "border-red-500" : ""}`}
+            className={`w-full h-12 border-gray-200 rounded-lg text-black ${nameError ? "border-red-500" : ""}`}
           />
           {nameError && (
             <p className="text-sm text-red-600 mt-1">{nameError}</p>
@@ -325,7 +329,7 @@ export default function InviteUser() {
               value={phoneNumber}
               onChange={handlePhoneChange}
               placeholder="Enter phone number"
-              className={`flex-1 h-12 border-gray-200 rounded-lg ${phoneError ? "border-red-500" : ""}`}
+              className={`flex-1 h-12 border-gray-200 rounded-lg text-black ${phoneError ? "border-red-500" : ""}`}
               maxLength={15}
             />
           </div>
@@ -353,7 +357,7 @@ export default function InviteUser() {
               value={email}
               onChange={handleEmailChange}
               placeholder="Enter email address"
-              className={`w-full h-12 border-gray-200 rounded-lg ${emailError ? "border-red-500" : ""}`}
+              className={`w-full h-12 border-gray-200 rounded-lg text-black ${emailError ? "border-red-500" : ""}`}
             />
             {emailError && (
               <p className="text-sm text-red-600 mt-1">{emailError}</p>
@@ -452,14 +456,14 @@ export default function InviteUser() {
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4 z-40">
         <Button
           onClick={handleAddUser}
-          disabled={!isFormValid}
+          disabled={!isFormValid || submitting}
           className={`w-full py-3 ${
-            isFormValid
+            isFormValid && !submitting
               ? "bg-blue-600 hover:bg-blue-700 text-white"
               : "bg-gray-200 text-gray-500 cursor-not-allowed"
           } transition-colors`}
         >
-          Add user
+          {submitting ? "Adding user..." : "Add user"}
         </Button>
       </div>
 

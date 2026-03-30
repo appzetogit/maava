@@ -158,13 +158,13 @@ export const updateMenu = asyncHandler(async (req, res) => {
         }
       })(),
       // CRITICAL: Preserve approval status fields from existing item
-      // Restaurant should NOT be able to overwrite these fields
-      approvalStatus: existingItem?.approvalStatus || item.approvalStatus || 'pending',
-      rejectionReason: existingItem?.rejectionReason || item.rejectionReason || '',
-      requestedAt: existingItem?.requestedAt || item.requestedAt || (item.approvalStatus === 'pending' ? new Date() : undefined),
-      approvedAt: existingItem?.approvedAt || item.approvedAt,
-      approvedBy: existingItem?.approvedBy || item.approvedBy,
-      rejectedAt: existingItem?.rejectedAt || item.rejectedAt,
+      // Restaurant should NOT be able to manually approve their own items
+      approvalStatus: existingItem ? (existingItem.approvalStatus || 'pending') : 'pending',
+      rejectionReason: existingItem ? (existingItem.rejectionReason || '') : '',
+      requestedAt: existingItem ? existingItem.requestedAt : (new Date()),
+      approvedAt: existingItem ? existingItem.approvedAt : undefined,
+      approvedBy: existingItem ? existingItem.approvedBy : undefined,
+      rejectedAt: existingItem ? existingItem.rejectedAt : undefined,
     };
       }) : [],
     subsections: Array.isArray(section.subsections) ? section.subsections.map(subsection => {
@@ -231,13 +231,13 @@ export const updateMenu = asyncHandler(async (req, res) => {
           }
         })(),
         // CRITICAL: Preserve approval status fields from existing item
-        // Restaurant should NOT be able to overwrite these fields
-        approvalStatus: existingItem?.approvalStatus || item.approvalStatus || 'pending',
-        rejectionReason: existingItem?.rejectionReason || item.rejectionReason || '',
-        requestedAt: existingItem?.requestedAt || item.requestedAt || (item.approvalStatus === 'pending' ? new Date() : undefined),
-        approvedAt: existingItem?.approvedAt || item.approvedAt,
-        approvedBy: existingItem?.approvedBy || item.approvedBy,
-        rejectedAt: existingItem?.rejectedAt || item.rejectedAt,
+        // Restaurant should NOT be able to manually approve their own items
+        approvalStatus: existingItem ? (existingItem.approvalStatus || 'pending') : 'pending',
+        rejectionReason: existingItem ? (existingItem.rejectionReason || '') : '',
+        requestedAt: existingItem ? existingItem.requestedAt : (new Date()),
+        approvedAt: existingItem ? existingItem.approvedAt : undefined,
+        approvedBy: existingItem ? existingItem.approvedBy : undefined,
+        rejectedAt: existingItem ? existingItem.rejectedAt : undefined,
       };
         }) : [],
       };
@@ -1039,7 +1039,8 @@ export const searchFoodItems = asyncHandler(async (req, res) => {
     (menu.sections || []).forEach(section => {
       // Search direct items
       (section.items || []).forEach(item => {
-        if (item.approvalStatus === 'approved' && (searchRegex.test(item.name) || searchRegex.test(item.description || ''))) {
+        const isApproved = item.approvalStatus === 'approved' || !item.approvalStatus;
+        if (isApproved && (searchRegex.test(item.name) || searchRegex.test(item.description || ''))) {
           matchedItems.push({
             ...item,
             restaurant: restaurantInfo,
@@ -1051,7 +1052,8 @@ export const searchFoodItems = asyncHandler(async (req, res) => {
       // Search subsection items
       (section.subsections || []).forEach(subsection => {
         (subsection.items || []).forEach(item => {
-          if (item.approvalStatus === 'approved' && (searchRegex.test(item.name) || searchRegex.test(item.description || ''))) {
+          const isApproved = item.approvalStatus === 'approved' || !item.approvalStatus;
+          if (isApproved && (searchRegex.test(item.name) || searchRegex.test(item.description || ''))) {
             matchedItems.push({
               ...item,
               restaurant: restaurantInfo,

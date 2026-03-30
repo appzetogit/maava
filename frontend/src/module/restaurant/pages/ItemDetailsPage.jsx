@@ -470,8 +470,29 @@ export default function ItemDetailsPage() {
   }
 
   const handleSave = async () => {
-    if (!itemName.trim()) {
+    if (!itemName || itemName.trim() === "") {
       toast.error("Please enter an item name")
+      return
+    }
+
+    if (!itemDescription || itemDescription.trim().length < minDescriptionLength) {
+      toast.error(`Please enter a description (min ${minDescriptionLength} characters)`)
+      return
+    }
+
+    const priceNum = parseFloat(basePrice)
+    if (isNaN(priceNum) || priceNum <= 0) {
+      toast.error("Please enter a valid base price greater than 0")
+      return
+    }
+
+    if (!preparationTime || preparationTime === "") {
+      toast.error("Please select a preparation time")
+      return
+    }
+
+    if (images.length === 0) {
+      toast.error("Please add at least one image")
       return
     }
 
@@ -873,7 +894,7 @@ export default function ItemDetailsPage() {
                 <div className="w-20 h-20 bg-white/80 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
                   <Camera className="w-10 h-10 text-gray-400" />
                 </div>
-                <p className="text-sm font-medium text-gray-600">No images added yet</p>
+                <p className="text-sm font-medium text-gray-600">No images added yet *</p>
                 <p className="text-xs text-gray-500 mt-1">Tap the button below to add multiple images</p>
               </div>
             </div>
@@ -923,7 +944,7 @@ export default function ItemDetailsPage() {
           {/* Item Name */}
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-2">
-              Item name
+              Item name *
             </label>
             <div className="relative">
               <input
@@ -949,7 +970,7 @@ export default function ItemDetailsPage() {
           {/* Item Description */}
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-2">
-              Item description
+              Item description *
             </label>
             <div className="relative">
               <textarea
@@ -1017,7 +1038,7 @@ export default function ItemDetailsPage() {
             </label>
             <div className="space-y-3">
               <div className="relative">
-                <label className="block text-xs text-gray-600 mb-1">Base price</label>
+                <label className="block text-xs text-gray-600 mb-1">Base price *</label>
                 <div className="relative">
                   <input
                     type="text"
@@ -1050,7 +1071,7 @@ export default function ItemDetailsPage() {
               
               {/* Preparation Time */}
               <div className="relative">
-                <label className="block text-xs text-gray-600 mb-1">Preparation Time</label>
+                <label className="block text-xs text-gray-600 mb-1">Preparation Time *</label>
                 <div className="relative">
                   <select
                     value={preparationTime}

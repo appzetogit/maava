@@ -307,7 +307,7 @@ export default function ProfilePage() {
           >
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <h3 className="text-base font-medium mb-1">₹2000 {t('delivery.referral_bonus')}</h3>
+                <h3 className="text-base font-medium mb-1 text-black">₹2000 {t('delivery.referral_bonus')}</h3>
                 <p className="text-gray-600 text-sm">{t('delivery.refer_friends_now')}</p>
               </div>
               <div className="flex items-center justify-center w-12 h-12">
@@ -326,11 +326,11 @@ export default function ProfilePage() {
                 className="bg-white py-0 border-0 shadow-none rounded-none first:rounded-t-lg last:rounded-b-lg cursor-pointer hover:bg-gray-200 transition-colors"
               >
                 <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 text-black">
                     <Ticket className="w-5 h-5" />
                     <span className="text-sm font-medium">{t('delivery.support_tickets')}</span>
                   </div>
-                  <ArrowRight className="w-5 h-5 text-gray-400" />
+                  <ArrowRight className="w-5 h-5 text-black" />
                 </CardContent>
               </Card>
             </div>
@@ -344,7 +344,7 @@ export default function ProfilePage() {
               className="bg-white py-0 border-0 shadow-none rounded-lg cursor-pointer hover:bg-gray-200 transition-colors mb-2"
             >
               <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 text-black">
                   <Bell className="w-5 h-5" />
                   <span className="text-sm font-medium">Order alert sound</span>
                 </div>
@@ -358,7 +358,7 @@ export default function ProfilePage() {
               className="bg-white py-0 border-0 shadow-none rounded-lg cursor-pointer hover:bg-gray-200 transition-colors"
             >
               <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 text-black">
                   <Languages className="w-5 h-5" />
                   <span className="text-sm font-medium">{t('delivery.change_language')}</span>
                 </div>

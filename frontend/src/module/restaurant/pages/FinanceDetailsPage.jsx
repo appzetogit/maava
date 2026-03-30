@@ -90,7 +90,7 @@ export default function FinanceDetailsPage() {
     taxDeductions: financeData?.taxDeductions || {
       gstOnServiceFees: 500.00,
       tds194O: 200.00,
-      gstPaidByZomato: 150.00,
+      gstPaidByMaava: 150.00,
       total: 850.00
     },
     investmentsInGrowth: financeData?.investmentsInGrowth || {
@@ -456,7 +456,7 @@ export default function FinanceDetailsPage() {
                                   <Info className="w-3.5 h-3.5 text-gray-400" />
                                 </div>
                                 <span className="text-sm font-medium text-gray-900">
-                                  ₹{(settlementData.taxDeductions?.gstPaidByZomato || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                  ₹{(settlementData.taxDeductions?.gstPaidByMaava || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                 </span>
                               </div>
                             </div>

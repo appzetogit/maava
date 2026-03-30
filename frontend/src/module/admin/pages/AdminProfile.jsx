@@ -64,8 +64,8 @@ export default function AdminProfile() {
       // Only allow letters and spaces
       filteredValue = value.replace(/[^a-zA-Z\s]/g, "");
     } else if (field === "phone") {
-      // Only allow numbers
-      filteredValue = value.replace(/\D/g, "");
+      // Only allow numbers and limit to 10 digits
+      filteredValue = value.replace(/\D/g, "").slice(0, 10);
     }
 
     setFormData((prev) => ({
@@ -112,6 +112,11 @@ export default function AdminProfile() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validate phone number length (exactly 10 digits if provided)
+    if (formData.phone && formData.phone.length !== 10) {
+      toast.error("Phone number must be exactly 10 digits");
+      return;
+    }
     try {
       setSaving(true);
       let profileImageUrl = formData.profileImage;

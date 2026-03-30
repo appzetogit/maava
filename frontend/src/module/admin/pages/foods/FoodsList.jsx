@@ -15,13 +15,13 @@ export default function FoodsList() {
     const fetchAllFoods = async () => {
       try {
         setLoading(true)
-        
+
         // First, fetch all restaurants
         const restaurantsResponse = await adminAPI.getRestaurants({ limit: 1000 })
-        const restaurants = restaurantsResponse?.data?.data?.restaurants || 
-                          restaurantsResponse?.data?.restaurants || 
-                          []
-        
+        const restaurants = restaurantsResponse?.data?.data?.restaurants ||
+          restaurantsResponse?.data?.restaurants ||
+          []
+
         if (restaurants.length === 0) {
           setFoods([])
           setLoading(false)
@@ -30,13 +30,13 @@ export default function FoodsList() {
 
         // Fetch menu for each restaurant and extract all food items
         const allFoods = []
-        
+
         for (const restaurant of restaurants) {
           try {
             const restaurantId = restaurant._id || restaurant.id
             const menuResponse = await restaurantAPI.getMenuByRestaurantId(restaurantId)
             const menu = menuResponse?.data?.data?.menu || menuResponse?.data?.menu
-            
+
             if (menu && menu.sections) {
               // Extract items from sections and subsections
               menu.sections.forEach((section) => {
@@ -60,7 +60,7 @@ export default function FoodsList() {
                     })
                   })
                 }
-                
+
                 // Items in subsections
                 if (section.subsections && Array.isArray(section.subsections)) {
                   section.subsections.forEach((subsection) => {
@@ -93,7 +93,7 @@ export default function FoodsList() {
             console.warn(`Failed to fetch menu for restaurant ${restaurant._id || restaurant.id}:`, error.message)
           }
         }
-        
+
         setFoods(allFoods)
       } catch (error) {
         console.error("Error fetching foods:", error)
@@ -110,13 +110,13 @@ export default function FoodsList() {
   // Format ID to FOOD format (e.g., FOOD519399)
   const formatFoodId = (id) => {
     if (!id) return "FOOD000000"
-    
+
     const idString = String(id)
     // Extract last 6 digits from the ID
     // Handle formats like "1768285554154-0.703896654519399" or "item-1768285554154-0.703896654519399"
     const parts = idString.split(/[-.]/)
     let lastDigits = ""
-    
+
     // Get the last part and extract digits
     if (parts.length > 0) {
       const lastPart = parts[parts.length - 1]
@@ -128,7 +128,7 @@ export default function FoodsList() {
         lastDigits = allDigits.slice(-6).padStart(6, "0")
       }
     }
-    
+
     // If no digits found, use a hash of the ID
     if (!lastDigits) {
       const hash = idString.split("").reduce((acc, char) => {
@@ -136,13 +136,13 @@ export default function FoodsList() {
       }, 0)
       lastDigits = Math.abs(hash).toString().slice(-6).padStart(6, "0")
     }
-    
+
     return `FOOD${lastDigits}`
   }
 
   const filteredFoods = useMemo(() => {
     let result = [...foods]
-    
+
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim()
       result = result.filter(food =>
@@ -165,11 +165,11 @@ export default function FoodsList() {
 
     try {
       setDeleting(true)
-      
+
       // Get the restaurant's menu
       const menuResponse = await restaurantAPI.getMenuByRestaurantId(food.restaurantId)
       const menu = menuResponse?.data?.data?.menu || menuResponse?.data?.menu
-      
+
       if (!menu || !menu.sections) {
         throw new Error("Menu not found")
       }
@@ -179,8 +179,8 @@ export default function FoodsList() {
       const updatedSections = menu.sections.map(section => {
         // Check items in section
         if (section.items && Array.isArray(section.items)) {
-          const itemIndex = section.items.findIndex(item => 
-            String(item.id) === String(food.id) || 
+          const itemIndex = section.items.findIndex(item =>
+            String(item.id) === String(food.id) ||
             String(item.id) === String(food.originalItem?.id)
           )
           if (itemIndex !== -1) {
@@ -188,13 +188,13 @@ export default function FoodsList() {
             itemRemoved = true
           }
         }
-        
+
         // Check items in subsections
         if (section.subsections && Array.isArray(section.subsections)) {
           section.subsections = section.subsections.map(subsection => {
             if (subsection.items && Array.isArray(subsection.items)) {
-              const itemIndex = subsection.items.findIndex(item => 
-                String(item.id) === String(food.id) || 
+              const itemIndex = subsection.items.findIndex(item =>
+                String(item.id) === String(food.id) ||
                 String(item.id) === String(food.originalItem?.id)
               )
               if (itemIndex !== -1) {
@@ -205,7 +205,7 @@ export default function FoodsList() {
             return subsection
           })
         }
-        
+
         return section
       })
 
@@ -225,7 +225,7 @@ export default function FoodsList() {
           `/restaurant/menu`,
           { sections: updatedSections }
         )
-        
+
         if (!response.data || !response.data.success) {
           throw new Error(response.data?.message || "Failed to update menu")
         }
