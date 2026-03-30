@@ -37,7 +37,7 @@ export const getCancellation = asyncHandler(async (req, res) => {
     if (!cancellation) {
       cancellation = await CancellationPolicy.create({
         title: 'Cancellation Policy',
-        content: '<p>This is a demo cancellation policy. Please update with your actual cancellation terms and conditions.</p>',
+        content: '<p>At Maava, we strive to provide the best service. However, we understand that plans can change. Below is our cancellation policy:</p><p><strong>1. Order Cancellation by User</strong></p><p>Orders can only be cancelled within 60 seconds of being placed. Once the restaurant accepts the order, cancellation may not be possible.</p><p><strong>2. Refunds on Cancellation</strong></p><p>If an order is cancelled within the allowed time frame, a full refund will be processed to the original payment method.</p>',
         updatedBy: req.admin._id
       });
     }

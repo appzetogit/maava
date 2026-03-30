@@ -83,6 +83,7 @@ export default function EditProfile() {
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [profileImage, setProfileImage] = useState(initialProfile?.profileImage || "")
   const [imagePreview, setImagePreview] = useState(initialProfile?.profileImage || "")
+  const [errors, setErrors] = useState({})
   const fileInputRef = useRef(null)
 
   // Update form data when profile changes
@@ -124,10 +125,34 @@ export default function EditProfile() {
     setHasChanges(currentData !== savedData)
   }, [formData, initialData])
 
+  const validateEmail = (email) => {
+    if (!email) return true; // Optional if allowed, but usually required
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
+  }
+
   const handleChange = (field, value) => {
+    let newValue = value;
+    
+    // Specially handle email to strip spaces
+    if (field === 'email') {
+      newValue = value.replace(/\s/g, '');
+      
+      // Real-time validation
+      if (newValue && !validateEmail(newValue)) {
+        setErrors(prev => ({ ...prev, email: 'Please enter a valid email address' }));
+      } else {
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.email;
+          return newErrors;
+        });
+      }
+    }
+
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: newValue
     }))
   }
 
@@ -136,6 +161,14 @@ export default function EditProfile() {
       ...prev,
       [field]: ""
     }))
+    // Clear errors for this field if any
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   }
 
   const handleImageSelect = async (e) => {
@@ -195,9 +228,16 @@ export default function EditProfile() {
       setIsSaving(true)
 
       // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (formData.email && !emailRegex.test(formData.email)) {
+      if (formData.email && !validateEmail(formData.email)) {
         toast.error('Please enter a valid email address');
+        setErrors(prev => ({ ...prev, email: 'Please enter a valid email address' }));
+        setIsSaving(false);
+        return;
+      }
+
+      // Check for any other errors
+      if (Object.keys(errors).length > 0) {
+        toast.error('Please fix the errors before updating');
         setIsSaving(false);
         return;
       }
@@ -372,10 +412,17 @@ export default function EditProfile() {
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleChange('email', e.target.value)}
-                  className="flex-1 h-12 text-base border border-gray-300 dark:border-gray-700 focus:border-green-600 focus:ring-1 focus:ring-green-600 rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white"
+                  className={`flex-1 h-12 text-base border rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white focus:ring-1 ${
+                    errors.email 
+                      ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                      : 'border-gray-300 dark:border-gray-700 focus:border-green-600 focus:ring-green-600'
+                  }`}
                   placeholder="Email"
                 />
               </div>
+              {errors.email && (
+                <p className="text-xs text-red-500 mt-1">{errors.email}</p>
+              )}
             </div>
 
             {/* Date of Birth Field */}
@@ -449,6 +496,8 @@ export default function EditProfile() {
                 <DatePicker
                   value={formData.anniversary}
                   onChange={(newValue) => handleChange('anniversary', newValue)}
+                  maxDate={dayjs()}
+                  disableFuture
                   slotProps={{
                     textField: {
                       className: "w-full",

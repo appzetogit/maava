@@ -58,6 +58,11 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
     }
     
     if (email !== undefined && email !== null && email.trim() !== '') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(email.trim())) {
+        return errorResponse(res, 400, 'Invalid email format');
+      }
+      
       // Check if email already exists for another user
       const existingUser = await User.findOne({ 
         email: email.toLowerCase().trim(),
@@ -91,10 +96,16 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
 
     // Update additional profile fields (if they exist in schema)
     if (dateOfBirth !== undefined) {
+      if (dateOfBirth && new Date(dateOfBirth) > new Date()) {
+        return errorResponse(res, 400, 'Date of birth cannot be in the future');
+      }
       user.dateOfBirth = dateOfBirth || null;
     }
 
     if (anniversary !== undefined) {
+      if (anniversary && new Date(anniversary) > new Date()) {
+        return errorResponse(res, 400, 'Anniversary cannot be in the future');
+      }
       user.anniversary = anniversary || null;
     }
 

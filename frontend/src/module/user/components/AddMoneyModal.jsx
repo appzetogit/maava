@@ -7,6 +7,7 @@ import { userAPI } from "@/lib/api"
 import { initRazorpayPayment } from "@/lib/utils/razorpay"
 import { toast } from "sonner"
 import { getCompanyNameAsync } from "@/lib/utils/businessSettings"
+import { cn } from "@/lib/utils"
 
 export default function AddMoneyModal({ open, onOpenChange, onSuccess }) {
   const [amount, setAmount] = useState("")
@@ -199,7 +200,7 @@ export default function AddMoneyModal({ open, onOpenChange, onSuccess }) {
                 value={amount}
                 onChange={handleAmountChange}
                 placeholder="Enter amount"
-                className="pl-10 h-12 text-lg"
+                className="pl-10 h-12 text-lg dark:bg-gray-800 dark:text-white dark:border-gray-700"
                 disabled={loading || processing}
               />
             </div>
@@ -214,18 +215,26 @@ export default function AddMoneyModal({ open, onOpenChange, onSuccess }) {
               Quick Select
             </label>
             <div className="grid grid-cols-3 gap-2">
-              {quickAmounts.map((quickAmount) => (
-                <Button
-                  key={quickAmount}
-                  type="button"
-                  variant={amount === quickAmount.toString() ? "default" : "outline"}
-                  className="h-10"
-                  onClick={() => handleAmountSelect(quickAmount)}
-                  disabled={loading || processing}
-                >
-                  ₹{quickAmount}
-                </Button>
-              ))}
+              {quickAmounts.map((quickAmount) => {
+                const isSelected = amount === quickAmount.toString()
+                return (
+                  <Button
+                    key={quickAmount}
+                    type="button"
+                    variant={isSelected ? "default" : "outline"}
+                    className={cn(
+                      "h-10 transition-all",
+                      isSelected 
+                        ? "bg-green-600 hover:bg-green-700 text-white border-transparent" 
+                        : "dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                    )}
+                    onClick={() => handleAmountSelect(quickAmount)}
+                    disabled={loading || processing}
+                  >
+                    ₹{quickAmount}
+                  </Button>
+                )
+              })}
             </div>
           </div>
 

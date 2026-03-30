@@ -200,7 +200,7 @@ export default function About() {
                       Terms and Conditions
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-500">
-                      Read our terms and conditions
+                      Understand our platform usage guidelines
                     </div>
                   </div>
                   <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
@@ -218,7 +218,7 @@ export default function About() {
                       Privacy Policy
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-500">
-                      Learn how we protect your data
+                      See how we handle your personal information
                     </div>
                   </div>
                   <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
@@ -236,7 +236,7 @@ export default function About() {
                       Refund Policy
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-500">
-                      Read our refund terms and conditions
+                      View our policies for order returns and refunds
                     </div>
                   </div>
                   <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
@@ -254,7 +254,7 @@ export default function About() {
                       Shipping Policy
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-500">
-                      Learn about our shipping terms
+                      Information on delivery times and tracking
                     </div>
                   </div>
                   <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
@@ -272,7 +272,7 @@ export default function About() {
                       Cancellation Policy
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-500">
-                      Read our cancellation terms and conditions
+                      Review criteria for cancelling your orders
                     </div>
                   </div>
                   <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />

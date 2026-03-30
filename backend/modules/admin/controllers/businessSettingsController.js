@@ -11,7 +11,7 @@ import { initializeCloudinary } from '../../../config/cloudinary.js';
 export const getBusinessSettingsPublic = asyncHandler(async (req, res) => {
   try {
     const settings = await BusinessSettings.getSettings();
-    
+
     // Return only public-facing data with defaults if not set
     return successResponse(res, 200, 'Business settings retrieved successfully', {
       companyName: settings?.companyName || 'Appzeto Food',
@@ -73,7 +73,7 @@ export const updateBusinessSettings = asyncHandler(async (req, res) => {
     // Update basic fields
     if (companyName !== undefined) settings.companyName = companyName;
     if (email !== undefined) settings.email = email;
-    
+
     // Initialize phone object if it doesn't exist
     if (!settings.phone) {
       settings.phone = {
@@ -81,7 +81,7 @@ export const updateBusinessSettings = asyncHandler(async (req, res) => {
         number: ''
       };
     }
-    
+
     if (phoneCountryCode !== undefined) settings.phone.countryCode = phoneCountryCode;
     if (phoneNumber !== undefined) settings.phone.number = phoneNumber;
     if (address !== undefined) settings.address = address;
@@ -104,7 +104,7 @@ export const updateBusinessSettings = asyncHandler(async (req, res) => {
       try {
         await initializeCloudinary();
         const logoFile = req.files.logo[0];
-        
+
         // Validate file type
         const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
         if (!allowedMimeTypes.includes(logoFile.mimetype)) {
@@ -152,7 +152,7 @@ export const updateBusinessSettings = asyncHandler(async (req, res) => {
       try {
         await initializeCloudinary();
         const faviconFile = req.files.favicon[0];
-        
+
         // Validate file type
         const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/x-icon', 'image/vnd.microsoft.icon'];
         if (!allowedMimeTypes.includes(faviconFile.mimetype)) {

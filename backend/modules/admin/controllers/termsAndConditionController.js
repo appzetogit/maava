@@ -39,7 +39,7 @@ export const getTerms = asyncHandler(async (req, res) => {
       // Create default terms if it doesn't exist
       terms = await TermsAndCondition.create({
         title: 'Terms and Conditions',
-        content: '<p>This is a test Terms & Conditions</p><p><strong>Terms of Use</strong></p><p>This Terms of Use ("Terms") applies to your access to and use of the website and the mobile application (collectively, the "Platform"). Please read these Terms carefully.</p>',
+        content: '<p>Welcome to Maava. These Terms and Conditions govern your use of our food delivery platform. By accessing or using our services, you agree to be bound by these terms.</p><p><strong>1. Acceptance of Terms</strong></p><p>By using the Maava platform, you confirm that you are at least 18 years old and capable of entering into a legally binding agreement.</p><p><strong>2. User Accounts</strong></p><p>You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account.</p>',
         updatedBy: req.admin._id
       });
     }

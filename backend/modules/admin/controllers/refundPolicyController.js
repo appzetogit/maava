@@ -37,7 +37,7 @@ export const getRefund = asyncHandler(async (req, res) => {
     if (!refund) {
       refund = await RefundPolicy.create({
         title: 'Refund Policy',
-        content: '<p>Stack Food is a complete Multi-vendor Food products delivery system developed with powerful admin panel will help you to control your business smartly.</p>',
+        content: '<p>Maava focuses on customer satisfaction. If you encounter an issue with your order, please contact our support.</p><p><strong>1. Eligibility for Refund</strong></p><p>Refunds are applicable in cases of order cancellation (within limits), missing items, or delivery of wrong items.</p><p><strong>2. Refund Process</strong></p><p>Approved refunds are credited back to the original payment source within 5-7 business days.</p>',
         updatedBy: req.admin._id
       });
     }

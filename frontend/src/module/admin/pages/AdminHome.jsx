@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts"
-import { Activity, ArrowUpRight, ShoppingBag, CreditCard, Truck, Receipt, DollarSign, Store, UserCheck, Package, UserCircle, Clock, CheckCircle, Plus } from "lucide-react"
+import { Activity, ArrowUpRight, ShoppingBag, CreditCard, Truck, Receipt, Store, UserCheck, Package, UserCircle, Clock, CheckCircle, Plus, IndianRupee } from "lucide-react"
 import appzetoLogo from "@/assets/appzetologo.png"
 import { adminAPI } from "@/lib/api"
 
@@ -222,7 +222,7 @@ export default function AdminHome() {
               title="Total revenue"
               value={`₹${totalAdminEarnings.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               helper={`Commission ₹${commissionTotal.toFixed(2)} + Platform ₹${platformFeeTotal.toFixed(2)} + Delivery ₹${deliveryFeeTotal.toFixed(2)} + GST ₹${gstTotal.toFixed(2)}`}
-              icon={<DollarSign className="h-5 w-5 text-green-600" />}
+              icon={<IndianRupee className="h-5 w-5 text-green-600" />}
               accent="bg-green-200/40"
             />
             <MetricCard

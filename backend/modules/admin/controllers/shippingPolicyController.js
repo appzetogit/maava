@@ -37,7 +37,7 @@ export const getShipping = asyncHandler(async (req, res) => {
     if (!shipping) {
       shipping = await ShippingPolicy.create({
         title: 'Shipping Policy',
-        content: '<p>This is a demo shipping policy. Please update with your actual shipping terms and conditions.</p>',
+        content: '<p>Maava ensures timely delivery of order through our efficient delivery network.</p><p><strong>1. Delivery Time</strong></p><p>Estimated delivery time depends on restaurant processing and location of delivery. You can track live progress on the app.</p><p><strong>2. Delivery Charges</strong></p><p>Shipping fees vary based on distance and order volume, and are explicitly mentioned at checkout.</p>',
         updatedBy: req.admin._id
       });
     }
