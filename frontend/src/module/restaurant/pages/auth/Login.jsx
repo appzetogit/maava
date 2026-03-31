@@ -321,6 +321,7 @@ export default function RestaurantLogin() {
     redirectHandledRef.current = false // Reset flag for new attempt
 
     try {
+      ensureFirebaseInitialized()
       const { signInWithPopup, signInWithRedirect, signInWithCredential, GoogleAuthProvider } = await import("firebase/auth")
 
       // 1. Check if we are inside the Flutter Mobile App (WebView)
@@ -352,15 +353,11 @@ export default function RestaurantLogin() {
             // System error (e.g. ApiException 10 = SHA-1 mismatch, network error, etc.)
             const errMsg = result?.error || result?.message || "Native Google sign-in failed"
             console.error("❌ [Flutter] Native sign-in error (not a cancellation):", errMsg)
-            setApiError("Google sign-in failed on this device. Please try phone/email login or contact support.")
-            setIsSending(false)
-            return
+            // Fallback to normal flow if native fails with error
           }
         } catch (bridgeError) {
-          console.error("❌ [Flutter] Flutter Bridge Error", bridgeError)
-          setApiError("Google sign-in failed. Please use phone or email to login.")
-          setIsSending(false)
-          return
+          console.error("❌ [Flutter] Flutter Bridge Error - falling back to web flow:", bridgeError)
+          // Fallback to normal flow if bridge itself fails
         }
       }
 

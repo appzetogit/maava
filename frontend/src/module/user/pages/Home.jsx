@@ -1302,7 +1302,7 @@ export default function Home() {
 
         {/* Navbar */}
         <motion.div
-          className="relative z-20 pt-4 sm:pt-5 lg:pt-6"
+          className="relative z-20 pt-1.5 sm:pt-2 lg:pt-2.5"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}

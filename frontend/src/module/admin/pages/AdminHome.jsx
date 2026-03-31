@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Select,
@@ -16,6 +17,7 @@ import appzetoLogo from "@/assets/appzetologo.png"
 import { adminAPI } from "@/lib/api"
 
 export default function AdminHome() {
+  const navigate = useNavigate()
   const [selectedZone, setSelectedZone] = useState("all")
   const [selectedPeriod, setSelectedPeriod] = useState("overall")
   const [isLoading, setIsLoading] = useState(true)
@@ -30,11 +32,6 @@ export default function AdminHome() {
         if (response.data?.success && response.data?.data) {
           setDashboardData(response.data.data)
           console.log('✅ Dashboard stats fetched:', response.data.data)
-          console.log('💰 Commission:', response.data.data.commission)
-          console.log('💳 Platform Fee:', response.data.data.platformFee)
-          console.log('🚚 Delivery Fee:', response.data.data.deliveryFee)
-          console.log('🧾 GST:', response.data.data.gst)
-          console.log('💵 Total Admin Earnings:', response.data.data.totalAdminEarnings)
         } else {
           console.error('❌ Invalid response format:', response.data)
         }
@@ -182,6 +179,7 @@ export default function AdminHome() {
               helper="Rolling 12 months"
               icon={<ShoppingBag className="h-5 w-5 text-emerald-600" />}
               accent="bg-emerald-200/40"
+              path="/admin/transaction-report"
             />
             <MetricCard
               title="Commission earned"
@@ -189,6 +187,7 @@ export default function AdminHome() {
               helper="Restaurant commission"
               icon={<ArrowUpRight className="h-5 w-5 text-indigo-600" />}
               accent="bg-indigo-200/40"
+              path="/admin/restaurants/commission"
             />
             <MetricCard
               title="Orders processed"
@@ -196,6 +195,7 @@ export default function AdminHome() {
               helper="Fulfilled & billed"
               icon={<Activity className="h-5 w-5 text-amber-600" />}
               accent="bg-amber-200/40"
+              path="/admin/orders/all"
             />
             <MetricCard
               title="Platform fee"
@@ -203,6 +203,7 @@ export default function AdminHome() {
               helper="Total platform fees"
               icon={<CreditCard className="h-5 w-5 text-purple-600" />}
               accent="bg-purple-200/40"
+              path="/admin/order-report/regular"
             />
             <MetricCard
               title="Delivery fee"
@@ -210,6 +211,7 @@ export default function AdminHome() {
               helper="Total delivery fees"
               icon={<Truck className="h-5 w-5 text-blue-600" />}
               accent="bg-blue-200/40"
+              path="/admin/delivery-partners/earnings"
             />
             <MetricCard
               title="GST"
@@ -217,6 +219,7 @@ export default function AdminHome() {
               helper="Total GST collected"
               icon={<Receipt className="h-5 w-5 text-orange-600" />}
               accent="bg-orange-200/40"
+              path="/admin/tax-report"
             />
             <MetricCard
               title="Total revenue"
@@ -224,6 +227,7 @@ export default function AdminHome() {
               helper={`Commission ₹${commissionTotal.toFixed(2)} + Platform ₹${platformFeeTotal.toFixed(2)} + Delivery ₹${deliveryFeeTotal.toFixed(2)} + GST ₹${gstTotal.toFixed(2)}`}
               icon={<IndianRupee className="h-5 w-5 text-green-600" />}
               accent="bg-green-200/40"
+              path="/admin/expense-report"
             />
             <MetricCard
               title="Total restaurants"
@@ -231,6 +235,7 @@ export default function AdminHome() {
               helper="All registered restaurants"
               icon={<Store className="h-5 w-5 text-blue-600" />}
               accent="bg-blue-200/40"
+              path="/admin/restaurants"
             />
             <MetricCard
               title="Restaurant request pending"
@@ -238,6 +243,7 @@ export default function AdminHome() {
               helper="Awaiting approval"
               icon={<UserCheck className="h-5 w-5 text-orange-600" />}
               accent="bg-orange-200/40"
+              path="/admin/restaurants/joining-request"
             />
             <MetricCard
               title="Total delivery boy"
@@ -245,6 +251,7 @@ export default function AdminHome() {
               helper="All delivery partners"
               icon={<Truck className="h-5 w-5 text-indigo-600" />}
               accent="bg-indigo-200/40"
+              path="/admin/delivery-partners"
             />
             <MetricCard
               title="Delivery boy request pending"
@@ -252,6 +259,7 @@ export default function AdminHome() {
               helper="Awaiting verification"
               icon={<Clock className="h-5 w-5 text-yellow-600" />}
               accent="bg-yellow-200/40"
+              path="/admin/delivery-partners/join-request"
             />
             <MetricCard
               title="Total foods"
@@ -259,6 +267,7 @@ export default function AdminHome() {
               helper="Active menu items"
               icon={<Package className="h-5 w-5 text-purple-600" />}
               accent="bg-purple-200/40"
+              path="/admin/foods"
             />
             <MetricCard
               title="Total addons"
@@ -266,6 +275,7 @@ export default function AdminHome() {
               helper="Active addon items"
               icon={<Plus className="h-5 w-5 text-pink-600" />}
               accent="bg-pink-200/40"
+              path="/admin/addons"
             />
             <MetricCard
               title="Total customers"
@@ -273,6 +283,7 @@ export default function AdminHome() {
               helper="Registered users"
               icon={<UserCircle className="h-5 w-5 text-cyan-600" />}
               accent="bg-cyan-200/40"
+              path="/admin/customers"
             />
             <MetricCard
               title="Pending orders"
@@ -280,6 +291,7 @@ export default function AdminHome() {
               helper="Orders awaiting processing"
               icon={<Clock className="h-5 w-5 text-red-600" />}
               accent="bg-red-200/40"
+              path="/admin/orders/pending"
             />
             <MetricCard
               title="Completed orders"
@@ -287,6 +299,7 @@ export default function AdminHome() {
               helper="Successfully delivered"
               icon={<CheckCircle className="h-5 w-5 text-emerald-600" />}
               accent="bg-emerald-200/40"
+              path="/admin/orders/delivered"
             />
           </div>
 
@@ -300,7 +313,8 @@ export default function AdminHome() {
                 {orderStats.map((item) => (
                   <div
                     key={item.label}
-                    className="flex items-center justify-between rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-3"
+                    onClick={() => navigate(`/admin/orders/${item.label.toLowerCase()}`)}
+                    className="flex items-center justify-between rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-3 cursor-pointer hover:bg-neutral-100 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <span
@@ -326,9 +340,15 @@ export default function AdminHome() {
   )
 }
 
-function MetricCard({ title, value, helper, icon, accent }) {
+function MetricCard({ title, value, helper, icon, accent, path }) {
+  const navigate = useNavigate()
   return (
-    <Card className="overflow-hidden border-neutral-200 bg-white p-0">
+    <Card 
+      onClick={() => path && navigate(path)}
+      className={`overflow-hidden border-neutral-200 bg-white p-0 transition-all duration-200 ${
+        path ? "cursor-pointer hover:shadow-lg hover:-translate-y-1 active:scale-[0.98]" : ""
+      }`}
+    >
       <CardContent className="relative flex flex-col gap-2 px-4 pb-4 pt-4">
         <div className={`absolute inset-0 ${accent} `} />
         <div className="relative flex items-center justify-between">
@@ -337,7 +357,7 @@ function MetricCard({ title, value, helper, icon, accent }) {
             <p className="text-2xl font-semibold text-neutral-900">{value}</p>
             <p className="text-xs text-neutral-500">{helper}</p>
           </div>
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-neutral-100 ring-1 ring-neutral-200">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-neutral-200">
             {icon}
           </div>
         </div>

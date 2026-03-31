@@ -176,15 +176,11 @@ export default function RestaurantSignIn() {
             // System error (e.g. ApiException 10 = SHA-1 mismatch, network error, etc.)
             const errMsg = result?.error || result?.message || "Native Google sign-in failed"
             console.error("❌ [Flutter] Native sign-in error (not a cancellation):", errMsg)
-            setError("Google sign-in failed on this device. Please try email/password login or contact support.")
-            setIsLoading(false)
-            return
+            // Fallback to normal flow if native fails
           }
         } catch (bridgeError) {
-          console.error("❌ [Flutter] Flutter Bridge Error", bridgeError)
-          setError("Google sign-in failed. Please use email/password to login.")
-          setIsLoading(false)
-          return
+          console.error("❌ [Flutter] Flutter Bridge Error - falling back to web flow:", bridgeError)
+          // Fallback to normal flow if bridge itself fails
         }
       }
 
