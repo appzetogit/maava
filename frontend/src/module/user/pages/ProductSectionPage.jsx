@@ -60,7 +60,12 @@ const ProductCard = ({ product, themeColor }) => (
                     )}
                 </div>
                 <AddToCartButton
-                    item={{ ...product, restaurant: "Hibermart", restaurantId: "hibermart-id" }}
+                    item={{ 
+                      ...product, 
+                      id: product.id || product._id?.toString() || product._id,
+                      restaurant: "Hibermart", 
+                      restaurantId: "hibermart-id" 
+                    }}
                     className="w-[60px] sm:w-[70px]"
                 />
             </div>
