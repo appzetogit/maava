@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Mail, ArrowLeft, Shield } from "lucide-react"
-import appzetoLogo from "@/assets/appzetologo.png"
+// import appzetoLogo from "@/assets/appzetologo.png"
 import { authAPI, adminAPI } from "@/lib/api"
 import apiClient from "@/lib/api/axios"
 import { useCompanyName } from "@/lib/hooks/useCompanyName"
@@ -217,12 +217,10 @@ export default function AdminForgotPassword() {
           <CardHeader className="pb-4">
             <div className="flex w-full items-center gap-4 sm:gap-5">
               <div className="flex h-14 w-28 shrink-0 items-center justify-center rounded-xl bg-gray-900/5 ring-1 ring-neutral-200">
-                <img
-                  src={appzetoLogo}
-                  alt={companyName}
-                  className="h-10 w-24 object-contain"
-                  loading="lazy"
-                />
+                <div className="flex flex-col items-center">
+                  <span className="text-black font-[1000] text-xl tracking-tighter italic leading-none">MAAVA</span>
+                  <span className="text-black/40 font-black text-[7px] uppercase tracking-[0.3em] mt-1">Admin</span>
+                </div>
               </div>
               <div className="flex flex-col gap-1">
                 <CardTitle className="text-3xl leading-tight text-gray-900">

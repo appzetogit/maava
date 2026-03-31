@@ -57,7 +57,7 @@ import { Input } from "@/components/ui/input"
 import { sidebarMenuData } from "../data/sidebarMenu"
 import { hibermartSidebarMenuData } from "../data/hibermartSidebarMenu"
 import { getCachedSettings, loadBusinessSettings } from "@/lib/utils/businessSettings"
-import appzetoLogo from "@/assets/appzetologo.png"
+// import appzetoLogo from "@/assets/appzetologo.png"
 
 // Icon mapping
 const iconMap = {
@@ -570,7 +570,10 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
                     ) : companyName ? (
                       <span className="text-xs font-semibold text-white px-2 truncate"> {companyName} </span>
                     ) : (
-                      <img src={appzetoLogo} alt={companyName || "Company"} className="w-24 h-10 object-contain" loading="lazy" />
+                      <div className="flex flex-col items-center">
+                        <span className="text-white font-[1000] text-xl tracking-tighter italic leading-none">MAAVA</span>
+                        <span className="text-white/40 font-black text-[7px] uppercase tracking-[0.3em] mt-1">Admin Panel</span>
+                      </div>
                     )
                   )}
                 </div>
@@ -595,7 +598,7 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
                         {companyName.charAt(0).toUpperCase()}
                       </span>
                     ) : (
-                      <img src={appzetoLogo} alt={companyName || "Company"} className="w-10 h-10 object-contain" loading="lazy" />
+                      <span className="text-white font-black text-xs italic">M</span>
                     )
                   )}
                 </div>

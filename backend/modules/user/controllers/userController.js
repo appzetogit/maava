@@ -44,7 +44,7 @@ export const getUserProfile = asyncHandler(async (req, res) => {
  */
 export const updateUserProfile = asyncHandler(async (req, res) => {
   try {
-    const { name, email, phone, dateOfBirth, anniversary, gender } = req.body;
+    const { name, email, phone, dateOfBirth, anniversary, gender, profileImage } = req.body;
 
     const user = await User.findById(req.user._id);
 
@@ -94,6 +94,11 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
       user.phone = phone ? phone.trim() : null;
     }
 
+    // Update profile image if provided
+    if (profileImage !== undefined) {
+      user.profileImage = profileImage || null;
+    }
+
     // Update additional profile fields (if they exist in schema)
     if (dateOfBirth !== undefined) {
       if (dateOfBirth && new Date(dateOfBirth) > new Date()) {
@@ -121,7 +126,7 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
     delete userResponse.password;
 
     logger.info(`User profile updated: ${user._id}`, {
-      updatedFields: { name, email, phone, dateOfBirth, anniversary, gender }
+      updatedFields: { name, email, phone, dateOfBirth, anniversary, gender, profileImage }
     });
 
     return successResponse(res, 200, 'Profile updated successfully', {

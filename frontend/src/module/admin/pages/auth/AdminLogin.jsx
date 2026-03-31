@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Eye, EyeOff } from "lucide-react"
-import appzetoLogo from "@/assets/appzetologo.png"
+// import appzetoLogo from "@/assets/appzetologo.png"
 
 export default function AdminLogin() {
   const navigate = useNavigate()
@@ -24,7 +24,7 @@ export default function AdminLogin() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
-  const [logoUrl, setLogoUrl] = useState(appzetoLogo)
+  const [logoUrl, setLogoUrl] = useState(null)
 
   // Redirect to admin dashboard if already authenticated
   useEffect(() => {
@@ -100,18 +100,22 @@ export default function AdminLogin() {
           <CardHeader className="pb-4">
             <div className="flex w-full items-center gap-4 sm:gap-5">
               <div className="flex h-14 w-28 shrink-0 items-center justify-center rounded-xl bg-gray-900/5 ring-1 ring-neutral-200">
-                <img
-                  src={logoUrl}
-                  alt="Logo"
-                  className="h-10 w-24 object-contain"
-                  loading="lazy"
-                  onError={(e) => {
-                    // Fallback to default logo if business logo fails to load
-                    if (e.target.src !== appzetoLogo) {
-                      e.target.src = appzetoLogo
-                    }
-                  }}
-                />
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt="Logo"
+                    className="h-10 w-24 object-contain"
+                    loading="lazy"
+                    onError={(e) => {
+                      setLogoUrl(null)
+                    }}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center">
+                    <span className="text-black font-[1000] text-xl tracking-tighter italic leading-none">MAAVA</span>
+                    <span className="text-black/40 font-black text-[7px] uppercase tracking-[0.3em] mt-1">Admin</span>
+                  </div>
+                )}
               </div>
               <div className="flex flex-col gap-1">
                 <CardTitle className="text-3xl leading-tight text-gray-900">Admin Login</CardTitle>

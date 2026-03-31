@@ -929,6 +929,17 @@ export default function Inventory() {
       .filter(Boolean)
   }, [statusFilteredCategories, searchQuery])
 
+  // Apply text search on add-ons
+  const filteredAddons = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return addons
+
+    return addons.filter(addon =>
+      addon.name?.toLowerCase().includes(q) ||
+      (addon.description || "").toLowerCase().includes(q)
+    )
+  }, [addons, searchQuery])
+
   // When on Add-ons tab, keep the list empty (no items shown)
   const listToRender = activeTab === "add-ons" ? [] : filteredCategories
 
@@ -1432,9 +1443,16 @@ export default function Inventory() {
                     <p className="text-sm text-gray-400 mt-2">Approved add-ons will appear here</p>
                   </div>
                 </div>
+              ) : filteredAddons.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 px-4">
+                  <div className="text-center">
+                    <p className="text-lg font-medium text-gray-500">No matching add-ons found</p>
+                    <p className="text-sm text-gray-400 mt-2">Try searching with a different term</p>
+                  </div>
+                </div>
               ) : (
                 <div className="space-y-4">
-                  {addons.map((addon) => (
+                  {filteredAddons.map((addon) => (
                     <div
                       key={addon.id}
                       className="bg-white rounded-lg border border-gray-200 p-4"

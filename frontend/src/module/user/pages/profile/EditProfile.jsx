@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
-import { ArrowLeft, X, Pencil, Loader2 } from "lucide-react"
+import { ArrowLeft, X, Pencil, Loader2, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -109,10 +109,8 @@ export default function EditProfile() {
     setFormData(newFormData)
     
     // Update profile image
-    if (profile.profileImage) {
-      setProfileImage(profile.profileImage)
-      setImagePreview(profile.profileImage)
-    }
+    setProfileImage(profile.profileImage || "")
+    setImagePreview(profile.profileImage || "")
   }, [userProfile])
 
   // Get avatar initial
@@ -221,6 +219,37 @@ export default function EditProfile() {
     }
   }
 
+  const handleRemoveImage = async () => {
+    try {
+      setIsUploadingImage(true)
+      // Call API to remove profile image
+      await userAPI.updateProfile({ profileImage: "" })
+      
+      setProfileImage("")
+      setImagePreview("")
+
+      // Update localStorage
+      const stored = loadProfileFromStorage()
+      if (stored) {
+        stored.profileImage = ""
+        saveProfileToStorage(stored)
+      }
+
+      toast.success('Profile image removed successfully')
+      
+      // Update context
+      updateUserProfile({ profileImage: "" })
+      
+      // Dispatch event to refresh profile
+      window.dispatchEvent(new Event("userAuthChanged"))
+    } catch (error) {
+      console.error('Error removing image:', error)
+      toast.error(error?.response?.data?.message || 'Failed to remove image')
+    } finally {
+      setIsUploadingImage(false)
+    }
+  }
+
   const handleUpdate = async () => {
     if (isSaving) return
 
@@ -250,7 +279,7 @@ export default function EditProfile() {
         dateOfBirth: formData.dateOfBirth ? formData.dateOfBirth.format('YYYY-MM-DD') : undefined,
         anniversary: formData.anniversary ? formData.anniversary.format('YYYY-MM-DD') : undefined,
         gender: formData.gender || undefined,
-        profileImage: profileImage || undefined, // Include profileImage in update
+        profileImage: profileImage, // Send actual value (including empty string) to clear if needed
       }
 
       // Call API to update profile
@@ -333,11 +362,23 @@ export default function EditProfile() {
                 {avatarInitial}
               </AvatarFallback>
             </Avatar>
+            {/* Remove Icon */}
+            {imagePreview && (
+              <button 
+                onClick={handleRemoveImage}
+                disabled={isUploadingImage}
+                className="absolute -top-1 -right-1 w-7 h-7 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center shadow-md border border-red-200 dark:border-red-800 hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
+                title="Remove photo"
+              >
+                <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400 group-hover:scale-110 transition-transform" />
+              </button>
+            )}
             {/* Edit Icon */}
             <button 
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploadingImage}
-              className="absolute bottom-0 right-0 w-8 h-8 bg-green-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="absolute -bottom-1 -right-1 w-9 h-9 bg-green-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-zinc-900 hover:bg-green-700 transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Change photo"
             >
               {isUploadingImage ? (
                 <Loader2 className="h-4 w-4 text-white animate-spin" />

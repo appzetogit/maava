@@ -31,7 +31,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import appzetoLogo from "@/assets/appzetologo.png";
+// import appzetoLogo from "@/assets/appzetologo.png";
 import { adminAPI } from "@/lib/api";
 import { clearModuleAuth } from "@/lib/utils/auth";
 import { getCachedSettings, loadBusinessSettings } from "@/lib/utils/businessSettings";
@@ -307,8 +307,8 @@ export default function AdminNavbar({ onMenuClick }) {
                     className="w-full h-full object-contain"
                     loading="lazy"
                     onError={(e) => {
-                      // Fallback to default logo if company logo fails to load
-                      e.target.src = appzetoLogo;
+                      // Fallback to text if company logo fails to load
+                      e.target.style.display = 'none';
                     }}
                   />
                 ) : (
@@ -317,7 +317,10 @@ export default function AdminNavbar({ onMenuClick }) {
                       {businessSettings.companyName}
                     </span>
                   ) : (
-                    <img src={appzetoLogo} alt={businessSettings?.companyName || "Company"} className="w-20 lg:w-24 h-10 lg:h-12 object-contain" loading="lazy" />
+                    <div className="flex flex-col items-center">
+                      <span className="text-black font-[1000] text-xl tracking-tighter italic leading-none">MAAVA</span>
+                      <span className="text-black/40 font-black text-[7px] uppercase tracking-[0.3em] mt-1">Admin</span>
+                    </div>
                   )
                 )}
               </div>
