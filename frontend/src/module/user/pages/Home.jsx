@@ -1316,7 +1316,7 @@ export default function Home() {
           <div className="relative z-20 max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto px-3 sm:px-6 lg:px-8">
             {/* Search Bar and VEG MODE Container - Sticky */}
             <motion.div
-              className="sticky top-4 z-30 flex items-center gap-3 sm:gap-4 lg:gap-6"
+              className="sticky top-12 mt-6 z-30 flex items-center gap-3 sm:gap-4 lg:gap-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
@@ -2633,7 +2633,6 @@ export default function Home() {
               <button
                 onClick={() => {
                   setShowVegModePopup(false)
-                  setIsApplyingVegMode(true)
                   setAppliedVegModeOption(vegModeOption)
                   if (typeof window !== "undefined") {
                     localStorage.setItem("userVegModeOption", vegModeOption)
@@ -2641,10 +2640,14 @@ export default function Home() {
                   // Confirm veg mode is ON by updating context and prevVegMode
                   setVegModeContext(true)
                   setPrevVegMode(true)
-                  // Simulate applying veg mode settings
-                  setTimeout(() => {
-                    setIsApplyingVegMode(false)
-                  }, 2000)
+                  
+                  if (vegModeOption === "pure-veg") {
+                    setIsApplyingVegMode(true)
+                    // Simulate applying veg mode settings
+                    setTimeout(() => {
+                      setIsApplyingVegMode(false)
+                    }, 2000)
+                  }
                 }}
                 className="w-full bg-green-600 text-white font-black py-4 rounded-2xl hover:bg-green-700 bg-gradient-to-r from-green-600 to-green-500 shadow-xl shadow-green-200 dark:shadow-none transition-all active:scale-[0.98] mb-3 text-[10px] uppercase tracking-widest"
               >
