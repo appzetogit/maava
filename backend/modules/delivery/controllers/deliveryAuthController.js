@@ -37,7 +37,7 @@ export const sendOTP = asyncHandler(async (req, res) => {
     }
 
     // Call shared OTP service
-    await otpService.sendOTP(phone, purpose);
+    await otpService.generateAndSendOTP(phone, purpose);
 
     return successResponse(res, 200, 'OTP sent successfully');
   } catch (error) {

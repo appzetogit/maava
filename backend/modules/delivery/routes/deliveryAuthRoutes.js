@@ -15,7 +15,7 @@ const router = express.Router();
 // Validation schemas
 const sendOTPSchema = Joi.object({
   phone: Joi.string()
-    .pattern(/^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/)
+    .pattern(/^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,15}$/)
     .required(),
   purpose: Joi.string()
     .valid('login', 'register', 'reset-password', 'verify-phone')
@@ -24,7 +24,7 @@ const sendOTPSchema = Joi.object({
 
 const verifyOTPSchema = Joi.object({
   phone: Joi.string()
-    .pattern(/^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/)
+    .pattern(/^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,15}$/)
     .required(),
   otp: Joi.string().required().length(6),
   purpose: Joi.string()
