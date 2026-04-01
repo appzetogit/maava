@@ -587,6 +587,27 @@ export default function OrderTracking() {
     }
   };
 
+  const handleShare = async () => {
+    const shareData = {
+      title: `Track my order from ${order?.restaurant || 'the restaurant'}`,
+      text: `Follow my food order delivery live!`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success("Tracking link copied to clipboard!");
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.error('Error sharing:', err);
+      }
+    }
+  };
+
   const handleRefresh = async () => {
     setIsRefreshing(true)
     try {
@@ -810,6 +831,7 @@ export default function OrderTracking() {
           <motion.button
             className="w-10 h-10 flex items-center justify-center"
             whileTap={{ scale: 0.9 }}
+            onClick={handleShare}
           >
             <Share2 className="w-5 h-5" />
           </motion.button>
@@ -934,7 +956,7 @@ export default function OrderTracking() {
               defaultAddress?.phone ||
               'Phone number not available'
             }
-            rightContent={null}
+            showArrow={false}
           />
           <SectionItem
             icon={HomeIcon}
@@ -964,7 +986,7 @@ export default function OrderTracking() {
 
               return 'Address details not found for this order'
             })()}
-            rightContent={null}
+            showArrow={false}
           />
           {/* Add delivery instructions removed as requested */}
         </motion.div>
@@ -984,12 +1006,6 @@ export default function OrderTracking() {
               <p className="font-semibold text-gray-900">{order.restaurant}</p>
               <p className="text-sm text-gray-500">{order.address?.city || 'Local Area'}</p>
             </div>
-            <motion.button
-              className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center"
-              whileTap={{ scale: 0.9 }}
-            >
-              <Phone className="w-5 h-5 text-green-700" />
-            </motion.button>
           </div>
 
           {/* Order Items */}
@@ -1009,7 +1025,6 @@ export default function OrderTracking() {
                   ))}
                 </div>
               </div>
-              <ChevronRight className="w-5 h-5 text-gray-400" />
             </div>
           </div>
         </motion.div>
@@ -1026,6 +1041,7 @@ export default function OrderTracking() {
             title="Cancel order"
             subtitle=""
             onClick={handleCancelOrder}
+            showArrow={false}
           />
         </motion.div>
 
