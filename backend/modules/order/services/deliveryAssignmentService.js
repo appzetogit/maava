@@ -104,34 +104,40 @@ export async function findNearestDeliveryBoys(restaurantLat, restaurantLng, rest
 
         let lat = null, lng = null, distance = LARGE_DISTANCE;
 
+        // Zone filtering - apply ALWAYS, even if no GPS location
+        if (zone) {
+          if (partner.zoneId && partner.zoneId.toString() !== zone._id.toString()) {
+            return null; // Explicitly in a different zone
+          }
+          // If no GPS, but zoneId doesn't match/exist, we have to assume they aren't here
+          if (!hasValidLocation && !partner.zoneId) {
+            return null;
+          }
+        }
+
         if (hasValidLocation) {
           [lng, lat] = location.coordinates;
 
-          // Zone filtering (same as findNearestDeliveryBoy)
-          if (zone) {
-            if (partner.zoneId && partner.zoneId.toString() !== zone._id.toString()) {
-              return null;
+          // Geo-spatial check if zone exists and partner doesn't explicitly have zoneId
+          if (zone && !partner.zoneId && zone.coordinates && zone.coordinates.length >= 3) {
+            const zoneCoords = zone.coordinates;
+            let inside = false;
+            for (let i = 0, j = zoneCoords.length - 1; i < zoneCoords.length; j = i++) {
+              const xi = zoneCoords[i].longitude;
+              const yi = zoneCoords[i].latitude;
+              const xj = zoneCoords[j].longitude;
+              const yj = zoneCoords[j].latitude;
+              const intersect = ((yi > lat) !== (yj > lat)) &&
+                (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+              if (intersect) inside = !inside;
             }
-            if (!partner.zoneId && zone.coordinates && zone.coordinates.length >= 3) {
-              const zoneCoords = zone.coordinates;
-              let inside = false;
-              for (let i = 0, j = zoneCoords.length - 1; i < zoneCoords.length; j = i++) {
-                const xi = zoneCoords[i].longitude;
-                const yi = zoneCoords[i].latitude;
-                const xj = zoneCoords[j].longitude;
-                const yj = zoneCoords[j].latitude;
-                const intersect = ((yi > lat) !== (yj > lat)) &&
-                  (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
-                if (intersect) inside = !inside;
-              }
-              if (!inside) return null;
-            }
+            if (!inside) return null; // Outside zone polygon
           }
 
           distance = calculateDistance(restaurantLat, restaurantLng, lat, lng);
         } else {
-          // Partner has no valid location - include them for socket broadcast but mark as unknown distance
-          console.log(`⚠️ Delivery partner ${partner._id} has no valid GPS location but is online - will notify via socket broadcast`);
+          // Partner has no valid location but passed the explicit zoneId match
+          console.log(`⚠️ Delivery partner ${partner._id} has no valid GPS location but is online and matches zone - will notify via socket broadcast`);
         }
 
         return {
@@ -145,8 +151,9 @@ export async function findNearestDeliveryBoys(restaurantLat, restaurantLng, rest
       })
       .filter(partner => {
         if (!partner) return false;
-        // Include if within priority distance OR if location is unknown (give them benefit of the doubt)
-        return partner.distance <= priorityDistance || !partner.hasValidLocation;
+        // Include only if within priority distance.
+        // Partners without valid GPS location are now strictly excluded to prevent cross-city bugs.
+        return partner.hasValidLocation && partner.distance <= priorityDistance;
       })
       .sort((a, b) => {
         // Sort by distance; unknown-location partners at the end

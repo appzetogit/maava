@@ -195,7 +195,11 @@ export default function DeliveryOTP() {
       if (authData?.isSignUp) {
         purpose = "register"
         if (authData.name) extraPayload.name = authData.name;
-        if (authData.referralCode) extraPayload.referralCode = authData.referralCode;
+      }
+      
+      // Always include referralCode if provided from SignIn
+      if (authData?.referralCode) {
+        extraPayload.referralCode = authData.referralCode;
       }
 
       // First attempt: verify OTP for login or register

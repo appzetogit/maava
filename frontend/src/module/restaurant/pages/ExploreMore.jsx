@@ -880,7 +880,10 @@ export default function ExploreMore() {
             ease: [0.25, 0.1, 0.25, 1]
           }}
         >
-          <Card className="overflow-hidden bg-white mb-8 rounded-[2rem] shadow-[0_15px_40px_-15px_rgba(0,0,0,0.08)] border-0">
+          <Card 
+            className="overflow-hidden bg-white mb-8 rounded-[2rem] shadow-[0_15px_40px_-15px_rgba(0,0,0,0.08)] border-0 cursor-pointer hover:shadow-[0_20px_50px_-20px_rgba(0,0,0,0.12)] transition-all duration-300"
+            onClick={() => navigate("/restaurant/outlet-info")}
+          >
             <CardContent className="p-0">
               <div
                 className="group w-full flex items-center justify-between p-5 transition-all duration-500"
@@ -905,6 +908,7 @@ export default function ExploreMore() {
                       </div>
                     )}
                   </div>
+                  <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-black transition-colors" />
                 </div>
               </div>
             </CardContent>

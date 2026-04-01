@@ -97,6 +97,17 @@ export const submitSignupDetails = asyncHandler(async (req, res) => {
       updateData.referredBy = verifiedReferrer;
       updateData.referralStatus = 'pending';
 
+      // Update the Referral record to 'signed_up'
+      try {
+        const { default: Referral } = await import('../models/Referral.js');
+        await Referral.findOneAndUpdate(
+          { friendPhone: delivery.phone, status: 'pending' },
+          { status: 'signed_up', signedUpAs: delivery._id }
+        );
+      } catch (refErr) {
+        console.error('Error updating Referral record during signup:', refErr);
+      }
+
       // Send initial push notifications to both referrer and referee
       try {
         const referrerDoc = await Delivery.findOne({ deliveryId: verifiedReferrer });

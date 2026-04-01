@@ -1,0 +1,14 @@
+{
+  "deliveredCount": 106,
+  "settlementCount": 126,
+  "sampleSettlement": {
+    "commission": 49.9,
+    "platformFee": 5,
+    "deliveryFee": 0,
+    "gst": 25,
+    "deliveryMargin": 0,
+    "totalEarning": 79.9,
+    "status": "pending"
+  },
+  "last30DaysCount": 104
+}

@@ -152,13 +152,13 @@ const creditRestaurantWallet = async (restaurantId, orderId, netAmount, orderNum
   try {
     const RestaurantWallet = (await import('../../restaurant/models/RestaurantWallet.js')).default;
     const wallet = await RestaurantWallet.findOrCreateByRestaurantId(restaurantId);
-    
+
     // Create description with breakdown
     let description = `Payment for order ${orderNumber}`;
     if (foodPrice && commission) {
       description = `Payment for order ${orderNumber} (Order: ₹${foodPrice}, Commission: ₹${commission}, Net: ₹${netAmount})`;
     }
-    
+
     wallet.addTransaction({
       amount: netAmount, // Credit net amount (₹170)
       type: 'payment',
@@ -166,7 +166,7 @@ const creditRestaurantWallet = async (restaurantId, orderId, netAmount, orderNum
       description: description,
       orderId: orderId
     });
-    
+
     await wallet.save();
 
     // Create audit log
@@ -201,11 +201,11 @@ const creditDeliveryWallet = async (deliveryId, orderId, amount, orderNumber, se
   try {
     const DeliveryWallet = (await import('../../delivery/models/DeliveryWallet.js')).default;
     const wallet = await DeliveryWallet.findOrCreateByDeliveryId(deliveryId);
-    
+
     const tipAmount = settlement?.deliveryPartnerEarning?.tipAmount || 0;
     const basePayout = (settlement?.deliveryPartnerEarning?.totalEarning || amount) - tipAmount;
-    
-    const finalDescription = tipAmount > 0 
+
+    const finalDescription = tipAmount > 0
       ? `Payment for order ${orderNumber} (Payout: ₹${basePayout.toFixed(2)}, Tip: ₹${tipAmount.toFixed(2)})`
       : `Payment for order ${orderNumber}`;
 
@@ -221,7 +221,7 @@ const creditDeliveryWallet = async (deliveryId, orderId, amount, orderNumber, se
         tipAmount: tipAmount
       }
     });
-    
+
     await wallet.save();
 
     // Create audit log

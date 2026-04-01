@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { motion } from "framer-motion"
-import { ArrowLeft, Headphones, ArrowRight, Phone } from "lucide-react"
+import { ArrowLeft, ArrowRight, Phone } from "lucide-react"
+import { deliveryAPI } from "@/lib/api"
 import { getCompanyNameAsync } from "@/lib/utils/businessSettings"
 
 const STORAGE_KEY = "appzeto_food_referrals"
@@ -11,22 +12,30 @@ export default function YourReferrals() {
   const [activeTab, setActiveTab] = useState("in-progress")
   const [referrals, setReferrals] = useState([])
   const [earnings, setEarnings] = useState(0)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadReferrals()
   }, [])
 
-  const loadReferrals = () => {
-    const storedReferrals = localStorage.getItem(STORAGE_KEY)
-    if (storedReferrals) {
-      try {
-        const parsedReferrals = JSON.parse(storedReferrals)
-        if (Array.isArray(parsedReferrals)) {
-          setReferrals(parsedReferrals)
-        }
-      } catch (error) {
-        console.error("Error parsing referrals from localStorage:", error)
+  const loadReferrals = async () => {
+    try {
+      setLoading(true)
+      const res = await deliveryAPI.getReferrals();
+      if (res.data?.success) {
+        // Map backend fields to frontend fields
+        const mappedReferrals = res.data.data.referrals.map(ref => ({
+          name: ref.friendName,
+          mobile: ref.friendPhone,
+          completed: ref.status === 'completed' || ref.status === 'signed_up',
+          timestamp: ref.createdAt
+        }));
+        setReferrals(mappedReferrals);
       }
+    } catch (error) {
+      console.error("Error fetching referrals:", error);
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -58,7 +67,8 @@ export default function YourReferrals() {
 
   const handleWhatsApp = async (mobile, name) => {
     const companyName = await getCompanyNameAsync()
-    const message = `Hey ${name}! Join ${companyName} as a delivery partner and earn together!`
+    const appLink = "https://maava.in/delivery/signup";
+    const message = `Hey ${name}! Join ${companyName} as a delivery partner and earn together! Download now: ${appLink}`
     const whatsappUrl = `https://wa.me/${mobile}?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, '_blank')
   }
@@ -78,10 +88,8 @@ export default function YourReferrals() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <h1 className="text-lg font-bold">Your referrals</h1>
-        <div className="flex items-center gap-2">
-          <Headphones className="w-5 h-5" />
-          <span className="text-sm">Help</span>
-        </div>
+        <div className="w-9" /> {/* Visual spacer */}
+
       </div>
 
       {/* Earnings Card */}

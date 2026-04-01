@@ -836,6 +836,21 @@ export default function OrdersMain() {
     setCountdown(240)
   }
 
+  // Handle mark order as ready manually
+  const handleMarkReady = async (orderId) => {
+    try {
+      const response = await restaurantAPI.markOrderReady(orderId)
+      if (response.data?.success) {
+        toast.success('Order marked as ready!')
+        // Refresh orders
+        window.location.reload() 
+      }
+    } catch (error) {
+      console.error('Error marking order as ready:', error)
+      toast.error(error.response?.data?.message || 'Failed to mark order as ready')
+    }
+  }
+
   // Handle cancel order (for preparing orders)
   const handleCancelClick = (order) => {
     setOrderToCancel(order)
@@ -1130,7 +1145,7 @@ export default function OrdersMain() {
   const renderContent = () => {
     switch (activeFilter) {
       case "preparing":
-        return <PreparingOrders onSelectOrder={handleSelectOrder} onCancel={handleCancelClick} />
+        return <PreparingOrders onSelectOrder={handleSelectOrder} onCancel={handleCancelClick} onMarkReady={handleMarkReady} />
       case "ready":
         return <ReadyOrders onSelectOrder={handleSelectOrder} />
       case "out-for-delivery":
@@ -1927,6 +1942,7 @@ function OrderCard({
   deliveryPartnerId,
   onSelect,
   onCancel,
+  onMarkReady,
 }) {
   const isReady = status === "Ready"
 
@@ -2041,16 +2057,24 @@ function OrderCard({
                 </div>
               )}
             </div>
-            {/* Hide ETA for ready orders */}
-            {status !== 'ready' && eta && (
-              <div className="flex items-baseline gap-1">
-                <span className="text-[11px] text-gray-500">ETA</span>
-                <span className="text-xs font-medium text-black">
-                  {eta}
-                </span>
-              </div>
             )}
           </div>
+
+          {/* Mark as Ready button - only show for preparing orders */}
+          {status === 'preparing' && onMarkReady && (
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMarkReady(mongoId || orderId);
+                }}
+                className="flex-1 bg-green-600 text-white py-2 rounded-xl text-xs font-bold hover:bg-green-700 transition-colors shadow-sm"
+              >
+                Mark as Ready
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -2058,7 +2082,7 @@ function OrderCard({
 }
 
 // Preparing Orders List
-function PreparingOrders({ onSelectOrder, onCancel }) {
+function PreparingOrders({ onSelectOrder, onCancel, onMarkReady }) {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
@@ -2294,6 +2318,7 @@ function PreparingOrders({ onSelectOrder, onCancel }) {
                 deliveryPartnerId={order.deliveryPartnerId}
                 onSelect={onSelectOrder}
                 onCancel={onCancel}
+                onMarkReady={onMarkReady}
               />
             )
           })}

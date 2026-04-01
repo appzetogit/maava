@@ -30,7 +30,8 @@ const verifyOTPSchema = Joi.object({
   purpose: Joi.string()
     .valid('login', 'register', 'reset-password', 'verify-phone')
     .default('login'),
-  name: Joi.string().allow(null, '').optional()
+  name: Joi.string().allow(null, '').optional(),
+  referralCode: Joi.string().allow(null, '').optional()
 });
 
 // Public routes

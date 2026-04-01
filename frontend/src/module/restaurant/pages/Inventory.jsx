@@ -757,9 +757,8 @@ export default function Inventory() {
       if (showLoading) setLoadingAddons(true)
       const response = await restaurantAPI.getAddons()
       const data = response?.data?.data?.addons || response?.data?.addons || []
-      // Filter to show only approved add-ons
-      const approvedAddons = data.filter(addon => addon.approvalStatus === 'approved')
-      setAddons(approvedAddons)
+      // Show all add-ons including pending
+      setAddons(data)
     } catch (error) {
       console.error('Error fetching add-ons:', error)
       toast.error('Failed to load add-ons')
@@ -1463,6 +1462,12 @@ export default function Inventory() {
                             <h3 className="text-base font-semibold text-gray-900">{addon.name}</h3>
                             {addon.approvalStatus === 'approved' && (
                               <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800 rounded">Approved</span>
+                            )}
+                            {addon.approvalStatus === 'pending' && (
+                              <span className="px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 rounded">Pending</span>
+                            )}
+                            {addon.approvalStatus === 'rejected' && (
+                              <span className="px-2 py-0.5 text-xs font-medium bg-red-100 text-red-800 rounded">Rejected</span>
                             )}
                           </div>
                           {addon.description && (

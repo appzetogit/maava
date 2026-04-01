@@ -47,6 +47,17 @@ export const processReferralBonuses = async (refereeDocId, referrerDeliveryIdFie
     // Mark referral status as completed
     referee.referralStatus = 'completed';
     await referee.save();
+
+    // Update the Referral record to 'completed'
+    try {
+      const { default: Referral } = await import('../models/Referral.js');
+      await Referral.findOneAndUpdate(
+        { signedUpAs: referee._id },
+        { status: 'completed' }
+      );
+    } catch (refErr) {
+      console.error('Error updating Referral record during bonus process:', refErr);
+    }
     console.log(`✅ Referral bonuses processed. Referrer: ${referrerDeliveryIdField}, Referee: ${referee._id}`);
 
     // --- SEND COMPLETION NOTIFICATIONS ---

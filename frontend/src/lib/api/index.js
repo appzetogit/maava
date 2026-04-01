@@ -813,6 +813,14 @@ export const deliveryAPI = {
       params: { latitude, longitude, radius }
     });
   },
+
+  // Referrals
+  addReferral: (data) => {
+    return apiClient.post('/delivery/referrals', data);
+  },
+  getReferrals: () => {
+    return apiClient.get('/delivery/referrals');
+  },
 };
 
 // Export admin API helper functions

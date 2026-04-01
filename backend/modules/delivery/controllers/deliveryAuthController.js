@@ -1,4 +1,5 @@
 import Delivery from '../models/Delivery.js';
+import Referral from '../models/Referral.js';
 import otpService from '../../auth/services/otpService.js';
 import jwtService from '../../auth/services/jwtService.js';
 import { successResponse, errorResponse } from '../../../shared/utils/response.js';
@@ -22,26 +23,26 @@ const logger = winston.createLogger({
 export const sendOTP = asyncHandler(async (req, res) => {
   const { phone, purpose = 'login' } = req.body;
 
-  // Validate phone number
   if (!phone) {
     return errorResponse(res, 400, 'Phone number is required');
   }
 
-  // Validate phone number format
-  const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
-  if (!phoneRegex.test(phone)) {
-    return errorResponse(res, 400, 'Invalid phone number format');
-  }
-
   try {
-    const result = await otpService.generateAndSendOTP(phone, purpose, null);
-    return successResponse(res, 200, result.message, {
-      expiresIn: result.expiresIn,
-      identifierType: result.identifierType
-    });
+    // Check if user exists if purpose is register
+    if (purpose === 'register') {
+      const existingUser = await Delivery.findOne({ phone });
+      if (existingUser) {
+        return errorResponse(res, 400, 'Delivery boy already exists with this phone number. Please login.');
+      }
+    }
+
+    // Call shared OTP service
+    await otpService.sendOTP(phone, purpose);
+
+    return successResponse(res, 200, 'OTP sent successfully');
   } catch (error) {
     logger.error(`Error sending OTP: ${error.message}`);
-    return errorResponse(res, 500, error.message);
+    return errorResponse(res, 400, error.message);
   }
 });
 
@@ -62,31 +63,39 @@ export const verifyOTP = asyncHandler(async (req, res) => {
 
   try {
     let delivery;
-    const identifier = phone;
-
+    
     if (purpose === 'register') {
       // Registration flow
-      // Check if delivery boy already exists
       delivery = await Delivery.findOne({ phone });
-
       if (delivery) {
         return errorResponse(res, 400, 'Delivery boy already exists with this phone number. Please login.');
       }
 
-      // Name is mandatory for explicit registration
       if (!normalizedName) {
         return errorResponse(res, 400, 'Name is required for registration');
       }
 
-      // Verify OTP before creating delivery boy
+      // Verify OTP
       await otpService.verifyOTP(phone, otp, purpose, null);
 
       let verifiedReferrer = null;
-      if (referralCode) {
-        // Find if referrer exists
+      // 1. Check existing Referral record
+      const existingReferral = await Referral.findOne({ friendPhone: phone, status: 'pending' });
+      if (existingReferral) {
+        const referrer = await Delivery.findById(existingReferral.referrer);
+        if (referrer) verifiedReferrer = referrer.deliveryId;
+      } 
+      // 2. Check manual code
+      else if (referralCode) {
         const referrer = await Delivery.findOne({ deliveryId: referralCode.trim().toUpperCase() });
         if (referrer) {
           verifiedReferrer = referrer.deliveryId;
+          await Referral.create({
+            referrer: referrer._id,
+            friendName: normalizedName,
+            friendPhone: phone,
+            status: 'pending'
+          }).catch(err => logger.error(`Error creating Referral: ${err.message}`));
         }
       }
 
@@ -95,164 +104,121 @@ export const verifyOTP = asyncHandler(async (req, res) => {
         phone,
         phoneVerified: true,
         signupMethod: 'phone',
-        status: 'pending', // New delivery boys start as pending approval
-        isActive: true, // Allow login to see verification message
+        status: 'pending',
+        isActive: true,
         referredBy: verifiedReferrer,
         referralStatus: verifiedReferrer ? 'pending' : null
       };
 
       try {
         delivery = await Delivery.create(deliveryData);
-        logger.info(`New delivery boy registered: ${delivery._id}`, { 
-          phone, 
-          deliveryId: delivery._id,
-          deliveryIdField: delivery.deliveryId
-        });
+        if (verifiedReferrer) {
+          await Referral.findOneAndUpdate(
+            { friendPhone: phone, status: 'pending' },
+            { status: 'signed_up', signedUpAs: delivery._id }
+          ).catch(err => logger.error(`Error updating Referral: ${err.message}`));
+        }
       } catch (createError) {
-        // Handle duplicate key error
         if (createError.code === 11000) {
           delivery = await Delivery.findOne({ phone });
-          if (!delivery) {
-            throw createError;
-          }
-          return errorResponse(res, 400, 'Delivery boy already exists with this phone number. Please login.');
+          if (!delivery) throw createError;
         } else {
           throw createError;
         }
       }
     } else {
-      // Login (with optional auto-registration)
+      // Login Flow
       delivery = await Delivery.findOne({ phone });
-
-      // Verify OTP first (before creating user)
       await otpService.verifyOTP(phone, otp, purpose, null);
 
       if (!delivery) {
-        // New user - create minimal record for signup flow
-        // Use provided name or placeholder
+        // Minimal record for new user via login
         let verifiedReferrer = null;
-        if (referralCode) {
+        const existingReferral = await Referral.findOne({ friendPhone: phone, status: 'pending' });
+        if (existingReferral) {
+          const referrer = await Delivery.findById(existingReferral.referrer);
+          if (referrer) verifiedReferrer = referrer.deliveryId;
+        } else if (referralCode) {
           const referrer = await Delivery.findOne({ deliveryId: referralCode.trim().toUpperCase() });
           if (referrer) {
             verifiedReferrer = referrer.deliveryId;
+            await Referral.create({
+              referrer: referrer._id,
+              friendName: normalizedName || 'Delivery Partner',
+              friendPhone: phone,
+              status: 'pending'
+            }).catch(err => logger.error(`Error creating Referral: ${err.message}`));
           }
         }
 
         const deliveryData = {
-          name: normalizedName || 'Delivery Partner', // Placeholder if not provided
+          name: normalizedName || 'Delivery Partner',
           phone,
           phoneVerified: true,
           signupMethod: 'phone',
-          status: 'pending', // New delivery boys start as pending approval
-          isActive: true, // Allow login to see verification message
+          status: 'pending',
+          isActive: true,
           referredBy: verifiedReferrer,
           referralStatus: verifiedReferrer ? 'pending' : null
         };
 
         try {
           delivery = await Delivery.create(deliveryData);
-          logger.info(`New delivery boy created for signup: ${delivery._id}`, { 
-            phone, 
-            deliveryId: delivery._id,
-            deliveryIdField: delivery.deliveryId,
-            hasName: !!normalizedName
-          });
+          if (verifiedReferrer) {
+            await Referral.findOneAndUpdate(
+              { friendPhone: phone, status: 'pending' },
+              { status: 'signed_up', signedUpAs: delivery._id }
+            ).catch(err => logger.error(`Error updating Referral: ${err.message}`));
+          }
         } catch (createError) {
           if (createError.code === 11000) {
             delivery = await Delivery.findOne({ phone });
-            if (!delivery) {
-              throw createError;
-            }
-            logger.info(`Delivery boy found after duplicate key error: ${delivery._id}`);
+            if (!delivery) throw createError;
           } else {
             throw createError;
           }
         }
       } else {
-        // Existing delivery boy login - update verification status if needed
         if (!delivery.phoneVerified) {
           delivery.phoneVerified = true;
           await delivery.save();
         }
       }
-
-      // Check if signup needs to be completed (missing required fields)
-      const needsSignup = !delivery.location?.city || 
-                         !delivery.vehicle?.number || 
-                         !delivery.documents?.pan?.number ||
-                         !delivery.documents?.aadhar?.number ||
-                         !delivery.documents?.aadhar?.document ||
-                         !delivery.documents?.pan?.document ||
-                         !delivery.documents?.drivingLicense?.document;
-
-      if (needsSignup) {
-        // Generate tokens for signup flow
-        const tokens = jwtService.generateTokens({
-          userId: delivery._id.toString(),
-          role: 'delivery',
-          email: delivery.email || delivery.phone || delivery.deliveryId
-        });
-
-        // Store refresh token
-        delivery.refreshToken = tokens.refreshToken;
-        await delivery.save();
-
-        // Set refresh token in httpOnly cookie
-        res.cookie('refreshToken', tokens.refreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict',
-          maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-        });
-
-        return successResponse(res, 200, 'OTP verified. Please complete your profile.', {
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
-          user: {
-            id: delivery._id,
-            name: delivery.name,
-            phone: delivery.phone,
-            email: delivery.email,
-            deliveryId: delivery.deliveryId,
-            status: delivery.status,
-            rejectionReason: delivery.rejectionReason || null // Include rejection reason for blocked accounts
-          },
-          needsSignup: true // Signal that signup needs to be completed
-        });
-      }
     }
 
-    // Check if delivery boy is active (blocked/pending status partners can still login to see rejection reason or verification message)
+    // Common Token & Response Logic
+    const needsSignup = !delivery.location?.city || 
+                       !delivery.vehicle?.number || 
+                       !delivery.documents?.pan?.number ||
+                       !delivery.documents?.aadhar?.number ||
+                       !delivery.documents?.aadhar?.document ||
+                       !delivery.documents?.pan?.document ||
+                       !delivery.documents?.drivingLicense?.document;
+
     if (!delivery.isActive && delivery.status !== 'blocked' && delivery.status !== 'pending') {
       return errorResponse(res, 403, 'Your account has been deactivated. Please contact support.');
     }
 
-    // Generate tokens
     const tokens = jwtService.generateTokens({
       userId: delivery._id.toString(),
       role: 'delivery',
       email: delivery.email || delivery.phone || delivery.deliveryId
     });
 
-    // Store refresh token in database
     delivery.refreshToken = tokens.refreshToken;
+    delivery.lastLogin = new Date();
     await delivery.save();
 
-    // Set refresh token in httpOnly cookie
     res.cookie('refreshToken', tokens.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    // Update last login
-    delivery.lastLogin = new Date();
-    await delivery.save();
-
-    // Return access token and delivery boy info
-    return successResponse(res, 200, 'Authentication successful', {
+    return successResponse(res, 200, needsSignup ? 'OTP verified. Please complete your profile.' : 'Authentication successful', {
       accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
       user: {
         id: delivery._id,
         deliveryId: delivery.deliveryId,
@@ -260,14 +226,13 @@ export const verifyOTP = asyncHandler(async (req, res) => {
         email: delivery.email,
         phone: delivery.phone,
         phoneVerified: delivery.phoneVerified,
-        signupMethod: delivery.signupMethod,
-        profileImage: delivery.profileImage,
-        isActive: delivery.isActive,
         status: delivery.status,
-        rejectionReason: delivery.rejectionReason || null, // Include rejection reason for blocked accounts
+        rejectionReason: delivery.rejectionReason || null,
+        profileImage: delivery.profileImage,
         metrics: delivery.metrics,
         earnings: delivery.earnings
-      }
+      },
+      needsSignup
     });
   } catch (error) {
     logger.error(`Error verifying OTP: ${error.message}`);
@@ -280,44 +245,24 @@ export const verifyOTP = asyncHandler(async (req, res) => {
  * POST /api/delivery/auth/refresh-token
  */
 export const refreshToken = asyncHandler(async (req, res) => {
-  // Get refresh token from cookie or header
   const refreshToken = req.cookies?.refreshToken || req.headers['x-refresh-token'];
-
-  if (!refreshToken) {
-    return errorResponse(res, 401, 'Refresh token not found');
-  }
+  if (!refreshToken) return errorResponse(res, 401, 'Refresh token not found');
 
   try {
-    // Verify refresh token
     const decoded = jwtService.verifyRefreshToken(refreshToken);
+    if (decoded.role !== 'delivery') return errorResponse(res, 401, 'Invalid token for delivery');
 
-    // Ensure it's a delivery token
-    if (decoded.role !== 'delivery') {
-      return errorResponse(res, 401, 'Invalid token for delivery');
-    }
-
-    // Get delivery boy from database and verify refresh token matches
     const delivery = await Delivery.findById(decoded.userId).select('+refreshToken');
+    if (!delivery || !delivery.isActive) return errorResponse(res, 401, 'Delivery boy not found or inactive');
+    if (delivery.refreshToken !== refreshToken) return errorResponse(res, 401, 'Invalid refresh token');
 
-    if (!delivery || !delivery.isActive) {
-      return errorResponse(res, 401, 'Delivery boy not found or inactive');
-    }
-
-    // Verify refresh token matches stored token
-    if (delivery.refreshToken !== refreshToken) {
-      return errorResponse(res, 401, 'Invalid refresh token');
-    }
-
-    // Generate new access token
     const accessToken = jwtService.generateAccessToken({
       userId: delivery._id.toString(),
       role: 'delivery',
       email: delivery.email || delivery.phone || delivery.deliveryId
     });
 
-    return successResponse(res, 200, 'Token refreshed successfully', {
-      accessToken
-    });
+    return successResponse(res, 200, 'Token refreshed successfully', { accessToken });
   } catch (error) {
     return errorResponse(res, 401, error.message || 'Invalid refresh token');
   }
@@ -328,20 +273,15 @@ export const refreshToken = asyncHandler(async (req, res) => {
  * POST /api/delivery/auth/logout
  */
 export const logout = asyncHandler(async (req, res) => {
-  // Get delivery boy from request (set by auth middleware)
   if (req.delivery) {
-    // Clear refresh token from database
     req.delivery.refreshToken = null;
     await req.delivery.save();
   }
-
-  // Clear refresh token cookie
   res.clearCookie('refreshToken', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict'
   });
-
   return successResponse(res, 200, 'Logged out successfully');
 });
 
@@ -350,7 +290,6 @@ export const logout = asyncHandler(async (req, res) => {
  * GET /api/delivery/auth/me
  */
 export const getCurrentDelivery = asyncHandler(async (req, res) => {
-  // Delivery boy is attached by authenticate middleware
   return successResponse(res, 200, 'Delivery boy retrieved successfully', {
     user: {
       id: req.delivery._id,
@@ -375,4 +314,3 @@ export const getCurrentDelivery = asyncHandler(async (req, res) => {
     }
   });
 });
-

@@ -363,16 +363,14 @@ export default function EditProfile() {
               </AvatarFallback>
             </Avatar>
             {/* Remove Icon */}
-            {imagePreview && (
-              <button 
-                onClick={handleRemoveImage}
-                disabled={isUploadingImage}
-                className="absolute -top-1 -right-1 w-7 h-7 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center shadow-md border border-red-200 dark:border-red-800 hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
-                title="Remove photo"
-              >
-                <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400 group-hover:scale-110 transition-transform" />
-              </button>
-            )}
+            <button 
+              onClick={handleRemoveImage}
+              disabled={isUploadingImage}
+              className="absolute -top-1 -right-1 w-7 h-7 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center shadow-md border border-red-200 dark:border-red-800 hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
+              title="Remove photo"
+            >
+              <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400 group-hover:scale-110 transition-transform" />
+            </button>
             {/* Edit Icon */}
             <button 
               onClick={() => fileInputRef.current?.click()}
