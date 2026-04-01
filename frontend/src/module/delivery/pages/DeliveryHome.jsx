@@ -4063,6 +4063,18 @@ export default function DeliveryHome() {
   // Show new order popup when order is received from Socket.IO
   useEffect(() => {
     if (newOrder) {
+      // Check if delivery boy is online
+      if (!isOnline) {
+        console.log('🚫 New order received while offline, ignoring');
+        toast.info("Orders will only be received when you are online", {
+          description: "Please turn on your online status to start receiving orders.",
+          id: "offline-order-notification",
+          icon: "📴"
+        });
+        clearNewOrder();
+        return;
+      }
+
       const orderId = newOrder.orderMongoId || newOrder.orderId;
 
       // Check if this order has already been accepted
@@ -8151,6 +8163,20 @@ export default function DeliveryHome() {
         onEmergencyClick={() => setShowEmergencyPopup(true)}
         onHelpClick={() => setShowHelpPopup(true)}
       />
+
+      {/* Offline Status Alert Banner */}
+      {!isOnline && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center gap-2 flex-shrink-0"
+        >
+          <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+          <p className="text-amber-800 text-[11px] font-medium uppercase tracking-wider">
+            You are Offline • Go Online to receive orders
+          </p>
+        </motion.div>
+      )}
 
       {/* Carousel - Only show if there are slides */}
       {carouselSlides.length > 0 && (
