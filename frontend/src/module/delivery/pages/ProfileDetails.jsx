@@ -23,6 +23,18 @@ export default function ProfileDetails() {
   })
   const [bankDetailsErrors, setBankDetailsErrors] = useState({})
   const [isUpdatingBankDetails, setIsUpdatingBankDetails] = useState(false)
+  const [showPersonalDetailsPopup, setShowPersonalDetailsPopup] = useState(false)
+  const [personalDetails, setPersonalDetails] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    aadharNumber: ""
+  })
+  const [personalDetailsErrors, setPersonalDetailsErrors] = useState({})
+  const [isUpdatingPersonalDetails, setIsUpdatingPersonalDetails] = useState(false)
+  const [showCityPopup, setShowCityPopup] = useState(false)
+  const [cityInput, setCityInput] = useState("")
+  const [isUpdatingCity, setIsUpdatingCity] = useState(false)
 
   // Note: All alternate phone related code has been removed
 
@@ -110,9 +122,20 @@ export default function ProfileDetails() {
               </div>
             <div className="p-2 px-3 flex items-center justify-between">
                 <p className="text-sm text-gray-900">City</p>
-                <p className="text-base text-gray-900">
-                  {profile?.location?.city || "N/A"}
-                </p>
+                <div className="flex items-center gap-2">
+                   <p className="text-base text-gray-900">
+                     {profile?.location?.city || "N/A"}
+                   </p>
+                   <button
+                     onClick={() => {
+                        setCityInput(profile?.location?.city || "")
+                        setShowCityPopup(true)
+                     }}
+                     className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                   >
+                     <Edit2 className="w-4 h-4 text-green-600" />
+                   </button>
+                </div>
               </div>
             <div className="p-2 px-3 flex items-center justify-between">
                 <p className="text-sm text-gray-900">Vehicle type</p>
@@ -232,8 +255,34 @@ export default function ProfileDetails() {
 
         {/* Personal Details Section */}
         <div>
-          <h2 className="text-base font-medium text-gray-900 mb-3">Personal details</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-bold text-gray-900">Personal details</h2>
+            <button
+              onClick={() => {
+                setShowPersonalDetailsPopup(true)
+                setPersonalDetails({
+                  name: profile?.name || "",
+                  phone: profile?.phone || "",
+                  email: profile?.email || "",
+                  aadharNumber: profile?.documents?.aadhar?.number || ""
+                })
+                setPersonalDetailsErrors({})
+              }}
+              className="text-green-600 font-medium text-sm flex items-center gap-1 hover:text-green-700"
+            >
+              <Edit2 className="w-4 h-4" />
+              <span>Edit</span>
+            </button>
+          </div>
           <div className="bg-white rounded-lg shadow-sm divide-y divide-gray-200">
+            <div className="p-2 px-3 flex items-center justify-between">
+              <div className="w-full align-center flex content-center justify-between">
+                <p className="text-sm text-gray-900 mb-1">Name</p>
+                <p className="text-base text-gray-900">
+                  {profile?.name || "N/A"}
+                </p>
+              </div>
+            </div>
             <div className="p-2 px-3 flex items-center justify-between">
               <div className="w-full align-center flex content-center justify-between">
                 <p className="text-sm text-gray-900 mb-1">Phone</p>
@@ -376,28 +425,37 @@ export default function ProfileDetails() {
           </div>
           <button
             onClick={async () => {
-              if (vehicleInput.trim()) {
-                try {
-                  await deliveryAPI.updateProfile({
-                    vehicle: {
-                      ...profile?.vehicle,
-                      number: vehicleInput.trim()
-                    }
-                  })
-                  setVehicleNumber(vehicleInput.trim())
-                  setShowVehiclePopup(false)
-                  toast.success("Vehicle number updated successfully")
-                  // Refetch profile
-                  const response = await deliveryAPI.getProfile()
-                  if (response?.data?.success && response?.data?.data?.profile) {
-                    setProfile(response.data.data.profile)
+              const vehicleRegex = /^[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{1,4}$/
+              const trimmedValue = vehicleInput.trim().toUpperCase().replace(/\s+/g, "")
+              
+              if (!trimmedValue) {
+                toast.error("Please enter a vehicle number")
+                return
+              }
+
+              if (!vehicleRegex.test(trimmedValue)) {
+                toast.error("Invalid vehicle number format. e.g. MH12DE1433")
+                return
+              }
+
+              try {
+                await deliveryAPI.updateProfile({
+                  vehicle: {
+                    ...profile?.vehicle,
+                    number: trimmedValue
                   }
-                } catch (error) {
-                  console.error("Error updating vehicle number:", error)
-                  toast.error("Failed to update vehicle number")
+                })
+                setVehicleNumber(trimmedValue)
+                setShowVehiclePopup(false)
+                toast.success("Vehicle number updated successfully")
+                // Refetch profile
+                const response = await deliveryAPI.getProfile()
+                if (response?.data?.success && response?.data?.data?.profile) {
+                  setProfile(response.data.data.profile)
                 }
-              } else {
-                toast.error("Please enter a valid vehicle number")
+              } catch (error) {
+                console.error("Error updating vehicle number:", error)
+                toast.error(error?.response?.data?.message || "Failed to update vehicle number")
               }
             }}
             className="w-full bg-black text-white py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
@@ -613,6 +671,242 @@ export default function ProfileDetails() {
         </div>
       </BottomPopup>
 
+      {/* Personal Details Edit Popup */}
+      <BottomPopup
+        isOpen={showPersonalDetailsPopup}
+        onClose={() => {
+          setShowPersonalDetailsPopup(false)
+          setPersonalDetailsErrors({})
+        }}
+        title="Edit Personal Details"
+        showCloseButton={true}
+        closeOnBackdropClick={true}
+        maxHeight="80vh"
+      >
+        <div className="space-y-4">
+          {/* Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={personalDetails.name}
+              onChange={(e) => {
+                setPersonalDetails(prev => ({ ...prev, name: e.target.value }))
+                setPersonalDetailsErrors(prev => ({ ...prev, name: "" }))
+              }}
+              placeholder="Enter your name"
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                personalDetailsErrors.name ? "border-red-500" : "border-gray-300"
+              }`}
+            />
+            {personalDetailsErrors.name && (
+              <p className="text-red-500 text-xs mt-1">{personalDetailsErrors.name}</p>
+            )}
+          </div>
+
+          {/* Phone */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={personalDetails.phone}
+              onChange={(e) => {
+                setPersonalDetails(prev => ({ ...prev, phone: e.target.value }))
+                setPersonalDetailsErrors(prev => ({ ...prev, phone: "" }))
+              }}
+              placeholder="Enter phone number"
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                personalDetailsErrors.phone ? "border-red-500" : "border-gray-300"
+              }`}
+            />
+            {personalDetailsErrors.phone && (
+              <p className="text-red-500 text-xs mt-1">{personalDetailsErrors.phone}</p>
+            )}
+          </div>
+
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              value={personalDetails.email}
+              onChange={(e) => {
+                setPersonalDetails(prev => ({ ...prev, email: e.target.value }))
+                setPersonalDetailsErrors(prev => ({ ...prev, email: "" }))
+              }}
+              placeholder="Enter email address"
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                personalDetailsErrors.email ? "border-red-500" : "border-gray-300"
+              }`}
+            />
+            {personalDetailsErrors.email && (
+              <p className="text-red-500 text-xs mt-1">{personalDetailsErrors.email}</p>
+            )}
+          </div>
+
+          {/* Aadhar Number */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Aadhar Card Number
+            </label>
+            <input
+              type="text"
+              value={personalDetails.aadharNumber}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, '').slice(0, 12)
+                setPersonalDetails(prev => ({ ...prev, aadharNumber: value }))
+                setPersonalDetailsErrors(prev => ({ ...prev, aadharNumber: "" }))
+              }}
+              placeholder="Enter 12 digit Aadhar number"
+              maxLength={12}
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                personalDetailsErrors.aadharNumber ? "border-red-500" : "border-gray-300"
+              }`}
+            />
+            {personalDetailsErrors.aadharNumber && (
+              <p className="text-red-500 text-xs mt-1">{personalDetailsErrors.aadharNumber}</p>
+            )}
+          </div>
+
+          {/* Submit Button */}
+          <button
+            onClick={async () => {
+              // Validate
+              const errors = {}
+              if (!personalDetails.name.trim()) {
+                errors.name = "Name is required"
+              }
+              if (!personalDetails.phone.trim()) {
+                errors.phone = "Phone number is required"
+              }
+              if (personalDetails.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personalDetails.email)) {
+                errors.email = "Invalid email format"
+              }
+              if (personalDetails.aadharNumber.trim() && personalDetails.aadharNumber.length !== 12) {
+                errors.aadharNumber = "Aadhar number must be 12 digits"
+              }
+
+              if (Object.keys(errors).length > 0) {
+                setPersonalDetailsErrors(errors)
+                return
+              }
+
+              setIsUpdatingPersonalDetails(true)
+              try {
+                await deliveryAPI.updateProfile({
+                  name: personalDetails.name.trim(),
+                  phone: personalDetails.phone.trim(),
+                  email: personalDetails.email.trim() || null,
+                  documents: {
+                    ...profile?.documents,
+                    aadhar: {
+                      ...profile?.documents?.aadhar,
+                      number: personalDetails.aadharNumber.trim() || null
+                    }
+                  }
+                })
+                toast.success("Personal details updated successfully")
+                setShowPersonalDetailsPopup(false)
+                // Refetch profile
+                const response = await deliveryAPI.getProfile()
+                if (response?.data?.success && response?.data?.data?.profile) {
+                  setProfile(response.data.data.profile)
+                }
+              } catch (error) {
+                console.error("Error updating personal details:", error)
+                toast.error(error?.response?.data?.message || "Failed to update personal details")
+              } finally {
+                setIsUpdatingPersonalDetails(false)
+              }
+            }}
+            disabled={isUpdatingPersonalDetails}
+            className={`w-full py-3 rounded-lg font-medium text-white transition-colors ${
+              isUpdatingPersonalDetails
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-[#00B761] hover:bg-[#00A055]"
+            }`}
+          >
+            {isUpdatingPersonalDetails ? "Updating..." : "Save Personal Details"}
+          </button>
+        </div>
+      </BottomPopup>
+      {/* City Edit Popup */}
+      <BottomPopup
+        isOpen={showCityPopup}
+        onClose={() => setShowCityPopup(false)}
+        title="Edit City"
+        showCloseButton={true}
+        closeOnBackdropClick={true}
+        maxHeight="50vh"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              City <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={cityInput}
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^a-zA-Z\s]/g, "")
+                setCityInput(value)
+              }}
+              placeholder="Enter city name (e.g. Mumbai)"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              autoFocus
+            />
+          </div>
+          <button
+            onClick={async () => {
+              const trimmedCity = cityInput.trim()
+              if (!trimmedCity) {
+                toast.error("Please enter a city name")
+                return
+              }
+              if (trimmedCity.length < 2) {
+                toast.error("City name is too short")
+                return
+              }
+
+              setIsUpdatingCity(true)
+              try {
+                await deliveryAPI.updateProfile({
+                  location: {
+                    ...profile?.location,
+                    city: trimmedCity
+                  }
+                })
+                toast.success("City updated successfully")
+                setShowCityPopup(false)
+                // Refetch profile
+                const response = await deliveryAPI.getProfile()
+                if (response?.data?.success && response?.data?.data?.profile) {
+                  setProfile(response.data.data.profile)
+                }
+              } catch (error) {
+                console.error("Error updating city:", error)
+                toast.error(error?.response?.data?.message || "Failed to update city")
+              } finally {
+                setIsUpdatingCity(false)
+              }
+            }}
+            disabled={isUpdatingCity}
+            className={`w-full py-3 rounded-lg font-medium text-white transition-colors ${
+              isUpdatingCity
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-black hover:bg-gray-800"
+            }`}
+          >
+            {isUpdatingCity ? "Updating..." : "Update City"}
+          </button>
+        </div>
+      </BottomPopup>
     </div>
   )
 }

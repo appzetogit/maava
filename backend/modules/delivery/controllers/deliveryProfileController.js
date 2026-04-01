@@ -52,7 +52,7 @@ const updateProfileSchema = Joi.object({
   gender: Joi.string().valid('male', 'female', 'other', 'prefer-not-to-say').optional(),
   vehicle: Joi.object({
     type: Joi.string().valid('bike', 'scooter', 'bicycle', 'car').optional(),
-    number: Joi.string().trim().optional().allow(null, ''),
+    number: Joi.string().trim().uppercase().pattern(/^[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{1,4}$/).optional().allow(null, ''),
     model: Joi.string().trim().optional().allow(null, ''),
     brand: Joi.string().trim().optional().allow(null, '')
   }).optional(),
@@ -60,7 +60,7 @@ const updateProfileSchema = Joi.object({
     addressLine1: Joi.string().trim().optional().allow(null, ''),
     addressLine2: Joi.string().trim().optional().allow(null, ''),
     area: Joi.string().trim().optional().allow(null, ''),
-    city: Joi.string().trim().optional().allow(null, ''),
+    city: Joi.string().trim().pattern(/^[a-zA-Z\s]{2,50}$/).optional().allow(null, ''),
     state: Joi.string().trim().optional().allow(null, ''),
     zipCode: Joi.string().trim().optional().allow(null, '')
   }).optional(),
@@ -69,13 +69,17 @@ const updateProfileSchema = Joi.object({
     publicId: Joi.string().trim().optional().allow(null, '')
   }).optional(),
   documents: Joi.object({
+    aadhar: Joi.object({
+      number: Joi.string().trim().length(12).pattern(/^\d{12}$/).optional()
+    }).optional(),
     bankDetails: Joi.object({
       accountHolderName: Joi.string().trim().min(2).max(100).optional().allow(null, ''),
       accountNumber: Joi.string().trim().min(9).max(18).optional().allow(null, ''),
       ifscCode: Joi.string().trim().length(11).uppercase().optional().allow(null, ''),
       bankName: Joi.string().trim().min(2).max(100).optional().allow(null, '')
     }).optional()
-  }).optional()
+  }).optional(),
+  phone: Joi.string().trim().optional()
 });
 
 export const updateProfile = asyncHandler(async (req, res) => {
@@ -89,15 +93,25 @@ export const updateProfile = asyncHandler(async (req, res) => {
       return errorResponse(res, 400, error.details[0].message);
     }
 
-    // Handle nested documents.bankDetails update properly
+    // Handle nested updates properly to avoid overwriting existing document fields
     const setData = { ...updateData };
-    if (updateData.documents?.bankDetails) {
-      // Merge bankDetails with existing documents
-      setData['documents.bankDetails'] = {
-        ...delivery.documents?.bankDetails,
-        ...updateData.documents.bankDetails
-      };
-      // Remove the nested documents object to avoid conflicts
+    
+    if (updateData.documents) {
+      if (updateData.documents.bankDetails) {
+        setData['documents.bankDetails'] = {
+          ...delivery.documents?.bankDetails,
+          ...updateData.documents.bankDetails
+        };
+      }
+      
+      if (updateData.documents.aadhar) {
+        setData['documents.aadhar'] = {
+          ...delivery.documents?.aadhar,
+          ...updateData.documents.aadhar
+        };
+      }
+      
+      // Remove the nested documents object to avoid conflicts with dot notation
       delete setData.documents;
     }
 
