@@ -442,6 +442,57 @@ export default function HubMenu() {
     toast.success('Image removed')
   }
 
+  // Handle camera capture for add-ons in Flutter InAppWebView
+  const handleAddonCameraCapture = async () => {
+    try {
+      if (window.flutter_inappwebview && typeof window.flutter_inappwebview.callHandler === 'function') {
+        console.log('📸 Using Flutter InAppWebView camera handler for add-on')
+        const result = await window.flutter_inappwebview.callHandler('openCamera', {
+          source: 'camera',
+          accept: 'image/*',
+          multiple: true,
+          quality: 0.8
+        })
+
+        if (result && result.success) {
+          let files = []
+          const results = Array.isArray(result.files) ? result.files : [result]
+          
+          for (const res of results) {
+            let file = null
+            if (res.file) {
+              file = res.file
+            } else if (res.base64) {
+              let base64Data = res.base64
+              if (base64Data.includes(',')) base64Data = base64Data.split(',')[1]
+              
+              const byteCharacters = atob(base64Data)
+              const byteNumbers = new Array(byteCharacters.length)
+              for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i)
+              }
+              const byteArray = new Uint8Array(byteNumbers)
+              const mimeType = res.mimeType || 'image/jpeg'
+              const blob = new Blob([byteArray], { type: mimeType })
+              file = new File([blob], res.fileName || `addon-image-${Date.now()}.jpg`, { type: mimeType })
+            }
+            if (file) files.push(file)
+          }
+
+          if (files.length > 0) {
+            handleAddonImageAdd({ target: { files: files } })
+          }
+        }
+      } else {
+        addonFileInputRef.current?.click()
+      }
+    } catch (error) {
+      console.error('❌ Error opening camera:', error)
+      toast.error('Failed to open camera')
+      addonFileInputRef.current?.click()
+    }
+  }
+
   // Handle add-on save
   const handleSaveAddon = async () => {
     if (!addonName.trim()) {
@@ -2173,13 +2224,23 @@ export default function HubMenu() {
                     className="hidden"
                     id="addon-image-upload"
                   />
-                  <label
-                    htmlFor="addon-image-upload"
-                    className="flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors"
-                  >
-                    <Camera className="h-5 w-5 text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700">Add Images</span>
-                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleAddonCameraCapture}
+                      className="p-2 border-2 border-green-200 bg-green-50 rounded-lg text-green-600 hover:bg-green-100 transition-colors"
+                      title="Capture from Camera"
+                    >
+                      <Camera className="h-5 w-5" />
+                    </button>
+                    <label
+                      htmlFor="addon-image-upload"
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors"
+                    >
+                      <Plus className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm font-medium text-gray-700">Add Images</span>
+                    </label>
+                  </div>
                   <p className="text-xs text-gray-500 mt-1">Add multiple images (PNG, JPG, WEBP - max 5MB each)</p>
                 </div>
               </div>

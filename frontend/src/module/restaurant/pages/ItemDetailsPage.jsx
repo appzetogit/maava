@@ -353,6 +353,60 @@ export default function ItemDetailsPage() {
     }
   }
 
+  // Handle camera capture for Flutter InAppWebView
+  const handleCameraCapture = async () => {
+    try {
+      if (window.flutter_inappwebview && typeof window.flutter_inappwebview.callHandler === 'function') {
+        console.log('📸 Using Flutter InAppWebView camera handler for menu item')
+        const result = await window.flutter_inappwebview.callHandler('openCamera', {
+          source: 'camera',
+          accept: 'image/*',
+          multiple: true,
+          quality: 0.8
+        })
+
+        if (result && result.success) {
+          let files = []
+          
+          // Handle multiple files if returned
+          const results = Array.isArray(result.files) ? result.files : [result]
+          
+          for (const res of results) {
+            let file = null
+            if (res.file) {
+              file = res.file
+            } else if (res.base64) {
+              let base64Data = res.base64
+              if (base64Data.includes(',')) base64Data = base64Data.split(',')[1]
+              
+              const byteCharacters = atob(base64Data)
+              const byteNumbers = new Array(byteCharacters.length)
+              for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i)
+              }
+              const byteArray = new Uint8Array(byteNumbers)
+              const mimeType = res.mimeType || 'image/jpeg'
+              const blob = new Blob([byteArray], { type: mimeType })
+              file = new File([blob], res.fileName || `item-image-${Date.now()}.jpg`, { type: mimeType })
+            }
+            if (file) files.push(file)
+          }
+
+          if (files.length > 0) {
+            // Simulate an event object for handleImageAdd
+            handleImageAdd({ target: { files: files } })
+          }
+        }
+      } else {
+        fileInputRef.current?.click()
+      }
+    } catch (error) {
+      console.error('❌ Error opening camera:', error)
+      toast.error('Failed to open camera')
+      fileInputRef.current?.click()
+    }
+  }
+
   const handleImageDelete = (index) => {
     if (index < 0 || index >= images.length) return
     
@@ -889,13 +943,16 @@ export default function ItemDetailsPage() {
               )}
             </div>
           ) : (
-            <div className="relative w-full h-80 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+            <div 
+              className="relative w-full h-80 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center cursor-pointer"
+              onClick={handleCameraCapture}
+            >
               <div className="text-center">
-                <div className="w-20 h-20 bg-white/80 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
+                <div className="w-20 h-20 bg-white/80 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg hover:scale-105 transition-transform">
                   <Camera className="w-10 h-10 text-gray-400" />
                 </div>
                 <p className="text-sm font-medium text-gray-600">No images added yet *</p>
-                <p className="text-xs text-gray-500 mt-1">Tap the button below to add multiple images</p>
+                <p className="text-xs text-gray-500 mt-1">Tap here or the button below to add images</p>
               </div>
             </div>
           )}
@@ -911,15 +968,25 @@ export default function ItemDetailsPage() {
               className="hidden"
               id="image-upload"
             />
-            <label
-              htmlFor="image-upload"
-              className="flex items-center justify-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-xl text-sm font-semibold cursor-pointer hover:from-gray-800 hover:to-gray-700 transition-all shadow-md hover:shadow-lg active:scale-95"
-            >
-              <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
-                <Plus className="w-4 h-4" />
-              </div>
-              <span>Add Images</span>
-            </label>
+            <div className="flex gap-3">
+              <label
+                htmlFor="image-upload"
+                className="flex-1 flex items-center justify-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-xl text-sm font-semibold cursor-pointer hover:from-gray-800 hover:to-gray-700 transition-all shadow-md hover:shadow-lg active:scale-95"
+              >
+                <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
+                  <Plus className="w-4 h-4" />
+                </div>
+                <span>Add Images</span>
+              </label>
+              <button
+                type="button"
+                onClick={handleCameraCapture}
+                className="px-5 py-3.5 bg-green-50 text-green-600 border-2 border-green-200 rounded-xl hover:bg-green-100 transition-all shadow-sm active:scale-95"
+                title="Capture from Camera"
+              >
+                <Camera className="w-6 h-6" />
+              </button>
+            </div>
           </div>
         </div>
 
