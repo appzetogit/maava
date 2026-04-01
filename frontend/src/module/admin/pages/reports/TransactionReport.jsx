@@ -33,7 +33,6 @@ export default function TransactionReport() {
     restaurant: "All restaurants",
     time: "All Time",
   })
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [zones, setZones] = useState([])
   const [restaurants, setRestaurants] = useState([])
 
@@ -375,32 +374,27 @@ export default function TransactionReport() {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-50 animate-in fade-in-0 zoom-in-95 duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95">
-                  <DropdownMenuLabel>Export Format</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleExport("csv")} className="cursor-pointer">
-                    <FileText className="w-4 h-4 mr-2" />
+                  <DropdownMenuLabel className="text-slate-900 font-bold">Export Format</DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-slate-100" />
+                  <DropdownMenuItem onClick={() => handleExport("csv")} className="cursor-pointer text-slate-700 focus:bg-slate-50 focus:text-slate-900 py-2">
+                    <FileText className="w-4 h-4 mr-2 text-slate-500" />
                     Export as CSV
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport("excel")} className="cursor-pointer">
-                    <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  <DropdownMenuItem onClick={() => handleExport("excel")} className="cursor-pointer text-slate-700 focus:bg-slate-50 focus:text-slate-900 py-2">
+                    <FileSpreadsheet className="w-4 h-4 mr-2 text-slate-500" />
                     Export as Excel
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport("pdf")} className="cursor-pointer">
-                    <FileText className="w-4 h-4 mr-2" />
+                  <DropdownMenuItem onClick={() => handleExport("pdf")} className="cursor-pointer text-slate-700 focus:bg-slate-50 focus:text-slate-900 py-2">
+                    <FileText className="w-4 h-4 mr-2 text-slate-500" />
                     Export as PDF
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport("json")} className="cursor-pointer">
-                    <Code className="w-4 h-4 mr-2" />
+                  <DropdownMenuItem onClick={() => handleExport("json")} className="cursor-pointer text-slate-700 focus:bg-slate-50 focus:text-slate-900 py-2">
+                    <Code className="w-4 h-4 mr-2 text-slate-500" />
                     Export as JSON
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <button 
-                onClick={() => setIsSettingsOpen(true)}
-                className="p-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition-all"
-              >
-                <Settings className="w-3 h-3" />
-              </button>
+
             </div>
           </div>
 
@@ -495,30 +489,6 @@ export default function TransactionReport() {
         </div>
       </div>
 
-      {/* Settings Dialog */}
-      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-        <DialogContent className="max-w-md bg-white p-0 opacity-0 data-[state=open]:opacity-100 data-[state=closed]:opacity-0 transition-opacity duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:scale-100 data-[state=closed]:scale-100">
-          <DialogHeader className="px-6 pt-6 pb-4">
-            <DialogTitle className="flex items-center gap-2">
-              <Settings className="w-5 h-5" />
-              Report Settings
-            </DialogTitle>
-          </DialogHeader>
-          <div className="px-6 pb-6">
-            <p className="text-sm text-slate-700">
-              Transaction report settings and preferences will be available here.
-            </p>
-          </div>
-          <div className="px-6 pb-6 flex items-center justify-end">
-            <button
-              onClick={() => setIsSettingsOpen(false)}
-              className="px-4 py-2 text-sm font-medium rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-all shadow-md"
-            >
-              Close
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

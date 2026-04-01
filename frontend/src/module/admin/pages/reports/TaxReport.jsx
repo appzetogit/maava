@@ -175,22 +175,22 @@ export default function TaxReport() {
                     <ChevronDown className="w-3 h-3" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-50 animate-in fade-in-0 zoom-in-95 duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95">
-                  <DropdownMenuLabel>Export Format</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleExport("csv")} className="cursor-pointer">
+                <DropdownMenuContent align="end" className="w-56 bg-white border border-slate-200 rounded-lg shadow-xl z-50">
+                  <DropdownMenuLabel className="text-slate-900 font-bold px-3 py-2">Export Format</DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-slate-100" />
+                  <DropdownMenuItem onClick={() => handleExport("csv")} className="text-slate-700 focus:bg-slate-50 focus:text-slate-900 cursor-pointer py-2 px-3">
                     <FileText className="w-4 h-4 mr-2" />
                     Export as CSV
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport("excel")} className="cursor-pointer">
+                  <DropdownMenuItem onClick={() => handleExport("excel")} className="text-slate-700 focus:bg-slate-50 focus:text-slate-900 cursor-pointer py-2 px-3">
                     <FileSpreadsheet className="w-4 h-4 mr-2" />
                     Export as Excel
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport("pdf")} className="cursor-pointer">
+                  <DropdownMenuItem onClick={() => handleExport("pdf")} className="text-slate-700 focus:bg-slate-50 focus:text-slate-900 cursor-pointer py-2 px-3">
                     <FileText className="w-4 h-4 mr-2" />
                     Export as PDF
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport("json")} className="cursor-pointer">
+                  <DropdownMenuItem onClick={() => handleExport("json")} className="text-slate-700 focus:bg-slate-50 focus:text-slate-900 cursor-pointer py-2 px-3">
                     <Code className="w-4 h-4 mr-2" />
                     Export as JSON
                   </DropdownMenuItem>
@@ -223,19 +223,19 @@ export default function TaxReport() {
               <table className="w-full">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
-                    <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-900 uppercase tracking-wider">
                       SI
                     </th>
-                    <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-900 uppercase tracking-wider">
                       Income Source
                     </th>
-                    <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-900 uppercase tracking-wider">
                       Total Income
                     </th>
-                    <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-900 uppercase tracking-wider">
                       Total Tax
                     </th>
-                    <th className="px-4 py-3 text-center text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-[10px] font-bold text-slate-900 uppercase tracking-wider">
                       Action
                     </th>
                   </tr>
@@ -271,9 +271,9 @@ export default function TaxReport() {
 
       {/* Settings Dialog */}
       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-        <DialogContent className="max-w-md bg-white p-0 opacity-0 data-[state=open]:opacity-100 data-[state=closed]:opacity-0 transition-opacity duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:scale-100 data-[state=closed]:scale-100">
-          <DialogHeader className="px-6 pt-6 pb-4">
-            <DialogTitle className="flex items-center gap-2">
+        <DialogContent className="max-w-md bg-white p-0 border border-slate-200 shadow-2xl">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-100">
+            <DialogTitle className="flex items-center gap-2 text-slate-900 font-bold">
               <Settings className="w-5 h-5" />
               Report Settings
             </DialogTitle>

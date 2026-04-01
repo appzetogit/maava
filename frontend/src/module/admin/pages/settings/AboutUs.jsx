@@ -167,69 +167,69 @@ export default function AboutUs() {
         </div>
 
         {/* Basic Information */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
+        <Card className="mb-6 bg-white border-slate-200 shadow-sm">
+          <CardHeader className="border-b border-slate-100">
+            <CardTitle className="text-slate-900">Basic Information</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             <div>
-              <Label htmlFor="appName">App Name</Label>
+              <Label htmlFor="appName" className="text-slate-700 font-semibold mb-1.5 block">App Name</Label>
               <Input
                 id="appName"
                 value={aboutData.appName}
                 onChange={(e) => setAboutData(prev => ({ ...prev, appName: e.target.value }))}
                 placeholder={companyName}
-                className="mt-1"
+                className="mt-1 bg-white border-slate-300 text-slate-900 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
-              <Label htmlFor="version">Version</Label>
+              <Label htmlFor="version" className="text-slate-700 font-semibold mb-1.5 block">Version</Label>
               <Input
                 id="version"
                 value={aboutData.version}
                 onChange={(e) => setAboutData(prev => ({ ...prev, version: e.target.value }))}
                 placeholder="1.0.0"
-                className="mt-1"
+                className="mt-1 bg-white border-slate-300 text-slate-900 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description" className="text-slate-700 font-semibold mb-1.5 block">Description</Label>
               <Textarea
                 id="description"
                 value={aboutData.description}
                 onChange={(e) => setAboutData(prev => ({ ...prev, description: e.target.value }))}
                 placeholder="Your trusted food delivery partner..."
                 rows={4}
-                className="mt-1"
+                className="mt-1 bg-white border-slate-300 text-slate-900 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
-              <Label htmlFor="logo">Logo URL</Label>
+              <Label htmlFor="logo" className="text-slate-700 font-semibold mb-1.5 block">Logo URL</Label>
               <Input
                 id="logo"
                 value={aboutData.logo}
                 onChange={(e) => setAboutData(prev => ({ ...prev, logo: e.target.value }))}
                 placeholder="https://example.com/logo.png"
-                className="mt-1"
+                className="mt-1 bg-white border-slate-300 text-slate-900 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </CardContent>
         </Card>
 
         {/* Features */}
-        <Card className="mb-6">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Features</CardTitle>
-            <Button onClick={addFeature} size="sm" variant="outline">
+        <Card className="mb-6 bg-white border-slate-200 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100">
+            <CardTitle className="text-slate-900">Features</CardTitle>
+            <Button onClick={addFeature} size="sm" variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-50">
               <Plus className="h-4 w-4 mr-2" />
               Add Feature
             </Button>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             {aboutData.features.map((feature, index) => {
               const IconComponent = iconMap[feature.icon] || Heart
               return (
-                <Card key={index} className="border-2">
+                <Card key={index} className="border border-slate-200 bg-slate-50/50">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
                       <div className={`${feature.bgColor} rounded-lg p-3 flex-shrink-0`}>
@@ -238,15 +238,15 @@ export default function AboutUs() {
                       <div className="flex-1 space-y-3">
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <Label>Icon</Label>
+                            <Label className="text-slate-700 font-semibold mb-1 block">Icon</Label>
                             <Select
                               value={feature.icon}
                               onValueChange={(value) => updateFeature(index, 'icon', value)}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="bg-white border-slate-300 text-slate-900">
                                 <SelectValue />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent className="bg-white border-slate-200 text-slate-900">
                                 {iconOptions.map(opt => (
                                   <SelectItem key={opt.value} value={opt.value}>
                                     {opt.label}
@@ -256,15 +256,15 @@ export default function AboutUs() {
                             </Select>
                           </div>
                           <div>
-                            <Label>Color</Label>
+                            <Label className="text-slate-700 font-semibold mb-1 block">Color</Label>
                             <Select
                               value={feature.color}
                               onValueChange={(value) => updateFeature(index, 'color', value)}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="bg-white border-slate-300 text-slate-900">
                                 <SelectValue />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent className="bg-white border-slate-200 text-slate-900">
                                 {colorOptions.map(opt => (
                                   <SelectItem key={opt.value} value={opt.value}>
                                     {opt.label}
@@ -275,20 +275,22 @@ export default function AboutUs() {
                           </div>
                         </div>
                         <div>
-                          <Label>Title</Label>
+                          <Label className="text-slate-700 font-semibold mb-1 block">Title</Label>
                           <Input
                             value={feature.title}
                             onChange={(e) => updateFeature(index, 'title', e.target.value)}
                             placeholder="Feature title"
+                            className="bg-white border-slate-300 text-slate-900"
                           />
                         </div>
                         <div>
-                          <Label>Description</Label>
+                          <Label className="text-slate-700 font-semibold mb-1 block">Description</Label>
                           <Textarea
                             value={feature.description}
                             onChange={(e) => updateFeature(index, 'description', e.target.value)}
                             placeholder="Feature description"
                             rows={2}
+                            className="bg-white border-slate-300 text-slate-900"
                           />
                         </div>
                       </div>
@@ -312,8 +314,8 @@ export default function AboutUs() {
         </Card>
 
         {/* Save Button */}
-        <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={saving} size="lg">
+        <div className="flex justify-end mb-10">
+          <Button onClick={handleSave} disabled={saving} size="lg" className="bg-blue-600 hover:bg-blue-700 text-white shadow-md px-8">
             {saving ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>

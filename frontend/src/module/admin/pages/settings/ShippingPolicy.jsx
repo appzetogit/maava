@@ -122,12 +122,12 @@ export default function ShippingPolicy() {
         </div>
 
         {/* Text Area */}
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+        <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6">
           <Textarea
             value={shippingData.content}
             onChange={(e) => setShippingData(prev => ({ ...prev, content: e.target.value }))}
             placeholder="Enter shipping policy content..."
-            className="min-h-[600px] w-full text-sm text-slate-700 leading-relaxed resize-y"
+            className="min-h-[600px] w-full text-sm text-slate-900 leading-relaxed resize-y bg-white border-slate-300 focus:border-blue-600 focus:ring-blue-600"
             dir="ltr"
             style={{
               direction: 'ltr',
@@ -140,12 +140,12 @@ export default function ShippingPolicy() {
         </div>
 
         {/* Submit Button */}
-        <div className="flex justify-end mt-6">
+        <div className="flex justify-end mt-6 mb-10">
           <button
             type="button"
             onClick={handleSubmit}
             disabled={saving}
-            className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-md font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>

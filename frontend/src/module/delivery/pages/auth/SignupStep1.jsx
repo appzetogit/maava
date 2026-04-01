@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { ArrowLeft } from "lucide-react"
 import { deliveryAPI } from "@/lib/api"
@@ -22,11 +22,50 @@ export default function SignupStep1() {
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Pre-fill referral code from login or existing profile
+  useEffect(() => {
+    const fetchProfileAndReferral = async () => {
+      // 1. Try sessionStorage first (from sign-in/OTP flow)
+      const stored = sessionStorage.getItem("deliveryAuthData")
+      if (stored) {
+        try {
+          const authData = JSON.parse(stored)
+          if (authData.referralCode) {
+            setFormData(prev => ({
+              ...prev,
+              referralCode: authData.referralCode
+            }))
+            return; // Found in session, skip DB fetch
+          }
+        } catch (e) {
+          console.error("Error parsing auth data for referral code:", e)
+        }
+      }
+
+      // 2. Fallback: Fetch current profile to see if referral code is already set in DB
+      try {
+        const response = await deliveryAPI.getProfile();
+        if (response?.data?.success && response?.data?.data?.profile) {
+          const profile = response.data.data.profile;
+          setFormData(prev => ({
+            ...prev,
+            name: prev.name || profile.name || "",
+            referralCode: profile.referredBy || ""
+          }));
+        }
+      } catch (err) {
+        console.error("Error fetching profile for pre-fill:", err);
+      }
+    };
+
+    fetchProfileAndReferral();
+  }, [])
+
   const handleChange = (e) => {
     let { name, value } = e.target
     
     // Apply field specific validation/formatting during typing
-    if (name === "name") {
+    if (name === "name" || name === "city" || name === "state") {
       value = value.replace(/[^a-zA-Z\s]/g, "")
     } else if (name === "vehicleNumber") {
       value = value.toUpperCase().replace(/[^A-Z0-9]/g, "")

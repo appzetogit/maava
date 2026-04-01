@@ -5,13 +5,6 @@ import AnimatedPage from "../../components/AnimatedPage"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { authAPI } from "@/lib/api"
 import { firebaseAuth, googleProvider, ensureFirebaseInitialized } from "@/lib/firebase"
 import { setAuthData } from "@/lib/utils/auth"
@@ -164,7 +157,7 @@ export default function SignIn() {
 
 
   // Get selected country details dynamically
-  const selectedCountry = countryCodes.find(c => c.code === formData.countryCode) || countryCodes[2] // Default to India (+91)
+  const selectedCountry = countryCodes.find(c => c.code === formData.countryCode) || countryCodes[0] // Default to India (+91)
 
   const validateEmail = (email) => {
     if (!email.trim()) {
@@ -223,12 +216,6 @@ export default function SignIn() {
     }
   }
 
-  const handleCountryCodeChange = (value) => {
-    setFormData({
-      ...formData,
-      countryCode: value,
-    })
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -458,29 +445,10 @@ export default function SignIn() {
             {authMethod === "phone" && (
               <div className="space-y-2">
                 <div className="flex gap-2 items-stretch">
-                  <Select
-                    value={formData.countryCode}
-                    onValueChange={handleCountryCodeChange}
-                  >
-                    <SelectTrigger className="w-[100px] md:w-[120px] !h-12 md:!h-14 border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-black dark:text-white rounded-lg flex items-center transition-colors" size="default">
-                      <SelectValue>
-                        <span className="flex items-center gap-2 text-sm md:text-base text-black dark:text-white">
-                          <span>{selectedCountry.flag}</span>
-                          <span>{selectedCountry.code}</span>
-                        </span>
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px] overflow-y-auto">
-                      {countryCodes.map((country) => (
-                        <SelectItem key={country.code} value={country.code}>
-                          <span className="flex items-center gap-2 text-black dark:text-white">
-                            <span>{country.flag}</span>
-                            <span>{country.code}</span>
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="w-[80px] md:w-[90px] h-12 md:h-14 border border-gray-300 dark:border-gray-700 bg-gray-50/50 dark:bg-[#1a1a1a] text-black dark:text-white rounded-lg flex items-center justify-center gap-2 shrink-0 select-none">
+                    <span className="text-sm md:text-base">{selectedCountry.flag}</span>
+                    <span className="text-sm md:text-base font-medium">{selectedCountry.code}</span>
+                  </div>
                   <Input
                     id="phone"
                     name="phone"

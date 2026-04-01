@@ -17,7 +17,7 @@ router.use(authenticate);
 // Profile routes
 router.get('/profile', getProfile);
 router.put('/profile', validate(Joi.object({
-  name: Joi.string().trim().min(2).max(100).optional(),
+  name: Joi.string().trim().min(2).max(100).pattern(/^[a-zA-Z\s]+$/).optional(),
   email: Joi.string().email().lowercase().trim().optional().allow(null, ''),
   dateOfBirth: Joi.date().optional().allow(null),
   gender: Joi.string().valid('male', 'female', 'other', 'prefer-not-to-say').optional(),
@@ -31,8 +31,8 @@ router.put('/profile', validate(Joi.object({
     addressLine1: Joi.string().trim().optional().allow(null, ''),
     addressLine2: Joi.string().trim().optional().allow(null, ''),
     area: Joi.string().trim().optional().allow(null, ''),
-    city: Joi.string().trim().optional().allow(null, ''),
-    state: Joi.string().trim().optional().allow(null, ''),
+    city: Joi.string().trim().pattern(/^[a-zA-Z\s]+$/).optional().allow(null, ''),
+    state: Joi.string().trim().pattern(/^[a-zA-Z\s]+$/).optional().allow(null, ''),
     zipCode: Joi.string().trim().optional().allow(null, '')
   }).optional(),
   profileImage: Joi.object({

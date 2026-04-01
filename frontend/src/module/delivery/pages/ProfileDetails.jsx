@@ -693,7 +693,8 @@ export default function ProfileDetails() {
               type="text"
               value={personalDetails.name}
               onChange={(e) => {
-                setPersonalDetails(prev => ({ ...prev, name: e.target.value }))
+                const value = e.target.value.replace(/[^a-zA-Z\s]/g, "")
+                setPersonalDetails(prev => ({ ...prev, name: value }))
                 setPersonalDetailsErrors(prev => ({ ...prev, name: "" }))
               }}
               placeholder="Enter your name"

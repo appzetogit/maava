@@ -21,11 +21,11 @@ const logger = winston.createLogger({
  * POST /api/delivery/signup/details
  */
 const signupDetailsSchema = Joi.object({
-  name: Joi.string().trim().min(2).max(100).required(),
+  name: Joi.string().trim().min(2).max(100).pattern(/^[a-zA-Z\s]+$/).required().messages({ 'string.pattern.base': 'Name must only contain letters and spaces' }),
   email: Joi.string().email().lowercase().trim().optional().allow(null, ''),
   address: Joi.string().trim().required(),
-  city: Joi.string().trim().required(),
-  state: Joi.string().trim().required(),
+  city: Joi.string().trim().pattern(/^[a-zA-Z\s]+$/).required().messages({ 'string.pattern.base': 'City must only contain letters and spaces' }),
+  state: Joi.string().trim().pattern(/^[a-zA-Z\s]+$/).required().messages({ 'string.pattern.base': 'State must only contain letters and spaces' }),
   vehicleType: Joi.string().valid('bike', 'scooter', 'bicycle', 'car').required(),
   vehicleName: Joi.string().trim().optional().allow(null, ''),
   vehicleNumber: Joi.string().trim().required(),
@@ -97,15 +97,31 @@ export const submitSignupDetails = asyncHandler(async (req, res) => {
       updateData.referredBy = verifiedReferrer;
       updateData.referralStatus = 'pending';
 
-      // Update the Referral record to 'signed_up'
+      // Update or create the Referral record
       try {
         const { default: Referral } = await import('../models/Referral.js');
-        await Referral.findOneAndUpdate(
-          { friendPhone: delivery.phone, status: 'pending' },
-          { status: 'signed_up', signedUpAs: delivery._id }
-        );
+        const existingReferral = await Referral.findOne({ friendPhone: delivery.phone, status: 'pending' });
+        
+        if (existingReferral) {
+          await Referral.findOneAndUpdate(
+            { friendPhone: delivery.phone, status: 'pending' },
+            { status: 'signed_up', signedUpAs: delivery._id }
+          );
+        } else {
+          // Find the referrer again to get their ObjectId
+          const referrerDoc = await Delivery.findOne({ deliveryId: verifiedReferrer });
+          if (referrerDoc) {
+            await Referral.create({
+              referrer: referrerDoc._id,
+              friendName: name.trim(),
+              friendPhone: delivery.phone,
+              status: 'signed_up',
+              signedUpAs: delivery._id
+            });
+          }
+        }
       } catch (refErr) {
-        console.error('Error updating Referral record during signup:', refErr);
+        console.error('Error updating/creating Referral record during signup:', refErr);
       }
 
       // Send initial push notifications to both referrer and referee

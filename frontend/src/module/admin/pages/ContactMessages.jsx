@@ -352,9 +352,12 @@ export default function ContactMessages() {
                             <Settings className="w-4 h-4" />
                           </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewFeedback(feedback)}>
-                            <Eye className="w-4 h-4 mr-2" />
+                        <DropdownMenuContent align="end" className="bg-white border border-slate-200 shadow-xl z-[100]">
+                          <DropdownMenuItem 
+                            onClick={() => handleViewFeedback(feedback)}
+                            className="text-slate-700 focus:bg-slate-100 focus:text-slate-900 cursor-pointer py-2"
+                          >
+                            <Eye className="w-4 h-4 mr-2 text-slate-500" />
                             View Details
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -397,66 +400,66 @@ export default function ContactMessages() {
 
       {/* View Feedback Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-200 dark:border-slate-700">
-            <DialogTitle className="text-2xl font-bold text-slate-900 dark:text-white">Feedback Details</DialogTitle>
-            <DialogDescription className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0 bg-white">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-200">
+            <DialogTitle className="text-2xl font-bold text-slate-900">Feedback Details</DialogTitle>
+            <DialogDescription className="text-sm text-slate-600 mt-1">
               Complete information about the user and their feedback
             </DialogDescription>
           </DialogHeader>
           {selectedFeedback && (
             <div className="px-6 py-6 space-y-6">
               {/* User Information Section */}
-              <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-5 flex items-center gap-3">
+              <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-5 border border-slate-200">
+                <h3 className="text-lg font-bold text-slate-900 mb-5 flex items-center gap-3">
                   <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
                   Customer Information
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Customer Name</label>
-                    <p className="text-base font-semibold text-slate-900 dark:text-white">{selectedFeedback.customer?.name || 'N/A'}</p>
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Customer Name</label>
+                    <p className="text-base font-semibold text-slate-900">{selectedFeedback.customer?.name || 'N/A'}</p>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Email Address</label>
-                    <p className="text-base font-semibold text-slate-900 dark:text-white break-all">{selectedFeedback.customer?.email || 'N/A'}</p>
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Email Address</label>
+                    <p className="text-base font-semibold text-slate-900 break-all">{selectedFeedback.customer?.email || 'N/A'}</p>
                   </div>
                   {selectedFeedback.customer?.phone && (
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Phone Number</label>
-                      <p className="text-base font-semibold text-slate-900 dark:text-white">{selectedFeedback.customer.phone}</p>
+                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Phone Number</label>
+                      <p className="text-base font-semibold text-slate-900">{selectedFeedback.customer.phone}</p>
                     </div>
                   )}
                   {selectedFeedback.orderId && (
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Order ID</label>
-                      <p className="text-base font-semibold text-slate-900 dark:text-white">{selectedFeedback.orderId}</p>
+                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Order ID</label>
+                      <p className="text-base font-semibold text-slate-900">{selectedFeedback.orderId}</p>
                     </div>
                   )}
                    {selectedFeedback.restaurantName && (
                      <div className="space-y-1">
-                       <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Restaurant</label>
-                       <p className="text-base font-semibold text-slate-900 dark:text-white">{selectedFeedback.restaurantName}</p>
+                       <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Restaurant</label>
+                       <p className="text-base font-semibold text-slate-900">{selectedFeedback.restaurantName}</p>
                      </div>
                    )}
                    {selectedFeedback.deliveryPartner?.name && (
                      <div className="space-y-1">
-                       <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Delivery Boy Name</label>
-                       <p className="text-base font-semibold text-slate-900 dark:text-white">{selectedFeedback.deliveryPartner.name}</p>
+                       <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Delivery Boy Name</label>
+                       <p className="text-base font-semibold text-slate-900">{selectedFeedback.deliveryPartner.name}</p>
                      </div>
                    )}
                    {selectedFeedback.deliveryPartner?.id && (
                      <div className="space-y-1">
-                       <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Delivery Boy ID</label>
-                       <p className="text-base font-semibold text-slate-900 dark:text-white font-mono text-sm">
+                       <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Delivery Boy ID</label>
+                       <p className="text-base font-semibold text-slate-900 font-mono text-sm">
                          {selectedFeedback.deliveryPartner.id.toString()}
                        </p>
                      </div>
                    )}
                    {selectedFeedback.deliveryPartner?.phone && (
                      <div className="space-y-1">
-                       <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Delivery Boy Phone</label>
-                       <p className="text-base font-semibold text-slate-900 dark:text-white">{selectedFeedback.deliveryPartner.phone}</p>
+                       <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Delivery Boy Phone</label>
+                       <p className="text-base font-semibold text-slate-900">{selectedFeedback.deliveryPartner.phone}</p>
                      </div>
                    )}
                 </div>
@@ -464,27 +467,27 @@ export default function ContactMessages() {
 
                {/* Food Items Section */}
                {selectedFeedback.items && selectedFeedback.items.length > 0 && (
-                 <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-5 border border-purple-200 dark:border-purple-800">
-                   <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-5 flex items-center gap-3">
+                 <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-5 border border-purple-200">
+                   <h3 className="text-lg font-bold text-slate-900 mb-5 flex items-center gap-3">
                      <div className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-600 rounded-full"></div>
                      Food Items Ordered
                    </h3>
-                   <div className="bg-white dark:bg-slate-800 rounded-lg p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
+                   <div className="bg-white rounded-lg p-5 border border-slate-200 shadow-sm">
                      <div className="space-y-2">
                        {selectedFeedback.items.map((item, index) => (
-                         <div key={index} className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-b-0">
+                         <div key={index} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-b-0">
                            <div className="flex-1">
-                             <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                             <p className="text-sm font-semibold text-slate-900">
                                {item.quantity}x {item.name}
                              </p>
                              {item.price && (
-                               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                               <p className="text-xs text-slate-500 mt-1">
                                  ₹{item.price} each
                                </p>
                              )}
                            </div>
                            {item.price && (
-                             <p className="text-sm font-bold text-slate-900 dark:text-white">
+                             <p className="text-sm font-bold text-slate-900">
                                ₹{(item.price * item.quantity).toFixed(2)}
                              </p>
                            )}
@@ -496,17 +499,17 @@ export default function ContactMessages() {
                )}
 
                {/* Rating Section */}
-               <div className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl p-5 border border-yellow-200 dark:border-yellow-800">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-5 flex items-center gap-3">
+               <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-5 border border-yellow-200">
+                <h3 className="text-lg font-bold text-slate-900 mb-5 flex items-center gap-3">
                   <div className="w-1 h-6 bg-gradient-to-b from-yellow-500 to-orange-600 rounded-full"></div>
                   Rating
                 </h3>
-                <div className="bg-white dark:bg-slate-800 rounded-lg p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="bg-white rounded-lg p-5 border border-slate-200 shadow-sm">
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1">
                       {renderStars(selectedFeedback.rating)}
                     </div>
-                    <span className="text-lg font-bold text-slate-900 dark:text-white">
+                    <span className="text-lg font-bold text-slate-900">
                       {selectedFeedback.rating} / 5
                     </span>
                   </div>
@@ -515,13 +518,13 @@ export default function ContactMessages() {
 
               {/* Feedback Message Section */}
               {selectedFeedback.comment && (
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-5 border border-blue-200 dark:border-blue-800">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-5 flex items-center gap-3">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-200">
+                  <h3 className="text-lg font-bold text-slate-900 mb-5 flex items-center gap-3">
                     <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></div>
                     Feedback Comment
                   </h3>
-                  <div className="bg-white dark:bg-slate-800 rounded-lg p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
-                    <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
+                  <div className="bg-white rounded-lg p-5 border border-slate-200 shadow-sm">
+                    <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
                       {selectedFeedback.comment}
                     </p>
                   </div>
@@ -530,9 +533,9 @@ export default function ContactMessages() {
 
               {/* Order Details Section */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
-                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-2">Submitted At</label>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2">Submitted At</label>
+                  <p className="text-sm font-semibold text-slate-900">
                     {selectedFeedback.submittedAt ? new Date(selectedFeedback.submittedAt).toLocaleString('en-US', {
                       year: 'numeric',
                       month: 'long',
@@ -542,9 +545,9 @@ export default function ContactMessages() {
                     }) : 'N/A'}
                   </p>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
-                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-2">Delivered At</label>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2">Delivered At</label>
+                  <p className="text-sm font-semibold text-slate-900">
                     {selectedFeedback.deliveredAt ? new Date(selectedFeedback.deliveredAt).toLocaleString('en-US', {
                       year: 'numeric',
                       month: 'long',
@@ -557,11 +560,11 @@ export default function ContactMessages() {
               </div>
 
               {/* Close Button */}
-              <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-700">
+              <div className="flex justify-end pt-4 border-t border-slate-200">
                 <Button
                   variant="outline"
                   onClick={() => setIsViewDialogOpen(false)}
-                  className="min-w-[100px]"
+                  className="min-w-[100px] border-slate-300 text-slate-700 hover:bg-slate-50"
                 >
                   Close
                 </Button>

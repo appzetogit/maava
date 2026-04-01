@@ -1,12 +1,5 @@
 import { useState, useEffect } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Gift } from "lucide-react"
 import { deliveryAPI } from "@/lib/api"
 import { useCompanyName } from "@/lib/hooks/useCompanyName"
@@ -14,26 +7,7 @@ import deliveryHeroImg from "@/assets/purple_delivery_boy.png"
 
 // Common country codes
 const countryCodes = [
-  { code: "+1", country: "US/CA", flag: "🇺🇸" },
-  { code: "+44", country: "UK", flag: "🇬🇧" },
   { code: "+91", country: "IN", flag: "🇮🇳" },
-  { code: "+86", country: "CN", flag: "🇨🇳" },
-  { code: "+81", country: "JP", flag: "🇯🇵" },
-  { code: "+49", country: "DE", flag: "🇩🇪" },
-  { code: "+33", country: "FR", flag: "🇫🇷" },
-  { code: "+39", country: "IT", flag: "🇮🇹" },
-  { code: "+34", country: "ES", flag: "🇪🇸" },
-  { code: "+61", country: "AU", flag: "🇦🇺" },
-  { code: "+7", country: "RU", flag: "🇷🇺" },
-  { code: "+55", country: "BR", flag: "🇧🇷" },
-  { code: "+52", country: "MX", flag: "🇲🇽" },
-  { code: "+82", country: "KR", flag: "🇰🇷" },
-  { code: "+65", country: "SG", flag: "🇸🇬" },
-  { code: "+971", country: "AE", flag: "🇦🇪" },
-  { code: "+966", country: "SA", flag: "🇸🇦" },
-  { code: "+27", country: "ZA", flag: "🇿🇦" },
-  { code: "+31", country: "NL", flag: "🇳🇱" },
-  { code: "+46", country: "SE", flag: "🇸🇪" },
 ]
 
 export default function DeliverySignIn() {
@@ -59,7 +33,7 @@ export default function DeliverySignIn() {
   const [isSending, setIsSending] = useState(false)
 
   // Get selected country details dynamically
-  const selectedCountry = countryCodes.find(c => c.code === formData.countryCode) || countryCodes[2] // Default to India (+91)
+  const selectedCountry = countryCodes.find(c => c.code === formData.countryCode) || countryCodes[0] // Default to India (+91)
 
   const validatePhone = (phone, countryCode) => {
     if (!phone || phone.trim() === "") {
@@ -136,12 +110,6 @@ export default function DeliverySignIn() {
     })
   }
 
-  const handleCountryCodeChange = (value) => {
-    setFormData({
-      ...formData,
-      countryCode: value,
-    })
-  }
 
   const handleReferralChange = (e) => {
     setFormData({
@@ -193,29 +161,10 @@ export default function DeliverySignIn() {
           {/* Mobile Number Input */}
           <div className="space-y-2 w-full">
             <div className="flex gap-2 items-stretch w-full">
-              <Select
-                value={formData.countryCode}
-                onValueChange={handleCountryCodeChange}
-              >
-                <SelectTrigger className="w-[100px] !h-12 border-gray-300 rounded-lg flex items-center shrink-0" size="default">
-                  <SelectValue>
-                    <span className="flex items-center gap-2 text-black font-medium">
-                      <span>{selectedCountry.flag}</span>
-                      <span>{selectedCountry.code}</span>
-                    </span>
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px] overflow-y-auto">
-                  {countryCodes.map((country) => (
-                    <SelectItem key={country.code} value={country.code}>
-                      <span className="flex items-center gap-2 text-black font-medium">
-                        <span>{country.flag}</span>
-                        <span>{country.code}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="w-[80px] h-12 border border-gray-300 bg-gray-50 flex items-center justify-center gap-2 rounded-lg shrink-0 select-none">
+                <span className="text-base">{selectedCountry.flag}</span>
+                <span className="text-base font-semibold text-black">{selectedCountry.code}</span>
+              </div>
               <input
                 type="tel"
                 inputMode="numeric"
