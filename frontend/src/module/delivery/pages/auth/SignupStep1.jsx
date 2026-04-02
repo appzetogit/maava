@@ -22,27 +22,9 @@ export default function SignupStep1() {
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Pre-fill referral code from login or existing profile
+  // Pre-fill profile details
   useEffect(() => {
-    const fetchProfileAndReferral = async () => {
-      // 1. Try sessionStorage first (from sign-in/OTP flow)
-      const stored = sessionStorage.getItem("deliveryAuthData")
-      if (stored) {
-        try {
-          const authData = JSON.parse(stored)
-          if (authData.referralCode) {
-            setFormData(prev => ({
-              ...prev,
-              referralCode: authData.referralCode
-            }))
-            return; // Found in session, skip DB fetch
-          }
-        } catch (e) {
-          console.error("Error parsing auth data for referral code:", e)
-        }
-      }
-
-      // 2. Fallback: Fetch current profile to see if referral code is already set in DB
+    const fetchProfileData = async () => {
       try {
         const response = await deliveryAPI.getProfile();
         if (response?.data?.success && response?.data?.data?.profile) {
@@ -50,7 +32,8 @@ export default function SignupStep1() {
           setFormData(prev => ({
             ...prev,
             name: prev.name || profile.name || "",
-            referralCode: profile.referredBy || ""
+            // Keep existing referral code if already set in profile
+            referralCode: prev.referralCode || profile.referredBy || ""
           }));
         }
       } catch (err) {
@@ -58,7 +41,7 @@ export default function SignupStep1() {
       }
     };
 
-    fetchProfileAndReferral();
+    fetchProfileData();
   }, [])
 
   const handleChange = (e) => {

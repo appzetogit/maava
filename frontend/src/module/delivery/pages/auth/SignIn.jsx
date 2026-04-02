@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react"
-import { useNavigate, useSearchParams } from "react-router-dom"
-import { Gift } from "lucide-react"
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { deliveryAPI } from "@/lib/api"
 import { useCompanyName } from "@/lib/hooks/useCompanyName"
 import deliveryHeroImg from "@/assets/purple_delivery_boy.png"
@@ -16,19 +15,8 @@ export default function DeliverySignIn() {
   const [formData, setFormData] = useState({
     phone: "",
     countryCode: "+91",
-    referralCode: "",
   })
-  const [searchParams] = useSearchParams()
 
-  useEffect(() => {
-    const refCode = searchParams.get("ref")
-    if (refCode) {
-      setFormData(prev => ({
-        ...prev,
-        referralCode: refCode.toUpperCase()
-      }))
-    }
-  }, [searchParams])
   const [error, setError] = useState("")
   const [isSending, setIsSending] = useState(false)
 
@@ -83,7 +71,6 @@ export default function DeliverySignIn() {
         phone: fullPhone,
         isSignUp: false,
         module: "delivery",
-        referralCode: formData.referralCode?.trim()?.toUpperCase() || null,
       }
       sessionStorage.setItem("deliveryAuthData", JSON.stringify(authData))
 
@@ -110,13 +97,6 @@ export default function DeliverySignIn() {
     })
   }
 
-
-  const handleReferralChange = (e) => {
-    setFormData({
-      ...formData,
-      referralCode: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""),
-    })
-  }
 
   const isValid = !validatePhone(formData.phone, formData.countryCode)
 
@@ -187,28 +167,6 @@ export default function DeliverySignIn() {
                 {error}
               </p>
             )}
-          </div>
-
-          {/* Referral Code Input */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700">
-              Referral Code (Optional)
-            </label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                <Gift size={20} />
-              </span>
-              <input
-                type="text"
-                placeholder="e.g. DEL000001"
-                value={formData.referralCode}
-                onChange={handleReferralChange}
-                className="w-full h-12 pl-12 pr-4 text-gray-900 placeholder-gray-400 focus:outline-none text-base border border-gray-300 rounded-lg uppercase"
-              />
-            </div>
-            <p className="text-xs text-gray-500">
-              Got a code from a friend? Enter it here!
-            </p>
           </div>
 
           {/* Continue Button (Restored Green) */}

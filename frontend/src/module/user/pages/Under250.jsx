@@ -18,12 +18,15 @@ import offerImage from "@/assets/offerimage.png"
 import AddToCartAnimation from "../components/AddToCartAnimation"
 import StickyCartCard from "../components/StickyCartCard"
 import api, { restaurantAPI } from "@/lib/api"
+import { useProfile } from "../context/ProfileContext"
+import { getCompanyNameAsync } from "@/lib/utils/businessSettings"
 
 export default function Under250() {
   const { location } = useLocation()
   const { zoneId, zoneStatus, isInService, isOutOfService } = useZone(location)
   const navigate = useNavigate()
   const { addToCart, updateQuantity, removeFromCart, getCartItem, cart } = useCart()
+  const { addDishFavorite, removeDishFavorite, isDishFavorite } = useProfile()
   const [activeCategory, setActiveCategory] = useState(null)
   const [showSortPopup, setShowSortPopup] = useState(false)
   const [selectedSort, setSelectedSort] = useState(null)
@@ -31,7 +34,6 @@ export default function Under250() {
   const [showItemDetail, setShowItemDetail] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
   const [quantities, setQuantities] = useState({})
-  const [bookmarkedItems, setBookmarkedItems] = useState(new Set())
   const [categories, setCategories] = useState([])
   const [loadingCategories, setLoadingCategories] = useState(true)
   const [bannerImage, setBannerImage] = useState(null)
@@ -320,6 +322,8 @@ export default function Under250() {
     const itemWithRestaurant = {
       ...item,
       restaurant: restaurant.name,
+      restaurantId: restaurant.restaurantId || restaurant._id || restaurant.id,
+      restaurantSlug: restaurant.slug || restaurant.name.toLowerCase().replace(/\s+/g, '-'),
       description: item.description || `${item.name} from ${restaurant.name}`,
       customisable: item.customisable || false,
       notEligibleForCoupons: item.notEligibleForCoupons || false,
@@ -328,16 +332,117 @@ export default function Under250() {
     setShowItemDetail(true)
   }
 
-  const handleBookmarkClick = (itemId) => {
-    setBookmarkedItems((prev) => {
-      const newSet = new Set(prev)
-      if (newSet.has(itemId)) {
-        newSet.delete(itemId)
-      } else {
-        newSet.add(itemId)
+  // Handle bookmark click using useProfile context
+  const handleBookmarkClick = (item) => {
+    const restaurantId = item.restaurantId
+    if (!restaurantId) {
+      toast.error("Restaurant information is missing")
+      return
+    }
+
+    const dishId = item.id || item._id
+    if (!dishId) {
+      toast.error("Dish information is missing")
+      return
+    }
+
+    const isFav = isDishFavorite(dishId, restaurantId)
+
+    if (isFav) {
+      // If already bookmarked, remove it
+      removeDishFavorite(dishId, restaurantId)
+      toast.success("Dish removed from favorites")
+    } else {
+      // Add to favorites
+      const dishData = {
+        id: dishId,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        originalPrice: item.originalPrice,
+        image: item.image,
+        restaurantId: restaurantId,
+        restaurantName: item.restaurant || "",
+        restaurantSlug: item.restaurantSlug || "",
+        foodType: item.foodType,
+        isSpicy: item.isSpicy,
+        customisable: item.customisable,
       }
-      return newSet
-    })
+      addDishFavorite(dishData)
+      toast.success("Dish added to favorites")
+    }
+  }
+
+  // Copy to clipboard helper
+  const copyToClipboard = async (text) => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text)
+        toast.success("Link copied to clipboard!")
+      } else {
+        throw new Error("Clipboard API not available")
+      }
+    } catch (error) {
+      // Fallback for older browsers
+      const textArea = document.createElement("textarea")
+      textArea.value = text
+      textArea.style.position = "fixed"
+      textArea.style.opacity = "0"
+      document.body.appendChild(textArea)
+      textArea.select()
+      try {
+        document.execCommand("copy")
+        toast.success("Link copied to clipboard!")
+      } catch (err) {
+        toast.error("Failed to copy link")
+      }
+      document.body.removeChild(textArea)
+    }
+  }
+
+  // Handle share click for individual dishes
+  const handleShareClick = async (item, e) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    
+    if (!item) return;
+    
+    const dishId = item.id || item._id
+    
+    if (!dishId) {
+      toast.error("Could not share this item")
+      return;
+    }
+    
+    const restaurantSlug = item.restaurantSlug || ""
+    const companyName = await getCompanyNameAsync()
+
+    // Create share URL with deep link to the dish
+    const shareUrl = `${window.location.origin}/user/restaurants/${restaurantSlug}?dish=${dishId}`
+    const shareText = `Check out ${item.name} from ${item.restaurant || "this restaurant"} on ${companyName}! ${shareUrl}`
+
+    // Try Web Share API first (mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${item.name} - ${item.restaurant || ""}`,
+          text: shareText,
+          url: shareUrl,
+        })
+        toast.success("Dish shared successfully")
+      } catch (error) {
+        // User cancelled or error occurred
+        if (error.name !== "AbortError") {
+          // Fallback to copy to clipboard
+          await copyToClipboard(shareUrl)
+        }
+      }
+    } else {
+      // Fallback to copy to clipboard
+      await copyToClipboard(shareUrl)
+    }
   }
 
   // Check if should show grayscale (only when user is out of service)
@@ -573,25 +678,25 @@ export default function Under250() {
                                 transition={{ duration: 0.3 }}
                               />
                               {/* Veg Indicator */}
-                              {item.isVeg && (
-                                <motion.div
-                                  className="absolute top-2 left-2 md:top-3 md:left-3 h-4 w-4 md:h-5 md:w-5 lg:h-6 lg:w-6 rounded border-2 border-green-600 bg-white flex items-center justify-center z-10"
-                                  whileHover={{ scale: 1.2, rotate: 5 }}
-                                  transition={{ duration: 0.2 }}
-                                >
-                                  <div className="h-2 w-2 md:h-2.5 md:w-2.5 lg:h-3 lg:w-3 rounded-full bg-green-600" />
-                                </motion.div>
-                              )}
+                              <motion.div
+                                className="absolute top-2 left-2 md:top-3 md:left-3 h-4 w-4 md:h-5 md:w-5 lg:h-6 lg:w-6 rounded border-2 bg-white flex items-center justify-center z-10"
+                                style={{ borderColor: item.isVeg ? '#00B761' : '#E23744' }}
+                                whileHover={{ scale: 1.2, rotate: 5 }}
+                                transition={{ duration: 0.2 }}
+                              >
+                                <div 
+                                  className="h-2 w-2 md:h-2.5 md:w-2.5 lg:h-3 lg:w-3 rounded-full" 
+                                  style={{ backgroundColor: item.isVeg ? '#00B761' : '#E23744' }}
+                                />
+                              </motion.div>
                             </div>
 
                             {/* Item Details */}
                             <div className="p-3 md:p-4 lg:p-5">
                               <div className="flex items-center gap-1 md:gap-2 mb-1 md:mb-2 lg:mb-3">
-                                {item.isVeg && (
-                                  <div className="h-3 w-3 md:h-4 md:w-4 lg:h-5 lg:w-5 rounded border border-green-600 bg-green-50 dark:bg-green-900/20 flex items-center justify-center">
-                                    <div className="h-1.5 w-1.5 md:h-2 md:w-2 lg:h-2.5 lg:w-2.5 rounded-full bg-green-600" />
-                                  </div>
-                                )}
+                                <div className={`h-3 w-3 md:h-4 md:w-4 lg:h-5 lg:w-5 rounded border ${item.isVeg ? 'border-green-600 bg-green-50 dark:bg-green-900/20' : 'border-red-600 bg-red-50 dark:bg-red-900/20'} flex items-center justify-center`}>
+                                  <div className={`h-1.5 w-1.5 md:h-2 md:w-2 lg:h-2.5 lg:w-2.5 rounded-full ${item.isVeg ? 'bg-green-600' : 'bg-red-600'}`} />
+                                </div>
                                 <span className="text-sm md:text-base lg:text-lg font-semibold text-gray-900 dark:text-white">
                                   1 x {item.name}
                                 </span>
@@ -795,19 +900,22 @@ export default function Under250() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleBookmarkClick(selectedItem.id)
+                      handleBookmarkClick(selectedItem)
                     }}
-                    className={`h-10 w-10 rounded-full border flex items-center justify-center transition-all duration-300 ${bookmarkedItems.has(selectedItem.id)
+                    className={`h-10 w-10 rounded-full border flex items-center justify-center transition-all duration-300 ${isDishFavorite(selectedItem.id || selectedItem._id, selectedItem.restaurantId)
                       ? "border-red-500 bg-red-50 text-red-500"
                       : "border-white bg-white/90 text-gray-600 hover:bg-white"
                       }`}
                   >
                     <Bookmark
-                      className={`h-5 w-5 transition-all duration-300 ${bookmarkedItems.has(selectedItem.id) ? "fill-red-500" : ""
+                      className={`h-5 w-5 transition-all duration-300 ${isDishFavorite(selectedItem.id || selectedItem._id, selectedItem.restaurantId) ? "fill-red-500" : ""
                         }`}
                     />
                   </button>
-                  <button className="h-10 w-10 rounded-full border border-white bg-white/90 text-gray-600 hover:bg-white flex items-center justify-center transition-colors">
+                  <button 
+                    onClick={(e) => handleShareClick(selectedItem, e)}
+                    className="h-10 w-10 rounded-full border border-white bg-white/90 text-gray-600 hover:bg-white flex items-center justify-center transition-colors"
+                  >
                     <Share2 className="h-5 w-5" />
                   </button>
                 </div>
@@ -818,11 +926,9 @@ export default function Under250() {
                 {/* Item Name and Indicator */}
                 <div className="flex items-start justify-between mb-3 md:mb-4 lg:mb-6">
                   <div className="flex items-center gap-2 md:gap-3 flex-1">
-                    {selectedItem.isVeg && (
-                      <div className="h-5 w-5 md:h-6 md:w-6 lg:h-7 lg:w-7 rounded border-2 border-amber-700 dark:border-amber-500 bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center flex-shrink-0">
-                        <div className="h-2.5 w-2.5 md:h-3 md:w-3 lg:h-3.5 lg:w-3.5 rounded-full bg-amber-700 dark:bg-amber-500" />
-                      </div>
-                    )}
+                    <div className={`h-5 w-5 md:h-6 md:w-6 lg:h-7 lg:w-7 rounded border-2 ${selectedItem.isVeg ? 'border-green-600 bg-green-50 dark:bg-green-900/20' : 'border-red-600 bg-red-50 dark:bg-red-900/20'} flex items-center justify-center flex-shrink-0`}>
+                      <div className={`h-2.5 w-2.5 md:h-3 md:w-3 lg:h-3.5 lg:w-3.5 rounded-full ${selectedItem.isVeg ? 'bg-green-600' : 'bg-red-600'}`} />
+                    </div>
                     <h2 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 dark:text-white">
                       {selectedItem.name}
                     </h2>
@@ -832,19 +938,22 @@ export default function Under250() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        handleBookmarkClick(selectedItem.id)
+                        handleBookmarkClick(selectedItem)
                       }}
-                      className={`h-8 w-8 lg:h-10 lg:w-10 rounded-full border flex items-center justify-center transition-all duration-300 ${bookmarkedItems.has(selectedItem.id)
+                      className={`h-8 w-8 lg:h-10 lg:w-10 rounded-full border flex items-center justify-center transition-all duration-300 ${isDishFavorite(selectedItem.id || selectedItem._id, selectedItem.restaurantId)
                         ? "border-red-500 bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400"
                         : "border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                         }`}
                     >
                       <Bookmark
-                        className={`h-4 w-4 lg:h-5 lg:w-5 transition-all duration-300 ${bookmarkedItems.has(selectedItem.id) ? "fill-red-500 dark:fill-red-400" : ""
+                        className={`h-4 w-4 lg:h-5 lg:w-5 transition-all duration-300 ${isDishFavorite(selectedItem.id || selectedItem._id, selectedItem.restaurantId) ? "fill-red-500 dark:fill-red-400" : ""
                           }`}
                       />
                     </button>
-                    <button className="h-8 w-8 lg:h-10 lg:w-10 rounded-full border border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 flex items-center justify-center transition-colors">
+                    <button 
+                      onClick={(e) => handleShareClick(selectedItem, e)}
+                      className="h-8 w-8 lg:h-10 lg:w-10 rounded-full border border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 flex items-center justify-center transition-colors"
+                    >
                       <Share2 className="h-4 w-4 lg:h-5 lg:w-5" />
                     </button>
                   </div>

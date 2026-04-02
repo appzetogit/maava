@@ -46,7 +46,6 @@ export default function DeliverySignup() {
     phone: "",
     countryCode: "+91",
     name: "",
-    referralCode: "",
   })
   const [errors, setErrors] = useState({
     phone: "",
@@ -144,7 +143,6 @@ export default function DeliverySignup() {
       method: "phone",
       phone: `${formData.countryCode} ${formData.phone}`,
       name: formData.name,
-      referralCode: formData.referralCode,
       isSignUp: true,
       module: "delivery",
     }
@@ -302,28 +300,6 @@ export default function DeliverySignup() {
                   <span>{errors.phone}</span>
                 </div>
               )}
-            </div>
-
-            {/* Referral Code (Optional) */}
-            <div className="space-y-1.5 pt-2 border-t border-gray-100">
-              <Label htmlFor="referralCode" className="text-sm font-medium text-gray-700">
-                Referral Code (Optional)
-              </Label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-3 flex items-center text-gray-400 pointer-events-none">
-                  <Gift className="h-4 w-4" />
-                </span>
-                <Input
-                  id="referralCode"
-                  name="referralCode"
-                  type="text"
-                  placeholder="e.g. DEL000001"
-                  value={formData.referralCode}
-                  onChange={handleChange}
-                  className="h-11 pl-9 border-gray-300 rounded-md shadow-sm focus-visible:ring-primary-orange focus-visible:ring-2 transition-colors placeholder:text-gray-400"
-                />
-              </div>
-              <p className="text-xs text-gray-500 mt-1 pl-1">Got a code from a friend? Enter it here!</p>
             </div>
 
             {/* Sign up button */}

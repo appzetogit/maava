@@ -1075,10 +1075,11 @@ export const getRestaurantsWithDishesUnder250 = async (req, res) => {
               price: getFinalPrice(item),
               originalPrice: item.originalPrice || item.price,
               image: item.image || (item.images && item.images.length > 0 ? item.images[0] : ""),
-              isVeg: item.foodType === 'Veg',
+              isVeg: String(item.foodType || '').toLowerCase() === 'veg',
               bestPrice: item.discountAmount > 0 || (item.originalPrice && item.originalPrice > getFinalPrice(item)),
               description: item.description || "",
               category: item.category || item.sectionName || "",
+              foodType: item.foodType || (item.isVeg ? 'Veg' : 'Non-Veg'),
             }))
           };
         }

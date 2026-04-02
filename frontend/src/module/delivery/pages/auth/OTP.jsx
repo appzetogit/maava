@@ -197,10 +197,6 @@ export default function DeliveryOTP() {
         if (authData.name) extraPayload.name = authData.name;
       }
       
-      // Always include referralCode if provided from SignIn
-      if (authData?.referralCode) {
-        extraPayload.referralCode = authData.referralCode;
-      }
 
       // First attempt: verify OTP for login or register
       const response = await deliveryAPI.verifyOTP(phone, code, purpose, extraPayload)
