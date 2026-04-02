@@ -1473,7 +1473,7 @@ export default function InMart() {
           >
 
             {/* Navbar */}
-            <div className="relative z-20 pt-3 sm:pt-4 lg:pt-6">
+            <div className="relative z-20 pt-2 sm:pt-4 lg:pt-6">
               <PageNavbar
                 textColor="black"
                 zIndex={20}

@@ -953,7 +953,7 @@ export default function PageNavbar({
                   <motion.div 
                     initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-2 mb-0.5 select-none relative group"
+                    className="flex items-center gap-2 mb-0.5 select-none relative group -mt-1"
                   >
                     <span className={`text-[11px] font-[900] uppercase tracking-tighter opacity-70 ${textColorClass} transform -translate-y-[1px]`}>
                       Delivery in
