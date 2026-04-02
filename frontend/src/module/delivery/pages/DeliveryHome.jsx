@@ -28,6 +28,7 @@ import {
   IndianRupee,
   Loader2,
   Camera,
+  MessageSquare,
 } from "lucide-react"
 import BottomPopup from "../components/BottomPopup"
 import FeedNavbar from "../components/FeedNavbar"
@@ -1386,11 +1387,18 @@ export default function DeliveryHome() {
 
   // Reset popup state on page load/refresh - ensure no popup shows on refresh
   useEffect(() => {
-    // Clear any popup state on mount
+    // Only clear new order popup - preserve active order state for restore
     setShowNewOrderPopup(false)
-    setSelectedRestaurant(null)
     setHasAutoShown(false)
     setCountdownSeconds(300)
+
+    // Don't clear selectedRestaurant here - restoreActiveOrder below will handle it
+    // If there's a saved active order, we want to restore it
+    // If there's no saved active order, restoreActiveOrder will set selectedRestaurant to null
+    const hasSavedOrder = !!localStorage.getItem('deliveryActiveOrder');
+    if (!hasSavedOrder) {
+      setSelectedRestaurant(null);
+    }
 
     // Clear any timers
     if (autoShowTimerRef.current) {
@@ -2700,7 +2708,8 @@ export default function DeliveryHome() {
                   // Route will be recalculated on restore using Directions API
                   routeCoordinates: routeCoordinates, // Save coordinates for fallback polyline
                   acceptedAt: new Date().toISOString(),
-                  hasDirectionsAPI: !!directionsResultForMap // Flag to indicate we should recalculate with Directions API
+                  hasDirectionsAPI: !!directionsResultForMap, // Flag to indicate we should recalculate with Directions API
+                  popupStage: 'en_route_to_pickup' // Save current stage for refresh state restore
                 };
                 localStorage.setItem('deliveryActiveOrder', JSON.stringify(activeOrderData));
                 console.log('💾 Saved active order to localStorage for refresh handling');
@@ -6291,7 +6300,74 @@ export default function DeliveryHome() {
           console.log('✅ Restored selectedRestaurant from localStorage');
         }
 
-        // Wait for map to be ready
+        // ✅ RESTORE POPUP STAGE based on live order status from API
+        // Priority: live API status > saved popupStage
+        try {
+          const orderId = activeOrderData.orderId || activeOrderData.restaurantInfo?.id || activeOrderData.restaurantInfo?.orderId;
+          if (orderId) {
+            const orderResp = await deliveryAPI.getOrderDetails(orderId);
+            const liveOrder = orderResp.data?.data?.order || orderResp.data?.data;
+            const liveStatus = liveOrder?.status || '';
+            const livePhase = liveOrder?.deliveryState?.currentPhase || '';
+
+            console.log('🔄 Restoring popup stage from live order status:', { liveStatus, livePhase });
+
+            if (liveStatus === 'delivered' || livePhase === 'completed') {
+              // Order is done - clear everything
+              localStorage.removeItem('deliveryActiveOrder');
+              setSelectedRestaurant(null);
+              return;
+            } else if (liveStatus === 'out_for_delivery' || livePhase === 'en_route_to_delivery' || livePhase === 'picked_up') {
+              // Delivery is in progress - show Reached Drop
+              console.log('✅ Restoring to Reached Drop stage');
+              // Update customer info from live order
+              if (liveOrder?.address?.location?.coordinates) {
+                const coords = liveOrder.address.location.coordinates;
+                const customerLat = coords[1];
+                const customerLng = coords[0];
+                setSelectedRestaurant(prev => prev ? {
+                  ...prev,
+                  orderStatus: liveStatus,
+                  deliveryPhase: livePhase,
+                  customerLat: customerLat || prev.customerLat,
+                  customerLng: customerLng || prev.customerLng,
+                  customerName: liveOrder.userId?.name || prev.customerName,
+                  customerAddress: liveOrder.address?.formattedAddress || prev.customerAddress,
+                } : prev);
+              }
+              // Save updated stage
+              try {
+                const updatedData = { ...activeOrderData, popupStage: 'reached_drop' };
+                localStorage.setItem('deliveryActiveOrder', JSON.stringify(updatedData));
+              } catch (_) {}
+              setTimeout(() => setShowReachedDropPopup(true), 1000);
+            } else if (liveStatus === 'ready' || livePhase === 'at_pickup' || livePhase === 'reached_pickup' || liveStatus === 'accepted') {
+              // At pickup - show Reached Pickup
+              console.log('✅ Restoring to Reached Pickup stage');
+              setSelectedRestaurant(prev => prev ? { ...prev, orderStatus: liveStatus, deliveryPhase: livePhase } : prev);
+              try {
+                const updatedData = { ...activeOrderData, popupStage: 'reached_pickup' };
+                localStorage.setItem('deliveryActiveOrder', JSON.stringify(updatedData));
+              } catch (_) {}
+              setTimeout(() => setShowreachedPickupPopup(true), 1000);
+            } else {
+              // Default: en_route to pickup - no popup, just show map with route
+              console.log('✅ Restoring to en_route_to_pickup stage (no popup)');
+              setSelectedRestaurant(prev => prev ? { ...prev, orderStatus: liveStatus, deliveryPhase: livePhase } : prev);
+            }
+          }
+        } catch (stageRestoreError) {
+          console.warn('⚠️ Could not determine live stage, using saved stage:', stageRestoreError.message);
+          // Fall back to saved popupStage
+          const savedStage = activeOrderData.popupStage;
+          if (savedStage === 'reached_drop') {
+            setTimeout(() => setShowReachedDropPopup(true), 1000);
+          } else if (savedStage === 'reached_pickup') {
+            setTimeout(() => setShowreachedPickupPopup(true), 1000);
+          }
+        }
+
+
         const waitForMap = () => {
           if (!window.deliveryMapInstance || !window.google || !window.google.maps) {
             setTimeout(waitForMap, 200);
@@ -6487,7 +6563,35 @@ export default function DeliveryHome() {
     setShowRoutePath(false);
   }, [clearNewOrder, clearOrderReady])
 
+  // ✅ SYNC popup stage to localStorage whenever it changes (for refresh restore)
+  useEffect(() => {
+    if (!selectedRestaurant) return;
+    try {
+      const saved = localStorage.getItem('deliveryActiveOrder');
+      if (!saved) return;
+      const data = JSON.parse(saved);
+      
+      // Determine current stage from active popups
+      let currentStage = data.popupStage || 'en_route_to_pickup';
+      if (showReachedDropPopup) {
+        currentStage = 'reached_drop';
+      } else if (showreachedPickupPopup) {
+        currentStage = 'reached_pickup';
+      } else if (selectedRestaurant?.orderStatus === 'out_for_delivery' || 
+                 selectedRestaurant?.deliveryPhase === 'en_route_to_delivery') {
+        currentStage = 'reached_drop'; // Order picked up, heading to customer
+      }
+      
+      if (data.popupStage !== currentStage) {
+        data.popupStage = currentStage;
+        localStorage.setItem('deliveryActiveOrder', JSON.stringify(data));
+        console.log('💾 Updated popup stage in localStorage:', currentStage);
+      }
+    } catch (_) {}
+  }, [showreachedPickupPopup, showReachedDropPopup, selectedRestaurant?.orderStatus, selectedRestaurant?.deliveryPhase, selectedRestaurant])
+
   // Periodically verify order still exists (every 30 seconds) to catch deletions
+
   useEffect(() => {
     if (!selectedRestaurant?.id && !selectedRestaurant?.orderId) {
       return; // No active order to verify
@@ -10034,15 +10138,48 @@ export default function DeliveryHome() {
 
           {/* Action Buttons */}
           <div className="flex gap-3 mb-6">
-            <button className="flex-1 flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <button
+              onClick={async () => {
+                // Try multiple paths to find customer phone number
+                let customerPhone = selectedRestaurant?.customerPhone || 
+                                     selectedRestaurant?.userPhone || 
+                                     selectedRestaurant?.user?.phone || 
+                                     null;
+
+                if (!customerPhone && selectedRestaurant?.orderId) {
+                  try {
+                    const response = await deliveryAPI.getOrderDetails(selectedRestaurant.orderId);
+                    const order = response.data?.data?.order || response.data?.order;
+                    // Check user object in order
+                    customerPhone = order?.userId?.phone || order?.user?.phone || null;
+                  } catch (err) {
+                    console.error('Error fetching customer phone:', err);
+                  }
+                }
+
+                if (customerPhone) {
+                  const cleanPhone = customerPhone.replace(/[^\d+]/g, '');
+                  window.location.href = `tel:${cleanPhone}`;
+                } else {
+                  toast.error('Customer phone number not available');
+                }
+              }}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
               <Phone className="w-5 h-5 text-gray-700" />
               <span className="text-gray-700 font-medium">Call</span>
             </button>
-            <button className="flex-1 flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              <MapPin className="w-5 h-5 text-gray-700" />
+            <button
+              onClick={() => navigate('/delivery/profile/conversation')}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <MessageSquare className="w-5 h-5 text-gray-700" />
               <span className="text-gray-700 font-medium">Chat</span>
             </button>
-            <button className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors">
+            <button
+              onClick={handleStartNavigation}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+            >
               <MapPin className="w-5 h-5 text-white" />
               <span className="text-white font-medium">Map</span>
             </button>
