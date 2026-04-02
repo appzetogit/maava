@@ -590,7 +590,7 @@ export default function OrderTracking() {
   const handleShare = async () => {
     const shareData = {
       title: `Track my order from ${order?.restaurant || 'the restaurant'}`,
-      text: `Follow my food order delivery live!`,
+      text: `follow my order delivery live!`,
       url: window.location.href,
     };
 
