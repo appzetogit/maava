@@ -2140,18 +2140,29 @@ export default function Cart() {
                 <MapEventsHandler setCoords={setTempMapCoords} setAddressInfo={setTempAddressInfo} />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1000]">
                   <div className="relative w-0 h-0 flex items-center justify-center">
-                    {/* Pulsing Blue Location Dot */}
-                    <div className="absolute flex items-center justify-center z-10">
-                      <div className="absolute w-24 h-24 bg-[#4285F4] rounded-full animate-ping opacity-20" style={{ animationDuration: '2s' }}></div>
-                      <div className="absolute w-16 h-16 bg-[#4285F4] rounded-full opacity-15"></div>
-                      <div className="w-5 h-5 bg-[#4285F4] rounded-full border-[3px] border-white shadow-sm z-20"></div>
-                    </div>
-                    {/* Original Black Map Pin */}
-                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex flex-col items-center z-30 animate-bounce" style={{ animationDuration: '2s' }}>
-                      <div className="bg-black w-12 h-12 rounded-full flex items-center justify-center border-4 border-white shadow-xl">
-                        <MapPin className="h-6 w-6 text-white" />
+                    {/* Modern Tear-drop Map Pin Design (Black) */}
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                      {/* Pulsing Blue Location Effect underneath the pin */}
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                        <div className="w-16 h-16 bg-[#4285F4] rounded-full animate-ping opacity-20" />
+                        <div className="absolute inset-0 w-16 h-16 bg-[#4285F4] rounded-full opacity-10" />
                       </div>
-                      <div className="w-1 h-8 bg-black rounded-b-full" />
+
+                      {/* Main Pin Body */}
+                      <motion.div 
+                        initial={{ y: -20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        className="relative z-10"
+                      >
+                        {/* Tear-drop shape using rounded corners and rotation */}
+                        <div className="relative w-12 h-12 bg-black rounded-full rounded-bl-none rotate-[-45deg] flex items-center justify-center border-2 border-white shadow-xl">
+                          {/* Inner white circle (Google Style) */}
+                          <div className="w-4 h-4 bg-white rounded-full rotate-[45deg]" />
+                        </div>
+                      </motion.div>
+
+                      {/* Ripple Animation at the point */}
+                      <div className="absolute bottom-0 w-8 h-8 bg-[#4285F4] rounded-full animate-ping opacity-30" style={{ animationDuration: '2.5s' }} />
                     </div>
                   </div>
                 </div>
