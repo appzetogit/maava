@@ -3395,8 +3395,19 @@ function MapEventsHandler({ setCoords, setAddressInfo }) {
         const result = await response.json()
         const data = result?.data || result
         if (data && data.address) {
-          const area = data.address.suburb || data.address.neighbourhood || data.address.residential || data.address.road || 'Unknown Area'
-          const city = data.address.city || data.address.town || data.address.village || 'Unknown City'
+          // Check for area names in order of specificity
+          const address = data.address;
+          const area = address.suburb || 
+                       address.neighbourhood || 
+                       address.residential || 
+                       address.road || 
+                       address.city_district || 
+                       address.county || 
+                       address.district || 
+                       (data.display_name ? data.display_name.split(',')[0] : 'Unknown Area');
+                       
+          const city = address.city || address.town || address.village || 'Unknown City'
+          
           setAddressInfo({
             area,
             city,
