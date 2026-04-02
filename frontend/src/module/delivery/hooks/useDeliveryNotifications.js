@@ -39,7 +39,7 @@ export const useDeliveryNotifications = () => {
           audioRef.current.pause();
           audioRef.current.src = newSrc;
           audioRef.current.load();
-          console.log('🔊 Audio source updated to:', selectedSound === 'original' ? 'Original' : 'Zomato Tone');
+          console.log('🔊 Audio source updated to:', selectedSound === 'original' ? 'Original' : 'Tone');
         }
       } else {
         // Initialize audio if not exists
@@ -102,7 +102,7 @@ export const useDeliveryNotifications = () => {
     if (!audioRef.current) {
       audioRef.current = new Audio(soundFile);
       audioRef.current.volume = 0.7;
-      console.log('🔊 Audio initialized with:', selectedSound === 'original' ? 'Original' : 'Zomato Tone');
+      console.log('🔊 Audio initialized with:', selectedSound === 'original' ? 'Original' : 'Tone');
     } else {
       // Update audio source if preference changed
       const currentSrc = audioRef.current.src;
@@ -111,7 +111,7 @@ export const useDeliveryNotifications = () => {
         audioRef.current.pause();
         audioRef.current.src = newSrc;
         audioRef.current.load();
-        console.log('🔊 Audio updated to:', selectedSound === 'original' ? 'Original' : 'Zomato Tone');
+        console.log('🔊 Audio updated to:', selectedSound === 'original' ? 'Original' : 'Tone');
       }
     }
 

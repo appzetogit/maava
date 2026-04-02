@@ -437,9 +437,9 @@ export default function ProfilePage() {
                   />
                 </label>
 
-                {/* Zomato Tone Option */}
+                {/* Tone Option */}
                 <label className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 rounded-lg transition-colors">
-                  <span className="text-base font-medium">Zomato Tone</span>
+                  <span className="text-base font-medium">Tone</span>
                   <input
                     type="radio"
                     name="alertSound"
@@ -450,14 +450,14 @@ export default function ProfilePage() {
                       localStorage.setItem('delivery_alert_sound', e.target.value)
                       // Play preview sound
                       try {
-                        console.log('🔊 Playing preview sound: Zomato Tone', { alertSoundPath: alertSound })
+                        console.log('🔊 Playing preview sound: Tone', { alertSoundPath: alertSound })
                         const audio = new Audio(alertSound)
                         audio.volume = 0.7
                         const playPromise = audio.play()
                         if (playPromise !== undefined) {
                           playPromise
                             .then(() => {
-                              console.log('✅ Preview sound playing: Zomato Tone')
+                              console.log('✅ Preview sound playing: Tone')
                             })
                             .catch(err => {
                               console.error('❌ Preview audio error:', err)
