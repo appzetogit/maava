@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import inmartAPI from '@/lib/api/inmartAPI';
 import { API_BASE_URL } from '@/lib/api/config';
 import { toast } from "sonner"
+import { uploadAPI } from "@/lib/api"
 import {
     ShoppingBag,
     Users,
@@ -587,14 +588,14 @@ export default function HibermartAdminHome() {
         if (!file) return;
 
         // Validate file type
-        if (!file.type.startsWith('image/')) {
-            alert('Please upload an image file');
+        if (!file.type || !file.type.startsWith('image/')) {
+            alert('Please upload an image file (jpg/png/webp/gif/svg)');
             return;
         }
 
-        // Validate file size (5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            alert('File size must be less than 5MB');
+        // Validate file size (20MB) - matches backend /upload/media limit
+        if (file.size > 20 * 1024 * 1024) {
+            alert('File size must be less than 20MB');
             return;
         }
 
@@ -603,6 +604,19 @@ export default function HibermartAdminHome() {
         formData.append('image', file);
 
         try {
+            // Preferred: same Cloudinary flow as Food/Restaurant admin (absolute URL in response)
+            try {
+                const res = await uploadAPI.uploadMedia(file, { folder: 'inmart' });
+                const d = res?.data?.data || res?.data;
+                if (d?.url) {
+                    setUploadedImageUrl(d.url);
+                    console.log('Image upload successful (cloud):', d.url);
+                    return;
+                }
+            } catch (cloudErr) {
+                console.warn('Cloud upload failed, falling back to local uploads endpoint:', cloudErr?.message || cloudErr);
+            }
+
             const response = await inmartAPI.uploadImage(formData);
             // inmartAPI.uploadImage returns response.data directly (axios)
             // so response here is { success, data: { url, ... } } or { success, url }
