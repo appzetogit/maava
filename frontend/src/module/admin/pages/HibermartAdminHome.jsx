@@ -603,21 +603,16 @@ export default function HibermartAdminHome() {
 
         try {
             const response = await inmartAPI.uploadImage(formData);
-
-            if (response.success) {
+            // inmartAPI.uploadImage returns response.data directly (axios)
+            // so response here is { success, data: { url, ... } } or { success, url }
+            const imageUrl = response?.data?.url || response?.url;
+            if (response?.success && imageUrl) {
                 const backendRoot = API_BASE_URL.replace('/api', '');
-                const fullUrl = `${backendRoot}${response.data.url}`;
-                setUploadedImageUrl(fullUrl);
-
-                // Update the image input field
-                const imageInput = document.querySelector('input[name="image"]');
-                if (imageInput) {
-                    imageInput.value = fullUrl;
-                }
-
+                const fullUrl = imageUrl.startsWith('http') ? imageUrl : `${backendRoot}${imageUrl}`;
+                setUploadedImageUrl(fullUrl); // ✅ updates controlled input
                 console.log('✅ Image upload successful:', fullUrl);
             } else {
-                alert('Failed to upload image: ' + response.message);
+                alert('Failed to upload image: ' + (response?.message || 'Unknown error'));
             }
         } catch (error) {
             console.error('Upload error:', error);
@@ -625,6 +620,8 @@ export default function HibermartAdminHome() {
             alert(`Failed to upload image: ${errMsg}`);
         } finally {
             setIsUploading(false);
+            // Reset file input so same file can be re-selected if needed
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
@@ -823,6 +820,7 @@ export default function HibermartAdminHome() {
     const handleOpenModal = (type, item = null) => {
         setModalType(type)
         setEditingItem(item)
+        setUploadedImageUrl(item?.image || "") // ✅ init image URL for editing
         if (type === "nav" && item) {
             setSelectedFeaturedCats(item.featuredCategories || [])
         } else {
@@ -1522,7 +1520,8 @@ export default function HibermartAdminHome() {
                                                     <input
                                                         name="image"
                                                         type="text"
-                                                        defaultValue={editingItem?.image}
+                                                        value={uploadedImageUrl}
+                                                        onChange={(e) => setUploadedImageUrl(e.target.value)}
                                                         placeholder="Paste image URL or upload below..."
                                                         className="w-full bg-white border border-neutral-200 rounded-3xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all placeholder:text-neutral-300"
                                                     />
@@ -1533,7 +1532,7 @@ export default function HibermartAdminHome() {
                                                     disabled={isUploading}
                                                     className="px-8 py-4 bg-neutral-900 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all disabled:bg-neutral-400"
                                                 >
-                                                    {isUploading ? '...' : 'UPLOAD'}
+                                                    {isUploading ? 'Uploading...' : 'UPLOAD'}
                                                 </button>
                                                 <input
                                                     type="file"

@@ -6,8 +6,11 @@ import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ensure uploads directory exists - correctly relative to backend root
-const uploadsDir = path.join(__dirname, '../../../../uploads/inmart');
+// Ensure uploads directory exists - correctly relative to project root (or UPLOADS_DIR)
+const uploadsRoot = process.env.UPLOADS_DIR
+    ? path.resolve(process.env.UPLOADS_DIR)
+    : path.join(__dirname, '../../../../uploads');
+const uploadsDir = path.join(uploadsRoot, 'inmart');
 if (!fs.existsSync(uploadsDir)) {
     console.log('📂 Creating uploads directory at:', uploadsDir);
     fs.mkdirSync(uploadsDir, { recursive: true });

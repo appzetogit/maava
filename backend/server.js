@@ -10,6 +10,11 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cron from 'node-cron';
 import mongoose from 'mongoose';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables FIRST (before anything else)
 dotenv.config();
@@ -372,7 +377,15 @@ app.use(cookieParser());
 app.use(mongoSanitize());
 
 // Serve static files from uploads directory
-app.use('/uploads', express.static('uploads'));
+const uploadsPath = process.env.UPLOADS_DIR
+  ? path.resolve(process.env.UPLOADS_DIR)
+  : path.resolve(__dirname, '../uploads');
+app.use('/uploads', express.static(uploadsPath, {
+  setHeaders: (res) => {
+    // Allow images/files to be embedded from other origins (e.g. Vite dev server on :5173)
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  }
+}));
 
 // Rate limiting (disabled in development mode)
 if (process.env.NODE_ENV === 'production') {
