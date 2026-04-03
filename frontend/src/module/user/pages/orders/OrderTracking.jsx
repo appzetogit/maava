@@ -736,11 +736,11 @@ export default function OrderTracking() {
   const statusConfig = {
     placed: {
       title: "Order placed",
-      subtitle: "Food preparation will begin shortly",
+      subtitle: isHibermart ? "Order processing will begin shortly" : "Food preparation will begin shortly",
       color: "bg-green-700"
     },
     preparing: {
-      title: "Preparing your order",
+      title: isHibermart ? "Processing your order" : "Preparing your order",
       subtitle: `Arriving in ${estimatedTime} mins`,
       color: "bg-green-700"
     },
@@ -751,7 +751,7 @@ export default function OrderTracking() {
     },
     delivered: {
       title: "Order delivered",
-      subtitle: "Enjoy your meal!",
+      subtitle: isHibermart ? "Thanks for shopping!" : "Enjoy your meal!",
       color: "bg-green-600"
     },
     cancelled: {
