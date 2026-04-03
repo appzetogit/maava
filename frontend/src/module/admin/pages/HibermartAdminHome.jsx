@@ -608,7 +608,7 @@ export default function HibermartAdminHome() {
             // so response here is { success, data: { url, ... } } or { success, url }
             const imageUrl = response?.data?.url || response?.url;
             if (response?.success && imageUrl) {
-                const backendRoot = API_BASE_URL.replace('/api', '');
+                const backendRoot = API_BASE_URL.replace(/\/api\/?$/, '').replace(/\/+$/, '');
                 const fullUrl = imageUrl.startsWith('http') ? imageUrl : `${backendRoot}${imageUrl}`;
                 setUploadedImageUrl(fullUrl); // ✅ updates controlled input
                 console.log('✅ Image upload successful:', fullUrl);

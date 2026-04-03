@@ -12,6 +12,15 @@ if (rawApiBaseUrl && typeof rawApiBaseUrl === 'string') {
   // Remove leading/trailing whitespace
   rawApiBaseUrl = rawApiBaseUrl.trim();
 
+  // Fix single-slash protocol typos:
+  // - https:/example.com -> https://example.com
+  // - http:/example.com  -> http://example.com
+  rawApiBaseUrl = rawApiBaseUrl.replace(/^(https?):\/(?!\/)/i, '$1://');
+
+  // Fix accidental leading dot in hostname:
+  // - https://.maava.in -> https://maava.in
+  rawApiBaseUrl = rawApiBaseUrl.replace(/^(https?:\/\/)\./i, '$1');
+
   // Fix duplicate protocols (https://https:// becomes https://)
   rawApiBaseUrl = rawApiBaseUrl.replace(/^(https?:\/\/)+(https?:\/\/)+/gi, (match) => {
     const protocol = match.match(/^(https?):\/\//i)?.[1] || 'https';

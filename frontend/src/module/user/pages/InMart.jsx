@@ -2150,17 +2150,19 @@ export default function InMart() {
               </section>
             )}
 
-            {/* Fixed Main Category Sections matching User Request */}
+            {/* Main Category Sections */}
             {!isLoading && apiData.allCategories && (
               <div className="space-y-8 mb-8">
-                {[
-                  { id: 'grocery', title: 'Grocery & Kitchen' },
-                  { id: 'snacks', title: 'Snacks & Drinks' },
-                  { id: 'beauty', title: 'Beauty & Wellness' },
-                  { id: 'household', title: 'Household & Lifestyle' }
-                ].map((header) => {
-                  // More flexible matching for root categories
-                  const rootCategory = apiData.allCategories.find(c => {
+                {(() => {
+                  const fixedHeaders = [
+                    { id: 'grocery', title: 'Grocery & Kitchen' },
+                    { id: 'snacks', title: 'Snacks & Drinks' },
+                    { id: 'beauty', title: 'Beauty & Wellness' },
+                    { id: 'household', title: 'Household & Lifestyle' }
+                  ];
+
+                  // Helper: flexible matching for the 4 fixed categories (keeps existing UI behavior)
+                  const findFixedRoot = (header) => apiData.allCategories.find((c) => {
                     const s = c.slug?.toLowerCase() || "";
                     const n = c.name?.toLowerCase() || "";
                     const id = header.id.toLowerCase();
@@ -2174,16 +2176,25 @@ export default function InMart() {
                       (id === 'household' && (s.includes('lifestyle') || n.includes('lifestyle')));
                   });
 
-                  if (!rootCategory || !rootCategory.subCategories.length) return null;
+                  const fixedRoots = fixedHeaders
+                    .map((h) => ({ header: h, root: findFixedRoot(h) }))
+                    .filter((x) => x.root && Array.isArray(x.root.subCategories) && x.root.subCategories.length > 0);
 
-                  return (
-                    <section key={header.id} className="w-full">
+                  const usedRootIds = new Set(fixedRoots.map((x) => x.root._id));
+
+                  // Add any extra main categories dynamically (so newly-added categories also display)
+                  const extraRoots = (apiData.allCategories || [])
+                    .filter((c) => c && c._id && !usedRootIds.has(c._id))
+                    .filter((c) => Array.isArray(c.subCategories) && c.subCategories.length > 0)
+                    .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+                  const renderRootSection = (key, title, rootCategory) => (
+                    <section key={key} className="w-full">
                       <div className="flex items-center justify-between mb-6 px-1">
                         <div className="relative">
                           <h2 className="text-xl sm:text-2xl md:text-[23px] font-black text-gray-900 dark:text-gray-100 tracking-tight">
-                            {header.title}
+                            {title}
                           </h2>
-                          {/* Vibrant Accent Line */}
                           <div className="absolute -bottom-1.5 left-0 w-10 h-[2.5px] bg-gradient-to-r from-yellow-500 to-transparent rounded-full opacity-60 shadow-[0_0_8px_rgba(250,204,21,0.4)]" />
                         </div>
                       </div>
@@ -2221,7 +2232,14 @@ export default function InMart() {
                       </div>
                     </section>
                   );
-                })}
+
+                  return (
+                    <>
+                      {fixedRoots.map(({ header, root }) => renderRootSection(header.id, header.title, root))}
+                      {extraRoots.map((root) => renderRootSection(root.slug || root._id, root.name, root))}
+                    </>
+                  );
+                })()}
               </div>
             )}
 
