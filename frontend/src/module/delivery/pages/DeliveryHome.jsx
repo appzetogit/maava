@@ -433,6 +433,7 @@ export default function DeliveryHome() {
   const liveTrackingPolylineRef = useRef(null) // Google Maps Polyline instance for live tracking
   const liveTrackingPolylineShadowRef = useRef(null) // Shadow/outline polyline for better visibility (Zomato/Rapido style)
   const fullRoutePolylineRef = useRef([]) // Store full decoded polyline from Directions API
+  const routeHeadingRef = useRef(null) // Latest bearing along the snapped route polyline
   const lastRiderPositionRef = useRef(null) // Last rider position for smooth animation
   const markerAnimationCancelRef = useRef(null) // Cancel function for marker animation
   const directionsResponseRef = useRef(null) // Store directions response for use in callbacks
@@ -1878,6 +1879,9 @@ export default function DeliveryHome() {
           updateLiveTrackingPolyline(currentDirectionsResponse, smoothedLocation);
         }
 
+        // Prefer snapped-route bearing for marker rotation so the icon head follows the polyline
+        const snappedHeading = Number.isFinite(routeHeadingRef.current) ? routeHeadingRef.current : heading;
+
         // ============================================
         // SMOOTH MARKER ANIMATION (1-2 seconds)
         // ============================================
@@ -1891,9 +1895,13 @@ export default function DeliveryHome() {
           if (bikeMarkerRef.current) {
             // Marker exists - animate smoothly to new position
             animateMarkerSmoothly(bikeMarkerRef.current, newSmoothedLocation, 1500, markerAnimationRef)
+            // Update icon rotation (position animation is handled separately)
+            if (snappedHeading !== null && snappedHeading !== undefined) {
+              setBikeMarkerIconHeading(snappedHeading)
+            }
           } else {
             // Marker doesn't exist yet, create it immediately with correct location
-            createOrUpdateBikeMarker(smoothedLat, smoothedLng, heading, !isUserPanningRef.current)
+            createOrUpdateBikeMarker(smoothedLat, smoothedLng, snappedHeading, !isUserPanningRef.current)
           }
         }
         // Update route polyline
@@ -5592,6 +5600,15 @@ export default function DeliveryHome() {
       // Find nearest point on polyline to rider
       const { segmentIndex, nearestPoint, distance } = findNearestPointOnPolyline(fullPolyline, riderPos);
 
+      // Store latest heading along the snapped route so the bike icon follows the polyline direction
+      const nextPoint = fullPolyline[Math.min(segmentIndex + 1, fullPolyline.length - 1)];
+      if (nextPoint && (nextPoint.lat !== nearestPoint.lat || nextPoint.lng !== nearestPoint.lng)) {
+        const bearing = calculateBearing(nearestPoint.lat, nearestPoint.lng, nextPoint.lat, nextPoint.lng);
+        if (Number.isFinite(bearing)) {
+          routeHeadingRef.current = bearing;
+        }
+      }
+
       // Trim polyline to remove points behind rider
       const trimmedPolyline = trimPolylineBehindRider(fullPolyline, nearestPoint, segmentIndex);
 
@@ -7556,6 +7573,27 @@ export default function DeliveryHome() {
     });
   };
 
+  const setBikeMarkerIconHeading = (headingValue = 0) => {
+    if (!window.google || !window.google.maps || !bikeMarkerRef.current) return;
+
+    const normalizedHeading = Number.isFinite(headingValue) ? headingValue : 0;
+    const currentIcon = bikeMarkerRef.current.getIcon?.();
+    const currentSize = currentIcon?.scaledSize?.width || 42;
+
+    // Arrow tip is at y = 6 on a 64px canvas; map that to the scaled size.
+    const tipY = Math.max(0, Math.round((6 * currentSize) / 64));
+    const anchorX = Math.round(currentSize / 2);
+
+    getRotatedBikeIcon(normalizedHeading).then((rotatedIconUrl) => {
+      if (!bikeMarkerRef.current) return;
+      bikeMarkerRef.current.setIcon({
+        url: rotatedIconUrl,
+        scaledSize: new window.google.maps.Size(currentSize, currentSize),
+        anchor: new window.google.maps.Point(anchorX, tipY)
+      });
+    });
+  };
+
   // Google Maps marker functions - Zomato style exact location tracking
   const createOrUpdateBikeMarker = async (latitude, longitude, heading = null, shouldCenterMap = true) => {
     if (!window.google || !window.google.maps || !window.deliveryMapInstance) {
@@ -7567,7 +7605,8 @@ export default function DeliveryHome() {
     const map = window.deliveryMapInstance;
 
     // Get rotated icon URL
-    const rotatedIconUrl = await getRotatedBikeIcon(heading || 0);
+    const preferredHeading = Number.isFinite(routeHeadingRef.current) ? routeHeadingRef.current : (heading || 0);
+    const rotatedIconUrl = await getRotatedBikeIcon(preferredHeading);
 
     if (!bikeMarkerRef.current) {
       console.log('📍 Creating new bike marker at:', { lat: latitude, lng: longitude });
@@ -7575,7 +7614,8 @@ export default function DeliveryHome() {
       const bikeIcon = {
         url: rotatedIconUrl,
         scaledSize: new window.google.maps.Size(42, 42), // Perfectly sized green dot
-        anchor: new window.google.maps.Point(21, 21) // Precisely centered
+        // Anchor at the "head" so it sits on the polyline
+        anchor: new window.google.maps.Point(21, 4)
       };
 
       bikeMarkerRef.current = new window.google.maps.Marker({
@@ -7644,12 +7684,13 @@ export default function DeliveryHome() {
       }
 
       // Update icon with rotation for smooth movement
-      const currentHeading = heading !== null && heading !== undefined ? heading : 0;
+      const currentHeadingRaw = heading !== null && heading !== undefined ? heading : 0;
+      const currentHeading = Number.isFinite(routeHeadingRef.current) ? routeHeadingRef.current : currentHeadingRaw;
       const rotatedIconUrl = await getRotatedBikeIcon(currentHeading);
       const bikeIcon = {
         url: rotatedIconUrl,
         scaledSize: new window.google.maps.Size(34, 34),
-        anchor: new window.google.maps.Point(17, 17)
+        anchor: new window.google.maps.Point(17, 3)
       };
       bikeMarkerRef.current.setIcon(bikeIcon);
 

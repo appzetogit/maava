@@ -27,6 +27,26 @@ const logger = winston.createLogger({
   ]
 });
 
+const emitHibermartAdminNewOrder = (req, order) => {
+  try {
+    if (!order?.isHibermartOrder) return;
+
+    const io = req?.app?.get('io');
+    if (!io) return;
+
+    // Emit minimal data; admin UI should refetch full order details via API.
+    io.of('/admin').to('admin:hibermart').emit('hibermart_new_order', {
+      orderMongoId: order._id?.toString?.() || undefined,
+      orderId: order.orderId,
+      total: order.pricing?.total,
+      paymentMethod: order.payment?.method,
+      createdAt: order.createdAt instanceof Date ? order.createdAt.toISOString() : order.createdAt
+    });
+  } catch (err) {
+    logger.warn('Failed to emit hibermart admin new order event:', { message: err.message });
+  }
+};
+
 /**
  * Create a new order and initiate Razorpay payment
  */
@@ -572,6 +592,8 @@ export const createOrder = async (req, res) => {
         }
         await order.save();
 
+        emitHibermartAdminNewOrder(req, order);
+
         // Notify restaurant about new wallet payment order (skip for Hibermart)
         if (!isHibermartOrder) {
           try {
@@ -667,6 +689,8 @@ export const createOrder = async (req, res) => {
           order.adminApproval = { status: 'pending' };
         }
         await order.save();
+
+        emitHibermartAdminNewOrder(req, order);
 
         return res.status(201).json({
           success: true,
@@ -1054,6 +1078,11 @@ export const verifyOrderPayment = async (req, res) => {
       } catch (userNotifErr) {
         logger.warn(`Failed to send confirmation push to user: ${userNotifErr.message}`);
       }
+    }
+
+    if (order.isHibermartOrder) {
+      // Hibermart orders are approved by admin; notify admin after successful payment.
+      emitHibermartAdminNewOrder(req, order);
     }
 
     logger.info(`Order payment verified: ${order.orderId}`, {

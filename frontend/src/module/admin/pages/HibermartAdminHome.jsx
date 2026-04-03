@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import inmartAPI from '@/lib/api/inmartAPI';
 import { API_BASE_URL } from '@/lib/api/config';
+import { toast } from "sonner"
 import {
     ShoppingBag,
     Users,
@@ -812,6 +813,45 @@ export default function HibermartAdminHome() {
             setLoading(false);
         }
     }, []);
+
+    const fetchOrdersOnly = useCallback(async () => {
+        try {
+            const ordersRes = await inmartAPI.adminGetOrders()
+            if (ordersRes && ordersRes.success) {
+                const transformedOrders = ordersRes.data.orders.map(order => ({
+                    id: order.orderId || order._id,
+                    customer: order.userId?.name || "Guest User",
+                    items: order.items.length,
+                    total: order.pricing.total,
+                    status: order.status.charAt(0).toUpperCase() + order.status.slice(1),
+                    time: new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    fullTime: new Date(order.createdAt).toLocaleString(),
+                    priority: order.status === 'pending',
+                    address: `${order.address?.house || ''} ${order.address?.city || ''}`.trim(),
+                    type: order.payment?.method === 'cash' ? 'COD' : 'Online',
+                    phone: order.userId?.phone || "N/A",
+                    email: order.userId?.email || "N/A",
+                    itemsList: order.items.map((item, idx) => ({
+                        id: item.itemId || idx,
+                        name: item.name,
+                        qty: item.quantity,
+                        price: item.price,
+                        image: item.image
+                    }))
+                }))
+                setOrders(transformedOrders)
+            }
+        } catch (err) {
+            console.error("Error fetching hibermart orders:", err)
+            toast.error("Failed to refresh orders")
+        }
+    }, [])
+
+    useEffect(() => {
+        const handler = () => fetchOrdersOnly()
+        window.addEventListener('hibermart_new_order', handler)
+        return () => window.removeEventListener('hibermart_new_order', handler)
+    }, [fetchOrdersOnly])
 
     useEffect(() => {
         fetchAllData();

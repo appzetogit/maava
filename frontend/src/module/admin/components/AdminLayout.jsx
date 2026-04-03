@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Outlet } from "react-router-dom"
 import AdminSidebar from "./AdminSidebar"
 import AdminNavbar from "./AdminNavbar"
+import { toast } from "sonner"
+import { useHibermartAdminOrderNotifications } from "../hooks/useHibermartAdminOrderNotifications"
 
 export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -22,6 +24,17 @@ export default function AdminLayout() {
   const handleCollapseChange = (collapsed) => {
     setIsSidebarCollapsed(collapsed)
   }
+
+  const handleHibermartNewOrder = useCallback(() => {
+    toast.success("New Hibermart order received")
+    try {
+      window.dispatchEvent(new CustomEvent('hibermart_new_order'))
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  useHibermartAdminOrderNotifications({ onNewOrder: handleHibermartNewOrder })
 
   return (
     <div className="min-h-screen bg-neutral-200 flex">

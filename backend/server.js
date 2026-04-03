@@ -179,6 +179,33 @@ export function getIO() {
 // Restaurant namespace for order notifications
 const restaurantNamespace = io.of('/restaurant');
 
+// Admin namespace for Hibermart order notifications
+const adminNamespace = io.of('/admin');
+
+adminNamespace.on('connection', (socket) => {
+  console.log('🛠️ Admin client connected:', socket.id);
+
+  socket.on('join-admin', (payload) => {
+    try {
+      const scope = payload?.scope || payload?.room || payload;
+      if (scope === 'hibermart' || scope === 'inmart') {
+        socket.join('admin:hibermart');
+        socket.emit('admin-room-joined', { room: 'admin:hibermart', socketId: socket.id });
+        return;
+      }
+
+      socket.join('admin:all');
+      socket.emit('admin-room-joined', { room: 'admin:all', socketId: socket.id });
+    } catch (err) {
+      console.error('Admin join error:', err);
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log('🛠️ Admin client disconnected:', socket.id);
+  });
+});
+
 // Add connection error handling before connection event
 restaurantNamespace.use((socket, next) => {
   try {
@@ -509,7 +536,7 @@ app.use('/api/hibermart/zones', hibermartZoneRoutes); // public detect + list en
 // 404 handler - but skip Socket.IO paths
 app.use((req, res, next) => {
   // Skip Socket.IO paths - Socket.IO handles its own routing
-  if (req.path.startsWith('/socket.io/') || req.path.startsWith('/restaurant') || req.path.startsWith('/delivery')) {
+  if (req.path.startsWith('/socket.io/') || req.path.startsWith('/restaurant') || req.path.startsWith('/delivery') || req.path.startsWith('/admin')) {
     return next();
   }
 

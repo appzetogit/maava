@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Package,
@@ -30,11 +30,7 @@ export default function HibermartOrderApproval() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("pending")
 
-  useEffect(() => {
-    fetchOrders()
-  }, [statusFilter])
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true)
       const response = await adminAPI.getPendingHibermartOrders({ status: statusFilter })
@@ -47,7 +43,17 @@ export default function HibermartOrderApproval() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [statusFilter])
+
+  useEffect(() => {
+    fetchOrders()
+  }, [fetchOrders])
+
+  useEffect(() => {
+    const handler = () => fetchOrders()
+    window.addEventListener('hibermart_new_order', handler)
+    return () => window.removeEventListener('hibermart_new_order', handler)
+  }, [fetchOrders])
 
   const handleApprove = async (order) => {
     const orderId = order._id || order.id;
