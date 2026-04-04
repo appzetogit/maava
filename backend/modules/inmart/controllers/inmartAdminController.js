@@ -8,6 +8,7 @@ import InMartNavigation from '../models/InMartNavigation.js';
 import Order from '../../order/models/Order.js';
 import User from '../../auth/models/User.js';
 import Delivery from '../../delivery/models/Delivery.js';
+import mongoose from 'mongoose';
 
 
 // ==================== PRODUCTS ====================
@@ -128,6 +129,13 @@ export const updateProduct = async (req, res) => {
 export const deleteProduct = async (req, res) => {
     try {
         const { id } = req.params;
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Product id is required'
+            });
+        }
+
         const isObjectId = mongoose.Types.ObjectId.isValid(id) && String(id).length === 24;
 
         // Support deletion by Mongo _id (preferred), or by productId/slug (fallback)
@@ -160,10 +168,17 @@ export const deleteProduct = async (req, res) => {
             message: 'Product deleted successfully'
         });
     } catch (error) {
+        console.error('Error deleting product:', {
+            id: req.params?.id,
+            message: error.message,
+            name: error.name,
+            stack: error.stack
+        });
         res.status(500).json({
             success: false,
             message: 'Error deleting product',
-            error: error.message
+            error: error.message,
+            errorName: error.name
         });
     }
 };
@@ -250,6 +265,13 @@ export const updateCategory = async (req, res) => {
 export const deleteCategory = async (req, res) => {
     try {
         const { id } = req.params;
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Category id is required'
+            });
+        }
+
         const isObjectId = mongoose.Types.ObjectId.isValid(id) && String(id).length === 24;
 
         // Support deletion by Mongo _id (preferred), or by slug (fallback)
@@ -273,10 +295,17 @@ export const deleteCategory = async (req, res) => {
             message: 'Category deleted successfully'
         });
     } catch (error) {
+        console.error('Error deleting category:', {
+            id: req.params?.id,
+            message: error.message,
+            name: error.name,
+            stack: error.stack
+        });
         res.status(500).json({
             success: false,
             message: 'Error deleting category',
-            error: error.message
+            error: error.message,
+            errorName: error.name
         });
     }
 };
@@ -420,6 +449,73 @@ export const deleteSubCategory = async (req, res) => {
         return res.status(200).json({ success: true, message: 'Subcategory deleted successfully' });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Error deleting subcategory', error: error.message });
+    }
+};
+
+// @desc    Remove a product from a collection (without deleting the product)
+// @route   DELETE /api/admin/inmart/collections/:collectionIdOrSlug/products/:productIdOrSlug
+// @access  Private/Admin
+export const removeProductFromCollection = async (req, res) => {
+    try {
+        const { collectionIdOrSlug, productIdOrSlug } = req.params;
+
+        if (!collectionIdOrSlug || !productIdOrSlug) {
+            return res.status(400).json({
+                success: false,
+                message: 'collectionIdOrSlug and productIdOrSlug are required'
+            });
+        }
+
+        const collectionIsObjectId = mongoose.Types.ObjectId.isValid(collectionIdOrSlug) && String(collectionIdOrSlug).length === 24;
+        const collection = collectionIsObjectId
+            ? await InMartCollection.findById(collectionIdOrSlug)
+            : await InMartCollection.findOne({ slug: collectionIdOrSlug });
+
+        if (!collection) {
+            return res.status(404).json({ success: false, message: 'Collection not found' });
+        }
+
+        const productIsObjectId = mongoose.Types.ObjectId.isValid(productIdOrSlug) && String(productIdOrSlug).length === 24;
+        let productObjectId = null;
+
+        if (productIsObjectId) {
+            productObjectId = new mongoose.Types.ObjectId(productIdOrSlug);
+        } else {
+            const product = await InMartProduct.findOne({
+                $or: [{ productId: productIdOrSlug }, { slug: productIdOrSlug }]
+            }).select('_id');
+
+            if (product?._id) {
+                productObjectId = product._id;
+            }
+        }
+
+        if (!productObjectId) {
+            return res.status(404).json({ success: false, message: 'Product not found' });
+        }
+
+        const beforeCount = collection.products?.length || 0;
+        collection.products = (collection.products || []).filter((p) => p?.toString?.() !== productObjectId.toString());
+
+        if ((collection.products?.length || 0) === beforeCount) {
+            return res.status(404).json({ success: false, message: 'Product not found in collection' });
+        }
+
+        await collection.save();
+        return res.status(200).json({ success: true, message: 'Product removed from collection successfully' });
+    } catch (error) {
+        console.error('Error removing product from collection:', {
+            params: req.params,
+            message: error.message,
+            name: error.name,
+            stack: error.stack
+        });
+        return res.status(500).json({
+            success: false,
+            message: 'Error removing product from collection',
+            error: error.message,
+            errorName: error.name
+        });
     }
 };
 

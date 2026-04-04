@@ -926,16 +926,20 @@ export default function HibermartAdminHome() {
         try {
             console.log(`🗑️ Deleting product from collection: ${collectionSlug}`, item);
 
-            // Delete the product itself
-            await inmartAPI.adminDeleteProduct(item._id || item.id);
+            const resolveId = (x) => x?._id || x?.id || x?.productId || x?.slug;
+            const productId = resolveId(item);
+
+            // Remove from collection/section without deleting the product
+            await inmartAPI.adminRemoveProductFromCollection(collectionSlug, productId);
 
             // Refresh data to update UI
             await fetchAllData();
 
-            console.log('✅ Product deleted successfully');
+            console.log('✅ Product removed from collection successfully');
         } catch (err) {
             console.error("Delete failed:", err);
-            alert("Failed to delete item.");
+            const msg = err?.response?.data?.message || err?.message || "Failed to delete item.";
+            alert(msg);
         }
     }
 

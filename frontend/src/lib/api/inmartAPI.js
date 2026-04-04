@@ -345,6 +345,19 @@ export const adminDeleteCollection = async (id) => {
 };
 
 /**
+ * Admin: Remove product from a collection (section) without deleting product
+ */
+export const adminRemoveProductFromCollection = async (collectionIdOrSlug, productIdOrSlug) => {
+    try {
+        const response = await api.delete(`/admin/inmart/collections/${collectionIdOrSlug}/products/${productIdOrSlug}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error removing product from collection:', error);
+        throw error;
+    }
+};
+
+/**
  * Admin: Get all banners
  */
 export const adminGetAllBanners = async () => {
@@ -617,6 +630,7 @@ export default {
     adminCreateCollection,
     adminUpdateCollection,
     adminDeleteCollection,
+    adminRemoveProductFromCollection,
     adminGetAllBanners,
     adminCreateBanner,
     adminUpdateBanner,

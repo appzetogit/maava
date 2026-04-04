@@ -14,6 +14,7 @@ import {
     createCollection,
     updateCollection,
     deleteCollection,
+    removeProductFromCollection,
     getAllStores,
     createStore,
     updateStore,
@@ -68,6 +69,9 @@ router.route('/categories/:id')
 router.route('/collections')
     .get(getAllCollections)
     .post(createCollection);
+
+// Remove product from a collection (section) without deleting the product
+router.delete('/collections/:collectionIdOrSlug/products/:productIdOrSlug', removeProductFromCollection);
 
 router.route('/collections/:id')
     .put(updateCollection)
