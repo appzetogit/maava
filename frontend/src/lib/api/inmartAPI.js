@@ -267,6 +267,32 @@ export const adminDeleteCategory = async (id) => {
 };
 
 /**
+ * Admin: Delete subcategory (embedded)
+ */
+export const adminDeleteSubCategory = async (categoryId, subId) => {
+    try {
+        const response = await api.delete(`/admin/inmart/categories/${categoryId}/subcategories/${subId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error deleting subcategory:', error);
+        throw error;
+    }
+};
+
+/**
+ * Admin: Delete child category (embedded)
+ */
+export const adminDeleteChildCategory = async (categoryId, subId, childId) => {
+    try {
+        const response = await api.delete(`/admin/inmart/categories/${categoryId}/subcategories/${subId}/children/${childId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error deleting child category:', error);
+        throw error;
+    }
+};
+
+/**
  * Admin: Get all collections
  */
 export const adminGetAllCollections = async () => {
@@ -585,6 +611,8 @@ export default {
     adminCreateCategory,
     adminUpdateCategory,
     adminDeleteCategory,
+    adminDeleteSubCategory,
+    adminDeleteChildCategory,
     adminGetAllCollections,
     adminCreateCollection,
     adminUpdateCollection,

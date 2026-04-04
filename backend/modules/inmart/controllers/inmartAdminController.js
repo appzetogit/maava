@@ -127,7 +127,19 @@ export const updateProduct = async (req, res) => {
 // @access  Private/Admin
 export const deleteProduct = async (req, res) => {
     try {
-        const product = await InMartProduct.findByIdAndDelete(req.params.id);
+        const { id } = req.params;
+        const isObjectId = mongoose.Types.ObjectId.isValid(id) && String(id).length === 24;
+
+        // Support deletion by Mongo _id (preferred), or by productId/slug (fallback)
+        let product = null;
+        if (isObjectId) {
+            product = await InMartProduct.findByIdAndDelete(id);
+        }
+        if (!product) {
+            product = await InMartProduct.findOneAndDelete({
+                $or: [{ productId: id }, { slug: id }]
+            });
+        }
 
         if (!product) {
             return res.status(404).json({
@@ -237,7 +249,17 @@ export const updateCategory = async (req, res) => {
 // @access  Private/Admin
 export const deleteCategory = async (req, res) => {
     try {
-        const category = await InMartCategory.findByIdAndDelete(req.params.id);
+        const { id } = req.params;
+        const isObjectId = mongoose.Types.ObjectId.isValid(id) && String(id).length === 24;
+
+        // Support deletion by Mongo _id (preferred), or by slug (fallback)
+        let category = null;
+        if (isObjectId) {
+            category = await InMartCategory.findByIdAndDelete(id);
+        }
+        if (!category) {
+            category = await InMartCategory.findOneAndDelete({ slug: id });
+        }
 
         if (!category) {
             return res.status(404).json({
@@ -361,6 +383,92 @@ export const deleteCollection = async (req, res) => {
             message: 'Error deleting collection',
             error: error.message
         });
+    }
+};
+
+// @desc    Delete a subcategory from a main category (embedded doc)
+// @route   DELETE /api/admin/inmart/categories/:categoryId/subcategories/:subId
+// @access  Private/Admin
+export const deleteSubCategory = async (req, res) => {
+    try {
+        const { categoryId, subId } = req.params;
+
+        const findCategoryQuery = (mongoose.Types.ObjectId.isValid(categoryId) && String(categoryId).length === 24)
+            ? { _id: categoryId }
+            : { slug: categoryId };
+
+        const category = await InMartCategory.findOne(findCategoryQuery);
+        if (!category) {
+            return res.status(404).json({ success: false, message: 'Category not found' });
+        }
+
+        const before = category.subCategories?.length || 0;
+        const subIdStr = String(subId);
+
+        category.subCategories = (category.subCategories || []).filter((sc) => {
+            const scId = sc?._id?.toString?.();
+            const scAltId = sc?.id ? String(sc.id) : null;
+            const scSlug = sc?.slug ? String(sc.slug) : null;
+            return !(scId === subIdStr || scAltId === subIdStr || scSlug === subIdStr);
+        });
+
+        if ((category.subCategories?.length || 0) === before) {
+            return res.status(404).json({ success: false, message: 'Subcategory not found' });
+        }
+
+        await category.save();
+        return res.status(200).json({ success: true, message: 'Subcategory deleted successfully' });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Error deleting subcategory', error: error.message });
+    }
+};
+
+// @desc    Delete a child category from a subcategory (embedded doc)
+// @route   DELETE /api/admin/inmart/categories/:categoryId/subcategories/:subId/children/:childId
+// @access  Private/Admin
+export const deleteChildCategory = async (req, res) => {
+    try {
+        const { categoryId, subId, childId } = req.params;
+
+        const findCategoryQuery = (mongoose.Types.ObjectId.isValid(categoryId) && String(categoryId).length === 24)
+            ? { _id: categoryId }
+            : { slug: categoryId };
+
+        const category = await InMartCategory.findOne(findCategoryQuery);
+        if (!category) {
+            return res.status(404).json({ success: false, message: 'Category not found' });
+        }
+
+        const subIdStr = String(subId);
+        const childIdStr = String(childId);
+
+        const sub = (category.subCategories || []).find((sc) => {
+            const scId = sc?._id?.toString?.();
+            const scAltId = sc?.id ? String(sc.id) : null;
+            const scSlug = sc?.slug ? String(sc.slug) : null;
+            return scId === subIdStr || scAltId === subIdStr || scSlug === subIdStr;
+        });
+
+        if (!sub) {
+            return res.status(404).json({ success: false, message: 'Subcategory not found' });
+        }
+
+        const before = sub.children?.length || 0;
+        sub.children = (sub.children || []).filter((ch) => {
+            const chId = ch?._id?.toString?.();
+            const chAltId = ch?.id ? String(ch.id) : null;
+            const chSlug = ch?.slug ? String(ch.slug) : null;
+            return !(chId === childIdStr || chAltId === childIdStr || chSlug === childIdStr);
+        });
+
+        if ((sub.children?.length || 0) === before) {
+            return res.status(404).json({ success: false, message: 'Child category not found' });
+        }
+
+        await category.save();
+        return res.status(200).json({ success: true, message: 'Child category deleted successfully' });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Error deleting child category', error: error.message });
     }
 };
 

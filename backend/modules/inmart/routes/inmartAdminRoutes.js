@@ -8,6 +8,8 @@ import {
     createCategory,
     updateCategory,
     deleteCategory,
+    deleteSubCategory,
+    deleteChildCategory,
     getAllCollections,
     createCollection,
     updateCollection,
@@ -34,6 +36,10 @@ const router = express.Router();
 
 // Image Upload
 router.post('/upload', upload.single('image'), uploadImage);
+
+// Embedded category deletes (must be before /categories/:id route)
+router.delete('/categories/:categoryId/subcategories/:subId/children/:childId', deleteChildCategory);
+router.delete('/categories/:categoryId/subcategories/:subId', deleteSubCategory);
 
 // Dashboard Stats
 router.get('/stats', getDashboardStats);

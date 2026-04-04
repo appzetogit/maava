@@ -748,6 +748,8 @@ export default function HibermartAdminHome() {
                                     ...sub,
                                     id: sub.slug || sub.id || sub._id || `sub-${Math.random()}`,
                                     type: 'category',
+                                    parentCategoryId: cat._id,
+                                    level: sub.level || 'sub',
                                     children: [
                                         ...(sub.children || []).map(child => {
                                             const childProducts = products.filter(p =>
@@ -762,6 +764,9 @@ export default function HibermartAdminHome() {
                                                 ...child,
                                                 id: child.slug || child.id || child._id || `child-${Math.random()}`,
                                                 type: 'category',
+                                                parentCategoryId: cat._id,
+                                                parentSubCategoryId: sub._id || sub.id || sub.slug,
+                                                level: child.level || 'child',
                                                 children: childProducts
                                             };
                                         }),
@@ -886,25 +891,34 @@ export default function HibermartAdminHome() {
 
     const handleDeleteItem = async (item) => {
         try {
+            const resolveId = (x) => x?._id || x?.id || x?.productId || x?.slug;
             if (activeTab === "banners") {
-                await inmartAPI.adminDeleteBanner(item._id || item.id);
+                await inmartAPI.adminDeleteBanner(resolveId(item));
                 fetchAllData();
             } else if (activeTab === "navigation") {
-                await inmartAPI.adminDeleteNavEntry(item._id || item.id);
+                await inmartAPI.adminDeleteNavEntry(resolveId(item));
                 fetchAllData();
             } else if (activeTab === "sale") {
                 // Handle sale item removal from collection
             } else if (["grocery", "beauty", "household", "snacks", "overview"].includes(activeTab)) {
                 if (item.type === "product") {
-                    await inmartAPI.adminDeleteProduct(item._id || item.id);
+                    await inmartAPI.adminDeleteProduct(resolveId(item));
                 } else {
-                    await inmartAPI.adminDeleteCategory(item._id || item.id);
+                    const level = item.level || (item.parentSubCategoryId ? 'child' : (item.parentCategoryId ? 'sub' : 'main'));
+                    if (level === 'child') {
+                        await inmartAPI.adminDeleteChildCategory(item.parentCategoryId, item.parentSubCategoryId, resolveId(item));
+                    } else if (level === 'sub') {
+                        await inmartAPI.adminDeleteSubCategory(item.parentCategoryId, resolveId(item));
+                    } else {
+                        await inmartAPI.adminDeleteCategory(resolveId(item));
+                    }
                 }
                 fetchAllData(); // Refresh to get updated tree
             }
         } catch (err) {
             console.error("Delete failed:", err);
-            alert("Failed to delete item.");
+            const msg = err?.response?.data?.message || err?.message || "Failed to delete item.";
+            alert(msg);
         }
     }
 
