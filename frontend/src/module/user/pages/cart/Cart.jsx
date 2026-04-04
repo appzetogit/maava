@@ -134,6 +134,7 @@ export default function Cart() {
   const [isAddressConfirmed, setIsAddressConfirmed] = useState(false)
   const [selectedAddressForOrder, setSelectedAddressForOrder] = useState(null)
   const [tempMapCoords, setTempMapCoords] = useState(null)
+  const [isMapMoving, setIsMapMoving] = useState(false)
   const [tempAddressInfo, setTempAddressInfo] = useState({
     area: '',
     city: '',
@@ -2258,33 +2259,43 @@ export default function Cart() {
                 zoomControl={false}
               >
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                <MapEventsHandler setCoords={setTempMapCoords} setAddressInfo={setTempAddressInfo} />
+                <MapEventsHandler setCoords={setTempMapCoords} setAddressInfo={setTempAddressInfo} setIsMapMoving={setIsMapMoving} />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1000]">
-                  <div className="relative w-0 h-0 flex items-center justify-center">
-                    {/* Modern Tear-drop Map Pin Design (Black) */}
-                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center">
-                      {/* Pulsing Blue Location Effect underneath the pin */}
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                        <div className="w-16 h-16 bg-[#4285F4] rounded-full animate-ping opacity-20" />
-                        <div className="absolute inset-0 w-16 h-16 bg-[#4285F4] rounded-full opacity-10" />
-                      </div>
+                  <div className="relative w-0 h-0">
+                    {/* Ripple + pulse are anchored at the exact pin point (map center). */}
+                    <motion.div
+                      className="absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-[#4285F4] rounded-full animate-ping opacity-30"
+                      style={{ animationDuration: '2.8s' }}
+                      animate={{ scale: isMapMoving ? 0.82 : 1, opacity: isMapMoving ? 0.18 : 0.3 }}
+                      transition={{ duration: 0.18, ease: 'easeOut' }}
+                    />
 
-                      {/* Main Pin Body */}
-                      <motion.div 
+                    <motion.div
+                      className="absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2"
+                      animate={{ scale: isMapMoving ? 0.9 : 1, opacity: isMapMoving ? 0.75 : 1 }}
+                      transition={{ duration: 0.18, ease: 'easeOut' }}
+                    >
+                      <div className="w-16 h-16 bg-[#4285F4] rounded-full animate-ping opacity-20" style={{ animationDuration: '2.8s' }} />
+                      <div className="absolute inset-0 w-16 h-16 bg-[#4285F4] rounded-full opacity-10" />
+                    </motion.div>
+
+                    {/* Modern Tear-drop Map Pin Design (Black) */}
+                    <motion.div
+                      className="absolute left-0 top-0 -translate-x-1/2 -translate-y-full"
+                      animate={{ y: isMapMoving ? -18 : 0, scale: isMapMoving ? 1.02 : 1 }}
+                      transition={{ type: 'spring', stiffness: 520, damping: 32, mass: 0.5 }}
+                      style={{ transformOrigin: '50% 100%' }}
+                    >
+                      <motion.div
                         initial={{ y: -20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         className="relative z-10"
                       >
-                        {/* Tear-drop shape using rounded corners and rotation */}
                         <div className="relative w-12 h-12 bg-black rounded-full rounded-bl-none rotate-[-45deg] flex items-center justify-center border-2 border-white shadow-xl">
-                          {/* Inner white circle (Google Style) */}
                           <div className="w-4 h-4 bg-white rounded-full rotate-[45deg]" />
                         </div>
                       </motion.div>
-
-                      {/* Ripple Animation at the point */}
-                      <div className="absolute bottom-0 w-8 h-8 bg-[#4285F4] rounded-full animate-ping opacity-30" style={{ animationDuration: '2.5s' }} />
-                    </div>
+                    </motion.div>
                   </div>
                 </div>
               </MapContainer>
@@ -3380,11 +3391,15 @@ export default function Cart() {
 }
 
 // Helper components for Leaflet
-function MapEventsHandler({ setCoords, setAddressInfo }) {
+function MapEventsHandler({ setCoords, setAddressInfo, setIsMapMoving }) {
   const map = useMap()
 
   useMapEvents({
+    movestart: () => {
+      setIsMapMoving?.(true)
+    },
     moveend: async () => {
+      setIsMapMoving?.(false)
       const center = map.getCenter()
       setCoords({ lat: center.lat, lng: center.lng })
 
