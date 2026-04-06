@@ -2158,10 +2158,17 @@ export default function Cart() {
                       <div className="absolute inset-0 w-16 h-16 bg-[#4285F4] rounded-full opacity-10" />
                     </motion.div>
 
+                    {/* Blue dot at exact delivery point (center of the animation) */}
+                    <motion.div
+                      className="absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2 z-20 w-3 h-3 bg-[#4285F4] rounded-full border-2 border-white shadow-sm"
+                      animate={{ scale: isMapMoving ? 0.92 : 1 }}
+                      transition={{ duration: 0.18, ease: 'easeOut' }}
+                    />
+
                     {/* Modern Tear-drop Map Pin Design (Black) */}
                     <motion.div
-                      className="absolute left-0 top-0 -translate-x-1/2 -translate-y-full"
-                      animate={{ y: isMapMoving ? -18 : 0, scale: isMapMoving ? 1.02 : 1 }}
+                      className="absolute left-0 top-0 -translate-x-1/2 -translate-y-full -mt-1"
+                      animate={{ y: isMapMoving ? -18 : -6, scale: isMapMoving ? 1.02 : 1 }}
                       transition={{ type: 'spring', stiffness: 520, damping: 32, mass: 0.5 }}
                       style={{ transformOrigin: '50% 100%' }}
                     >

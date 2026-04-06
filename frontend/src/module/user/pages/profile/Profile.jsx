@@ -20,7 +20,6 @@ import {
   Settings as SettingsIcon,
   Power,
   ShoppingCart,
-  Crown,
   BellRing
 } from "lucide-react"
 
@@ -339,27 +338,6 @@ export default function Profile() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Join Maava Gold Section - Premium Black Card */}
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          transition={{ duration: 0.2, type: "spring", stiffness: 300 }}
-          className="mt-3 cursor-default"
-        >
-          <div className="bg-[#1a1a1a] dark:bg-black rounded-2xl p-4 flex items-center justify-between shadow-lg border border-gray-800/10">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#f3c880] via-[#c6a053] to-[#8c6d32] p-[1px]">
-                <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#f3c880] to-[#c6a053] flex items-center justify-center">
-                    <Crown className="w-4 h-4 text-black fill-black" />
-                  </div>
-                </div>
-              </div>
-              <span className="text-lg font-bold text-white tracking-wide">Join Maava Gold</span>
-            </div>
-            <ChevronRight className="w-6 h-6 text-[#f3c880]" />
-          </div>
-        </motion.div>
 
         {/* Appzeto Money and Coupons - Side by Side */}
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-5 mt-3 mb-3">
