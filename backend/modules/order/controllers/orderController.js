@@ -52,6 +52,32 @@ const emitHibermartAdminNewOrder = (req, order) => {
  */
 export const createOrder = async (req, res) => {
   try {
+    const toNumberOrNull = (value) => {
+      if (value === null || value === undefined) return null;
+      if (typeof value === 'number' && Number.isFinite(value)) return value;
+      if (typeof value === 'string' && value.trim() !== '') {
+        const n = Number(value);
+        return Number.isFinite(n) ? n : null;
+      }
+      return null;
+    };
+
+    const extractLatLng = (loc) => {
+      if (!loc) return { lat: null, lng: null };
+
+      // Support: { latitude, longitude } / { lat, lng } / { coordinates: [lng, lat] }
+      const lat =
+        toNumberOrNull(loc.latitude) ??
+        toNumberOrNull(loc.lat) ??
+        toNumberOrNull(Array.isArray(loc.coordinates) ? loc.coordinates[1] : null);
+      const lng =
+        toNumberOrNull(loc.longitude) ??
+        toNumberOrNull(loc.lng) ??
+        toNumberOrNull(Array.isArray(loc.coordinates) ? loc.coordinates[0] : null);
+
+      return { lat, lng };
+    };
+
     const userId = req.user.id;
     let {
       items,
@@ -205,8 +231,40 @@ export const createOrder = async (req, res) => {
     }
 
     // CRITICAL: Validate that restaurant's location (pin) is within an active zone
-    const restaurantLat = restaurant?.location?.latitude || restaurant?.location?.coordinates?.[1] || restaurant?.onboarding?.step1?.location?.latitude;
-    const restaurantLng = restaurant?.location?.longitude || restaurant?.location?.coordinates?.[0] || restaurant?.onboarding?.step1?.location?.longitude;
+    const primaryLoc = extractLatLng(restaurant?.location);
+    const onboardingLoc = extractLatLng(restaurant?.onboarding?.step1?.location);
+
+    const restaurantLat = primaryLoc.lat ?? onboardingLoc.lat;
+    const restaurantLng = primaryLoc.lng ?? onboardingLoc.lng;
+
+    // If location exists only in onboarding, sync it to restaurant.location for future requests
+    if (
+      !isHibermartRequest &&
+      (primaryLoc.lat === null || primaryLoc.lng === null) &&
+      onboardingLoc.lat !== null &&
+      onboardingLoc.lng !== null
+    ) {
+      try {
+        const syncedLocation = {
+          ...(restaurant.onboarding?.step1?.location || {}),
+          latitude: onboardingLoc.lat,
+          longitude: onboardingLoc.lng,
+          coordinates: [onboardingLoc.lng, onboardingLoc.lat] // GeoJSON: [lng, lat]
+        };
+
+        restaurant.set('location', syncedLocation);
+        await restaurant.save();
+
+        logger.info('Synced restaurant location from onboarding', {
+          restaurantId: restaurant._id?.toString() || restaurant.restaurantId,
+          restaurantName: restaurant.name,
+          lat: onboardingLoc.lat,
+          lng: onboardingLoc.lng
+        });
+      } catch (syncErr) {
+        logger.warn('Failed to sync restaurant location from onboarding', { message: syncErr.message });
+      }
+    }
 
     if (!isHibermartRequest && (!restaurantLat || !restaurantLng)) {
       logger.error('❌ Restaurant location not found during order creation:', {

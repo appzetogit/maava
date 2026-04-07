@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { Plus, Minus, ArrowLeft, ChevronRight, Clock, MapPin, Phone, FileText, Utensils, Tag, Percent, Send, ChevronUp, ChevronDown, X, Check, Settings, CreditCard, Wallet, Building2, Sparkles, Navigation, Search, Image as ImageIcon, Briefcase, User as UserIcon } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-leaflet"
+import { MapContainer, TileLayer, Marker, Polyline, useMap, useMapEvents } from "react-leaflet"
 import "leaflet/dist/leaflet.css"
 import L from "leaflet"
 import confetti from "canvas-confetti"
@@ -2259,6 +2259,13 @@ export default function Cart() {
                 zoomControl={false}
               >
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <CurrentLocationMarker
+                  position={currentLocation?.latitude ? [currentLocation.latitude, currentLocation.longitude] : null}
+                />
+                <AnimatedPinRoute
+                  from={currentLocation?.latitude ? [currentLocation.latitude, currentLocation.longitude] : null}
+                  to={tempMapCoords ? [tempMapCoords.lat, tempMapCoords.lng] : null}
+                />
                 <MapEventsHandler setCoords={setTempMapCoords} setAddressInfo={setTempAddressInfo} setIsMapMoving={setIsMapMoving} />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1000]">
                   <div className="relative w-0 h-0">
@@ -3400,13 +3407,27 @@ export default function Cart() {
 // Helper components for Leaflet
 function MapEventsHandler({ setCoords, setAddressInfo, setIsMapMoving }) {
   const map = useMap()
+  const rafRef = useRef(null)
 
   useMapEvents({
     movestart: () => {
       setIsMapMoving?.(true)
     },
+    move: () => {
+      if (!setCoords) return
+      if (rafRef.current) return
+      rafRef.current = window.requestAnimationFrame(() => {
+        rafRef.current = null
+        const center = map.getCenter()
+        setCoords({ lat: center.lat, lng: center.lng })
+      })
+    },
     moveend: async () => {
       setIsMapMoving?.(false)
+      if (rafRef.current) {
+        window.cancelAnimationFrame(rafRef.current)
+        rafRef.current = null
+      }
       const center = map.getCenter()
       setCoords({ lat: center.lat, lng: center.lng })
 
@@ -3443,4 +3464,46 @@ function MapEventsHandler({ setCoords, setAddressInfo, setIsMapMoving }) {
   })
 
   return null
+}
+
+function CurrentLocationMarker({ position }) {
+  const icon = useMemo(() => {
+    return L.divIcon({
+      className: 'maava-current-location-icon',
+      html: '<div class="maava-current-location-dot"></div>',
+      iconSize: [16, 16],
+      iconAnchor: [8, 8]
+    })
+  }, [])
+
+  if (!position) return null
+  return <Marker position={position} icon={icon} interactive={false} />
+}
+
+function AnimatedPinRoute({ from, to }) {
+  if (!from || !to) return null
+
+  const [fromLat, fromLng] = from
+  const [toLat, toLng] = to
+
+  if (
+    typeof fromLat !== 'number' ||
+    typeof fromLng !== 'number' ||
+    typeof toLat !== 'number' ||
+    typeof toLng !== 'number'
+  ) {
+    return null
+  }
+
+  const isSame =
+    Math.abs(fromLat - toLat) < 0.000001 && Math.abs(fromLng - toLng) < 0.000001
+  if (isSame) return null
+
+  return (
+    <Polyline
+      positions={[from, to]}
+      pathOptions={{ className: 'maava-animated-route' }}
+      interactive={false}
+    />
+  )
 }
