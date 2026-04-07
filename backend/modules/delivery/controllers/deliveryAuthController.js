@@ -213,7 +213,7 @@ export const verifyOTP = asyncHandler(async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     });
 
     return successResponse(res, 200, needsSignup ? 'OTP verified. Please complete your profile.' : 'Authentication successful', {

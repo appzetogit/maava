@@ -258,7 +258,7 @@ export const verifyOTP = asyncHandler(async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     });
 
     // Return access token and user info
@@ -392,7 +392,7 @@ export const register = asyncHandler(async (req, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
   });
 
   logger.info(`New user registered via email: ${user._id}`, { email, userId: user._id, role: userRole });
@@ -469,7 +469,7 @@ export const login = asyncHandler(async (req, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
   });
 
   logger.info(`User logged in via email: ${user._id}`, { email, userId: user._id });
@@ -724,7 +724,7 @@ export const firebaseGoogleLogin = asyncHandler(async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     });
 
     return successResponse(res, 200, 'Firebase Google authentication successful', {
@@ -888,7 +888,7 @@ export const googleCallback = asyncHandler(async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     });
 
     // Clear OAuth state cookie
@@ -919,4 +919,3 @@ export const googleCallback = asyncHandler(async (req, res) => {
     return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/restaurant/login?error=auth_failed`);
   }
 });
-

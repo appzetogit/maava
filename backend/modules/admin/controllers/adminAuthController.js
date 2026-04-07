@@ -71,7 +71,7 @@ export const adminSignup = asyncHandler(async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     });
 
     // Remove password from response
@@ -140,7 +140,7 @@ export const adminLogin = asyncHandler(async (req, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
   });
 
   // Remove password from response
@@ -221,7 +221,7 @@ export const adminSignupWithOTP = asyncHandler(async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     });
 
     // Remove password from response
@@ -335,4 +335,3 @@ export const adminResetPassword = asyncHandler(async (req, res) => {
 
   return successResponse(res, 200, 'Password reset successfully. Please login with your new password.');
 });
-
