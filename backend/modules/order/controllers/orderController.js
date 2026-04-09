@@ -1207,17 +1207,28 @@ export const getUserOrders = async (req, res) => {
       delete query.userId; // Remove direct userId since we're using $or
     }
 
-    // Add status filter if provided
+
+    // Only show confirmed/completed/delivered orders for online payments
+    // Pending orders are only shown for COD or wallet
+    const allowedStatuses = ['confirmed', 'completed', 'delivered'];
     if (status) {
+      // If status is explicitly requested, use it (for admin or advanced UI)
       if (query.$or) {
-        // Add status to each $or condition
         query.$or = query.$or.map(condition => ({ ...condition, status }));
       } else {
         query.status = status;
       }
-    }
-    if (status) {
-      query.status = status;
+    } else {
+      // Default: filter out pending orders for online payments
+      query.$or = [
+        // Show only confirmed/completed/delivered orders for all
+        { status: { $in: allowedStatuses } },
+        // Show pending orders only if payment method is cash or wallet
+        { status: 'pending', $or: [
+          { 'payment.method': 'cash' },
+          { 'payment.method': 'wallet' }
+        ] }
+      ];
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
