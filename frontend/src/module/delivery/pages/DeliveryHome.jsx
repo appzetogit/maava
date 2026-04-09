@@ -6355,7 +6355,7 @@ export default function DeliveryHome() {
               try {
                 const updatedData = { ...activeOrderData, popupStage: 'reached_drop' };
                 localStorage.setItem('deliveryActiveOrder', JSON.stringify(updatedData));
-              } catch (_) {}
+              } catch (_) { }
               setTimeout(() => setShowReachedDropPopup(true), 1000);
             } else if (liveStatus === 'ready' || livePhase === 'at_pickup' || livePhase === 'reached_pickup' || liveStatus === 'accepted') {
               // At pickup - show Reached Pickup
@@ -6364,7 +6364,7 @@ export default function DeliveryHome() {
               try {
                 const updatedData = { ...activeOrderData, popupStage: 'reached_pickup' };
                 localStorage.setItem('deliveryActiveOrder', JSON.stringify(updatedData));
-              } catch (_) {}
+              } catch (_) { }
               setTimeout(() => setShowreachedPickupPopup(true), 1000);
             } else {
               // Default: en_route to pickup - no popup, just show map with route
@@ -6586,24 +6586,24 @@ export default function DeliveryHome() {
       const saved = localStorage.getItem('deliveryActiveOrder');
       if (!saved) return;
       const data = JSON.parse(saved);
-      
+
       // Determine current stage from active popups
       let currentStage = data.popupStage || 'en_route_to_pickup';
       if (showReachedDropPopup) {
         currentStage = 'reached_drop';
       } else if (showreachedPickupPopup) {
         currentStage = 'reached_pickup';
-      } else if (selectedRestaurant?.orderStatus === 'out_for_delivery' || 
-                 selectedRestaurant?.deliveryPhase === 'en_route_to_delivery') {
+      } else if (selectedRestaurant?.orderStatus === 'out_for_delivery' ||
+        selectedRestaurant?.deliveryPhase === 'en_route_to_delivery') {
         currentStage = 'reached_drop'; // Order picked up, heading to customer
       }
-      
+
       if (data.popupStage !== currentStage) {
         data.popupStage = currentStage;
         localStorage.setItem('deliveryActiveOrder', JSON.stringify(data));
         console.log('💾 Updated popup stage in localStorage:', currentStage);
       }
-    } catch (_) {}
+    } catch (_) { }
   }, [showreachedPickupPopup, showReachedDropPopup, selectedRestaurant?.orderStatus, selectedRestaurant?.deliveryPhase, selectedRestaurant])
 
   // Periodically verify order still exists (every 30 seconds) to catch deletions
@@ -7529,19 +7529,7 @@ export default function DeliveryHome() {
         const centerX = size / 2;
         const centerY = size / 2;
 
-        // 1. Draw Directional Arrow (Heading indicator)
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate((roundedHeading * Math.PI) / 180);
-
-        ctx.beginPath();
-        ctx.moveTo(0, -26); // Tip of the pointer
-        ctx.lineTo(12, -8);
-        ctx.lineTo(-12, -8);
-        ctx.closePath();
-        ctx.fillStyle = '#1d4ed8'; // Darker blue for heading arrow
-        ctx.fill();
-        ctx.restore();
+        // 1. Directional Arrow removed for minimalist look
 
         // 2. Draw Soft Outer Halo
         ctx.beginPath();
@@ -7580,16 +7568,16 @@ export default function DeliveryHome() {
     const currentIcon = bikeMarkerRef.current.getIcon?.();
     const currentSize = currentIcon?.scaledSize?.width || 42;
 
-    // Arrow tip is at y = 6 on a 64px canvas; map that to the scaled size.
-    const tipY = Math.max(0, Math.round((6 * currentSize) / 64));
+    // Centered anchor for the blue dot
     const anchorX = Math.round(currentSize / 2);
+    const anchorY = Math.round(currentSize / 2);
 
     getRotatedBikeIcon(normalizedHeading).then((rotatedIconUrl) => {
       if (!bikeMarkerRef.current) return;
       bikeMarkerRef.current.setIcon({
         url: rotatedIconUrl,
         scaledSize: new window.google.maps.Size(currentSize, currentSize),
-        anchor: new window.google.maps.Point(anchorX, tipY)
+        anchor: new window.google.maps.Point(anchorX, anchorY)
       });
     });
   };
@@ -7613,9 +7601,9 @@ export default function DeliveryHome() {
       // Create bike marker with rotated icon - exact position
       const bikeIcon = {
         url: rotatedIconUrl,
-        scaledSize: new window.google.maps.Size(42, 42), // Perfectly sized green dot
-        // Anchor at the "head" so it sits on the polyline
-        anchor: new window.google.maps.Point(21, 4)
+        scaledSize: new window.google.maps.Size(42, 42), // Perfectly sized blue dot
+        // Anchor at the center
+        anchor: new window.google.maps.Point(21, 21)
       };
 
       bikeMarkerRef.current = new window.google.maps.Marker({
@@ -7690,7 +7678,7 @@ export default function DeliveryHome() {
       const bikeIcon = {
         url: rotatedIconUrl,
         scaledSize: new window.google.maps.Size(34, 34),
-        anchor: new window.google.maps.Point(17, 3)
+        anchor: new window.google.maps.Point(17, 17)
       };
       bikeMarkerRef.current.setIcon(bikeIcon);
 
@@ -10181,10 +10169,10 @@ export default function DeliveryHome() {
             <button
               onClick={async () => {
                 // Try multiple paths to find customer phone number
-                let customerPhone = selectedRestaurant?.customerPhone || 
-                                     selectedRestaurant?.userPhone || 
-                                     selectedRestaurant?.user?.phone || 
-                                     null;
+                let customerPhone = selectedRestaurant?.customerPhone ||
+                  selectedRestaurant?.userPhone ||
+                  selectedRestaurant?.user?.phone ||
+                  null;
 
                 if (!customerPhone && selectedRestaurant?.orderId) {
                   try {
