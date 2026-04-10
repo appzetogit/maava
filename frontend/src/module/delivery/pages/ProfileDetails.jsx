@@ -101,23 +101,30 @@ export default function ProfileDetails() {
     try {
       setIsUploadingPhoto(true)
       
+      // Show immediate preview
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        setProfile(prev => ({
+          ...prev,
+          profileImage: { ...prev?.profileImage, url: event.target.result }
+        }))
+      }
+      reader.readAsDataURL(file)
+
+      
       // 1. Upload to Cloudinary
       const uploadRes = await uploadAPI.uploadMedia(file, { folder: 'delivery_profiles' })
       
-      if (uploadRes?.data?.success && uploadRes?.data?.data?.url) {
-        const { url, publicId } = uploadRes.data.data
+      if (uploadRes?.data?.success && uploadRes?.data?.data) {
+        const data = uploadRes.data.data
+        const url = data.url || data.secure_url
+        const publicId = data.publicId || data.public_id
         console.log("📸 Photo uploaded, updating profile:", { url, publicId })
         
         // 2. Update profile with new image info
         const updateRes = await deliveryAPI.updateProfile({
-          profileImage: {
-            url,
-            publicId
-          },
-          documents: {
-            ...profile?.documents,
-            photo: url
-          }
+          profileImage: { url, publicId },
+          documents: { photo: url }
         })
 
         console.log("✅ Profile update response:", updateRes.data)
@@ -136,11 +143,12 @@ export default function ProfileDetails() {
       }
     } catch (error) {
       console.error("❌ Error uploading photo:", error)
-      toast.error(error?.response?.data?.message || "Failed to upload photo")
+      toast.error(error?.response?.data?.message || error.message || "Failed to update photo")
+      if (typeof fetchProfile === 'function') fetchProfile()
     } finally {
       setIsUploadingPhoto(false)
-      // Reset input so the same file could be selected again
-      e.target.value = ""
+      // Reset input value to allow selecting same file again
+      if (e.target) e.target.value = ""
     }
   }
 
