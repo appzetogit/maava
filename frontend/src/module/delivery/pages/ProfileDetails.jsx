@@ -159,6 +159,7 @@ export default function ProfileDetails() {
             ref={fileInputRef}
             onChange={handlePhotoChange}
             accept="image/*"
+            capture="user"
             className="hidden"
           />
           <button
