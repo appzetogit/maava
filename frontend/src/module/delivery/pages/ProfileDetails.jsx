@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
-import { ArrowLeft, Plus, Edit2, ChevronRight, FileText, CheckCircle, XCircle, Eye, X, Camera, Loader2 } from "lucide-react"
+import { ArrowLeft, Plus, Edit2, ChevronRight, FileText, CheckCircle, XCircle, Eye, X, Camera, Loader2, Image, GalleryVertical } from "lucide-react"
 import BottomPopup from "../components/BottomPopup"
 import { toast } from "sonner"
 import { deliveryAPI, uploadAPI } from "@/lib/api"
@@ -37,6 +37,8 @@ export default function ProfileDetails() {
   const [isUpdatingCity, setIsUpdatingCity] = useState(false)
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
   const fileInputRef = useRef(null)
+  const galleryInputRef = useRef(null)
+  const [showPhotoSourcePopup, setShowPhotoSourcePopup] = useState(false)
 
   // Note: All alternate phone related code has been removed
 
@@ -183,11 +185,18 @@ export default function ProfileDetails() {
             capture="user"
             className="hidden"
           />
+          <input
+            type="file"
+            ref={galleryInputRef}
+            onChange={handlePhotoChange}
+            accept="image/*"
+            className="hidden"
+          />
           <button
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => setShowPhotoSourcePopup(true)}
             disabled={isUploadingPhoto}
             className={`flex items-center justify-center w-12 h-12 rounded-full shadow-lg border-2 border-white transition-all ${
-              isUploadingPhoto ? "bg-gray-400" : "bg-green-600 hover:bg-green-700"
+              isUploadingPhoto ? "bg-gray-400" : "bg-[#00B761] hover:bg-green-700"
             }`}
           >
             {isUploadingPhoto ? (
@@ -1002,6 +1011,45 @@ export default function ProfileDetails() {
             }`}
           >
             {isUpdatingCity ? "Updating..." : "Update City"}
+          </button>
+        </div>
+      </BottomPopup>
+
+      {/* Photo Source Selection Popup */}
+      <BottomPopup
+        isOpen={showPhotoSourcePopup}
+        onClose={() => setShowPhotoSourcePopup(false)}
+        title="Choose Photo Source"
+      >
+        <div className="grid grid-cols-2 gap-4 pb-4">
+          <button
+            onClick={() => {
+              setShowPhotoSourcePopup(false)
+              setTimeout(() => {
+                fileInputRef.current?.click()
+              }, 100)
+            }}
+            className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-2xl border border-gray-100 active:scale-95 transition-transform"
+          >
+            <div className="w-14 h-14 bg-[#E6F7EF] rounded-full flex items-center justify-center mb-3">
+              <Camera className="w-7 h-7 text-[#00B761]" />
+            </div>
+            <span className="text-sm font-semibold text-gray-900">Camera</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setShowPhotoSourcePopup(false)
+              setTimeout(() => {
+                galleryInputRef.current?.click()
+              }, 100)
+            }}
+            className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-2xl border border-gray-100 active:scale-95 transition-transform"
+          >
+            <div className="w-14 h-14 bg-[#E6F0FF] rounded-full flex items-center justify-center mb-3">
+              <Image className="w-7 h-7 text-[#0066FF]" />
+            </div>
+            <span className="text-sm font-semibold text-gray-900">Gallery</span>
           </button>
         </div>
       </BottomPopup>
