@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
-import { ArrowLeft, Plus, Edit2, ChevronRight, FileText, CheckCircle, XCircle, Eye, X } from "lucide-react"
+import { ArrowLeft, Plus, Edit2, ChevronRight, FileText, CheckCircle, XCircle, Eye, X, Camera, Loader2 } from "lucide-react"
 import BottomPopup from "../components/BottomPopup"
 import { toast } from "sonner"
-import { deliveryAPI } from "@/lib/api"
+import { deliveryAPI, uploadAPI } from "@/lib/api"
 
 export default function ProfileDetails() {
   const navigate = useNavigate()
@@ -35,6 +35,8 @@ export default function ProfileDetails() {
   const [showCityPopup, setShowCityPopup] = useState(false)
   const [cityInput, setCityInput] = useState("")
   const [isUpdatingCity, setIsUpdatingCity] = useState(false)
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
+  const fileInputRef = useRef(null)
 
   // Note: All alternate phone related code has been removed
 
@@ -80,6 +82,55 @@ export default function ProfileDetails() {
     fetchProfile()
   }, [navigate])
 
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please select an image file")
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size should be less than 5MB")
+      return
+    }
+
+    try {
+      setIsUploadingPhoto(true)
+      
+      // 1. Upload to Cloudinary
+      const uploadRes = await uploadAPI.uploadMedia(file, { folder: 'delivery_profiles' })
+      
+      if (uploadRes?.data?.success && uploadRes?.data?.data?.url) {
+        const { url, publicId } = uploadRes.data.data
+        
+        // 2. Update profile with new image info
+        await deliveryAPI.updateProfile({
+          profileImage: {
+            url,
+            publicId
+          }
+        })
+        
+        toast.success("Profile picture updated successfully")
+        
+        // 3. Update local state
+        setProfile(prev => ({
+          ...prev,
+          profileImage: { url, publicId }
+        }))
+      }
+    } catch (error) {
+      console.error("Error uploading photo:", error)
+      toast.error(error?.response?.data?.message || "Failed to upload photo")
+    } finally {
+      setIsUploadingPhoto(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
@@ -100,6 +151,30 @@ export default function ProfileDetails() {
           alt="Profile"
           className="w-full h-auto max-h-96 object-contain"
         />
+        
+        {/* Profile Picture Edit Button */}
+        <div className="absolute bottom-4 right-4">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handlePhotoChange}
+            accept="image/*"
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploadingPhoto}
+            className={`flex items-center justify-center w-12 h-12 rounded-full shadow-lg border-2 border-white transition-all ${
+              isUploadingPhoto ? "bg-gray-400" : "bg-green-600 hover:bg-green-700"
+            }`}
+          >
+            {isUploadingPhoto ? (
+              <Loader2 className="w-6 h-6 text-white animate-spin" />
+            ) : (
+              <Camera className="w-6 h-6 text-white" />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Content */}

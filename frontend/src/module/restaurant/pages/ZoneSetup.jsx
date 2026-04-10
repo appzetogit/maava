@@ -22,6 +22,7 @@ export default function ZoneSetup() {
   const [selectedLocation, setSelectedLocation] = useState(null)
   const [selectedAddress, setSelectedAddress] = useState("")
   const [zones, setZones] = useState([])
+  const [isOutsideZone, setIsOutsideZone] = useState(false)
   const zonePolygonsRef = useRef([])
 
 
@@ -184,7 +185,7 @@ export default function ZoneSetup() {
         const loader = new Loader({
           apiKey: apiKey,
           version: "weekly",
-          libraries: ["places"]
+          libraries: ["places", "geometry"]
         })
 
         const google = await loader.load()
@@ -393,16 +394,41 @@ export default function ZoneSetup() {
           setLocationSearch(newAddress)
           setSelectedAddress(newAddress)
           setSelectedLocation({ lat: newLat, lng: newLng, address: newAddress })
+          checkIfInZone(newLat, newLng)
         } else {
           const newAddress = `${newLat.toFixed(6)}, ${newLng.toFixed(6)}`
           setLocationSearch(newAddress)
           setSelectedAddress(newAddress)
           setSelectedLocation({ lat: newLat, lng: newLng, address: newAddress })
+          checkIfInZone(newLat, newLng)
         }
       })
     })
 
     markerRef.current = marker
+    checkIfInZone(lat, lng)
+  }
+
+  const checkIfInZone = (lat, lng) => {
+    if (!window.google || !window.google.maps || !window.google.maps.geometry) return
+
+    const point = new window.google.maps.LatLng(lat, lng)
+    let inZone = false
+
+    if (zonePolygonsRef.current.length === 0) {
+      // If no zones are defined, we can't really check
+      setIsOutsideZone(false)
+      return
+    }
+
+    for (const polygon of zonePolygonsRef.current) {
+      if (window.google.maps.geometry.poly.containsLocation(point, polygon)) {
+        inZone = true
+        break
+      }
+    }
+
+    setIsOutsideZone(!inZone)
   }
 
   const formatAddress = (location) => {
@@ -530,6 +556,17 @@ export default function ZoneSetup() {
               </p>
               <p className="text-xs text-gray-500 mt-1">
                 Coordinates: {selectedLocation.lat.toFixed(6)}, {selectedLocation.lng.toFixed(6)}
+              </p>
+            </div>
+          )}
+          
+          {isOutsideZone && selectedLocation && (
+            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+              <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-red-600 font-bold text-xs font-mono">!</span>
+              </div>
+              <p className="text-sm text-red-700 font-semibold">
+                You will not be able to receive orders. Mark your location correctly inside a zone.
               </p>
             </div>
           )}

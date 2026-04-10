@@ -49,6 +49,19 @@ export const getWallet = asyncHandler(async (req, res) => {
       .filter(t => t.type === 'withdrawal' && t.status === 'Pending')
       .reduce((sum, t) => sum + t.amount, 0);
 
+    // Calculate total earned (all completed payment + bonus + earning_addon transactions)
+    const totalEarnedFromTransactions = wallet.transactions
+      .filter(t => ['payment', 'bonus', 'earning_addon'].includes(t.type) && t.status === 'Completed')
+      .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+    // Pocket balance = the total money rider has earned (commission + bonuses)
+    // This is simply totalBalance from the wallet (backend keeps this accurate)
+    // cashInHand is SEPARATE — it's COD cash physically held by the rider, NOT part of earned pocket money
+    const pocketBalanceValue = Math.max(0, Number(wallet.totalBalance) || 0);
+
+    // Withdrawable = pocket balance minus pending withdrawal requests
+    const withdrawableAmount = Math.max(0, pocketBalanceValue - pendingWithdrawals);
+
     // Global cash limit and withdrawal limit (same for all delivery partners)
     let totalCashLimit = 0;
     let withdrawalLimit = 100;
@@ -173,8 +186,10 @@ export const getWallet = asyncHandler(async (req, res) => {
       totalCashLimit: totalCashLimit,
       availableCashLimit: Math.max(0, totalCashLimit - cashInHandForLimit),
       deliveryWithdrawalLimit: withdrawalLimit,
-      // Pocket balance = total balance (includes bonus, earnings, etc.)
-      pocketBalance: wallet.totalBalance || 0,
+      // Pocket balance = total earned balance (commission + bonuses). 
+      // cashInHand is COD cash physically held - completely separate, does NOT reduce pocket balance.
+      pocketBalance: pocketBalanceValue,
+      withdrawableAmount: withdrawableAmount,
       pendingWithdrawals: pendingWithdrawals,
       joiningBonusClaimed: wallet.joiningBonusClaimed || false,
       joiningBonusAmount: wallet.joiningBonusAmount || 0,

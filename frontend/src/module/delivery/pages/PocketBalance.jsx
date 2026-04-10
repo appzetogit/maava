@@ -58,6 +58,8 @@ export default function PocketBalancePage() {
 
     const handleWalletUpdate = () => {
       fetchWalletData()
+      // Delayed re-fetch after 5s to catch referral/bonus credited slightly after initial event
+      setTimeout(() => fetchWalletData(), 5000)
     }
 
     window.addEventListener('deliveryWalletStateUpdated', handleWalletUpdate)
@@ -86,51 +88,43 @@ export default function PocketBalancePage() {
   // Calculate weekly earnings for the current week (excludes bonus)
   const weeklyEarnings = calculatePeriodEarnings(walletState, 'week')
   
-  // Calculate total bonus amount from all bonus transactions
+  // Calculate total bonus amount: 'bonus' (joining bonus) + 'earning_addon' (admin incentives)
   const totalBonus = walletState?.transactions
-    ?.filter(t => t.type === 'bonus' && t.status === 'Completed')
+    ?.filter(t => (t.type === 'bonus' || t.type === 'earning_addon') && t.status === 'Completed')
     .reduce((sum, t) => sum + (t.amount || 0), 0) || 0
   
   // Calculate total withdrawn (needed for pocket balance calculation)
   const totalWithdrawn = balances.totalWithdrawn || 0
   
-  // Pocket balance = total balance (includes bonus + earnings)
-  // Formula: Pocket Balance = Earnings + Bonus - Withdrawals
-  // Use walletState.pocketBalance if available, otherwise calculate from totalBalance
+  // Pocket balance = total earned by rider (commission + bonuses from all time)
+  // cashInHand is COD cash physically held by the rider - COMPLETELY SEPARATE
+  // cashInHand does NOT reduce pocket balance
   let pocketBalance = walletState?.pocketBalance !== undefined 
-    ? walletState.pocketBalance 
-    : (walletState?.totalBalance || balances.totalBalance || 0)
+    ? walletState.pocketBalance      // pocketBalance = totalBalance from backend (correct)
+    : (walletState?.totalBalance || 0)
   
-  // IMPORTANT: Ensure pocket balance includes bonus
-  // If backend totalBalance is 0 but we have bonus, calculate it manually
-  // This ensures bonus is always reflected in pocket balance and withdrawable amount
+  // If pocketBalance is 0 but we have bonus transactions, add them
   if (pocketBalance === 0 && totalBonus > 0) {
-    // If totalBalance is 0 but we have bonus, pocket balance = bonus
     pocketBalance = totalBonus
-  } else if (pocketBalance > 0 && totalBonus > 0) {
-    // Verify pocket balance includes bonus
-    // Calculate expected: Earnings + Bonus - Withdrawals
-    const expectedBalance = weeklyEarnings + totalBonus - totalWithdrawn
-    // Use the higher value to ensure bonus is included
-    if (expectedBalance > pocketBalance) {
-      pocketBalance = expectedBalance
-    }
   }
-  
-  // Calculate cash collected (cash in hand)
+
+  // Calculate cash collected (cash in hand = COD cash physically held by rider)
   const cashCollected = balances.cashInHand || 0
   
-  // Deductions = actual deductions only (fees, penalties). Pending withdrawal is NOT a deduction.
+  // Deductions = actual deductions only (fees, penalties)
   const deductions = 0
   
-  // Amount withdrawn = approved + pending (requested) withdrawals. Withdraw ki hui amount yahin dikhegi.
-  const amountWithdrawnDisplay = (balances.totalWithdrawn || 0) + (balances.pendingWithdrawals || 0)
+  // Amount withdrawn = completed withdrawals (totalWithdrawn from backend)
+  const amountWithdrawnDisplay = balances.totalWithdrawn || 0
   
-  // Withdrawal limit from admin (min amount above which withdrawal is allowed)
+  // Withdrawal limit from admin settings
   const withdrawalLimit = Number(walletState?.deliveryWithdrawalLimit) || 100
   
-  // Withdrawable amount = pocket balance (includes bonus + earnings)
-  const withdrawableAmount = pocketBalance > 0 ? pocketBalance : 0
+  // Withdrawable amount = backend value (pocketBalance - pendingWithdrawals)
+  // If backend provides withdrawableAmount use it, otherwise calculate locally
+  const withdrawableAmount = walletState?.withdrawableAmount !== undefined
+    ? Math.max(0, walletState.withdrawableAmount)
+    : Math.max(0, pocketBalance - (balances.pendingWithdrawals || 0))
   
   // Withdrawal allowed only when withdrawable amount >= withdrawal limit
   const canWithdraw = withdrawableAmount >= withdrawalLimit && withdrawableAmount > 0
@@ -341,7 +335,7 @@ export default function PocketBalancePage() {
 
         <DetailRow label="Earnings" value={formatCurrency(weeklyEarnings)} />
         <DetailRow label="Bonus" value={formatCurrency(totalBonus)} />
-        <DetailRow label="Amount withdrawn" value={formatCurrency(totalWithdrawn)} />
+        <DetailRow label="Amount withdrawn" value={formatCurrency(amountWithdrawnDisplay)} />
         <DetailRow label="Cash collected" value={formatCurrency(cashCollected)} />
         <DetailRow label="Deductions" value={formatCurrency(deductions)} />
         <DetailRow label="Pocket balance" value={formatCurrency(pocketBalance)} />

@@ -68,11 +68,15 @@ export default function PocketDetails() {
           return d >= weekRange.start && d <= weekRange.end && p.status === "Completed"
         })
 
-        // 3) Fetch bonus transactions for mapping by orderId
-        const bonus = await fetchWalletTransactions({ type: "bonus", limit: 1000 })
+        // 3) Fetch ALL bonus transactions: 'bonus' (joining bonus) + 'earning_addon' (admin incentives)
+        const [bonusTx, earningAddonTx] = await Promise.all([
+          fetchWalletTransactions({ type: "bonus", limit: 1000 }),
+          fetchWalletTransactions({ type: "earning_addon", limit: 1000 })
+        ])
+        const allBonusTx = [...bonusTx, ...earningAddonTx]
         
         // Filter bonuses within the selected week range
-        const filteredBonuses = bonus.filter((b) => {
+        const filteredBonuses = allBonusTx.filter((b) => {
           const bonusDate = b.date || b.createdAt
           if (!bonusDate) return false
           const d = new Date(bonusDate)

@@ -1777,7 +1777,20 @@ export const completeDelivery = asyncHandler(async (req, res) => {
       console.error('⚠️ Error calculating commission using rules:', commissionError.message);
       // Fallback: Use delivery fee as earnings if commission calculation fails
       totalEarning = order.pricing?.deliveryFee || 0;
-      console.warn(`⚠️ Using fallback earnings (delivery fee): ₹${totalEarning.toFixed(2)}`);
+      
+      // If still 0, use a bare minimum payout of ₹10 for delivery partners
+      if (totalEarning <= 0) {
+        totalEarning = 10;
+        console.warn(`⚠️ Using absolute minimum fallback earnings: ₹${totalEarning.toFixed(2)}`);
+      } else {
+        console.warn(`⚠️ Using fallback earnings (delivery fee): ₹${totalEarning.toFixed(2)}`);
+      }
+    }
+    
+    // Final check: Ensure delivery partner gets at least some minimum earning (e.g., ₹10)
+    if (totalEarning <= 0) {
+      totalEarning = 10;
+      console.warn(`⚠️ Final fallback: totalEarning was 0, setting to ₹10 for order ${orderIdForLog}`);
     }
 
     // Add earning to delivery boy's wallet

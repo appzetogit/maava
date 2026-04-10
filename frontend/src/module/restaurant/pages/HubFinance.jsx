@@ -8,10 +8,7 @@ import { restaurantAPI } from "@/lib/api"
 export default function HubFinance() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const [activeTab, setActiveTab] = useState(() => {
-    const tabParam = searchParams.get("tab")
-    return tabParam === "invoices" ? "invoices" : "payouts"
-  })
+  const [activeTab, setActiveTab] = useState("payouts")
   const [selectedDateRange, setSelectedDateRange] = useState("14 Nov - 14 Dec'25")
   const [showDownloadMenu, setShowDownloadMenu] = useState(false)
   const [showDateRangePicker, setShowDateRangePicker] = useState(false)
@@ -647,28 +644,9 @@ export default function HubFinance() {
       {/* Primary Navigation Tabs */}
       <div className="px-4 py-3">
         <div className="flex gap-2">
-          <motion.button
-            onClick={() => setActiveTab("payouts")}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className={`flex-1 py-3 px-4 rounded-full font-medium text-sm transition-colors ${activeTab === "payouts"
-                ? "bg-black text-white"
-                : "bg-white text-gray-600 border border-gray-300"
-              }`}
-          >
+          <div className="flex-1 py-3 px-4 rounded-full font-medium text-sm bg-black text-white text-center">
             Payouts
-          </motion.button>
-          <motion.button
-            onClick={() => setActiveTab("invoices")}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className={`flex-1 py-3 px-4 rounded-full font-medium text-sm transition-colors ${activeTab === "invoices"
-                ? "bg-black text-white"
-                : "bg-white text-gray-600 border border-gray-300"
-              }`}
-          >
-            Invoices & Taxes
-          </motion.button>
+          </div>
         </div>
       </div>
 
@@ -987,13 +965,6 @@ export default function HubFinance() {
           </div>
         )}
 
-        {activeTab === "invoices" && (
-          <div className=" rounded-lg p-4">
-            <p className="text-sm text-gray-600 text-center py-8">
-              Invoices & Taxes content will be displayed here
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Withdrawal Modal */}

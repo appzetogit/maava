@@ -49,6 +49,8 @@ export const fetchDeliveryWallet = async () => {
         deliveryWithdrawalLimit: Number(walletData.deliveryWithdrawalLimit ?? walletData.delivery_withdrawal_limit) || 100,
         // Pocket balance = total balance (includes bonus)
         pocketBalance: walletData.pocketBalance !== undefined ? Number(walletData.pocketBalance) : (Number(walletData.totalBalance) || 0),
+        // withdrawableAmount from backend (pocketBalance - pendingWithdrawals)
+        withdrawableAmount: walletData.withdrawableAmount !== undefined ? Number(walletData.withdrawableAmount) : (Number(walletData.pocketBalance) || Number(walletData.totalBalance) || 0),
         pendingWithdrawals: walletData.pendingWithdrawals || 0,
         joiningBonusClaimed: walletData.joiningBonusClaimed || false,
         joiningBonusAmount: walletData.joiningBonusAmount || 0,

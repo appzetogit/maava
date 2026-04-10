@@ -43,11 +43,10 @@ export const getEarnings = asyncHandler(async (req, res) => {
         endDate.setHours(23, 59, 59, 999);
         break;
       case 'week':
-        // Get week range (Monday to Sunday)
-        startDate = new Date(baseDate);
-        const day = startDate.getDay();
-        const diff = startDate.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
-        startDate.setDate(diff);
+        // Get week range (Sunday to Saturday) to match frontend definition
+        const dayOfWeek = selectedDate.getDay(); 
+        startDate = new Date(selectedDate);
+        startDate.setDate(selectedDate.getDate() - dayOfWeek);
         startDate.setHours(0, 0, 0, 0);
         endDate = new Date(startDate);
         endDate.setDate(startDate.getDate() + 6);
@@ -75,7 +74,7 @@ export const getEarnings = asyncHandler(async (req, res) => {
     
     // Filter by transaction type (only 'payment' type for earnings)
     transactions = transactions.filter(t => 
-      t.type === 'payment' && 
+      ['payment', 'bonus', 'earning_addon'].includes(t.type) && 
       t.status === 'Completed'
     );
 
@@ -120,6 +119,7 @@ export const getEarnings = asyncHandler(async (req, res) => {
         orderId: order?.orderId || transaction.orderId?.toString() || 'Unknown',
         restaurantName: order?.restaurantName || 'Unknown Restaurant',
         amount: transaction.amount || 0,
+        type: transaction.type,
         description: transaction.description || '',
         deliveredAt: order?.deliveredAt || transaction.createdAt || transaction.processedAt,
         createdAt: transaction.createdAt || transaction.processedAt,
@@ -150,10 +150,10 @@ export const getEarnings = asyncHandler(async (req, res) => {
     const totalHours = Math.floor(totalTimeMinutes / 60);
     const totalMinutesRemainder = totalTimeMinutes % 60;
 
-    // Calculate breakdown
-    const orderEarning = totalAmount; // All payments are order earnings
-    const incentive = 0; // Can be added from bonus transactions separately if needed
-    const otherEarnings = 0; // Can include tips, bonuses, etc.
+    // Calculate breakdown based on transaction types
+    const orderEarnings = transactions.filter(t => t.type === 'payment').reduce((sum, t) => sum + (t.amount || 0), 0);
+    const incentive = transactions.filter(t => t.type === 'bonus').reduce((sum, t) => sum + (t.amount || 0), 0);
+    const otherEarnings = transactions.filter(t => t.type === 'earning_addon').reduce((sum, t) => sum + (t.amount || 0), 0);
 
     return successResponse(res, 200, 'Earnings retrieved successfully', {
       earnings: paginatedEarnings,
@@ -165,7 +165,7 @@ export const getEarnings = asyncHandler(async (req, res) => {
         totalEarnings: totalAmount,
         totalHours,
         totalMinutes: totalMinutesRemainder,
-        orderEarning,
+        orderEarning: orderEarnings,
         incentive,
         otherEarnings
       },

@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 import { ArrowLeft, ArrowRight, Phone } from "lucide-react"
 import { deliveryAPI } from "@/lib/api"
 import { getCompanyNameAsync } from "@/lib/utils/businessSettings"
+import { fetchWalletTransactions } from "../utils/deliveryWalletState"
 
 const STORAGE_KEY = "appzeto_food_referrals"
 
@@ -21,25 +22,44 @@ export default function YourReferrals() {
   const loadReferrals = async () => {
     try {
       setLoading(true)
-      const res = await deliveryAPI.getReferrals();
-      if (res.data?.success) {
-        // Map backend fields to frontend fields
-        const mappedReferrals = res.data.data.referrals.map(ref => ({
+
+      // Fetch referrals list and bonus transactions in parallel
+      const [referralRes, bonusTx] = await Promise.all([
+        deliveryAPI.getReferrals(),
+        fetchWalletTransactions({ type: "bonus", limit: 1000 })
+      ])
+
+      if (referralRes.data?.success) {
+        const mappedReferrals = referralRes.data.data.referrals.map(ref => ({
           name: ref.friendName,
           mobile: ref.friendPhone,
-          completed: ref.status === 'completed' || ref.status === 'signed_up',
+          // 'completed' status = referral bonus credited to referrer
+          completed: ref.status === 'completed',
+          // 'signed_up' = friend signed up but hasn't done first order yet (still in progress)
+          signedUp: ref.status === 'signed_up' || ref.status === 'completed',
           timestamp: ref.createdAt
-        }));
-        setReferrals(mappedReferrals);
+        }))
+        setReferrals(mappedReferrals)
       }
+
+      // Calculate referral earnings from wallet: sum of 'bonus' transactions where description has 'Referral'
+      const referralEarnings = bonusTx
+        .filter(t => t.status === 'Completed' && 
+          (t.description?.toLowerCase().includes('referral') || t.description?.toLowerCase().includes('refer'))
+        )
+        .reduce((sum, t) => sum + (t.amount || 0), 0)
+      setEarnings(referralEarnings)
+
     } catch (error) {
-      console.error("Error fetching referrals:", error);
+      console.error("Error fetching referrals:", error)
     } finally {
       setLoading(false)
     }
   }
 
   // Filter referrals based on tab
+  // In Progress = not yet completed (friend hasn't done first order yet)
+  // Past = completed (bonus credited)
   const inProgressReferrals = referrals.filter(ref => !ref.completed)
   const pastReferrals = referrals.filter(ref => ref.completed)
 
@@ -96,7 +116,14 @@ export default function YourReferrals() {
       <div className="bg-white px-4 py-6">
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
           <p className="text-center text-sm text-gray-600 mb-2">Your referral earnings</p>
-          <p className="text-center text-4xl font-bold text-gray-900">₹{earnings}</p>
+          <p className="text-center text-4xl font-bold text-gray-900">
+            ₹{earnings.toLocaleString('en-IN')}
+          </p>
+          {earnings === 0 && (
+            <p className="text-center text-xs text-gray-400 mt-1">
+              Bonus credited when your referral completes first order
+            </p>
+          )}
         </div>
       </div>
 

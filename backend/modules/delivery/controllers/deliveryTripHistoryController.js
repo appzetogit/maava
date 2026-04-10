@@ -46,11 +46,10 @@ export const getTripHistory = asyncHandler(async (req, res) => {
         endDate.setHours(23, 59, 59, 999);
         break;
       case 'weekly':
-        // Get start of week (Monday)
+        // Get week range (Sunday to Saturday) to match frontend definition
         const dayOfWeek = selectedDate.getDay();
-        const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Adjust for Monday start
         startDate = new Date(selectedDate);
-        startDate.setDate(selectedDate.getDate() + diff);
+        startDate.setDate(selectedDate.getDate() - dayOfWeek);
         startDate.setHours(0, 0, 0, 0);
         endDate = new Date(startDate);
         endDate.setDate(startDate.getDate() + 6);
@@ -68,10 +67,11 @@ export const getTripHistory = asyncHandler(async (req, res) => {
         endDate.setHours(23, 59, 59, 999);
     }
 
-    // Build query
+    // Build query - filter by deliveredAt for delivered orders, createdAt for others
+    const dateField = status === 'Completed' || status === 'delivered' ? 'deliveredAt' : 'createdAt';
     const query = {
       deliveryPartnerId: delivery._id,
-      createdAt: {
+      [dateField]: {
         $gte: startDate,
         $lte: endDate
       }

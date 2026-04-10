@@ -1,8 +1,11 @@
 import WithdrawalRequest from '../models/WithdrawalRequest.js';
 import RestaurantWallet from '../models/RestaurantWallet.js';
 import Restaurant from '../models/Restaurant.js';
+import Order from '../../order/models/Order.js';
+import RestaurantCommission from '../../admin/models/RestaurantCommission.js';
 import { successResponse, errorResponse } from '../../../shared/utils/response.js';
 import asyncHandler from '../../../shared/middleware/asyncHandler.js';
+import mongoose from 'mongoose';
 import winston from 'winston';
 
 const logger = winston.createLogger({
@@ -32,14 +35,69 @@ export const createWithdrawalRequest = asyncHandler(async (req, res) => {
       return errorResponse(res, 400, 'Valid withdrawal amount is required');
     }
 
-    // Get restaurant wallet
-    const wallet = await RestaurantWallet.findOrCreateByRestaurantId(restaurant._id);
-    
-    // Check if sufficient balance
-    const availableBalance = wallet.totalBalance || 0;
+    // Get restaurant ID for variations (same as finance controller)
+    const restaurantIdRaw = restaurant._id?.toString() || restaurant.restaurantId || restaurant.id;
+    const restaurantIdVariations = [restaurantIdRaw];
+    if (mongoose.Types.ObjectId.isValid(restaurantIdRaw)) {
+      const objectIdString = new mongoose.Types.ObjectId(restaurantIdRaw).toString();
+      if (!restaurantIdVariations.includes(objectIdString)) {
+        restaurantIdVariations.push(objectIdString);
+      }
+    }
+
+    const restaurantIdQuery = {
+      $or: [
+        { restaurantId: { $in: restaurantIdVariations } },
+        { restaurantId: restaurantIdRaw }
+      ]
+    };
+
+    // Calculate current cycle dates (to match Hub Finance UI)
+    const now = new Date();
+    const currentDay = now.getDay();
+    const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1;
+    const currentCycleStart = new Date(now);
+    currentCycleStart.setDate(now.getDate() - daysFromMonday);
+    currentCycleStart.setHours(0, 0, 0, 0);
+    const currentCycleEnd = new Date(currentCycleStart);
+    currentCycleEnd.setDate(currentCycleStart.getDate() + 6);
+    currentCycleEnd.setHours(23, 59, 59, 999);
+
+    // Get current cycle orders (delivered)
+    const currentCycleOrders = await Order.find({
+      ...restaurantIdQuery,
+      status: 'delivered',
+      $or: [
+        { deliveredAt: { $gte: currentCycleStart, $lte: currentCycleEnd } },
+        { 'tracking.delivered.timestamp': { $gte: currentCycleStart, $lte: currentCycleEnd } },
+        { createdAt: { $gte: currentCycleStart, $lte: currentCycleEnd } }
+      ]
+    }).lean();
+
+    // Calculate earnings from orders (food price - commission)
+    let totalEarnings = 0;
+    for (const order of currentCycleOrders) {
+      const foodPrice = (order.pricing?.subtotal || 0) - (order.pricing?.discount || 0);
+      const commissionResult = await RestaurantCommission.calculateCommissionForOrder(restaurant._id, foodPrice);
+      totalEarnings += (foodPrice - (commissionResult.commission || 0));
+    }
+
+    // Get all pending/approved withdrawal requests
+    const allWithdrawals = await WithdrawalRequest.find({
+      restaurantId: restaurant._id,
+      status: { $in: ['Pending', 'Approved'] }
+    }).lean();
+    const totalWithdrawnAmount = allWithdrawals.reduce((sum, req) => sum + (req.amount || 0), 0);
+
+    // Available balance matches Hub Finance "estimatedPayout"
+    const availableBalance = Math.max(0, Math.round((totalEarnings - totalWithdrawnAmount) * 100) / 100);
+
     if (amount > availableBalance) {
       return errorResponse(res, 400, 'Insufficient balance. Available balance: ₹' + availableBalance.toFixed(2));
     }
+
+    // Get restaurant wallet (to keep it updated if possible)
+    const wallet = await RestaurantWallet.findOrCreateByRestaurantId(restaurant._id);
 
     // Check for pending requests
     const pendingRequest = await WithdrawalRequest.findOne({
@@ -283,6 +341,26 @@ export const approveWithdrawalRequest = asyncHandler(async (req, res) => {
 
     await wallet.save();
 
+    // Send notification to restaurant
+    try {
+      console.log(`🔔 [Withdrawal] Attempting to send approval notification to restaurant: ${withdrawalRequest.restaurantId._id}`);
+      const { sendNotificationToUser } = await import('../../notification/services/pushNotificationService.js');
+      const notifResult = await sendNotificationToUser(
+        withdrawalRequest.restaurantId._id.toString(),
+        'restaurant',
+        '💰 Withdrawal Approved',
+        `Your withdrawal request for ₹${withdrawalRequest.amount.toFixed(2)} has been approved.`,
+        { 
+          type: 'WITHDRAWAL_APPROVED', 
+          amount: withdrawalRequest.amount.toString(),
+          requestId: withdrawalRequest._id.toString()
+        }
+      );
+      console.log(`✅ [Withdrawal] Approval notification result:`, notifResult);
+    } catch (notifError) {
+      console.error(`❌ [Withdrawal] Error sending approval notification:`, notifError);
+    }
+
     logger.info(`Withdrawal request approved: ${id} by admin: ${admin._id}`);
 
     return successResponse(res, 200, 'Withdrawal request approved successfully', {
@@ -375,6 +453,27 @@ export const rejectWithdrawalRequest = asyncHandler(async (req, res) => {
     }
 
     await wallet.save();
+
+    // Send notification to restaurant
+    try {
+      console.log(`🔔 [Withdrawal] Attempting to send rejection notification to restaurant: ${withdrawalRequest.restaurantId}`);
+      const { sendNotificationToUser } = await import('../../notification/services/pushNotificationService.js');
+      const notifResult = await sendNotificationToUser(
+        withdrawalRequest.restaurantId.toString(),
+        'restaurant',
+        '❌ Withdrawal Rejected',
+        `Your withdrawal request for ₹${withdrawalRequest.amount.toFixed(2)} has been rejected. ${rejectionReason ? 'Reason: ' + rejectionReason : ''}`,
+        { 
+          type: 'WITHDRAWAL_REJECTED', 
+          amount: withdrawalRequest.amount.toString(),
+          requestId: withdrawalRequest._id.toString(),
+          reason: rejectionReason || ''
+        }
+      );
+      console.log(`✅ [Withdrawal] Rejection notification result:`, notifResult);
+    } catch (notifError) {
+      console.error(`❌ [Withdrawal] Error sending rejection notification:`, notifError);
+    }
 
     logger.info(`Withdrawal request rejected: ${id} by admin: ${admin._id}. Balance refunded.`);
 
