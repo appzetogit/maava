@@ -2677,22 +2677,22 @@ export default function Cart() {
               </div>
 
               <div className="p-5 space-y-6">
-                {/* Pay on Delivery */}
+                {/* Razorpay Online */}
                 <div>
-                  <p className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Pay on Delivery</p>
+                  <p className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Online Payment</p>
                   <button
-                    onClick={() => { setSelectedPaymentMethod('cash'); setSelectedUpiApp(null); setShowPaymentOptions(false); }}
-                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${selectedPaymentMethod === 'cash' ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                    onClick={() => { setSelectedPaymentMethod('razorpay'); setSelectedUpiApp(null); }}
+                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${selectedPaymentMethod === 'razorpay' ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                   >
                     <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <span className="text-xl">💵</span>
+                      <CreditCard className="h-6 w-6 text-black dark:text-white" />
                     </div>
                     <div className="flex-1 text-left">
-                      <p className="font-bold text-gray-900 dark:text-white text-sm">Pay on Delivery (Cash/UPI)</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Pay cash or ask for QR code</p>
+                      <p className="font-bold text-gray-900 dark:text-white text-sm">Razorpay (Online)</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Pay via Cards, UPI, Netbanking & more</p>
                     </div>
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selectedPaymentMethod === 'cash' ? 'border-green-500 bg-green-500' : 'border-gray-300 dark:border-gray-600'}`}>
-                      {selectedPaymentMethod === 'cash' && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selectedPaymentMethod === 'razorpay' ? 'border-green-500 bg-green-500' : 'border-gray-300 dark:border-gray-600'}`}>
+                      {selectedPaymentMethod === 'razorpay' && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
                     </div>
                   </button>
                 </div>
@@ -2701,7 +2701,7 @@ export default function Cart() {
                 <div>
                   <p className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Wallet</p>
                   <button
-                    onClick={() => { setSelectedPaymentMethod('wallet'); setSelectedUpiApp(null); setShowPaymentOptions(false); }}
+                    onClick={() => { setSelectedPaymentMethod('wallet'); setSelectedUpiApp(null); }}
                     disabled={walletBalance < total}
                     className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all disabled:opacity-50 ${selectedPaymentMethod === 'wallet' ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                   >
@@ -2720,140 +2720,24 @@ export default function Cart() {
                   </button>
                 </div>
 
-                {/* Pay by UPI App */}
+                {/* Pay on Delivery */}
                 <div>
-                  <p className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Pay by any UPI App</p>
-                  <div className="space-y-2">
-                    {/* Google Pay */}
-                    <button
-                      onClick={() => { setSelectedPaymentMethod('razorpay'); setSelectedUpiApp('google_pay'); setShowPaymentOptions(false); }}
-                      className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${selectedPaymentMethod === 'razorpay' && selectedUpiApp === 'google_pay'
-                        ? 'border-green-500 bg-green-50 dark:bg-green-900/10'
-                        : 'border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800'
-                        }`}
-                    >
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden bg-white border border-gray-100 dark:border-gray-700 shadow-sm">
-                        <svg viewBox="0 0 48 48" className="w-8 h-8">
-                          <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z" />
-                          <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.32-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z" />
-                          <path fill="#FBBC05" d="M11.68 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.68-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24c0 3.55.85 6.91 2.34 9.88l7.34-5.7z" />
-                          <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.34 5.7c1.74-5.2 6.59-9.07 12.32-9.07z" />
-                        </svg>
-                      </div>
-                      <div className="flex-1 text-left">
-                        <p className="font-bold text-gray-900 dark:text-white text-sm">Google Pay</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Pay via Google Pay UPI</p>
-                      </div>
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selectedPaymentMethod === 'razorpay' && selectedUpiApp === 'google_pay' ? 'border-green-500 bg-green-500' : 'border-gray-300 dark:border-gray-600'
-                        }`}>
-                        {selectedPaymentMethod === 'razorpay' && selectedUpiApp === 'google_pay' && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
-                      </div>
-                    </button>
-
-                    {/* Paytm UPI */}
-                    <button
-                      onClick={() => { setSelectedPaymentMethod('razorpay'); setSelectedUpiApp('paytm'); setShowPaymentOptions(false); }}
-                      className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${selectedPaymentMethod === 'razorpay' && selectedUpiApp === 'paytm'
-                        ? 'border-green-500 bg-green-50 dark:bg-green-900/10'
-                        : 'border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800'
-                        }`}
-                    >
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden bg-[#00BAF2] shadow-sm">
-                        <span className="text-white font-black text-lg tracking-tighter">Pay</span>
-                      </div>
-                      <div className="flex-1 text-left">
-                        <p className="font-bold text-gray-900 dark:text-white text-sm">Paytm UPI</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Pay via Paytm UPI ID</p>
-                      </div>
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selectedPaymentMethod === 'razorpay' && selectedUpiApp === 'paytm' ? 'border-green-500 bg-green-500' : 'border-gray-300 dark:border-gray-600'
-                        }`}>
-                        {selectedPaymentMethod === 'razorpay' && selectedUpiApp === 'paytm' && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
-                      </div>
-                    </button>
-
-                    {/* PhonePe */}
-                    <button
-                      onClick={() => { setSelectedPaymentMethod('razorpay'); setSelectedUpiApp('phonepe'); setShowPaymentOptions(false); }}
-                      className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${selectedPaymentMethod === 'razorpay' && selectedUpiApp === 'phonepe'
-                        ? 'border-green-500 bg-green-50 dark:bg-green-900/10'
-                        : 'border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800'
-                        }`}
-                    >
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden bg-[#5F259F] shadow-sm">
-                        <svg viewBox="0 0 48 48" className="w-8 h-8" fill="white">
-                          <path d="M24 6C14.06 6 6 14.06 6 24s8.06 18 18 18 18-8.06 18-18S33.94 6 24 6zm6.5 26.5h-4v-5.5h-5v5.5h-4v-13h4v4h5v-4h4v13z" />
-                        </svg>
-                      </div>
-                      <div className="flex-1 text-left">
-                        <p className="font-bold text-gray-900 dark:text-white text-sm">PhonePe</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Pay via PhonePe UPI</p>
-                      </div>
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selectedPaymentMethod === 'razorpay' && selectedUpiApp === 'phonepe' ? 'border-green-500 bg-green-500' : 'border-gray-300 dark:border-gray-600'
-                        }`}>
-                        {selectedPaymentMethod === 'razorpay' && selectedUpiApp === 'phonepe' && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
-                      </div>
-                    </button>
-
-                    {/* Add New UPI ID */}
-                    <button
-                      onClick={() => { setSelectedPaymentMethod('razorpay'); setSelectedUpiApp(null); setShowPaymentOptions(false); }}
-                      className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
-                    >
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-gray-100 dark:bg-gray-800">
-                        <Plus className="h-5 w-5 text-gray-500" />
-                      </div>
-                      <div className="flex-1 text-left">
-                        <p className="font-bold text-gray-700 dark:text-gray-300 text-sm">Add New UPI ID</p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">You need to have a registered UPI ID</p>
-                      </div>
-                      <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Credit & Debit Cards */}
-                <div>
-                  <p className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Credit & Debit Cards</p>
+                  <p className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Pay on Delivery</p>
                   <button
-                    onClick={() => { setSelectedPaymentMethod('razorpay'); setShowPaymentOptions(false); }}
-                    className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+                    onClick={() => { setSelectedPaymentMethod('cash'); setSelectedUpiApp(null); }}
+                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${selectedPaymentMethod === 'cash' ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                   >
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-gray-100 dark:bg-gray-800">
-                      <Plus className="h-5 w-5 text-gray-500" />
+                    <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <span className="text-xl">💵</span>
                     </div>
                     <div className="flex-1 text-left">
-                      <p className="font-bold text-gray-700 dark:text-gray-300 text-sm">Add New Card</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Save and Pay via Cards.</p>
+                      <p className="font-bold text-gray-900 dark:text-white text-sm">Pay on Delivery (Cash/UPI)</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Pay cash or ask for QR code</p>
                     </div>
-                    <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selectedPaymentMethod === 'cash' ? 'border-green-500 bg-green-500' : 'border-gray-300 dark:border-gray-600'}`}>
+                      {selectedPaymentMethod === 'cash' && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                    </div>
                   </button>
-                </div>
-
-                {/* More Payment Options */}
-                <div>
-                  <p className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">More Payment Options</p>
-                  <div className="space-y-2">
-                    {[
-                      { label: 'Wallets', sub: 'PhonePe, Amazon Pay & more', icon: '👛' },
-                      { label: 'Netbanking', sub: 'Select from a list of banks', icon: '🏦' },
-                      { label: 'CRED Pay', sub: 'Pay via CRED coins or CRED cash', icon: '💳' },
-                    ].map((opt) => (
-                      <button
-                        key={opt.label}
-                        onClick={() => { setSelectedPaymentMethod('razorpay'); setShowPaymentOptions(false); }}
-                        className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
-                      >
-                        <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center flex-shrink-0 text-xl">
-                          {opt.icon}
-                        </div>
-                        <div className="flex-1 text-left">
-                          <p className="font-bold text-gray-900 dark:text-white text-sm">{opt.label}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{opt.sub}</p>
-                        </div>
-                        <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                      </button>
-                    ))}
-                  </div>
                 </div>
 
                 {/* Bottom Confirm */}
