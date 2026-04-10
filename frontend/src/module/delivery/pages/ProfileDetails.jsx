@@ -106,28 +106,41 @@ export default function ProfileDetails() {
       
       if (uploadRes?.data?.success && uploadRes?.data?.data?.url) {
         const { url, publicId } = uploadRes.data.data
+        console.log("📸 Photo uploaded, updating profile:", { url, publicId })
         
         // 2. Update profile with new image info
-        await deliveryAPI.updateProfile({
+        const updateRes = await deliveryAPI.updateProfile({
           profileImage: {
             url,
             publicId
+          },
+          documents: {
+            ...profile?.documents,
+            photo: url
           }
         })
+
+        console.log("✅ Profile update response:", updateRes.data)
         
         toast.success("Profile picture updated successfully")
         
         // 3. Update local state
         setProfile(prev => ({
           ...prev,
-          profileImage: { url, publicId }
+          profileImage: { url, publicId },
+          documents: {
+            ...prev?.documents,
+            photo: url
+          }
         }))
       }
     } catch (error) {
-      console.error("Error uploading photo:", error)
+      console.error("❌ Error uploading photo:", error)
       toast.error(error?.response?.data?.message || "Failed to upload photo")
     } finally {
       setIsUploadingPhoto(false)
+      // Reset input so the same file could be selected again
+      e.target.value = ""
     }
   }
 

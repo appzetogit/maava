@@ -39,14 +39,18 @@ router.put('/profile', validate(Joi.object({
     url: Joi.string().uri().optional().allow(null, ''),
     publicId: Joi.string().trim().optional().allow(null, '')
   }).optional(),
-  documents: Joi.object({
-    bankDetails: Joi.object({
-      accountHolderName: Joi.string().trim().min(2).max(100).optional().allow(null, ''),
-      accountNumber: Joi.string().trim().min(9).max(18).optional().allow(null, ''),
-      ifscCode: Joi.string().trim().length(11).uppercase().optional().allow(null, ''),
-      bankName: Joi.string().trim().min(2).max(100).optional().allow(null, '')
-    }).optional()
-  }).optional()
+   documents: Joi.object({
+     aadhar: Joi.object({
+       number: Joi.string().trim().length(12).pattern(/^\d{12}$/).optional().allow(null, '')
+     }).optional(),
+     photo: Joi.string().uri().optional().allow(null, ''),
+     bankDetails: Joi.object({
+       accountHolderName: Joi.string().trim().min(2).max(100).optional().allow(null, ''),
+       accountNumber: Joi.string().trim().min(9).max(18).optional().allow(null, ''),
+       ifscCode: Joi.string().trim().length(11).uppercase().optional().allow(null, ''),
+       bankName: Joi.string().trim().min(2).max(100).optional().allow(null, '')
+     }).optional()
+   }).optional()
 })), updateProfile);
 
 // Reverify route (resubmit for approval)
