@@ -37,8 +37,6 @@ export default function ProfileDetails() {
   const [isUpdatingCity, setIsUpdatingCity] = useState(false)
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
   const fileInputRef = useRef(null)
-  const galleryInputRef = useRef(null)
-  const [showPhotoSourcePopup, setShowPhotoSourcePopup] = useState(false)
 
   // Note: All alternate phone related code has been removed
 
@@ -182,18 +180,10 @@ export default function ProfileDetails() {
             ref={fileInputRef}
             onChange={handlePhotoChange}
             accept="image/*"
-            capture="user"
-            className="hidden"
-          />
-          <input
-            type="file"
-            ref={galleryInputRef}
-            onChange={handlePhotoChange}
-            accept="image/*"
             className="hidden"
           />
           <button
-            onClick={() => setShowPhotoSourcePopup(true)}
+            onClick={() => fileInputRef.current?.click()}
             disabled={isUploadingPhoto}
             className={`flex items-center justify-center w-12 h-12 rounded-full shadow-lg border-2 border-white transition-all ${
               isUploadingPhoto ? "bg-gray-400" : "bg-[#00B761] hover:bg-green-700"
@@ -202,7 +192,7 @@ export default function ProfileDetails() {
             {isUploadingPhoto ? (
               <Loader2 className="w-6 h-6 text-white animate-spin" />
             ) : (
-              <Camera className="w-6 h-6 text-white" />
+              <Image className="w-6 h-6 text-white" />
             )}
           </button>
         </div>
@@ -1015,44 +1005,6 @@ export default function ProfileDetails() {
         </div>
       </BottomPopup>
 
-      {/* Photo Source Selection Popup */}
-      <BottomPopup
-        isOpen={showPhotoSourcePopup}
-        onClose={() => setShowPhotoSourcePopup(false)}
-        title="Choose Photo Source"
-      >
-        <div className="grid grid-cols-2 gap-4 pb-4">
-          <button
-            onClick={() => {
-              setShowPhotoSourcePopup(false)
-              setTimeout(() => {
-                fileInputRef.current?.click()
-              }, 100)
-            }}
-            className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-2xl border border-gray-100 active:scale-95 transition-transform"
-          >
-            <div className="w-14 h-14 bg-[#E6F7EF] rounded-full flex items-center justify-center mb-3">
-              <Camera className="w-7 h-7 text-[#00B761]" />
-            </div>
-            <span className="text-sm font-semibold text-gray-900">Camera</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setShowPhotoSourcePopup(false)
-              setTimeout(() => {
-                galleryInputRef.current?.click()
-              }, 100)
-            }}
-            className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-2xl border border-gray-100 active:scale-95 transition-transform"
-          >
-            <div className="w-14 h-14 bg-[#E6F0FF] rounded-full flex items-center justify-center mb-3">
-              <Image className="w-7 h-7 text-[#0066FF]" />
-            </div>
-            <span className="text-sm font-semibold text-gray-900">Gallery</span>
-          </button>
-        </div>
-      </BottomPopup>
     </div>
   )
 }
