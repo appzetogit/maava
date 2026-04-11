@@ -1475,6 +1475,7 @@ export default function InMart() {
             {/* Navbar */}
             <div className="relative z-20 pt-2 sm:pt-4 lg:pt-6">
               <PageNavbar
+                cartType="hibermart"
                 textColor="black"
                 zIndex={20}
                 hideLogo={true}

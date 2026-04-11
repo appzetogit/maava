@@ -5,6 +5,7 @@ import { ChevronDown, ShoppingCart, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useLocation } from "../hooks/useLocation"
 import { useCart } from "../context/CartContext"
+import { useHibermartCart } from "../context/HibermartCartContext"
 import { useLocationSelector } from "./UserLayout"
 import { FaLocationDot } from "react-icons/fa6"
 import { getCachedSettings, loadBusinessSettings } from "@/lib/utils/businessSettings"
@@ -18,12 +19,29 @@ export default function PageNavbar({
   showProfile = false,
   onNavClick,
   hideLogo = false,
-  showTimer = false
+  showTimer = false,
+  cartType = "food" // "food" or "hibermart"
 }) {
   const { location, loading, requestLocation } = useLocation()
-  const { getCartCount } = useCart()
+  const foodCart = useCart()
+  const hibermartCart = useHibermartCart()
+  
   const { openLocationSelector } = useLocationSelector()
-  const cartCount = getCartCount()
+  
+  const getCartData = () => {
+    if (cartType === "hibermart") {
+      return {
+        count: hibermartCart.getCartCount(),
+        link: "/in-mart/cart"
+      }
+    }
+    return {
+      count: foodCart.getCartCount(),
+      link: "/user/cart"
+    }
+  }
+
+  const { count: cartCount, link: cartLink } = getCartData()
   const [logoUrl, setLogoUrl] = useState(null)
   const [companyName, setCompanyName] = useState(null)
   const [deliveryTime, setDeliveryTime] = useState(8)
@@ -1050,7 +1068,7 @@ export default function PageNavbar({
           </Link>
 
           {/* Cart Icon */}
-          <Link to="/user/cart">
+          <Link to={cartLink}>
             <Button
               variant="ghost"
               size="icon"
