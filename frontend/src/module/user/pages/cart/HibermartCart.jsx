@@ -2489,7 +2489,7 @@ export default function Cart() {
                       </p>
                       <p className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate mt-0.5">
                         {selectedPaymentMethod === "razorpay"
-                          ? "Razorpay (Online)"
+                          ? "Online Pay"
                           : selectedPaymentMethod === "wallet"
                             ? `Wallet (₹${walletBalance.toFixed(0)})`
                             : "Pay on Delivery (Cash/UPI)"}
@@ -2567,7 +2567,7 @@ export default function Cart() {
                       <CreditCard className="h-6 w-6 text-black dark:text-white" />
                     </div>
                     <div className="flex-1 text-left">
-                      <p className="font-bold text-gray-900 dark:text-white text-sm">Razorpay (Online)</p>
+                      <p className="font-bold text-gray-900 dark:text-white text-sm">Online Pay</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Pay via Cards, UPI, Netbanking & more</p>
                     </div>
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selectedPaymentMethod === 'razorpay' ? 'border-green-500 bg-green-500' : 'border-gray-300 dark:border-gray-600'}`}>
