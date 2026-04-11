@@ -503,6 +503,10 @@ export default function HubMenu() {
       toast.error("Please enter a valid price")
       return
     }
+    if (addonImages.length === 0) {
+      toast.error("Please upload at least one image for the add-on")
+      return
+    }
 
     try {
       setUploadingAddonImages(true)
@@ -2185,7 +2189,7 @@ export default function HubMenu() {
                 {/* Images Section */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Images
+                    Images <span className="text-red-500">*</span>
                   </label>
 
                   {/* Image Preview Grid */}
@@ -2255,7 +2259,7 @@ export default function HubMenu() {
                 </button>
                 <button
                   onClick={handleSaveAddon}
-                  disabled={!addonName.trim() || !addonPrice || uploadingAddonImages}
+                  disabled={!addonName.trim() || !addonPrice || addonImages.length === 0 || uploadingAddonImages}
                   className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
                 >
                   {uploadingAddonImages ? (

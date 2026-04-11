@@ -210,7 +210,7 @@ export async function notifyRestaurantNewOrder(order, restaurantId, paymentMetho
     // --- PUSH NOTIFICATION (AUTOMATED) ---
     try {
       const pushService = await getPushService();
-      
+
       // Get customer name for the message
       let customerName = 'a customer';
       if (order.userId && typeof order.userId === 'object' && (order.userId.name || order.userId.fullName)) {

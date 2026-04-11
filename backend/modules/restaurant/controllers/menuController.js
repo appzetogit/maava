@@ -855,8 +855,12 @@ export const getAddonsByRestaurantId = async (req, res) => {
     console.log(`[ADDONS] Menu isActive: ${menu.isActive}`);
     console.log(`[ADDONS] Total addons in menu: ${(menu.addons || []).length}`);
 
-    // Show all addons - no filtering (as per user request to show addons "kaise bhi")
-    const allAddons = menu.addons || [];
+    // Filter addons: only show approved AND available addons to the user
+    const allAddons = (menu.addons || []).filter(addon => {
+      const isApproved = addon.approvalStatus === 'approved';
+      const isAvailable = addon.isAvailable !== false;
+      return isApproved && isAvailable;
+    });
 
     // Log all addons for debugging
     console.log(`[ADDONS] Returning all addons: ${allAddons.length}`);

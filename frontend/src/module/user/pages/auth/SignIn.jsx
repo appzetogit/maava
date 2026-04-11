@@ -170,11 +170,23 @@ export default function SignIn() {
     return ""
   }
 
-  const validatePhone = (phone) => {
+  const validatePhone = (phone, countryCode) => {
     if (!phone.trim()) {
       return "Phone number is required"
     }
     const cleanPhone = phone.replace(/[\s\-\(\)]/g, "")
+    
+    // India specific validation
+    if (countryCode === "+91") {
+      if (cleanPhone.length !== 10) {
+        return "Phone number must be 10 digits"
+      }
+      if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+        return "Invalid Indian mobile number"
+      }
+      return ""
+    }
+
     const phoneRegex = /^\d{7,15}$/
     if (!phoneRegex.test(cleanPhone)) {
       return "Phone number must be 7-15 digits"
@@ -210,7 +222,7 @@ export default function SignIn() {
     if (name === "email") {
       setErrors({ ...errors, email: validateEmail(value) })
     } else if (name === "phone") {
-      setErrors({ ...errors, phone: validatePhone(value) })
+      setErrors({ ...errors, phone: validatePhone(value, formData.countryCode) })
     } else if (name === "name") {
       setErrors({ ...errors, name: validateName(value) })
     }
@@ -227,7 +239,7 @@ export default function SignIn() {
     const newErrors = { phone: "", email: "", name: "" }
 
     if (authMethod === "phone") {
-      const phoneError = validatePhone(formData.phone)
+      const phoneError = validatePhone(formData.phone, formData.countryCode)
       newErrors.phone = phoneError
       if (phoneError) hasErrors = true
     } else {
@@ -600,18 +612,16 @@ export default function SignIn() {
             </button>
           </div>
 
-          {/* Legal Disclaimer */}
           <div className="text-center text-xs md:text-sm text-gray-500 dark:text-gray-400 pt-1 md:pt-2">
-            <p className="mb-1 md:mb-2">
-              By continuing, you agree to our
+            <p className="mb-2">
+              By continuing, you agree to our{' '}
+              <span 
+                className="underline hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer"
+                onClick={() => navigate("/restaurant/privacy")}
+              >
+                Privacy Policy
+              </span>
             </p>
-            <div className="flex justify-center gap-2 flex-wrap">
-              <a href="#" className="underline hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Terms of Service</a>
-              <span>•</span>
-              <a href="#" className="underline hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Privacy Policy</a>
-              <span>•</span>
-              <a href="#" className="underline hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Content Policy</a>
-            </div>
           </div>
         </div>
       </div>

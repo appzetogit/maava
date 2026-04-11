@@ -1649,3 +1649,13 @@ export const notificationAPI = {
   },
 };
 
+// Export legal API helper functions (public)
+export const legalAPI = {
+  getPrivacyPolicy: () => {
+    return apiClient.get(API_ENDPOINTS.ADMIN.PRIVACY_PUBLIC);
+  },
+  getTermsAndConditions: () => {
+    return apiClient.get(API_ENDPOINTS.ADMIN.TERMS_PUBLIC);
+  },
+};
+

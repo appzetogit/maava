@@ -181,12 +181,14 @@ export default function DeliverySignIn() {
             {isSending ? "Sending OTP..." : "Continue"}
           </button>
 
-          {/* Terms and Conditions */}
           <p className="text-xs text-center text-gray-600 px-4">
             By continuing, you agree to our{" "}
-            <a href="#" className="text-blue-600 hover:underline">
-              Terms and Conditions
-            </a>
+            <span 
+              className="text-blue-600 hover:underline cursor-pointer"
+              onClick={() => navigate("/restaurant/privacy")}
+            >
+              Privacy Policy
+            </span>
           </p>
         </div>
       </div>

@@ -40,11 +40,21 @@ export async function findNearestDeliveryBoys(restaurantLat, restaurantLng, rest
     // Use the same logic as findNearestDeliveryBoy but return all within priority distance
     // NOTE: We do NOT require currentLocation here so that delivery boys who just went online
     // (and haven't sent a GPS update yet) are still included via socket broadcast fallback.
+    // Get IDs of delivery partners who are currently on an active trip
+    const busyOrdersCount = await Order.find({
+      deliveryPartnerId: { $ne: null },
+      status: { $nin: ['delivered', 'cancelled'] }
+    }).select('deliveryPartnerId').lean();
+    
+    const busyRiderIds = busyOrdersCount.map(order => order.deliveryPartnerId);
+    console.log(`🚫 Found ${busyRiderIds.length} busy delivery partners to exclude`);
+
     let zone = null;
     let deliveryQuery = {
       'availability.isOnline': true,
       status: { $in: ['approved', 'active'] },
       isActive: true,
+      _id: { $nin: busyRiderIds }
     };
 
     if (restaurantId) {
@@ -192,12 +202,22 @@ export async function findNearestDeliveryBoy(restaurantLat, restaurantLng, resta
   try {
     console.log(`🔍 Searching for nearest delivery partner near restaurant: ${restaurantLat}, ${restaurantLng} (Restaurant ID: ${restaurantId})`);
 
+    // Get IDs of delivery partners who are currently on an active trip
+    const busyOrdersCount = await Order.find({
+      deliveryPartnerId: { $ne: null },
+      status: { $nin: ['delivered', 'cancelled'] }
+    }).select('deliveryPartnerId').lean();
+    
+    const busyRiderIds = busyOrdersCount.map(order => order.deliveryPartnerId);
+    console.log(`🚫 Found ${busyRiderIds.length} busy delivery partners to exclude from nearest search`);
+
     // Step 1: Find zone for restaurant (if restaurantId provided)
     let zone = null;
     let deliveryQuery = {
       'availability.isOnline': true,
       status: { $in: ['approved', 'active'] },
       isActive: true,
+      _id: { $nin: busyRiderIds },
       'availability.currentLocation.coordinates': {
         $exists: true,
         $ne: [0, 0] // Exclude default/null coordinates
@@ -236,15 +256,19 @@ export async function findNearestDeliveryBoy(restaurantLat, restaurantLng, resta
       }
     }
 
-    // Exclude already notified delivery partners
+    // Exclude already notified delivery partners AND busy partners
+    const allExcludeIds = [...busyRiderIds];
     if (excludeIds && excludeIds.length > 0) {
-      const excludeObjectIds = excludeIds
-        .filter(id => mongoose.Types.ObjectId.isValid(id))
-        .map(id => new mongoose.Types.ObjectId(id));
-      if (excludeObjectIds.length > 0) {
-        deliveryQuery._id = { $nin: excludeObjectIds };
-        console.log(`🚫 Excluding ${excludeObjectIds.length} already notified delivery partners`);
-      }
+      excludeIds.forEach(id => {
+        if (mongoose.Types.ObjectId.isValid(id)) {
+          allExcludeIds.push(new mongoose.Types.ObjectId(id));
+        }
+      });
+    }
+
+    if (allExcludeIds.length > 0) {
+      deliveryQuery._id = { $nin: allExcludeIds };
+      console.log(`🚫 Excluding ${allExcludeIds.length} partners (busy or already notified)`);
     }
 
     // Find all online delivery partners (with zone filter if applicable)

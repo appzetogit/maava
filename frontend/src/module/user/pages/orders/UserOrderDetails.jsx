@@ -115,6 +115,11 @@ export default function UserOrderDetails() {
   const restaurantName =
     order.restaurantName || restaurantObj.name || "Restaurant"
 
+  const isHibermartOrder = 
+    order.isHibermartOrder === true || 
+    order.restaurantId === 'hibermart-id' || 
+    restaurantName.toLowerCase() === 'hibermart'
+
   // Build restaurant address (try restaurant fields first, then fall back)
   const restaurantLocation = (() => {
     const loc = restaurantObj.location || {}
@@ -564,7 +569,13 @@ export default function UserOrderDetails() {
       <div className="fixed bottom-0 w-full bg-white border-t border-gray-200 p-4 flex gap-3 z-20">
         <button
           type="button"
-          onClick={() => navigate(`/user/restaurants/${order.restaurantId || ""}`)}
+          onClick={() => {
+            if (isHibermartOrder) {
+              navigate('/in-mart')
+            } else {
+              navigate(`/user/restaurants/${order.restaurantId || ""}`)
+            }
+          }}
           className="flex-1 bg-[#E23744] text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-red-600 transition-colors"
         >
           <RotateCcw className="w-4 h-4" />

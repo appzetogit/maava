@@ -41,7 +41,7 @@ export default function ItemDetailsPage() {
   const [itemSizeUnit, setItemSizeUnit] = useState("piece")
   const [itemDescription, setItemDescription] = useState("")
   const [foodType, setFoodType] = useState("Non-Veg")
-  const [basePrice, setBasePrice] = useState("0")
+  const [basePrice, setBasePrice] = useState("")
   const [preparationTime, setPreparationTime] = useState("")
   const [gst, setGst] = useState("5.0")
   const [isRecommended, setIsRecommended] = useState(false)
@@ -55,7 +55,7 @@ export default function ItemDetailsPage() {
   const [allergens, setAllergens] = useState("")
   const [showMoreNutrition, setShowMoreNutrition] = useState(false)
   const [selectedTags, setSelectedTags] = useState([])
-  const [rating, setRating] = useState("0.0") // New field for manual rating
+  const [rating, setRating] = useState("") // New field for manual rating
   const [images, setImages] = useState([])
   const [imageFiles, setImageFiles] = useState(new Map()) // Track File objects by preview URL
   const [uploadingImages, setUploadingImages] = useState(false)
@@ -96,7 +96,7 @@ export default function ItemDetailsPage() {
         setItemSizeUnit(item.itemSizeUnit || "piece")
         setItemDescription(item.description || "")
         setFoodType(item.foodType === "Veg" ? "Veg" : (item.foodType === "Egg" ? "Egg" : "Non-Veg"))
-        setBasePrice(item.price?.toString() || "0")
+        setBasePrice(item.price?.toString() || "")
         setPreparationTime(item.preparationTime || "")
         setGst(item.gst?.toString() || "5.0")
         setIsRecommended(item.isRecommended || false)
@@ -188,7 +188,7 @@ export default function ItemDetailsPage() {
             setItemSizeUnit(foundItem.itemSizeUnit || "piece")
             setItemDescription(foundItem.description || "")
             setFoodType(foundItem.foodType === "Veg" ? "Veg" : (foundItem.foodType === "Egg" ? "Egg" : "Non-Veg"))
-            setBasePrice(foundItem.price?.toString() || "0")
+            setBasePrice(foundItem.price?.toString() || "")
             setPreparationTime(foundItem.preparationTime || "")
             setGst(foundItem.gst?.toString() || "5.0")
             setIsRecommended(foundItem.isRecommended || false)
@@ -316,37 +316,40 @@ export default function ItemDetailsPage() {
 
   const handleImageAdd = (e) => {
     const files = Array.from(e.target.files)
+    if (files.length === 0) return
     
-    // Validate file types
+    // Only take the first file
+    const file = files[0]
+    
+    // Validate file type
     const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"]
-    const validFiles = files.filter(file => {
-      if (!allowedTypes.includes(file.type)) {
-        toast.error(`${file.name}: Invalid file type. Please upload PNG, JPG, JPEG, or WEBP.`)
-        return false
+    if (!allowedTypes.includes(file.type)) {
+      toast.error(`${file.name}: Invalid file type. Please upload PNG, JPG, JPEG, or WEBP.`)
+      return
+    }
+    
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    if (file.size > maxSize) {
+      toast.error(`${file.name}: File size exceeds 5MB limit.`)
+      return
+    }
+
+    // Revoke old blob URLs if any
+    imageFiles.forEach((_, url) => {
+      if (url.startsWith('blob:')) {
+        URL.revokeObjectURL(url)
       }
-      // Validate file size (max 5MB)
-      const maxSize = 5 * 1024 * 1024 // 5MB
-      if (file.size > maxSize) {
-        toast.error(`${file.name}: File size exceeds 5MB limit.`)
-        return false
-      }
-      return true
     })
 
-    if (validFiles.length === 0) return
-
-    // Create preview URLs for display and map them to File objects
-    const newImagePreviews = []
-    const newImageFilesMap = new Map(imageFiles)
+    // Create preview URL for display
+    const previewUrl = URL.createObjectURL(file)
+    const newImageFilesMap = new Map()
+    newImageFilesMap.set(previewUrl, file)
     
-    validFiles.forEach(file => {
-      const previewUrl = URL.createObjectURL(file)
-      newImagePreviews.push(previewUrl)
-      newImageFilesMap.set(previewUrl, file)
-    })
-    
-    setImages([...images, ...newImagePreviews])
+    setImages([previewUrl])
     setImageFiles(newImageFilesMap)
+    setCurrentImageIndex(0)
     
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
@@ -361,7 +364,7 @@ export default function ItemDetailsPage() {
         const result = await window.flutter_inappwebview.callHandler('openCamera', {
           source: 'camera',
           accept: 'image/*',
-          multiple: true,
+          multiple: false,
           quality: 0.8
         })
 
@@ -797,8 +800,8 @@ export default function ItemDetailsPage() {
         const imageCount = allImageUrls.length
         toast.success(
           isNewItem 
-            ? `Item created successfully with ${imageCount} image(s)` 
-            : `Item updated successfully with ${imageCount} image(s)`
+            ? `Item created successfully` 
+            : `Item updated successfully`
         )
         // Small delay to ensure backend has processed the update
         await new Promise(resolve => setTimeout(resolve, 300))
@@ -951,20 +954,19 @@ export default function ItemDetailsPage() {
                 <div className="w-20 h-20 bg-white/80 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg hover:scale-105 transition-transform">
                   <Camera className="w-10 h-10 text-gray-400" />
                 </div>
-                <p className="text-sm font-medium text-gray-600">No images added yet *</p>
-                <p className="text-xs text-gray-500 mt-1">Tap here or the button below to add images</p>
+                <p className="text-sm font-medium text-gray-600">No image added yet *</p>
+                <p className="text-xs text-gray-500 mt-1">Tap here or the button below to add an image</p>
               </div>
             </div>
           )}
 
           {/* Add image button - redesigned */}
           <div className="px-4 py-4 bg-white border-t border-gray-100">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageAdd}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageAdd}
               className="hidden"
               id="image-upload"
             />
@@ -976,7 +978,7 @@ export default function ItemDetailsPage() {
                 <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
                   <Plus className="w-4 h-4" />
                 </div>
-                <span>Add Images</span>
+                <span>Add Image</span>
               </label>
               <button
                 type="button"
@@ -1002,7 +1004,7 @@ export default function ItemDetailsPage() {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg text-left flex items-center justify-between bg-white hover:bg-gray-50 transition-colors"
             >
               <span className="text-sm text-gray-900">
-                {category} ({subCategory})
+                {(!subCategory || category === subCategory || category.toLowerCase().trim() === subCategory.toLowerCase().trim()) ? category : `${category} (${subCategory})`}
               </span>
               <ChevronDown className="w-5 h-5 text-gray-500" />
             </button>

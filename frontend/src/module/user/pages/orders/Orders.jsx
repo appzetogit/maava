@@ -265,7 +265,11 @@ export default function Orders() {
               deliveredAt: order.deliveredAt || null,
               deliveryPartnerName: order.deliveryPartnerId?.name || order.deliveryPartnerName || null,
               deliveryPartnerPhone: order.deliveryPartnerId?.phone || order.deliveryPartnerPhone || null,
-              note: order.note || null
+              note: order.note || null,
+              isHibermartOrder:
+                order.isHibermartOrder === true ||
+                order.restaurantId === 'hibermart-id' ||
+                (order.restaurantId?.name || order.restaurantName)?.toLowerCase() === 'hibermart'
             }
           })
 
@@ -344,8 +348,10 @@ export default function Orders() {
 
   // Handle reorder
   const handleReorder = (order) => {
-    // Navigate to restaurant page or cart
-    if (order.restaurantId) {
+    // Navigate to Hibermart or restaurant page
+    if (order.isHibermartOrder) {
+      navigate('/in-mart')
+    } else if (order.restaurantId) {
       navigate(`/user/restaurants/${order.restaurantId}`)
     } else {
       toast.info('Restaurant information not available')
@@ -582,7 +588,13 @@ Order again from this restaurant in the ${companyName} app.`
                           {order.deliveryPartnerPhone && ` • ${order.deliveryPartnerPhone}`}
                         </p>
                       )}
-                      {order.restaurantId && (
+                      {order.isHibermartOrder ? (
+                        <Link to="/in-mart">
+                          <button className="text-xs text-red-500 font-medium flex items-center mt-1 hover:text-red-600">
+                            View Hibermart <span className="ml-0.5">▸</span>
+                          </button>
+                        </Link>
+                      ) : order.restaurantId && (
                         <Link to={`/user/restaurants/${order.restaurantId}`}>
                           <button className="text-xs text-red-500 font-medium flex items-center mt-1 hover:text-red-600">
                             View menu <span className="ml-0.5">▸</span>
@@ -740,9 +752,9 @@ Order again from this restaurant in the ${companyName} app.`
                         </span>
                         {order.payment.status && (
                           <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-medium ${order.payment.status === 'completed' ? 'bg-green-100 text-green-700' :
-                              order.payment.status === 'failed' ? 'bg-red-100 text-red-700' :
-                                order.payment.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                  'bg-gray-100 text-gray-700'
+                            order.payment.status === 'failed' ? 'bg-red-100 text-red-700' :
+                              order.payment.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-gray-100 text-gray-700'
                             }`}>
                             {order.payment.status}
                           </span>
@@ -845,10 +857,8 @@ Order again from this restaurant in the ${companyName} app.`
         )}
       </div>
 
-      {/* Footer Branding */}
-      <div className="flex justify-center mt-8 mb-4">
-        <h1 className="text-4xl font-black text-gray-200 tracking-tighter italic">appzeto</h1>
-      </div>
+
+
 
       {/* Rating & Feedback Modal */}
       {ratingModal.open && ratingModal.order && (
@@ -892,8 +902,8 @@ Order again from this restaurant in the ${companyName} app.`
                       >
                         <Star
                           className={`w-10 h-10 transition-all ${isActive
-                              ? "text-yellow-400 fill-yellow-400 drop-shadow-lg"
-                              : "text-gray-300 hover:text-yellow-200"
+                            ? "text-yellow-400 fill-yellow-400 drop-shadow-lg"
+                            : "text-gray-300 hover:text-yellow-200"
                             }`}
                         />
                       </button>

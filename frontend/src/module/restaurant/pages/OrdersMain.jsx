@@ -56,7 +56,8 @@ function CompletedOrders({ onSelectOrder }) {
             itemsSummary: order.items?.map(item => `${item.quantity}x ${item.name}`).join(', ') || 'No items',
             photoUrl: order.items?.[0]?.image || null,
             photoAlt: order.items?.[0]?.name || 'Order',
-            amount: order.pricing?.total || order.total || 0
+            amount: order.pricing?.total || order.total || 0,
+            note: order.note || ''
           }))
 
           transformedOrders.sort((a, b) => {
@@ -261,7 +262,8 @@ function CancelledOrders({ onSelectOrder }) {
             itemsSummary: order.items?.map(item => `${item.quantity}x ${item.name}`).join(', ') || 'No items',
             photoUrl: order.items?.[0]?.image || null,
             photoAlt: order.items?.[0]?.name || 'Order',
-            amount: order.pricing?.total || order.total || 0
+            amount: order.pricing?.total || order.total || 0,
+            note: order.note || ''
           }))
 
           transformedOrders.sort((a, b) => {
@@ -1512,6 +1514,17 @@ export default function OrdersMain() {
                     </div>
                   )}
 
+                  {/* User Note */}
+                  {(popupOrder || newOrder)?.note && (
+                    <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                      <div className="flex items-center gap-2 mb-1">
+                        <FileText className="w-4 h-4 text-blue-600" />
+                        <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">User Note</span>
+                      </div>
+                      <p className="text-sm text-blue-900 font-medium italic">"{(popupOrder || newOrder).note}"</p>
+                    </div>
+                  )}
+
                   {/* Total bill */}
                   <div className="mb-4 flex items-center justify-between py-3 border-y border-gray-200">
                     <div className="flex items-center gap-2">
@@ -1845,6 +1858,13 @@ export default function OrdersMain() {
                 </p>
               </div>
 
+              {selectedOrder.note && (
+                <div className="mb-3 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+                  <p className="text-[10px] font-bold text-blue-700 uppercase tracking-wider mb-1">User Note</p>
+                  <p className="text-xs text-blue-900 italic">"{selectedOrder.note}"</p>
+                </div>
+              )}
+
               <div className="flex items-center justify-between text-[11px] text-gray-500 mb-4">
                 {/* Hide ETA for ready orders */}
                 {selectedOrder.status !== 'ready' && selectedOrder.eta && (
@@ -1940,6 +1960,7 @@ function OrderCard({
   photoUrl,
   photoAlt,
   deliveryPartnerId,
+  note,
   onSelect,
   onCancel,
   onMarkReady,
@@ -1997,7 +2018,7 @@ function OrderCard({
         {/* Content */}
         <div className="flex-1 flex flex-col justify-between min-h-[80px]">
           {/* Top row */}
-          <div className="flex items-start justify-between gap-2 pr-8">
+          <div className="flex items-start justify-between gap-2 pr-12">
             <div>
               <p className="text-sm font-semibold text-black leading-tight">
                 Order #{orderId}
@@ -2031,6 +2052,12 @@ function OrderCard({
             <p className="text-xs text-gray-600 line-clamp-1">
               {itemsSummary}
             </p>
+            {note && (
+              <div className="mt-2 flex items-center gap-1.5 px-2 py-1 bg-blue-50 rounded-md border border-blue-100 w-fit">
+                <FileText className="w-3 h-3 text-blue-600" />
+                <p className="text-[10px] font-bold text-blue-700 truncate max-w-[200px]">Note: {note}</p>
+              </div>
+            )}
           </div>
 
           {/* Bottom row */}
@@ -2126,7 +2153,8 @@ function PreparingOrders({ onSelectOrder, onCancel, onMarkReady }) {
               itemsSummary: order.items?.map(item => `${item.quantity}x ${item.name}`).join(', ') || 'No items',
               photoUrl: order.items?.[0]?.image || null,
               photoAlt: order.items?.[0]?.name || 'Order',
-              deliveryPartnerId: order.deliveryPartnerId || null // Track if delivery partner is assigned
+              deliveryPartnerId: order.deliveryPartnerId || null, // Track if delivery partner is assigned
+              note: order.note || ''
             }
           })
 
@@ -2361,7 +2389,8 @@ function ReadyOrders({ onSelectOrder }) {
             eta: null, // Don't show ETA for ready orders
             itemsSummary: order.items?.map(item => `${item.quantity}x ${item.name}`).join(', ') || 'No items',
             photoUrl: order.items?.[0]?.image || null,
-            photoAlt: order.items?.[0]?.name || 'Order'
+            photoAlt: order.items?.[0]?.name || 'Order',
+            note: order.note || ''
           }))
 
           if (isMounted) {
@@ -2478,7 +2507,8 @@ const OutForDeliveryOrders = ({ onSelectOrder }) => {
             eta: null,
             itemsSummary: order.items?.map(item => `${item.quantity}x ${item.name}`).join(', ') || 'No items',
             photoUrl: order.items?.[0]?.image || null,
-            photoAlt: order.items?.[0]?.name || 'Order'
+            photoAlt: order.items?.[0]?.name || 'Order',
+            note: order.note || ''
           }))
 
           if (isMounted) {

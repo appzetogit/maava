@@ -18,7 +18,6 @@ import {
   FileText,
   Star,
   MessageSquare,
-  HelpCircle,
   Lightbulb,
   Edit,
   IndianRupee,
@@ -688,7 +687,6 @@ export default function ExploreMore() {
   ]
 
   const helpItems = [
-    { id: 1, label: "Help centre", icon: HelpCircle, route: "/restaurant/help-centre" },
     { id: 3, label: "Share your feedback", icon: Edit, route: "/restaurant/Share-Feedback" },
   ]
 
@@ -1186,35 +1184,13 @@ export default function ExploreMore() {
                 <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] text-gray-400 font-bold uppercase tracking-widest">
                   <a
                     href="#"
-                    className="hover:text-black transition-colors"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      console.log("Terms of Service clicked")
-                    }}
-                  >
-                    Terms
-                  </a>
-                  <span className="w-1 h-1 rounded-full bg-gray-200" />
-                  <a
-                    href="#"
                     className="hover:text-purple-600 transition-colors"
                     onClick={(e) => {
                       e.preventDefault()
-                      console.log("Privacy Policy clicked")
+                      navigate("/restaurant/privacy")
                     }}
                   >
                     Privacy
-                  </a>
-                  <span className="w-1 h-1 rounded-full bg-purple-200" />
-                  <a
-                    href="#"
-                    className="hover:text-purple-600 transition-colors"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      console.log("Code of Conduct clicked")
-                    }}
-                  >
-                    Code of Conduct
                   </a>
                 </div>
               </div>

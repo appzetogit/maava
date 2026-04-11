@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { exportToCSV, exportToExcel, exportToPDF, exportToJSON } from "./ordersExportUtils"
 
 export function useOrdersManagement(orders, statusKey, title) {
@@ -130,6 +130,15 @@ export function useOrdersManagement(orders, statusKey, title) {
       restaurant: "",
     })
   }
+
+  // Reset filters and search when statusKey changes
+  useEffect(() => {
+    handleResetFilters()
+    setSearchQuery("")
+    setIsFilterOpen(false)
+    setIsSettingsOpen(false)
+    setIsViewOrderOpen(false)
+  }, [statusKey])
 
   const handleExport = (format) => {
     const filename = title.toLowerCase().replace(/\s+/g, "_")

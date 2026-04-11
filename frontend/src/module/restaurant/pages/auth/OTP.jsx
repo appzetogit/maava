@@ -24,7 +24,7 @@ export default function RestaurantOTP() {
     if (stored) {
       const data = JSON.parse(stored)
       setAuthData(data)
-      
+
       // Handle both phone and email
       if (data.method === "email" && data.email) {
         setContactType("email")
@@ -71,7 +71,7 @@ export default function RestaurantOTP() {
   const handleChange = (index, value) => {
     // Take only the last digit if multiple characters are present (allows overwriting)
     const digit = value.length > 0 ? value[value.length - 1] : ""
-    
+
     // Only allow digits
     if (digit && !/^\d$/.test(digit)) {
       return
@@ -149,30 +149,31 @@ export default function RestaurantOTP() {
   const handleSuccess = (accessToken, restaurant, isSignUp) => {
     // Store auth data using utility function to ensure proper module-specific token storage
     setRestaurantAuthData("restaurant", accessToken, restaurant)
-    
+
     // Dispatch custom event for same-tab updates
     window.dispatchEvent(new Event("restaurantAuthChanged"))
 
     sessionStorage.removeItem("restaurantAuthData")
 
     setTimeout(async () => {
-      // After signup, send to onboarding
-      if (isSignUp) {
-        navigate("/restaurant/onboarding", { replace: true })
-      } else {
-        // After login, check if onboarding is incomplete
-        try {
-          const incompleteStep = await checkOnboardingStatus()
-          if (incompleteStep) {
-            // Navigate to onboarding with the incomplete step
-            navigate(`/restaurant/onboarding?step=${incompleteStep}`, { replace: true })
-          } else {
-            // Onboarding is complete, go to restaurant home
-            navigate("/restaurant", { replace: true })
-          }
-        } catch (err) {
-          console.error("Failed to check onboarding status:", err)
-          // Fallback to restaurant home
+      // Always check onboarding status — even for signup attempts.
+      // This handles the case where an existing restaurant tries to sign up again:
+      // backend logs them in silently, and we must NOT send them back to onboarding step 1.
+      try {
+        const incompleteStep = await checkOnboardingStatus()
+        if (incompleteStep) {
+          // Has incomplete onboarding steps — go to the right step
+          navigate(`/restaurant/onboarding?step=${incompleteStep}`, { replace: true })
+        } else {
+          // Onboarding complete — go to dashboard
+          navigate("/restaurant", { replace: true })
+        }
+      } catch (err) {
+        console.error("Failed to check onboarding status:", err)
+        // Fallback: new signups go to onboarding start, logins go to dashboard
+        if (isSignUp) {
+          navigate("/restaurant/onboarding", { replace: true })
+        } else {
           navigate("/restaurant", { replace: true })
         }
       }
@@ -181,7 +182,7 @@ export default function RestaurantOTP() {
 
   const handleVerify = async (otpValue = null) => {
     const code = otpValue || otp.join("")
-    
+
     if (code.length !== 6) {
       setError("Please enter the complete 6-digit code")
       return
@@ -215,7 +216,7 @@ export default function RestaurantOTP() {
       // The user will be able to update their real restaurant name in the onboarding step 1.
       if (data?.needsName) {
         const defaultName = contactInfo.split("-")[1] || contactInfo || "New Restaurant"
-        
+
         // Update authData to reflect it's now a signup flow
         setAuthData((prev) => {
           const updated = {
@@ -278,7 +279,7 @@ export default function RestaurantOTP() {
       const purpose = authData.isSignUp ? "register" : "login"
       const phone = authData.method === "phone" ? authData.phone : null
       const email = authData.method === "email" ? authData.email : null
-      
+
       await restaurantAPI.sendOTP(phone, purpose, email)
     } catch (err) {
       const message =
@@ -340,7 +341,7 @@ export default function RestaurantOTP() {
             {otp.map((digit, index) => {
               const hasValue = digit !== ""
               const isFocused = focusedIndex === index
-              
+
               return (
                 <div key={index} className="relative flex flex-col items-center min-w-[48px] py-2" style={{ minHeight: '60px' }}>
                   {/* Clickable Input Area - Large clickable zone */}
@@ -414,11 +415,10 @@ export default function RestaurantOTP() {
           <Button
             onClick={() => handleVerify()}
             disabled={isLoading || !isOtpComplete}
-            className={`w-full h-12 rounded-lg font-bold text-base transition-colors ${
-              !isLoading && isOtpComplete
+            className={`w-full h-12 rounded-lg font-bold text-base transition-colors ${!isLoading && isOtpComplete
                 ? "bg-blue-600 hover:bg-blue-700 text-white"
                 : "bg-gray-300 text-gray-500 cursor-not-allowed"
-            }`}
+              }`}
           >
             {isLoading ? "Verifying..." : "Continue"}
           </Button>

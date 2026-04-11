@@ -4208,8 +4208,11 @@ export default function DeliveryHome() {
       setSelectedRestaurant(restaurantData)
       setShowNewOrderPopup(true)
       setCountdownSeconds(300) // Reset countdown to 5 minutes
+    } else {
+      // Clear popup if newOrder is removed (e.g., accepted by someone else)
+      setShowNewOrderPopup(false)
     }
-  }, [newOrder, calculateTimeAway, riderLocation])
+  }, [newOrder, calculateTimeAway, riderLocation, isOnline, clearNewOrder])
 
   // Recalculate distance when rider location becomes available
   useEffect(() => {
@@ -4469,6 +4472,13 @@ export default function DeliveryHome() {
   const fetchAssignedOrders = useCallback(async () => {
     if (!isOnline) {
       console.log('⚠️ Delivery person is offline, skipping order fetch')
+      return
+    }
+
+    // Check if delivery partner is already on a trip
+    const hasActiveOrder = activeOrder || selectedRestaurant || localStorage.getItem('deliveryActiveOrder');
+    if (hasActiveOrder) {
+      console.log('⚠️ Delivery partner already has an active order, skipping order fetch')
       return
     }
 

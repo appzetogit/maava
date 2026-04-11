@@ -281,6 +281,14 @@ export const useDeliveryNotifications = () => {
 
     socketRef.current.on('new_order', (orderData) => {
       console.log('📦 New order received via socket:', orderData);
+      
+      // Check if delivery partner is already on a trip
+      const hasActiveOrder = localStorage.getItem('activeOrder') || localStorage.getItem('deliveryActiveOrder');
+      if (hasActiveOrder) {
+        console.log('🚫 Ignoring new order request - delivery partner is already on an active trip');
+        return;
+      }
+
       // Deduplicate: ignore if we already showed this order
       const incomingId = orderData?.orderId || orderData?.mongoId || orderData?.orderMongoId;
       if (incomingId && lastNotifiedOrderIdRef.current === incomingId) {
@@ -296,6 +304,14 @@ export const useDeliveryNotifications = () => {
     socketRef.current.on('new_order_available', (orderData) => {
       console.log('📦 New order available (priority notification):', orderData);
       console.log('📦 Notification phase:', orderData.phase || 'unknown');
+
+      // Check if delivery partner is already on a trip
+      const hasActiveOrder = localStorage.getItem('activeOrder') || localStorage.getItem('deliveryActiveOrder');
+      if (hasActiveOrder) {
+        console.log('🚫 Ignoring new order available - delivery partner is already on an active trip');
+        return;
+      }
+
       // Deduplicate: ignore if we already showed this order
       const incomingId = orderData?.orderId || orderData?.mongoId || orderData?.orderMongoId;
       if (incomingId && lastNotifiedOrderIdRef.current === incomingId) {
@@ -338,6 +354,30 @@ export const useDeliveryNotifications = () => {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
       }
+    });
+
+    socketRef.current.on('order_accepted_by_other', (data) => {
+      console.log('🔇 Order accepted by another partner:', data);
+      const acceptedOrderId = data?.orderId || data?.mongoId || data?.orderMongoId;
+      
+      setNewOrder(prev => {
+        if (!prev) return null;
+        const currentId = prev.orderId || prev.mongoId || prev.orderMongoId;
+        
+        // Match order ID from any of the possible fields
+        if (currentId === acceptedOrderId || 
+            prev.orderId === data.orderId || 
+            (prev.orderMongoId && prev.orderMongoId === data.orderId)) {
+          console.log('✅ Clearing current order notification - already accepted by someone else');
+          // Stop sound if playing
+          if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+          }
+          return null;
+        }
+        return prev;
+      });
     });
 
     return () => {

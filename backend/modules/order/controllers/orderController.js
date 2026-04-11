@@ -661,12 +661,12 @@ export const createOrder = async (req, res) => {
               restaurantId: assignedRestaurantId,
               notifyRestaurantResult
             });
-            
+
           } catch (notifyError) {
             logger.error('❌ Error notifying restaurant about wallet payment order:', notifyError);
           }
         }
-        
+
         // --- USER PUSH NOTIFICATION (AUTOMATED) ---
         // Send to user regardless of whether it's Hibermart or standard restaurant
         try {
@@ -782,7 +782,7 @@ export const createOrder = async (req, res) => {
           restaurantId: assignedRestaurantId,
           notifyRestaurantResult
         });
-        
+
       } catch (notifyError) {
         logger.error('❌ Error notifying restaurant about COD order (order still created):', {
           error: notifyError.message,
@@ -1224,10 +1224,12 @@ export const getUserOrders = async (req, res) => {
         // Show only confirmed/completed/delivered orders for all
         { status: { $in: allowedStatuses } },
         // Show pending orders only if payment method is cash or wallet
-        { status: 'pending', $or: [
-          { 'payment.method': 'cash' },
-          { 'payment.method': 'wallet' }
-        ] }
+        {
+          status: 'pending', $or: [
+            { 'payment.method': 'cash' },
+            { 'payment.method': 'wallet' }
+          ]
+        }
       ];
     }
 

@@ -239,6 +239,17 @@ export const acceptOrder = asyncHandler(async (req, res) => {
     console.log(`📦 Delivery partner ${delivery._id} attempting to accept order ${orderId}`);
     console.log(`📍 Location provided: lat=${currentLat}, lng=${currentLng}`);
 
+    // Check if delivery partner already has an active order
+    const activeOrderCount = await Order.countDocuments({
+      deliveryPartnerId: delivery._id,
+      status: { $nin: ['delivered', 'cancelled'] }
+    });
+
+    if (activeOrderCount > 0) {
+      console.warn(`⚠️ Delivery partner ${delivery._id} already has an active order. Cannot accept new one.`);
+      return errorResponse(res, 400, 'You already have an active order. Please complete your current trip before accepting a new one.');
+    }
+
     // Find order - try both by _id and orderId
     // First check if order exists (without deliveryPartnerId filter)
     let order = await Order.findOne({
@@ -794,6 +805,7 @@ export const acceptOrder = asyncHandler(async (req, res) => {
         // Also broadcast that this order is no longer available to others
         deliveryNamespace.emit('order_accepted_by_other', {
           orderId: order.orderId,
+          mongoId: order._id?.toString() || order._id,
           deliveryPartnerId: normalizedId
         });
 

@@ -35,11 +35,23 @@ export default function RestaurantSignup() {
   const [isLoading, setIsLoading] = useState(false)
   const [apiError, setApiError] = useState("")
 
-  const validatePhone = (phone) => {
+  const validatePhone = (phone, countryCode) => {
     if (!phone.trim()) {
       return "Phone number is required"
     }
     const cleanPhone = phone.replace(/[\s\-\(\)]/g, "")
+
+    // India specific validation
+    if (countryCode === "+91") {
+      if (cleanPhone.length !== 10) {
+        return "Phone number must be 10 digits"
+      }
+      if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+        return "Invalid Indian mobile number"
+      }
+      return ""
+    }
+
     const phoneRegex = /^\d{7,15}$/
     if (!phoneRegex.test(cleanPhone)) {
       return "Phone number must be 7-15 digits"
@@ -69,16 +81,22 @@ export default function RestaurantSignup() {
 
     // Real-time validation
     if (name === "phone") {
-      setErrors({ ...errors, phone: validatePhone(value) })
+      setErrors({ ...errors, phone: validatePhone(value, formData.countryCode) })
     } else if (name === "name") {
       setErrors({ ...errors, name: validateName(value) })
     }
   }
 
   const handleCountryCodeChange = (value) => {
-    setFormData({
-      ...formData,
-      countryCode: value,
+    setFormData((prev) => {
+      const newData = { ...prev, countryCode: value }
+      if (prev.phone) {
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          phone: validatePhone(prev.phone, value)
+        }))
+      }
+      return newData
     })
   }
 
@@ -91,7 +109,7 @@ export default function RestaurantSignup() {
     let hasErrors = false
     const newErrors = { phone: "", name: "" }
 
-    const phoneError = validatePhone(formData.phone)
+    const phoneError = validatePhone(formData.phone, formData.countryCode)
     newErrors.phone = phoneError
     if (phoneError) hasErrors = true
 

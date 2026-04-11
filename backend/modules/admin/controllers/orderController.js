@@ -860,6 +860,13 @@ export const getTransactionReport = asyncHandler(async (req, res) => {
 
       if (restaurantDoc) {
         query.restaurantId = restaurantDoc._id?.toString() || restaurantDoc.restaurantId;
+      } else {
+        // If restaurant specified but not found, return empty results
+        return successResponse(res, 200, 'Transaction report retrieved successfully', {
+          summary: { completedTransaction: 0, refundedTransaction: 0, adminEarning: 0, restaurantEarning: 0, deliverymanEarning: 0 },
+          transactions: [],
+          pagination: { page: parseInt(page), limit: parseInt(limit), total: 0, pages: 0 }
+        });
       }
     }
 
@@ -883,7 +890,7 @@ export const getTransactionReport = asyncHandler(async (req, res) => {
     // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    // Fetch orders with population
+    // Fetch orders with population for the table (paginated)
     const orders = await Order.find(query)
       .populate('userId', 'name email phone')
       .populate('restaurantId', 'name slug')
@@ -895,110 +902,90 @@ export const getTransactionReport = asyncHandler(async (req, res) => {
     // Get total count
     const total = await Order.countDocuments(query);
 
-    // Calculate summary statistics
+    // --- AGGREGATION FOR SUMMARY STATISTICS (CONSISTENT WITH FILTERED ORDERS) ---
     const AdminCommission = (await import('../models/AdminCommission.js')).default;
-    
-    // Build date query for summary stats
-    const summaryDateQuery = {};
-    if (fromDate || toDate) {
-      summaryDateQuery.orderDate = {};
-      if (fromDate) {
-        const startDate = new Date(fromDate);
-        startDate.setHours(0, 0, 0, 0);
-        summaryDateQuery.orderDate.$gte = startDate;
+
+    // Fetch ALL order IDs that match the query for finding commissions
+    // Note: We use the same query object to ensure consistency
+    const allMatchingOrders = await Order.find(query).select('_id status pricing payment tracking').lean();
+    const orderIds = allMatchingOrders.map(o => o._id);
+
+    // Fetch commissions for these specific orders
+    const commissions = await AdminCommission.find({
+      orderId: { $in: orderIds },
+      status: 'completed'
+    }).lean();
+
+    // Mapping commissions by orderId for easy access
+    const commissionMap = {};
+    commissions.forEach(comm => {
+      commissionMap[comm.orderId.toString()] = comm;
+    });
+
+    // Fetch delivery partner earnings from DeliveryWallet for these specific orders
+    const DeliveryWallet = (await import('../../delivery/models/DeliveryWallet.js')).default;
+    const wallets = await DeliveryWallet.find({
+      'transactions.orderId': { $in: orderIds }
+    }).select('transactions').lean();
+
+    // Mapping delivery earnings by orderId
+    const deliveryEarningMap = {};
+    wallets.forEach(wallet => {
+      wallet.transactions.forEach(tx => {
+        if (tx.orderId && orderIds.some(id => id.toString() === tx.orderId.toString())) {
+          const orderIdStr = tx.orderId.toString();
+          if (tx.status === 'Completed' && (tx.type === 'payment' || tx.type === 'earning_addon')) {
+            deliveryEarningMap[orderIdStr] = (deliveryEarningMap[orderIdStr] || 0) + (tx.amount || 0);
+          }
+        }
+      });
+    });
+
+    // Calculate summary statistics from all matching orders
+    let completedTransaction = 0;
+    let refundedTransaction = 0;
+    let adminEarning = 0;
+    let restaurantEarning = 0;
+    let deliverymanEarning = 0;
+
+    allMatchingOrders.forEach(order => {
+      const totalAmount = order.pricing?.total || 0;
+      const orderIdStr = order._id.toString();
+      
+      // Completed transactions (Delivered and Paid)
+      if (order.status === 'delivered') {
+        completedTransaction += totalAmount;
+        
+        // Use actual delivery earning from wallet if available, fallback to 0
+        deliverymanEarning += (deliveryEarningMap[orderIdStr] || 0);
+        
+        // Add earnings from commission record if available
+        if (commissionMap[orderIdStr]) {
+          adminEarning += (commissionMap[orderIdStr].commissionAmount || 0);
+          restaurantEarning += (commissionMap[orderIdStr].restaurantEarning || 0);
+        }
+      } 
+      // Refunded/Cancelled transactions
+      else if (order.status === 'cancelled' || order.payment?.status === 'refunded') {
+        refundedTransaction += totalAmount;
       }
-      if (toDate) {
-        const endDate = new Date(toDate);
-        endDate.setHours(23, 59, 59, 999);
-        summaryDateQuery.orderDate.$lte = endDate;
-      }
-    }
+    });
 
-    // Build restaurant filter for summary
-    let summaryRestaurantQuery = {};
-    if (restaurant && restaurant !== 'All restaurants') {
-      const Restaurant = (await import('../../restaurant/models/Restaurant.js')).default;
-      const restaurantDoc = await Restaurant.findOne({
-        $or: [
-          { name: { $regex: restaurant, $options: 'i' } },
-          { _id: mongoose.Types.ObjectId.isValid(restaurant) ? restaurant : null },
-          { restaurantId: restaurant }
-        ]
-      }).select('_id restaurantId').lean();
-
-      if (restaurantDoc) {
-        summaryRestaurantQuery.restaurantId = restaurantDoc._id || restaurantDoc.restaurantId;
-      }
-    }
-
-    // Get all orders for summary calculation (without pagination)
-    const summaryQuery = { ...query };
-    const allOrdersForSummary = await Order.find(summaryQuery)
-      .populate('userId', 'name')
-      .populate('restaurantId', 'name')
-      .lean();
-
-    // Calculate completed transactions (delivered orders)
-    const completedOrders = allOrdersForSummary.filter(order => 
-      order.status === 'delivered' && order.payment?.status === 'completed'
-    );
-    const completedTransaction = completedOrders.reduce((sum, order) => 
-      sum + (order.pricing?.total || 0), 0
-    );
-
-    // Calculate refunded transactions
-    const refundedOrders = allOrdersForSummary.filter(order => 
-      order.payment?.status === 'refunded' || order.status === 'cancelled'
-    );
-    const refundedTransaction = refundedOrders.reduce((sum, order) => 
-      sum + (order.pricing?.total || 0), 0
-    );
-
-    // Get admin earning from AdminCommission
-    const adminCommissionQuery = {
-      status: 'completed',
-      ...summaryDateQuery,
-      ...summaryRestaurantQuery
-    };
-    const adminCommissions = await AdminCommission.find(adminCommissionQuery).lean();
-    const adminEarning = adminCommissions.reduce((sum, comm) => sum + (comm.commissionAmount || 0), 0);
-
-    // Calculate restaurant earning (order total - admin commission - delivery commission)
-    // For simplicity, we'll use restaurantEarning from AdminCommission if available
-    const restaurantEarning = adminCommissions.reduce((sum, comm) => sum + (comm.restaurantEarning || 0), 0);
-
-    // Calculate deliveryman earning (from delivery commissions)
-    // This would need to be calculated from delivery wallet transactions or order assignment info
-    // For now, we'll estimate based on delivery fee or use a placeholder
-    const deliverymanEarning = completedOrders.reduce((sum, order) => {
-      // Delivery commission is typically calculated from distance
-      // For now, we'll use a simple estimate or fetch from delivery wallet
-      return sum + (order.pricing?.deliveryFee || 0) * 0.8; // Estimate 80% of delivery fee goes to deliveryman
-    }, 0);
-
-    // Transform orders to match frontend format
-    const transformedTransactions = orders.map((order, index) => {
+    // Transform paginated orders for table display
+    const transformedTransactions = orders.map((order) => {
       const subtotal = order.pricing?.subtotal || 0;
       const discount = order.pricing?.discount || 0;
       const deliveryFee = order.pricing?.deliveryFee || 0;
       const tax = order.pricing?.tax || 0;
       const couponCode = order.pricing?.couponCode || null;
       
-      // For report: itemDiscount is the discount applied to items
-      const itemDiscount = discount;
-      // Discounted amount is subtotal after discount
-      const discountedAmount = Math.max(0, subtotal - discount);
-      // Coupon discount (if coupon was applied, it's part of discount)
+      const itemDiscount = couponCode ? 0 : discount;
       const couponDiscount = couponCode ? discount : 0;
-      // Referral discount (not currently in model, default to 0)
+      const discountedAmount = Math.max(0, subtotal - discount);
       const referralDiscount = 0;
-      // VAT/Tax
       const vatTax = tax;
-      // Delivery charge
       const deliveryCharge = deliveryFee;
-      // Total item amount (subtotal before discounts)
       const totalItemAmount = subtotal;
-      // Order amount (final total)
       const orderAmount = order.pricing?.total || 0;
 
       return {
@@ -1006,14 +993,14 @@ export const getTransactionReport = asyncHandler(async (req, res) => {
         orderId: order.orderId,
         restaurant: order.restaurantName || order.restaurantId?.name || 'Unknown Restaurant',
         customerName: order.userId?.name || 'Invalid Customer Data',
-        totalItemAmount: totalItemAmount,
-        itemDiscount: itemDiscount,
-        couponDiscount: couponDiscount,
-        referralDiscount: referralDiscount,
-        discountedAmount: discountedAmount,
-        vatTax: vatTax,
-        deliveryCharge: deliveryCharge,
-        orderAmount: orderAmount,
+        totalItemAmount,
+        itemDiscount,
+        couponDiscount,
+        referralDiscount,
+        discountedAmount,
+        vatTax,
+        deliveryCharge,
+        orderAmount,
       };
     });
 

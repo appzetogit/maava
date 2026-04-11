@@ -1814,7 +1814,7 @@ export default function ToHub() {
   )
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] flex flex-col overflow-x-hidden">
+    <div className="h-[100dvh] bg-[#FAFAFA] flex flex-col overflow-hidden">
       <style>{`
         .chart-shell *, .chart-shell, .chart-shell-mini *, .chart-shell-mini,
         .recharts-wrapper:focus, .recharts-surface:focus, .recharts-responsive-container:focus {
@@ -1926,7 +1926,7 @@ export default function ToHub() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 10 }}
           transition={{ duration: 0.2 }}
-          className="flex-1"
+          className="flex-1 overflow-y-auto"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}

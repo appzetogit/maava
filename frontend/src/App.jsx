@@ -357,14 +357,7 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/restaurant/privacy"
-        element={
-          <ProtectedRoute requiredRole="restaurant" loginPath="/restaurant/login">
-            <PrivacyPolicyPage />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/restaurant/privacy" element={<PrivacyPolicyPage />} />
       <Route
         path="/restaurant/terms"
         element={
