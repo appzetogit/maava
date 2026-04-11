@@ -1944,7 +1944,7 @@ function OrderCard({
   onCancel,
   onMarkReady,
 }) {
-  const isReady = status === "Ready"
+  const isReady = status.toLowerCase() === "ready"
 
   return (
     <div className="w-full bg-white rounded-2xl p-4 mb-3 border border-gray-200 hover:border-gray-400 transition-colors relative">
@@ -1997,7 +1997,7 @@ function OrderCard({
         {/* Content */}
         <div className="flex-1 flex flex-col justify-between min-h-[80px]">
           {/* Top row */}
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start justify-between gap-2 pr-8">
             <div>
               <p className="text-sm font-semibold text-black leading-tight">
                 Order #{orderId}
@@ -2009,7 +2009,7 @@ function OrderCard({
 
             <div className="flex flex-col items-end gap-1">
               <span
-                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium border ${isReady
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium border capitalize ${isReady
                   ? "border-green-500 text-green-600"
                   : "border-gray-800 text-gray-900"
                   }`}
@@ -2057,7 +2057,7 @@ function OrderCard({
                 </div>
               )}
             </div>
-            )}
+
           </div>
 
           {/* Mark as Ready button - only show for preparing orders */}

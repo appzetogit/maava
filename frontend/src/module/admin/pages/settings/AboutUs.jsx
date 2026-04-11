@@ -200,7 +200,7 @@ export default function AboutUs() {
                 onChange={(e) => setAboutData(prev => ({ ...prev, description: e.target.value }))}
                 placeholder="Your trusted food delivery partner..."
                 rows={4}
-                className="mt-1 bg-white border-slate-300 text-slate-900 focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 bg-white border-slate-300 text-slate-900 focus:ring-blue-500 focus:border-blue-500 p-4"
               />
             </div>
             <div>
@@ -230,7 +230,7 @@ export default function AboutUs() {
               const IconComponent = iconMap[feature.icon] || Heart
               return (
                 <Card key={index} className="border border-slate-200 bg-slate-50/50">
-                  <CardContent className="p-4">
+                  <CardContent className="p-6">
                     <div className="flex items-start gap-4">
                       <div className={`${feature.bgColor} rounded-lg p-3 flex-shrink-0`}>
                         <IconComponent className={`h-6 w-6 ${feature.color}`} />

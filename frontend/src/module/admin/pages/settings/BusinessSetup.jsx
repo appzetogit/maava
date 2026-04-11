@@ -63,6 +63,20 @@ export default function BusinessSetup() {
   };
 
   const handleInputChange = (field, value) => {
+    // Numeric validation for specific fields
+    if (field === 'phoneNumber' || field === 'pincode') {
+      const numericValue = value.replace(/[^0-9]/g, '');
+      // Limit lengths
+      if (field === 'phoneNumber' && numericValue.length > 10) return;
+      if (field === 'pincode' && numericValue.length > 6) return;
+      
+      setFormData((prev) => ({
+        ...prev,
+        [field]: numericValue,
+      }));
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -78,6 +92,11 @@ export default function BusinessSetup() {
       }
       if (!formData.email.trim()) {
         toast.error("Email is required");
+        return;
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email.trim())) {
+        toast.error("Please enter a valid email address");
         return;
       }
       if (!formData.phoneNumber.trim()) {
@@ -217,7 +236,7 @@ export default function BusinessSetup() {
                 </label>
                 <input
                   type="email"
-                  placeholder="Enter Your Email"
+                  placeholder="contact@example.com"
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
                   className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -444,8 +463,9 @@ export default function BusinessSetup() {
                   </div>
                   <input
                     type="text"
-                    placeholder="Enter Your Phone Number"
+                    placeholder="9876543210"
                     value={formData.phoneNumber}
+                    maxLength={10}
                     onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
                     className="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
@@ -469,13 +489,25 @@ export default function BusinessSetup() {
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   State
                 </label>
-                <input
-                  type="text"
-                  placeholder="Enter Your State"
+                <select
                   value={formData.state}
                   onChange={(e) => handleInputChange("state", e.target.value)}
-                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[position:right_0.5rem_center] bg-[size:1.5em_1.5em] bg-no-repeat pr-10"
+                >
+                  <option value="">Select State</option>
+                  {[
+                    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", 
+                    "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", 
+                    "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", 
+                    "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", 
+                    "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", 
+                    "Uttar Pradesh", "Uttarakhand", "West Bengal",
+                    "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
+                    "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
+                  ].map(state => (
+                    <option key={state} value={state}>{state}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -484,8 +516,9 @@ export default function BusinessSetup() {
                 </label>
                 <input
                   type="text"
-                  placeholder="Enter Your Pincode"
+                  placeholder="110001"
                   value={formData.pincode}
+                  maxLength={6}
                   onChange={(e) => handleInputChange("pincode", e.target.value)}
                   className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
