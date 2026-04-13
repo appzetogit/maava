@@ -926,8 +926,7 @@ export const getDashboardStats = async (req, res) => {
                         total: [
                             {
                                 $match: {
-                                    status: { $ne: 'cancelled' },
-                                    'payment.status': 'completed'
+                                    status: { $in: ['delivered', 'confirmed', 'picked_up', 'ready', 'out_for_delivery'] }
                                 }
                             },
                             {
@@ -942,8 +941,7 @@ export const getDashboardStats = async (req, res) => {
                             {
                                 $match: {
                                     createdAt: { $gte: startOfMonth },
-                                    status: { $ne: 'cancelled' },
-                                    'payment.status': 'completed'
+                                    status: { $in: ['delivered', 'confirmed', 'picked_up', 'ready', 'out_for_delivery'] }
                                 }
                             },
                             {

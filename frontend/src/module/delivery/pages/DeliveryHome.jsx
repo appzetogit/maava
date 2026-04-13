@@ -10501,14 +10501,11 @@ export default function DeliveryHome() {
                     )
 
                     if (response.data?.success) {
-                      // Get updated earnings from response
-                      // Note: completeDelivery API already adds earnings and COD cash collected to wallet
-                      const earnings = response.data.data?.earnings?.amount ||
-                        response.data.data?.totalEarning ||
-                        orderEarnings
-                      setOrderEarnings(earnings)
+                      // Get updated earnings from response (either full object or amount)
+                      const earningsEntity = response.data.data?.earnings || response.data.data?.totalEarning || orderEarnings
+                      setOrderEarnings(earningsEntity)
 
-                      console.log('✅ Delivery completed and earnings added to wallet:', earnings)
+                      console.log('✅ Delivery completed and earnings added to wallet:', earningsEntity)
                       console.log('✅ Wallet transaction:', response.data.data?.walletTransaction)
 
                       // Notify wallet listeners (Pocket balance, Pocket page) so cash collected updates
@@ -10598,15 +10595,13 @@ export default function DeliveryHome() {
               <p className="text-gray-600 text-sm mb-2">Earnings from this order</p>
               <p className="text-5xl font-bold text-gray-900">
                 ₹{(() => {
-                  if (orderEarnings > 0) {
-                    return orderEarnings.toFixed(2);
+                  const earnings = typeof orderEarnings === 'object' ? (orderEarnings.amount ?? orderEarnings.totalEarning ?? 0) : orderEarnings;
+                  const finalAmount = earnings || selectedRestaurant?.amount || selectedRestaurant?.estimatedEarnings || 0;
+                  
+                  if (typeof finalAmount === 'object' && finalAmount.totalEarning) {
+                    return Number(finalAmount.totalEarning).toFixed(2);
                   }
-                  // Handle estimatedEarnings - can be number or object
-                  const earnings = selectedRestaurant?.amount || selectedRestaurant?.estimatedEarnings || 0;
-                  if (typeof earnings === 'object' && earnings.totalEarning) {
-                    return earnings.totalEarning.toFixed(2);
-                  }
-                  return typeof earnings === 'number' ? earnings.toFixed(2) : '0.00';
+                  return Number(finalAmount).toFixed(2);
                 })()}
               </p>
               <p className="text-green-600 text-sm mt-2">💰 Added to your wallet</p>
@@ -10618,41 +10613,61 @@ export default function DeliveryHome() {
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Payment Details</h3>
 
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Trip pay</span>
-                    <span className="text-gray-900 font-semibold">₹{(() => {
-                      let earnings = 0;
-                      if (orderEarnings > 0) {
-                        earnings = orderEarnings;
-                      } else {
-                        const estEarnings = selectedRestaurant?.amount || selectedRestaurant?.estimatedEarnings || 0;
-                        if (typeof estEarnings === 'object' && estEarnings.totalEarning) {
-                          earnings = estEarnings.totalEarning;
-                        } else if (typeof estEarnings === 'number') {
-                          earnings = estEarnings;
-                        }
-                      }
-                      return (earnings - 5).toFixed(2);
-                    })()}</span>
-                  </div>
+                  {(() => {
+                    const earningsObj = typeof orderEarnings === 'object' ? orderEarnings : {};
+                    const breakdown = earningsObj.breakdown || (typeof selectedRestaurant?.estimatedEarnings === 'object' ? selectedRestaurant.estimatedEarnings.breakdown : null);
+                    const totalAmount = earningsObj.amount || earningsObj.totalEarning || (typeof orderEarnings === 'number' ? orderEarnings : (selectedRestaurant?.amount || (typeof selectedRestaurant?.estimatedEarnings === 'object' ? selectedRestaurant.estimatedEarnings.totalEarning : selectedRestaurant?.estimatedEarnings) || 0));
 
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Long distance return pay</span>
-                    <span className="text-gray-900 font-semibold">₹5.00</span>
-                  </div>
+                    if (breakdown) {
+                      return (
+                        <>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                            <div className="flex flex-col">
+                              <span className="text-gray-600">Base pay</span>
+                              <span className="text-[10px] text-gray-400">Fixed payout per order</span>
+                            </div>
+                            <span className="text-gray-900 font-semibold">₹{Number(breakdown.basePayout || 0).toFixed(2)}</span>
+                          </div>
 
-                  <div className="flex justify-between items-center py-2">
+                          {Number(breakdown.distance || 0) > 0 && (
+                            <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                              <div className="flex flex-col">
+                                <span className="text-gray-600">Distance pay</span>
+                                <span className="text-[10px] text-gray-400">{Number(breakdown.distance).toFixed(2)} km @ ₹{breakdown.commissionPerKm}/km</span>
+                              </div>
+                              <span className="text-gray-900 font-semibold">+ ₹{Number(breakdown.distanceCommission || 0).toFixed(2)}</span>
+                            </div>
+                          )}
+
+                          {Number(earningsObj.tipAmount || 0) > 0 && (
+                            <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                              <span className="text-gray-600">Customer Tip</span>
+                              <span className="text-green-600 font-semibold">+ ₹{Number(earningsObj.tipAmount).toFixed(2)}</span>
+                            </div>
+                          )}
+                        </>
+                      );
+                    }
+
+                    // Fallback for when breakdown is not available
+                    return (
+                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span className="text-gray-600">Trip pay</span>
+                        <span className="text-gray-900 font-semibold">₹{Number(totalAmount).toFixed(2)}</span>
+                      </div>
+                    );
+                  })()}
+
+                  <div className="flex justify-between items-center py-2 pt-4">
                     <span className="text-lg font-bold text-gray-900">Total Earnings</span>
                     <span className="text-lg font-bold text-gray-900">₹{(() => {
-                      if (orderEarnings > 0) {
-                        return orderEarnings.toFixed(2);
+                      const earnings = typeof orderEarnings === 'object' ? (orderEarnings.amount ?? orderEarnings.totalEarning ?? 0) : orderEarnings;
+                      const finalAmount = earnings || selectedRestaurant?.amount || selectedRestaurant?.estimatedEarnings || 0;
+                      
+                      if (typeof finalAmount === 'object' && finalAmount.totalEarning) {
+                        return Number(finalAmount.totalEarning).toFixed(2);
                       }
-                      // Handle estimatedEarnings - can be number or object
-                      const earnings = selectedRestaurant?.amount || selectedRestaurant?.estimatedEarnings || 0;
-                      if (typeof earnings === 'object' && earnings.totalEarning) {
-                        return earnings.totalEarning.toFixed(2);
-                      }
-                      return typeof earnings === 'number' ? earnings.toFixed(2) : '0.00';
+                      return Number(finalAmount).toFixed(2);
                     })()}</span>
                   </div>
                 </div>

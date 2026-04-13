@@ -641,8 +641,66 @@ export const acceptOrder = asyncHandler(async (req, res) => {
       return errorResponse(res, 500, 'Invalid route data. Please try again.');
     }
 
+    // Calculate delivery distance (restaurant to customer) for earnings calculation
+    let deliveryDistance = 0;
+    const customerCoords = order.address?.location?.coordinates;
+
+    if (customerCoords && customerCoords.length >= 2) {
+      const [customerLng, customerLat] = customerCoords;
+      let stopLng, stopLat;
+
+      // Check if it's Hibermart or regular restaurant
+      const isHibermart = order.isHibermartOrder ||
+        order.restaurantId === 'hibermart-id' ||
+        order.restaurantName?.toLowerCase?.() === 'hibermart';
+
+      if (isHibermart) {
+        // Get Hibermart store location
+        try {
+          const storeLoc = await HibermartStoreLocation.getOrCreate();
+          if (storeLoc?.location?.coordinates?.length >= 2) {
+            [stopLng, stopLat] = storeLoc.location.coordinates;
+          } else if (storeLoc?.location?.longitude && storeLoc?.location?.latitude) {
+            stopLng = storeLoc.location.longitude;
+            stopLat = storeLoc.location.latitude;
+          }
+        } catch (err) {
+          console.error('Error fetching Hibermart location:', err);
+        }
+      } else {
+        // Get regular restaurant location
+        try {
+          let restaurant = null;
+          if (mongoose.Types.ObjectId.isValid(order.restaurantId)) {
+            restaurant = await Restaurant.findById(order.restaurantId).select('location').lean();
+          } else {
+            restaurant = await Restaurant.findOne({ restaurantId: order.restaurantId }).select('location').lean();
+          }
+          if (restaurant?.location?.coordinates?.length >= 2) {
+            [stopLng, stopLat] = restaurant.location.coordinates;
+          }
+        } catch (err) {
+          console.error('Error fetching restaurant location:', err);
+        }
+      }
+
+      if (stopLng !== undefined && stopLat !== undefined) {
+        // Calculate distance using Haversine formula
+        const R = 6371; // Earth radius in km
+        const dLat = (customerLat - stopLat) * Math.PI / 180;
+        const dLng = (customerLng - stopLng) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(stopLat * Math.PI / 180) * Math.cos(customerLat * Math.PI / 180) *
+          Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        deliveryDistance = R * c;
+        console.log(`📏 Calculated delivery distance for assignment: ${deliveryDistance.toFixed(2)} km`);
+      }
+    }
+
     let updatedOrder;
     try {
+      console.log(`Param order ID update check: ${orderMongoId}`);
       console.log(`💾 Updating order in database...`);
       updatedOrder = await Order.findByIdAndUpdate(
         orderMongoId,
@@ -651,7 +709,11 @@ export const acceptOrder = asyncHandler(async (req, res) => {
             'deliveryState.status': 'accepted',
             'deliveryState.acceptedAt': new Date(),
             'deliveryState.currentPhase': 'en_route_to_pickup',
-            'deliveryState.routeToPickup': routeToPickup
+            'deliveryState.routeToPickup': routeToPickup,
+            // Also store the delivery distance in assignmentInfo for later use in completeDelivery
+            'assignmentInfo.distance': deliveryDistance,
+            'assignmentInfo.assignedAt': new Date(),
+            'assignmentInfo.deliveryPartnerId': delivery._id.toString()
           }
         },
         { new: true }
@@ -679,22 +741,8 @@ export const acceptOrder = asyncHandler(async (req, res) => {
     console.log(`✅ Order ${order.orderId} accepted by delivery partner ${delivery._id}`);
     console.log(`📍 Route calculated: ${routeData.distance.toFixed(2)} km, ${routeData.duration.toFixed(1)} mins`);
 
-    // Calculate delivery distance (restaurant to customer) for earnings calculation
-    let deliveryDistance = 0;
-    if (updatedOrder.restaurantId?.location?.coordinates && updatedOrder.address?.location?.coordinates) {
-      const [restaurantLng, restaurantLat] = updatedOrder.restaurantId.location.coordinates;
-      const [customerLng, customerLat] = updatedOrder.address.location.coordinates;
-
-      // Calculate distance using Haversine formula
-      const R = 6371; // Earth radius in km
-      const dLat = (customerLat - restaurantLat) * Math.PI / 180;
-      const dLng = (customerLng - restaurantLng) * Math.PI / 180;
-      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(restaurantLat * Math.PI / 180) * Math.cos(customerLat * Math.PI / 180) *
-        Math.sin(dLng / 2) * Math.sin(dLng / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      deliveryDistance = R * c;
-    }
+    // deliveryDistance was already calculated above and saved to updatedOrder
+    deliveryDistance = updatedOrder.assignmentInfo?.distance || deliveryDistance;
 
     // Calculate estimated earnings based on delivery distance
     let estimatedEarnings = null;
@@ -1736,28 +1784,63 @@ export const completeDelivery = asyncHandler(async (req, res) => {
     // Get delivery distance (in km) from order
     let deliveryDistance = 0;
 
-    // Priority 1: Get distance from routeToDelivery (most accurate)
-    if (order.deliveryState?.routeToDelivery?.distance) {
+    // Priority 1: Get latest distance from updatedOrder (most accurate as it reflects state after confirmation)
+    if (updatedOrder.deliveryState?.routeToDelivery?.distance) {
+      deliveryDistance = updatedOrder.deliveryState.routeToDelivery.distance;
+    }
+    // Priority 2: Get distance from assignmentInfo (set during acceptance)
+    else if (updatedOrder.assignmentInfo?.distance) {
+      deliveryDistance = updatedOrder.assignmentInfo.distance;
+    }
+    // Priority 3: Use old order object if updatedOrder is missing fields
+    else if (order.deliveryState?.routeToDelivery?.distance) {
       deliveryDistance = order.deliveryState.routeToDelivery.distance;
     }
-    // Priority 2: Get distance from assignmentInfo
-    else if (order.assignmentInfo?.distance) {
-      deliveryDistance = order.assignmentInfo.distance;
-    }
-    // Priority 3: Calculate distance from restaurant to customer if coordinates available
-    else if (order.restaurantId?.location?.coordinates && order.address?.location?.coordinates) {
-      const [restaurantLng, restaurantLat] = order.restaurantId.location.coordinates;
-      const [customerLng, customerLat] = order.address.location.coordinates;
+    // Priority 4: Calculate distance from restaurant to customer if coordinates available
+    else {
+      try {
+        const customerCoords = updatedOrder.address?.location?.coordinates || order.address?.location?.coordinates;
+        if (customerCoords && customerCoords.length >= 2) {
+          const [customerLng, customerLat] = customerCoords;
+          let stopLng, stopLat;
 
-      // Calculate distance using Haversine formula
-      const R = 6371; // Earth radius in km
-      const dLat = (customerLat - restaurantLat) * Math.PI / 180;
-      const dLng = (customerLng - restaurantLng) * Math.PI / 180;
-      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(restaurantLat * Math.PI / 180) * Math.cos(customerLat * Math.PI / 180) *
-        Math.sin(dLng / 2) * Math.sin(dLng / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      deliveryDistance = R * c;
+          // Check if Hibermart
+          const isHibermart = order.isHibermartOrder || 
+            order.restaurantId === 'hibermart-id' || 
+            order.restaurantName?.toLowerCase?.() === 'hibermart';
+
+          if (isHibermart) {
+            const storeLoc = await HibermartStoreLocation.getOrCreate();
+            if (storeLoc?.location?.coordinates?.length >= 2) {
+              [stopLng, stopLat] = storeLoc.location.coordinates;
+            }
+          } else {
+            // Get restaurant manually since populate might fail on String restaurantId
+            let restaurant = null;
+            if (mongoose.Types.ObjectId.isValid(order.restaurantId)) {
+              restaurant = await Restaurant.findById(order.restaurantId).select('location').lean();
+            } else {
+              restaurant = await Restaurant.findOne({ restaurantId: order.restaurantId }).select('location').lean();
+            }
+            if (restaurant?.location?.coordinates?.length >= 2) {
+              [stopLng, stopLat] = restaurant.location.coordinates;
+            }
+          }
+
+          if (stopLng !== undefined && stopLat !== undefined) {
+             const R = 6371; // Earth radius in km
+             const dLat = (customerLat - stopLat) * Math.PI / 180;
+             const dLng = (customerLng - stopLng) * Math.PI / 180;
+             const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+               Math.cos(stopLat * Math.PI / 180) * Math.cos(customerLat * Math.PI / 180) *
+               Math.sin(dLng / 2) * Math.sin(dLng / 2);
+             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+             deliveryDistance = R * c;
+          }
+        }
+      } catch (err) {
+        console.error('Error in final delivery distance fallback:', err);
+      }
     }
 
     console.log(`📏 Delivery distance: ${deliveryDistance.toFixed(2)} km for order ${orderIdForLog}`);
