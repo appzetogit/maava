@@ -130,8 +130,46 @@ export default function SignupStep2() {
   }
 
   // Camera capture handler (mobile support)
-  const handleCameraCapture = (docType) => {
-    cameraInputRefs[docType]?.current?.click()
+  // Flutter InAppWebView camera handler (for mobile app)
+  const handleCameraCapture = async (docType) => {
+    try {
+      if (window.flutter_inappwebview && typeof window.flutter_inappwebview.callHandler === 'function') {
+        const result = await window.flutter_inappwebview.callHandler('openCamera', {
+          source: 'camera',
+          accept: 'image/*',
+          multiple: false,
+          quality: 0.8
+        })
+        if (result && result.success) {
+          let file = null
+          const res = Array.isArray(result.files) ? result.files[0] : result
+          if (res?.file) {
+            file = res.file
+          } else if (res?.base64) {
+            let base64Data = res.base64
+            if (base64Data.includes(',')) base64Data = base64Data.split(',')[1]
+            const byteCharacters = atob(base64Data)
+            const byteNumbers = new Array(byteCharacters.length)
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i)
+            }
+            const byteArray = new Uint8Array(byteNumbers)
+            const mimeType = res.mimeType || 'image/jpeg'
+            const blob = new Blob([byteArray], { type: mimeType })
+            file = new File([blob], res.fileName || `${docType}-photo-${Date.now()}.jpg`, { type: mimeType })
+          }
+          if (file) {
+            handleFileSelect(docType, file)
+          }
+        }
+      } else {
+        cameraInputRefs[docType]?.current?.click()
+      }
+    } catch (error) {
+      console.error('❌ Error opening camera:', error)
+      toast.error('Failed to open camera')
+      cameraInputRefs[docType]?.current?.click()
+    }
   }
 
   const DocumentUpload = ({ docType, label, required = true }) => {
