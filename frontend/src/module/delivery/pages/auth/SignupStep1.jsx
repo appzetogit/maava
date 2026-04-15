@@ -6,19 +6,27 @@ import { toast } from "sonner"
 
 export default function SignupStep1() {
   const navigate = useNavigate()
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    address: "",
-    city: "",
-    state: "",
-    vehicleType: "bike",
-    vehicleName: "",
-    vehicleNumber: "",
-    panNumber: "",
-    aadharNumber: "",
-    referralCode: ""
-  })
+  const [formData, setFormData] = useState(() => {
+    // Try to load from localStorage
+    const saved = localStorage.getItem("delivery_signup_form");
+    return saved ? JSON.parse(saved) : {
+      name: "",
+      email: "",
+      address: "",
+      city: "",
+      state: "",
+      vehicleType: "bike",
+      vehicleName: "",
+      vehicleNumber: "",
+      panNumber: "",
+      aadharNumber: "",
+      referralCode: ""
+    };
+  });
+    // Persist form data to localStorage on every change
+    useEffect(() => {
+      localStorage.setItem("delivery_signup_form", JSON.stringify(formData));
+    }, [formData]);
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 

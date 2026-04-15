@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { ArrowLeft, Upload, X, Check } from "lucide-react"
 import { deliveryAPI } from "@/lib/api"
@@ -6,6 +6,13 @@ import apiClient from "@/lib/api/axios"
 import { toast } from "sonner"
 
 export default function SignupStep2() {
+  // Refs for camera input for each doc type
+  const cameraInputRefs = {
+    profilePhoto: useRef(),
+    aadharPhoto: useRef(),
+    panPhoto: useRef(),
+    drivingLicensePhoto: useRef(),
+  }
   const navigate = useNavigate()
   const [documents, setDocuments] = useState({
     profilePhoto: null,
@@ -122,6 +129,11 @@ export default function SignupStep2() {
     }
   }
 
+  // Camera capture handler (mobile support)
+  const handleCameraCapture = (docType) => {
+    cameraInputRefs[docType]?.current?.click()
+  }
+
   const DocumentUpload = ({ docType, label, required = true }) => {
     const file = documents[docType]
     const uploaded = uploadedDocs[docType]
@@ -132,7 +144,7 @@ export default function SignupStep2() {
         <label className="block text-sm font-medium text-gray-700 mb-2">
           {label} {required && <span className="text-red-500">*</span>}
         </label>
-        
+
         {uploaded ? (
           <div className="relative">
             <img
@@ -153,34 +165,69 @@ export default function SignupStep2() {
             </div>
           </div>
         ) : (
-          <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-green-500 transition-colors">
-            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-              {isUploading ? (
-                <>
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mb-2"></div>
-                  <p className="text-sm text-gray-500">Uploading...</p>
-                </>
-              ) : (
-                <>
-                  <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                  <p className="text-sm text-gray-500 mb-1">Click to upload</p>
-                  <p className="text-xs text-gray-400">PNG, JPG up to 5MB</p>
-                </>
-              )}
-            </div>
-            <input
-              type="file"
-              className="hidden"
-              accept="image/*"
-              onChange={(e) => {
-                const selectedFile = e.target.files[0]
-                if (selectedFile) {
-                  handleFileSelect(docType, selectedFile)
-                }
-              }}
+          <div className="flex gap-2 w-full">
+            {/* Main upload label (gallery/file) */}
+            <label className="flex-1 flex flex-col items-center justify-center h-48 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-green-500 transition-colors">
+              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                {isUploading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mb-2"></div>
+                    <p className="text-sm text-gray-500">Uploading...</p>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-500 mb-1">Click to upload</p>
+                    <p className="text-xs text-gray-400">PNG, JPG up to 5MB</p>
+                  </>
+                )}
+              </div>
+              <input
+                type="file"
+                className="hidden"
+                accept="image/*"
+                capture="environment"
+                onChange={(e) => {
+                  const selectedFile = e.target.files[0]
+                  if (selectedFile) {
+                    handleFileSelect(docType, selectedFile)
+                  }
+                }}
+                disabled={isUploading}
+              />
+            </label>
+            {/* Camera button (mobile/photo capture) */}
+            <button
+              type="button"
+              className="flex flex-col items-center justify-center h-48 w-16 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 transition-colors bg-gray-50"
+              style={{ minWidth: 56 }}
+              onClick={() => handleCameraCapture(docType)}
               disabled={isUploading}
-            />
-          </label>
+              tabIndex={-1}
+              aria-label={`Capture ${label} with camera`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-green-500 mb-2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5V6.75A2.25 2.25 0 0 1 5.25 4.5h2.086a1.5 1.5 0 0 0 1.06-.44l.828-.828A1.5 1.5 0 0 1 10.284 3h3.432a1.5 1.5 0 0 1 1.06.44l.828.828a1.5 1.5 0 0 0 1.06.44h2.086A2.25 2.25 0 0 1 21 6.75v.75" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5h18M3 7.5v9.75A2.25 2.25 0 0 0 5.25 19.5h13.5A2.25 2.25 0 0 0 21 17.25V7.5M3 7.5l2.25 2.25m13.5-2.25L21 9.75M12 15.75a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+              </svg>
+              <span className="text-xs text-gray-500">Camera</span>
+              {/* Hidden camera input */}
+              <input
+                ref={cameraInputRefs[docType]}
+                type="file"
+                className="hidden"
+                accept="image/*"
+                capture="environment"
+                onChange={(e) => {
+                  const selectedFile = e.target.files[0]
+                  if (selectedFile) {
+                    handleFileSelect(docType, selectedFile)
+                  }
+                }}
+                disabled={isUploading}
+              />
+            </button>
+          </div>
         )}
       </div>
     )
