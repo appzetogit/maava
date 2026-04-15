@@ -224,7 +224,6 @@ export default function SignupStep2() {
                 type="file"
                 className="hidden"
                 accept="image/*"
-                capture="environment"
                 onChange={(e) => {
                   const selectedFile = e.target.files[0]
                   if (selectedFile) {
