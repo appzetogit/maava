@@ -51,7 +51,8 @@ export default function SignupStep1() {
     if (name === "name" || name === "city" || name === "state") {
       value = value.replace(/[^a-zA-Z\s]/g, "")
     } else if (name === "vehicleNumber") {
-      value = value.toUpperCase().replace(/[^A-Z0-9]/g, "")
+      // Only allow uppercase letters and digits, max 10 chars
+      value = value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10)
     } else if (name === "panNumber") {
       value = value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10)
     } else if (name === "aadharNumber") {
@@ -96,6 +97,8 @@ export default function SignupStep1() {
 
     if (!formData.vehicleNumber.trim()) {
       newErrors.vehicleNumber = "Vehicle number is required"
+    } else if (!/^[A-Z]{2}\d{2}[A-Z]{1,2}\d{4}$/.test(formData.vehicleNumber)) {
+      newErrors.vehicleNumber = "Invalid vehicle number format (e.g., MH12AB1234)"
     }
 
     if (!formData.panNumber.trim()) {
