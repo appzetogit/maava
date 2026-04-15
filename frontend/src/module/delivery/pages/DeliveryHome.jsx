@@ -671,13 +671,11 @@ export default function DeliveryHome() {
   const acceptButtonIsSwiping = useRef(false)
   const autoShowTimerRef = useRef(null)
 
-  const {
-    bookedGigs,
-    currentGig,
-    goOnline,
-    goOffline,
-    getSelectedDropLocation
-  } = useGigStore()
+  const bookedGigs = useGigStore(state => state.bookedGigs)
+  const currentGig = useGigStore(state => state.currentGig)
+  const goOnline = useGigStore(state => state.goOnline)
+  const goOffline = useGigStore(state => state.goOffline)
+  const getSelectedDropLocation = useGigStore(state => state.getSelectedDropLocation)
 
   // Use same localStorage key as FeedNavbar for online status
   const LS_KEY = "app:isOnline"
@@ -796,7 +794,10 @@ export default function DeliveryHome() {
   const progressPercentage = Math.min((loginHours / minimumHours) * 100, 100)
 
   // Get today's progress from store
-  const { getTodayProgress, getDateData, hasDateData, updateTodayProgress } = useProgressStore()
+  const getTodayProgress = useProgressStore(state => state.getTodayProgress)
+  const getDateData = useProgressStore(state => state.getDateData)
+  const hasDateData = useProgressStore(state => state.hasDateData)
+  const updateTodayProgress = useProgressStore(state => state.updateTodayProgress)
   const todayProgress = getTodayProgress()
 
   // Check if store has data for today
@@ -4079,6 +4080,12 @@ export default function DeliveryHome() {
   // Show new order popup when order is received from Socket.IO
   useEffect(() => {
     if (newOrder) {
+      // Guard: Don't re-process if we are already showing this specific order
+      const newOrderId = newOrder.orderMongoId || newOrder.orderId;
+      if (selectedRestaurant && (selectedRestaurant.id === newOrderId || selectedRestaurant.orderId === newOrder.orderId)) {
+        return;
+      }
+
       // Check if delivery boy is online
       if (!isOnline) {
         console.log('🚫 New order received while offline, ignoring');
@@ -4218,6 +4225,11 @@ export default function DeliveryHome() {
   useEffect(() => {
     if (!selectedRestaurant || !showNewOrderPopup) return
 
+    // Guard: Only recalculate if location changed significantly OR distance is genuinely missing
+    // Using a ref or ID-based check is better than the whole object
+    const orderId = selectedRestaurant.orderId || selectedRestaurant.id;
+
+
     // Only recalculate if distance is missing or showing '0 km' or 'Calculating...'
     const currentDistance = selectedRestaurant.distance || selectedRestaurant.pickupDistance
     if (currentDistance && currentDistance !== '0 km' && currentDistance !== 'Calculating...') {
@@ -4250,7 +4262,8 @@ export default function DeliveryHome() {
         timeAway: calculateTimeAway(pickupDistance)
       }))
     }
-  }, [riderLocation, selectedRestaurant, showNewOrderPopup, calculateTimeAway])
+  }, [riderLocation, selectedRestaurant?.id, selectedRestaurant?.orderId, showNewOrderPopup, calculateTimeAway])
+
 
   // Fetch restaurant address if missing when selectedRestaurant is set
   useEffect(() => {
@@ -4293,7 +4306,8 @@ export default function DeliveryHome() {
 
       fetchAddress()
     }
-  }, [selectedRestaurant?.orderId, selectedRestaurant?.id, selectedRestaurant?.address])
+  }, [selectedRestaurant?.orderId, selectedRestaurant?.id, selectedRestaurant?.address, showNewOrderPopup])
+
 
   // Handle online toggle - check for booked gigs
   const handleToggleOnline = () => {
@@ -10511,9 +10525,14 @@ export default function DeliveryHome() {
                       // Notify wallet listeners (Pocket balance, Pocket page) so cash collected updates
                       window.dispatchEvent(new Event('deliveryWalletStateUpdated'))
 
+                      // Extract numerical amount for the toast
+                      const earningsAmount = typeof earningsEntity === 'object'
+                        ? (earningsEntity.totalEarning || earningsEntity.amount || 0)
+                        : (Number(earningsEntity) || 0)
+
                       // Show success message
-                      if (earnings > 0) {
-                        toast.success(`₹${earnings.toFixed(2)} added to your wallet! 💰`)
+                      if (earningsAmount > 0) {
+                        toast.success(`₹${earningsAmount.toFixed(2)} added to your wallet! 💰`)
                       }
 
                       // Update local state to reflect the new status
@@ -10597,7 +10616,7 @@ export default function DeliveryHome() {
                 ₹{(() => {
                   const earnings = typeof orderEarnings === 'object' ? (orderEarnings.amount ?? orderEarnings.totalEarning ?? 0) : orderEarnings;
                   const finalAmount = earnings || selectedRestaurant?.amount || selectedRestaurant?.estimatedEarnings || 0;
-                  
+
                   if (typeof finalAmount === 'object' && finalAmount.totalEarning) {
                     return Number(finalAmount.totalEarning).toFixed(2);
                   }
@@ -10663,7 +10682,7 @@ export default function DeliveryHome() {
                     <span className="text-lg font-bold text-gray-900">₹{(() => {
                       const earnings = typeof orderEarnings === 'object' ? (orderEarnings.amount ?? orderEarnings.totalEarning ?? 0) : orderEarnings;
                       const finalAmount = earnings || selectedRestaurant?.amount || selectedRestaurant?.estimatedEarnings || 0;
-                      
+
                       if (typeof finalAmount === 'object' && finalAmount.totalEarning) {
                         return Number(finalAmount.totalEarning).toFixed(2);
                       }

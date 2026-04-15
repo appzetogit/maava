@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { checkOnboardingStatus } from "../utils/onboardingUtils"
 import { motion, AnimatePresence } from "framer-motion"
 import Lenis from "lenis"
-import { Printer, Volume2, VolumeX, ChevronDown, ChevronUp, Minus, Plus, X, AlertCircle, Loader2 } from "lucide-react"
+import { Printer, Volume2, VolumeX, ChevronDown, ChevronUp, Minus, Plus, X, AlertCircle, Loader2, FileText } from "lucide-react"
 import { toast } from "sonner"
 import BottomNavOrders from "../components/BottomNavOrders"
 import RestaurantNavbar from "../components/RestaurantNavbar"
@@ -155,6 +155,7 @@ function CompletedOrders({ onSelectOrder }) {
                       tableOrToken: order.tableOrToken,
                       timePlaced: deliveredDate,
                       itemsSummary: order.itemsSummary,
+                      note: order.note,
                     })
                   }
                   className="w-full text-left flex gap-3 items-stretch"
@@ -367,6 +368,7 @@ function CancelledOrders({ onSelectOrder }) {
                       tableOrToken: order.tableOrToken,
                       timePlaced: cancelledDate,
                       itemsSummary: order.itemsSummary,
+                      note: order.note,
                     })
                   }
                   className="w-full text-left flex gap-3 items-stretch"
@@ -690,7 +692,7 @@ export default function OrdersMain() {
             shownOrdersRef.current.add(orderId)
             setPopupOrder(orderForPopup)
             setShowNewOrderPopup(true)
-            
+
             // Calculate remaining seconds based on order creation
             const orderTime = new Date(orderForPopup.createdAt || new Date()).getTime();
             const now = Date.now();
@@ -845,7 +847,7 @@ export default function OrdersMain() {
       if (response.data?.success) {
         toast.success('Order marked as ready!')
         // Refresh orders
-        window.location.reload() 
+        window.location.reload()
       }
     } catch (error) {
       console.error('Error marking order as ready:', error)
@@ -1415,13 +1417,6 @@ export default function OrdersMain() {
                   </div>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={handlePrint}
-                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                      aria-label="Print"
-                    >
-                      <Printer className="w-5 h-5 text-gray-700" />
-                    </button>
-                    <button
                       onClick={toggleMute}
                       className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                       aria-label={isMuted ? "Unmute" : "Mute"}
@@ -1436,7 +1431,10 @@ export default function OrdersMain() {
                 </div>
 
                 {/* Content */}
-                <div className="px-4 py-4 max-h-[60vh] overflow-y-auto">
+                <div
+                  className="px-4 py-4 max-h-[50vh] overflow-y-auto scrollbar-hide"
+                  data-lenis-prevent
+                >
                   {/* Customer info */}
                   <div className="mb-4">
                     <h4 className="text-sm font-semibold text-gray-900">
@@ -1577,7 +1575,10 @@ export default function OrdersMain() {
                     </div>
                   </div>
 
-                  {/* Accept and Reject buttons */}
+                </div>
+
+                {/* Fixed Footer with Buttons */}
+                <div className="px-4 py-4 bg-gray-50 border-t border-gray-200">
                   <div className="space-y-3">
                     {/* Accept button with countdown */}
                     <div className="relative">
@@ -1606,12 +1607,7 @@ export default function OrdersMain() {
                   </div>
                 </div>
 
-                {/* Footer */}
-                <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
-                  <button className="text-sm text-gray-600 hover:text-gray-900 transition-colors underline mx-auto block">
-                    Need help with this order?
-                  </button>
-                </div>
+
               </motion.div>
             </motion.div>
           </>
@@ -1811,74 +1807,84 @@ export default function OrdersMain() {
                 <div className="h-1 w-10 rounded-full bg-gray-300" />
               </div>
 
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div>
-                  <p className="text-sm font-semibold text-black">
-                    Order #{selectedOrder.orderId}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {selectedOrder.customerName}
-                  </p>
-                  <p className="text-[11px] text-gray-500 mt-1">
-                    {selectedOrder.type}
-                    {selectedOrder.tableOrToken
-                      ? ` • ${selectedOrder.tableOrToken}`
-                      : ""}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium border ${selectedOrder.status === "Ready"
-                      ? "border-green-500 text-green-600"
-                      : "border-gray-800 text-gray-900"
-                      }`}
-                  >
-                    <span
-                      className={`h-1.5 w-1.5 rounded-full ${selectedOrder.status === "Ready"
-                        ? "bg-green-500"
-                        : "bg-gray-800"
-                        }`}
-                    />
-                    {selectedOrder.status}
-                  </span>
-                  <span className="text-[11px] text-gray-500">
-                    {selectedOrder.timePlaced}
-                  </span>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-100 my-3" />
-
-              <div className="mb-3">
-                <p className="text-xs font-medium text-gray-700 mb-1">
-                  Items
-                </p>
-                <p className="text-xs text-gray-600">
-                  {selectedOrder.itemsSummary}
-                </p>
-              </div>
-
-              {selectedOrder.note && (
-                <div className="mb-3 p-3 bg-blue-50 border border-blue-100 rounded-xl">
-                  <p className="text-[10px] font-bold text-blue-700 uppercase tracking-wider mb-1">User Note</p>
-                  <p className="text-xs text-blue-900 italic">"{selectedOrder.note}"</p>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between text-[11px] text-gray-500 mb-4">
-                {/* Hide ETA for ready orders */}
-                {selectedOrder.status !== 'ready' && selectedOrder.eta && (
-                  <span>ETA: <span className="font-medium text-black">{selectedOrder.eta}</span></span>
-                )}
-                <span>Payment: <span className="font-medium text-black">Paid online</span></span>
-              </div>
-
-              <button
-                className="w-full bg-black text-white py-2.5 rounded-xl text-sm font-medium"
-                onClick={() => setIsSheetOpen(false)}
+              <div
+                className="max-h-[65vh] overflow-y-auto pr-1"
+                data-lenis-prevent
               >
-                Close
-              </button>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div>
+                    <p className="text-sm font-semibold text-black">
+                      Order #{selectedOrder.orderId}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {selectedOrder.customerName}
+                    </p>
+                    <p className="text-[11px] text-gray-500 mt-1">
+                      {selectedOrder.type}
+                      {selectedOrder.tableOrToken
+                        ? ` • ${selectedOrder.tableOrToken}`
+                        : ""}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium border ${selectedOrder.status === "Ready"
+                        ? "border-green-500 text-green-600"
+                        : "border-gray-800 text-gray-900"
+                        }`}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${selectedOrder.status === "Ready"
+                          ? "bg-green-500"
+                          : "bg-gray-800"
+                          }`}
+                      />
+                      {selectedOrder.status}
+                    </span>
+                    <span className="text-[11px] text-gray-500">
+                      {selectedOrder.timePlaced}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-100 my-3" />
+
+                <div className="mb-3">
+                  <p className="text-xs font-medium text-gray-700 mb-1">
+                    Items
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    {selectedOrder.itemsSummary}
+                  </p>
+                </div>
+
+                {selectedOrder.note && (
+                  <div className="mb-3 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+                    <div className="flex items-center gap-2 mb-1">
+                      <FileText className="w-4 h-4 text-blue-600" />
+                      <p className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">User Note</p>
+                    </div>
+                    <p className="text-xs text-blue-900 italic">"{selectedOrder.note}"</p>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between text-[11px] text-gray-500 mb-4">
+                  {/* Hide ETA for ready orders */}
+                  {selectedOrder.status !== 'ready' && selectedOrder.eta && (
+                    <span>ETA: <span className="font-medium text-black">{selectedOrder.eta}</span></span>
+                  )}
+                  <span>Payment: <span className="font-medium text-black">Paid online</span></span>
+                </div>
+              </div>
+
+              <div className="mt-4 border-t border-gray-100 pt-4">
+                <button
+                  className="w-full bg-black text-white py-3 rounded-xl text-sm font-medium hover:bg-black/90 transition-colors"
+                  onClick={() => setIsSheetOpen(false)}
+                >
+                  Close
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -1994,6 +2000,7 @@ function OrderCard({
             timePlaced,
             eta,
             itemsSummary,
+            note,
           })
         }
         className="w-full text-left flex gap-3 items-stretch cursor-pointer"
@@ -2344,6 +2351,7 @@ function PreparingOrders({ onSelectOrder, onCancel, onMarkReady }) {
                 photoUrl={order.photoUrl}
                 photoAlt={order.photoAlt}
                 deliveryPartnerId={order.deliveryPartnerId}
+                note={order.note}
                 onSelect={onSelectOrder}
                 onCancel={onCancel}
                 onMarkReady={onMarkReady}

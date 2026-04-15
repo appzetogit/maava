@@ -1604,6 +1604,7 @@ export default function Cart() {
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     placeholder="Add cooking instructions, allergies, etc."
+                    maxLength={20}
                     className="w-full border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl p-3 md:p-4 text-sm md:text-base resize-none h-20 md:h-24 focus:outline-none focus:border-black dark:focus:border-white bg-white dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100"
                   />
                 </div>

@@ -389,16 +389,16 @@ export const useDeliveryNotifications = () => {
   }, [deliveryPartnerId, playNotificationSound]);
 
   // Helper functions
-  const clearNewOrder = () => {
+  const clearNewOrder = useCallback(() => {
     setNewOrder(null);
     // Reset deduplication ref when order is cleared so a NEW order can be displayed
     // (but don't reset for same orderId - prevents reshowing same order from broadcast)
     lastNotifiedOrderIdRef.current = null;
-  };
+  }, []);
 
-  const clearOrderReady = () => {
+  const clearOrderReady = useCallback(() => {
     setOrderReady(null);
-  };
+  }, []);
 
   return {
     newOrder,
