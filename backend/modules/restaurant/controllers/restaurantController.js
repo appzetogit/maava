@@ -242,7 +242,8 @@ export const getRestaurants = async (req, res) => {
       }
     }
 
-    // Fetch restaurants - Show ALL restaurants regardless of zone
+
+    // Fetch restaurants
     let restaurants = await Restaurant.find(query)
       .select('-owner -createdAt -updatedAt -password')
       .sort(sortObj)
@@ -250,8 +251,14 @@ export const getRestaurants = async (req, res) => {
       .skip(parseInt(offset))
       .lean();
 
-    // Note: We show all restaurants regardless of zone. Zone-based filtering is removed.
-    // Users in any zone will see all restaurants.
+    // If zoneId is provided, filter out restaurants outside the zone
+    if (userZone && userZone.coordinates && userZone.coordinates.length >= 3) {
+      restaurants = restaurants.filter(r => {
+        const lat = r?.location?.latitude;
+        const lng = r?.location?.longitude;
+        return typeof lat === 'number' && typeof lng === 'number' && isPointInZone(lat, lng, userZone.coordinates);
+      });
+    }
 
     // Apply string-based filters that can't be done in MongoDB query
     if (maxDeliveryTime) {

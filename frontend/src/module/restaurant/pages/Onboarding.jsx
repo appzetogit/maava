@@ -101,11 +101,13 @@ const clearOnboardingFromLocalStorage = () => {
 
 // Helper function to convert "HH:mm" string to Date object
 const stringToTime = (timeString) => {
-  if (!timeString || !timeString.includes(":")) {
+  if (!timeString || typeof timeString !== 'string' || !timeString.includes(":")) {
     return new Date(2000, 0, 1, 10, 0) // Default to 10:00 AM
   }
-  const [hours, minutes] = timeString.split(":").map(Number)
-  return new Date(2000, 0, 1, hours || 10, minutes || 0)
+  const parts = timeString.split(":")
+  const hours = parseInt(parts[0], 10)
+  const minutes = parseInt(parts[1], 10)
+  return new Date(2000, 0, 1, isNaN(hours) ? 10 : hours, isNaN(minutes) ? 0 : minutes)
 }
 
 // Helper function to convert Date object to "HH:mm" string
@@ -198,8 +200,8 @@ export default function RestaurantOnboarding() {
     menuImages: [],
     profileImage: null,
     cuisines: [],
-    openingTime: "",
-    closingTime: "",
+    openingTime: "10:00",
+    closingTime: "22:00",
     openDays: [],
   })
 
@@ -266,8 +268,8 @@ export default function RestaurantOnboarding() {
           menuImages: localData.step2.menuImages || [],
           profileImage: localData.step2.profileImage || null,
           cuisines: localData.step2.cuisines || [],
-          openingTime: localData.step2.openingTime || "",
-          closingTime: localData.step2.closingTime || "",
+          openingTime: localData.step2.openingTime || "10:00",
+          closingTime: localData.step2.closingTime || "22:00",
           openDays: localData.step2.openDays || [],
         })
       }
@@ -343,8 +345,8 @@ export default function RestaurantOnboarding() {
               // Load profile image URL if available
               profileImage: data.step2.profileImageUrl || null,
               cuisines: data.step2.cuisines || [],
-              openingTime: data.step2.deliveryTimings?.openingTime || "",
-              closingTime: data.step2.deliveryTimings?.closingTime || "",
+              openingTime: data.step2.deliveryTimings?.openingTime || "10:00",
+              closingTime: data.step2.deliveryTimings?.closingTime || "22:00",
               openDays: data.step2.openDays || [],
             })
           }

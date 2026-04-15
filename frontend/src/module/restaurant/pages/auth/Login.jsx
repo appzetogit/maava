@@ -159,10 +159,6 @@ export default function RestaurantLogin() {
     // Remove any non-digit characters for validation
     const digitsOnly = phone.replace(/\D/g, "")
 
-    // Minimum length check (at least 7 digits)
-    if (digitsOnly.length < 7) {
-      return "Phone number must be at least 7 digits"
-    }
 
     // Maximum length check (typically 15 digits for international numbers)
     if (digitsOnly.length > 15) {
@@ -511,12 +507,11 @@ export default function RestaurantLogin() {
                     value={formData.countryCode}
                     onValueChange={handleCountryCodeChange}
                   >
-                    <SelectTrigger className="w-[100px] h-12 border border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 flex items-center shrink-0" style={{ height: '48px' }}>
+                    <SelectTrigger hideIcon={true} className="w-[80px] h-12 border border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 flex items-center shrink-0" style={{ height: '48px' }}>
                       <SelectValue>
                         <span className="flex items-center gap-1.5">
                           <span className="text-base">{selectedCountry.flag}</span>
                           <span className="text-sm font-medium text-gray-900">{selectedCountry.code}</span>
-                          <ChevronDown className="w-3.5 h-3.5 text-gray-500" />
                         </span>
                       </SelectValue>
                     </SelectTrigger>
