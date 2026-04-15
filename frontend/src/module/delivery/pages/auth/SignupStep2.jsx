@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { ArrowLeft, Upload, X, Check } from "lucide-react"
 import { deliveryAPI } from "@/lib/api"
@@ -6,6 +6,19 @@ import apiClient from "@/lib/api/axios"
 import { toast } from "sonner"
 
 export default function SignupStep2() {
+  // Load uploadedDocs from localStorage if available
+  const getInitialUploadedDocs = () => {
+    try {
+      const stored = localStorage.getItem("deliverySignupDocs")
+      if (stored) return JSON.parse(stored)
+    } catch {}
+    return {
+      profilePhoto: null,
+      aadharPhoto: null,
+      panPhoto: null,
+      drivingLicensePhoto: null
+    }
+  }
   // Refs for camera input for each doc type
   const cameraInputRefs = {
     profilePhoto: useRef(),
@@ -20,12 +33,7 @@ export default function SignupStep2() {
     panPhoto: null,
     drivingLicensePhoto: null
   })
-  const [uploadedDocs, setUploadedDocs] = useState({
-    profilePhoto: null,
-    aadharPhoto: null,
-    panPhoto: null,
-    drivingLicensePhoto: null
-  })
+  const [uploadedDocs, setUploadedDocs] = useState(getInitialUploadedDocs)
   const [uploading, setUploading] = useState({
     profilePhoto: false,
     aadharPhoto: false,
@@ -33,6 +41,11 @@ export default function SignupStep2() {
     drivingLicensePhoto: false
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Persist uploadedDocs to localStorage on change
+  useEffect(() => {
+    localStorage.setItem("deliverySignupDocs", JSON.stringify(uploadedDocs))
+  }, [uploadedDocs])
 
   const handleFileSelect = async (docType, file) => {
     if (!file) return
@@ -88,10 +101,11 @@ export default function SignupStep2() {
       ...prev,
       [docType]: null
     }))
-    setUploadedDocs(prev => ({
-      ...prev,
-      [docType]: null
-    }))
+    setUploadedDocs(prev => {
+      const updated = { ...prev, [docType]: null }
+      localStorage.setItem("deliverySignupDocs", JSON.stringify(updated))
+      return updated
+    })
   }
 
   const handleSubmit = async (e) => {
