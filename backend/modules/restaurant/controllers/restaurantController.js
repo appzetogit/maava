@@ -1,5 +1,6 @@
 import Restaurant from '../models/Restaurant.js';
 import Menu from '../models/Menu.js';
+import OutletTimings from '../models/OutletTimings.js';
 import Zone from '../../admin/models/Zone.js';
 import { successResponse, errorResponse } from '../../../shared/utils/response.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../../../shared/utils/cloudinaryService.js';
@@ -292,6 +293,15 @@ export const getRestaurants = async (req, res) => {
         .select('restaurant sections')
         .lean();
 
+      const outletTimings = await OutletTimings.find({
+        restaurantId: { $in: restaurantIds }
+      }).lean();
+
+      const timingsMap = new Map();
+      for (const timing of outletTimings) {
+        timingsMap.set(timing.restaurantId.toString(), timing.timings);
+      }
+
       const pureVegByRestaurantId = new Map();
       for (const menu of menus) {
         const key = menu?.restaurant?.toString();
@@ -309,9 +319,28 @@ export const getRestaurants = async (req, res) => {
           restaurant?.isVegOnly === true ||
           restaurant?.isVeg === true;
 
+        const specificTimings = timingsMap.get(restaurantId);
+        let timingsToUse = specificTimings || null;
+
+        // Fallback to restaurant-level timings if no specific outlet timings exist
+        if (!timingsToUse) {
+          const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+          const rOpening = restaurant.deliveryTimings?.openingTime || '09:00 AM';
+          const rClosing = restaurant.deliveryTimings?.closingTime || '10:00 PM';
+          const rOpenDays = restaurant.openDays && restaurant.openDays.length > 0 ? restaurant.openDays : days;
+
+          timingsToUse = days.map(day => ({
+            day,
+            isOpen: rOpenDays.includes(day),
+            openingTime: rOpening,
+            closingTime: rClosing
+          }));
+        }
+
         return {
           ...restaurant,
           isPureVeg: explicitPureVeg || derivedPureVeg,
+          outletTimings: timingsToUse
         };
       });
     }

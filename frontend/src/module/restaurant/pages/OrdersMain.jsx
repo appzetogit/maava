@@ -1945,7 +1945,7 @@ function ResendNotificationButton({ orderId, mongoId, onSuccess }) {
       ) : (
         <>
           <Volume2 className="w-3 h-3" />
-          <span>Resend</span>
+          <span>Send</span>
         </>
       )}
     </button>

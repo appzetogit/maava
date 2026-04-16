@@ -101,9 +101,16 @@ router.get('/zones', authenticate, getRestaurantZones);
 router.get('/list', getRestaurants);
 router.get('/search/food', searchFoodItems);
 router.get('/under-250', getRestaurantsWithDishesUnder250);
-// Menu and inventory routes must come before /:id to avoid route conflicts
-router.get('/:restaurantId/offers/item/:itemId/coupons', getCouponsByItemIdPublic);
+
+// Outlet Timings routes (authenticated - for restaurant module)
+// Must come before generic /:id routes to avoid conflicts
+router.use('/', outletTimingsRoutes);
+
+// Public timing route
 router.get('/:restaurantId/outlet-timings', getOutletTimingsByRestaurantId);
+
+// Other public routes
+router.get('/:restaurantId/offers/item/:itemId/coupons', getCouponsByItemIdPublic);
 router.get('/:id/menu', getMenuByRestaurantId);
 router.get('/:id/addons', getAddonsByRestaurantId);
 router.get('/:id/inventory', getInventoryByRestaurantId);
@@ -120,9 +127,5 @@ router.post('/profile/menu-image', authenticate, uploadMiddleware.single('file')
 
 // Delivery status route (authenticated - for restaurant module)
 router.put('/delivery-status', authenticate, updateDeliveryStatus);
-
-// Outlet Timings routes (authenticated - for restaurant module)
-// Must come after all /:id routes to avoid route conflicts
-router.use('/', outletTimingsRoutes);
 
 export default router;

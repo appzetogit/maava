@@ -192,6 +192,8 @@ export const API_ENDPOINTS = {
     LIST: '/restaurant/list',
     UNDER_250: '/restaurant/under-250',
     BY_ID: '/restaurant/:id',
+    OUTLET_TIMINGS_PUBLIC: '/restaurant/:id/outlet-timings',
+    OUTLET_TIMINGS: '/restaurant/outlet-timings',
     BY_OWNER: '/restaurant/owner/me',
   },
   // Delivery endpoints

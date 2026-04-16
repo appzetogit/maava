@@ -8,8 +8,30 @@ import { MobileTimePicker } from "@mui/x-date-pickers/MobileTimePicker"
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns"
 import { useCompanyName } from "@/lib/hooks/useCompanyName"
+import { restaurantAPI } from "@/lib/api"
 
 const STORAGE_KEY = "restaurant_outlet_timings"
+
+// Convert days object (localStorage format) to timings array (API format)
+const daysToTimingsArray = (daysObj) => {
+  const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+  return dayNames.map(day => {
+    const d = daysObj[day] || { isOpen: true, openingTime: "09:00", closingTime: "22:00" }
+    const toAMPM = (time24) => {
+      if (!time24) return "09:00 AM"
+      const [h, m] = time24.split(":").map(Number)
+      const period = h >= 12 ? 'PM' : 'AM'
+      const h12 = h % 12 || 12
+      return `${h12.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${period}`
+    }
+    return {
+      day,
+      isOpen: d.isOpen !== false,
+      openingTime: toAMPM(d.openingTime),
+      closingTime: toAMPM(d.closingTime),
+    }
+  })
+}
 
 // Helper function to convert "HH:mm" string to Date object
 const stringToTime = (timeString) => {
@@ -104,13 +126,18 @@ export default function OutletTimings() {
     return getDefaultDays()
   })
 
-  // Save to localStorage whenever days change (but only if it's an internal update)
+  // Save to localStorage and sync to backend whenever days change (but only if it's an internal update)
   useEffect(() => {
     if (isInternalUpdate.current) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(days))
-        // Dispatch event to notify other components
         window.dispatchEvent(new Event("outletTimingsUpdated"))
+
+        // Sync to backend
+        const timingsArray = daysToTimingsArray(days)
+        restaurantAPI.updateOutletTimings({ timings: timingsArray })
+          .then(() => console.log('✅ Outlet timings synced to backend'))
+          .catch(err => console.error('❌ Failed to sync timings to backend:', err))
       } catch (error) {
         console.error("Error saving outlet timings:", error)
       }

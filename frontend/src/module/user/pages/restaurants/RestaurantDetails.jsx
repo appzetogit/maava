@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 import { useLocation } from "../../hooks/useLocation"
 import { useZone } from "../../hooks/useZone"
+import { checkIsRestaurantOpen } from "../../utils/timingUtils"
 import {
   ArrowLeft,
   Search,
@@ -87,6 +88,8 @@ export default function RestaurantDetails() {
   const [loadingRestaurant, setLoadingRestaurant] = useState(true)
   const [restaurantError, setRestaurantError] = useState(null)
   const fetchedRestaurantRef = useRef(false) // Track if restaurant has been fetched for current slug
+  const [outletTimings, setOutletTimings] = useState(null)
+  const [isRestaurantClosedByTiming, setIsRestaurantClosedByTiming] = useState(false)
 
   const [currentOfferIndex, setCurrentOfferIndex] = useState(0)
   const [publicOffers, setPublicOffers] = useState([])
@@ -384,6 +387,45 @@ export default function RestaurantDetails() {
 
     fetchRestaurant()
   }, [slug, zoneId, loadingZone, restaurant?.slug])
+  
+  // Fetch outlet timings and check if restaurant is open — polls every 30 seconds
+  useEffect(() => {
+    if (!restaurant) return
+
+    const fetchAndCheckStatus = async () => {
+      // Use MongoDB _id for the outlet timings lookup (not string restaurantId)
+      const restaurantId = restaurant?._id || restaurant?.id || restaurant?.restaurantId
+      if (!restaurantId) return
+
+      try {
+        const response = await restaurantAPI.getOutletTimings(restaurantId)
+        console.log('[Timing Debug] restaurantId used:', restaurantId)
+        console.log('[Timing Debug] API response:', response.data)
+        
+        if (response.data?.success && response.data.data?.outletTimings) {
+          const timings = response.data.data.outletTimings.timings || []
+          console.log('[Timing Debug] timings array:', timings)
+          setOutletTimings(timings)
+          
+          const { isOpen, currentDayTiming } = checkIsRestaurantOpen(timings)
+          console.log('[Timing Debug] isOpen:', isOpen, '| today timing:', currentDayTiming)
+          setIsRestaurantClosedByTiming(!isOpen)
+        }
+      } catch (error) {
+        console.error('Error polling timings:', error)
+      }
+    }
+
+    // Initial check
+    fetchAndCheckStatus()
+    
+    // Poll every 30 seconds to catch dashboard updates
+    const interval = setInterval(fetchAndCheckStatus, 30000)
+    return () => clearInterval(interval)
+  }, [restaurant])
+
+
+
 
   // Check for dish parameter in URL to show dish detail automatically
   useEffect(() => {
@@ -538,6 +580,11 @@ export default function RestaurantDetails() {
     // CRITICAL: Check if user is in service zone or restaurant is available
     if (isOutOfService) {
       toast.error('You are outside the service zone. Please select a location within the service area.');
+      return;
+    }
+
+    if (isRestaurantClosedByTiming) {
+      toast.error('you cannot oder restaurent is outside sheduled timing');
       return;
     }
 
@@ -1105,13 +1152,54 @@ export default function RestaurantDetails() {
 
   // Only show grayscale when user is out of service (not based on restaurant availability)
   const shouldShowGrayscale = isOutOfService
-
   return (
     <AnimatedPage
       id="scrollingelement"
       className={`min-h-screen bg-white dark:bg-[#0a0a0a] flex flex-col transition-all duration-300 ${shouldShowGrayscale ? 'grayscale opacity-75' : ''
         }`}
     >
+      {/* Closed Warning Banner */}
+      <AnimatePresence>
+        {isRestaurantClosedByTiming && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-red-50 border-b border-red-100 sticky top-0 z-50 overflow-hidden"
+          >
+            <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-red-700">
+                <div className="p-1.5 bg-red-100 rounded-full">
+                  <AlertCircle className="w-4 h-4" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold leading-tight">
+                    Restaurant abhi band hai — Aap order nahi kar sakte
+                  </span>
+                  <span className="text-[11px] opacity-85">
+                    {(() => {
+                      const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+                      const today = days[new Date().getDay()];
+                      const todayTiming = outletTimings?.find(t => t?.day?.toLowerCase() === today.toLowerCase());
+                      return todayTiming
+                        ? `Aaj (${today}) ke liye opening time: ${todayTiming.openingTime} — Closing: ${todayTiming.closingTime}`
+                        : 'Ordering is disabled as the restaurant is currently closed.';
+                    })()}
+                  </span>
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-8 border-red-200 text-red-600 hover:bg-red-100 hover:text-red-700 font-bold px-3 text-xs uppercase tracking-wider"
+                onClick={() => navigate(-1)}
+              >
+                Go Back
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Header - Back, Search, Menu (like reference image) */}
       <div className="px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 pt-3 md:pt-4 lg:pt-5 pb-2 md:pb-3 bg-white dark:bg-[#1a1a1a] relative z-30">
         <div className="max-w-7xl mx-auto">
@@ -1209,6 +1297,27 @@ export default function RestaurantDetails() {
                     </span>
                   </div>
                 )}
+
+                {/* Timing Info - shows what system is reading from DB */}
+                {(() => {
+                  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+                  const today = days[new Date().getDay()];
+                  const todayTiming = outletTimings?.find(t => t?.day?.toLowerCase() === today.toLowerCase());
+                  if (!todayTiming) return null;
+                  return (
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        isRestaurantClosedByTiming 
+                          ? 'bg-red-100 text-red-600' 
+                          : 'bg-green-100 text-green-700'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${isRestaurantClosedByTiming ? 'bg-red-500' : 'bg-green-500'}`}></span>
+                        {isRestaurantClosedByTiming ? 'CLOSED' : 'OPEN'}
+                        {' · '}{today} {todayTiming.openingTime} – {todayTiming.closingTime}
+                      </span>
+                    </div>
+                  );
+                })()}
 
                 {/* Animated Offers Ticker */}
                 {offersList.length > 0 && (

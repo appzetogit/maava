@@ -41,36 +41,72 @@ export const getOutletTimings = asyncHandler(async (req, res) => {
 export const getOutletTimingsByRestaurantId = asyncHandler(async (req, res) => {
   const { restaurantId } = req.params;
 
-  // Verify restaurant exists and is active
-  const restaurant = await Restaurant.findById(restaurantId);
-  if (!restaurant || !restaurant.isActive) {
+  // Search by either _id (if valid ObjectId) or the string-based restaurantId field
+  let restaurantQuery = { isActive: true };
+  const isObjectId = /^[0-9a-fA-F]{24}$/.test(restaurantId);
+
+  if (isObjectId) {
+    restaurantQuery = { 
+      $or: [
+        { _id: restaurantId },
+        { restaurantId: restaurantId }
+      ],
+      isActive: true
+    };
+  } else {
+    restaurantQuery = { 
+      restaurantId: restaurantId,
+      isActive: true
+    };
+  }
+
+  const restaurant = await Restaurant.findOne(restaurantQuery);
+  
+  if (!restaurant) {
     return errorResponse(res, 404, 'Restaurant not found');
   }
 
+  // Use the actual ObjectId of the restaurant for the OutletTimings query
+  const actualRestaurantId = restaurant._id;
+
   const outletTimings = await OutletTimings.findOne({
-    restaurantId,
+    restaurantId: actualRestaurantId,
     isActive: true
   });
 
+
   if (!outletTimings) {
-    // Return default timings if not set
-    return successResponse(res, 200, 'Outlet timings retrieved successfully', {
+    // Return restaurant-level delivery timings if available as fallback
+    const fallbackTimings = [];
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    
+    // Check if restaurant has basic deliveryTimings and openDays
+    const rOpening = restaurant.deliveryTimings?.openingTime || '09:00 AM';
+    const rClosing = restaurant.deliveryTimings?.closingTime || '10:00 PM';
+    const rOpenDays = restaurant.openDays && restaurant.openDays.length > 0 
+      ? restaurant.openDays 
+      : days;
+
+    days.forEach(day => {
+      fallbackTimings.push({
+        day,
+        isOpen: rOpenDays.includes(day),
+        openingTime: rOpening,
+        closingTime: rClosing
+      });
+    });
+
+    return successResponse(res, 200, 'Outlet timings retrieved successfully (from profile)', {
       outletTimings: {
-        restaurantId,
+        restaurantId: actualRestaurantId,
         outletType: 'Appzeto delivery',
-        timings: [
-          { day: 'Monday', isOpen: true, openingTime: '09:00 AM', closingTime: '10:00 PM' },
-          { day: 'Tuesday', isOpen: true, openingTime: '09:00 AM', closingTime: '10:00 PM' },
-          { day: 'Wednesday', isOpen: true, openingTime: '09:00 AM', closingTime: '10:00 PM' },
-          { day: 'Thursday', isOpen: true, openingTime: '09:00 AM', closingTime: '10:00 PM' },
-          { day: 'Friday', isOpen: true, openingTime: '09:00 AM', closingTime: '10:00 PM' },
-          { day: 'Saturday', isOpen: true, openingTime: '09:00 AM', closingTime: '10:00 PM' },
-          { day: 'Sunday', isOpen: true, openingTime: '09:00 AM', closingTime: '10:00 PM' }
-        ],
-        isActive: true
+        timings: fallbackTimings,
+        isActive: true,
+        source: 'profile'
       }
     });
   }
+
 
   return successResponse(res, 200, 'Outlet timings retrieved successfully', {
     outletTimings

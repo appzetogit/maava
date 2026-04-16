@@ -475,6 +475,14 @@ export const restaurantAPI = {
   getRestaurantById: (id) => {
     return apiClient.get(API_ENDPOINTS.RESTAURANT.BY_ID.replace(':id', id));
   },
+  // Get outlet timings for a restaurant (public)
+  getOutletTimings: (restaurantId) => {
+    return apiClient.get(API_ENDPOINTS.RESTAURANT.OUTLET_TIMINGS_PUBLIC.replace(':id', restaurantId));
+  },
+  // Update outlet timings for authenticated restaurant (dashboard)
+  updateOutletTimings: (data) => {
+    return apiClient.put(API_ENDPOINTS.RESTAURANT.OUTLET_TIMINGS, data);
+  },
   // Get coupons for item (public - for user cart)
   getCouponsByItemIdPublic: (restaurantId, itemId) => {
     return apiClient.get(

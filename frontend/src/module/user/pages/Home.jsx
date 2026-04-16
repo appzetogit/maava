@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useLocation } from "../hooks/useLocation"
 import { useZone } from "../hooks/useZone"
+import { checkIsRestaurantOpen } from "../utils/timingUtils"
 import appzetoFoodLogo from "@/assets/appzetologo.png"
 import offerImage from "@/assets/offerimage.png"
 import api, { restaurantAPI } from "@/lib/api"
@@ -1897,6 +1898,10 @@ export default function Home() {
             <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3  gap-3 sm:gap-4 lg:gap-5 xl:gap-6 pt-1 sm:pt-1.5 lg:pt-2 items-stretch ${isLoadingFilterResults || loadingRestaurants ? 'opacity-50' : 'opacity-100'} transition-opacity duration-300`}>
               {filteredRestaurants.map((restaurant, index) => {
                 const restaurantSlug = restaurant.slug || restaurant.name.toLowerCase().replace(/\s+/g, "-")
+                // Check if restaurant is open based on timings
+                const { isOpen: isRestaurantOpenNow } = checkIsRestaurantOpen(restaurant.outletTimings)
+                const isClosedByTiming = !isRestaurantOpenNow
+                
                 // Direct favorite check - isFavorite is already memoized in context
                 const favorite = isFavorite(restaurantSlug)
 
@@ -1925,6 +1930,15 @@ export default function Home() {
                     }, 3000)
                   }
                 }
+
+                const handleRestaurantClick = (e) => {
+                  if (isClosedByTiming) {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    toast.error('you cannot oder restaurent is outside sheduled timing')
+                  }
+                }
+
 
                 return (
                   <motion.div
@@ -1968,8 +1982,12 @@ export default function Home() {
                         }
                       }}
                     >
-                      <Link to={`/user/restaurants/${restaurantSlug}`} className="h-full flex">
-                        <Card className={`overflow-hidden gap-0 cursor-pointer border-0 dark:border-gray-800 group bg-white dark:bg-[#1a1a1a] border-background transition-all duration-500 py-0 rounded-md flex flex-col h-full w-full relative ${isOutOfService ? 'grayscale opacity-75' : ''
+                      <Link 
+                        to={`/user/restaurants/${restaurantSlug}`} 
+                        className="h-full flex"
+                        onClick={handleRestaurantClick}
+                      >
+                        <Card className={`overflow-hidden gap-0 cursor-pointer border-0 dark:border-gray-800 group bg-white dark:bg-[#1a1a1a] border-background transition-all duration-500 py-0 rounded-md flex flex-col h-full w-full relative ${isOutOfService || isClosedByTiming ? 'grayscale opacity-75' : ''
                           }`}>
                           {/* Image Section with Carousel */}
                           <div className="relative">
@@ -2032,6 +2050,14 @@ export default function Home() {
                                   FREE delivery
                                 </div>
                               </motion.div>
+                            )}
+                            {/* Closed Overlay */}
+                            {isClosedByTiming && (
+                              <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
+                                <div className="bg-red-600 text-white px-4 py-2 rounded-full font-black text-sm uppercase tracking-widest shadow-2xl scale-110">
+                                  Closed Now
+                                </div>
+                              </div>
                             )}
                           </div>
 
