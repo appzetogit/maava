@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { IndianRupee, Loader2 } from "lucide-react"
 import { deliveryAPI } from "@/lib/api"
 import { initRazorpayPayment } from "@/lib/utils/razorpay"
@@ -9,8 +9,13 @@ export default function DepositPopup({ onSuccess, cashInHand = 0 }) {
   const [amount, setAmount] = useState("")
   const [loading, setLoading] = useState(false)
   const [processing, setProcessing] = useState(false)
+  const [companyName, setCompanyName] = useState("Maava Delivery")
 
   const cashInHandNum = Number(cashInHand) || 0
+
+  useEffect(() => {
+    getCompanyNameAsync().then(setCompanyName).catch(() => {})
+  }, [])
 
   const handleAmountChange = (e) => {
     const v = e.target.value.replace(/[^0-9.]/g, "")
@@ -34,28 +39,32 @@ export default function DepositPopup({ onSuccess, cashInHand = 0 }) {
 
     try {
       setLoading(true)
+      // Call backend to create Razorpay Order
       const orderRes = await deliveryAPI.createDepositOrder(amt)
       const data = orderRes?.data?.data
       const rp = data?.razorpay
+
       if (!rp?.orderId || !rp?.key) {
         toast.error("Payment gateway not ready. Please try again.")
         setLoading(false)
         return
       }
-      setLoading(false)
 
-      let profile = {}
+      // Get user profile for pre-fill
+      let profileResult = {}
       try {
         const pr = await deliveryAPI.getProfile()
-        profile = pr?.data?.data?.profile || pr?.data?.profile || {}
+        profileResult = pr?.data?.data?.profile || pr?.data?.profile || {}
       } catch (_) {}
 
-      const phone = (profile?.phone || "").replace(/\D/g, "").slice(-10)
-      const email = profile?.email || ""
-      const name = profile?.name || ""
+      const phone = (profileResult?.phone || "").replace(/\D/g, "").slice(-10)
+      const email = profileResult?.email || ""
+      const name = profileResult?.name || ""
 
-      const companyName = await getCompanyNameAsync()
+      setLoading(false)
       setProcessing(true)
+
+      // Open DEFAULT Razorpay Checkout
       await initRazorpayPayment({
         key: rp.key,
         amount: rp.amount,
@@ -63,18 +72,29 @@ export default function DepositPopup({ onSuccess, cashInHand = 0 }) {
         order_id: rp.orderId,
         name: companyName,
         description: `Cash limit deposit - ₹${amt.toFixed(2)}`,
-        prefill: { name, email, contact: phone },
+        prefill: {
+          name: name,
+          email: email,
+          contact: phone
+        },
+        notes: {
+          deliveryId: profileResult?._id || "",
+          type: "cash_limit_deposit"
+        },
         handler: async (res) => {
           try {
+            // Verify payment on backend
             const verifyRes = await deliveryAPI.verifyDepositPayment({
               razorpay_order_id: res.razorpay_order_id,
               razorpay_payment_id: res.razorpay_payment_id,
               razorpay_signature: res.razorpay_signature,
               amount: amt
             })
+            
             if (verifyRes?.data?.success) {
-              toast.success(`Deposit of ₹${amt.toFixed(2)} successful. Available limit updated.`)
+              toast.success(`Deposit of ₹${amt.toFixed(2)} successful`)
               setAmount("")
+              // Refresh wallet state
               window.dispatchEvent(new CustomEvent("deliveryWalletStateUpdated"))
               if (onSuccess) onSuccess()
             } else {
@@ -90,7 +110,9 @@ export default function DepositPopup({ onSuccess, cashInHand = 0 }) {
           toast.error(e?.description || "Payment failed")
           setProcessing(false)
         },
-        onClose: () => setProcessing(false)
+        onClose: () => {
+          setProcessing(false)
+        }
       })
     } catch (err) {
       setLoading(false)
@@ -113,7 +135,7 @@ export default function DepositPopup({ onSuccess, cashInHand = 0 }) {
             placeholder="0.00"
             value={amount}
             onChange={handleAmountChange}
-            className="w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+            className="w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
           />
         </div>
         {cashInHandNum > 0 && (
@@ -122,17 +144,22 @@ export default function DepositPopup({ onSuccess, cashInHand = 0 }) {
           </p>
         )}
       </div>
+      
       <button
         type="button"
         onClick={handleDeposit}
         disabled={loading || processing || !amount || parseFloat(amount) < 1}
-        className="w-full py-2.5 rounded-lg bg-black text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-3 rounded-lg bg-black text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading || processing ? (
           <Loader2 className="w-4 h-4 animate-spin" />
         ) : null}
-        {loading ? "Creating…" : processing ? "Complete payment…" : "Deposit"}
+        {loading ? "Creating Order..." : processing ? "Opening Payment..." : "Deposit"}
       </button>
+
+      <div className="flex items-center justify-center gap-1 opacity-50">
+        <span className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Secured by Razorpay</span>
+      </div>
     </div>
   )
 }
