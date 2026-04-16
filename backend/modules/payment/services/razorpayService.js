@@ -61,11 +61,21 @@ const initializeRazorpay = async () => {
 };
 
 // Get Razorpay instance
-const getRazorpayInstance = async () => {
-  if (!razorpayInstance) {
+const getRazorpayInstance = async (forceRefresh = false) => {
+  if (!razorpayInstance || forceRefresh) {
+    logger.info('Initializing fresh Razorpay instance...');
     return await initializeRazorpay();
   }
   return razorpayInstance;
+};
+
+/**
+ * Clear the current Razorpay instance to force re-initialization
+ * Useful when credentials are updated in the database
+ */
+export const refreshRazorpayInstance = () => {
+  razorpayInstance = null;
+  logger.info('Razorpay instance cleared for refresh');
 };
 
 /**
