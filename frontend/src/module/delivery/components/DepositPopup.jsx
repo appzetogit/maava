@@ -67,8 +67,8 @@ export default function DepositPopup({ onSuccess, cashInHand = 0 }) {
 
       // Use pre-fetched profile data
       const phone = (profile?.phone || "").replace(/\D/g, "").slice(-10)
-      const email = profile?.email || ""
-      const name = profile?.name || ""
+      const email = profile?.email || "delivery@maava.com"
+      const name = profile?.name || "Delivery Partner"
 
       setLoading(false)
       setProcessing(true)
