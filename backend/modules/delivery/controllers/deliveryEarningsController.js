@@ -44,9 +44,9 @@ export const getEarnings = asyncHandler(async (req, res) => {
         break;
       case 'week':
         // Get week range (Sunday to Saturday) to match frontend definition
-        const dayOfWeek = selectedDate.getDay(); 
-        startDate = new Date(selectedDate);
-        startDate.setDate(selectedDate.getDate() - dayOfWeek);
+        const dayOfWeek = baseDate.getDay(); 
+        startDate = new Date(baseDate);
+        startDate.setDate(baseDate.getDate() - dayOfWeek);
         startDate.setHours(0, 0, 0, 0);
         endDate = new Date(startDate);
         endDate.setDate(startDate.getDate() + 6);

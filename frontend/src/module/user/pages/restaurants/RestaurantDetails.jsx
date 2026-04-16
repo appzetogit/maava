@@ -1174,7 +1174,7 @@ export default function RestaurantDetails() {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-sm font-bold leading-tight">
-                    Restaurant abhi band hai — Aap order nahi kar sakte
+                    Restaurant is currently closed — You cannot place an order
                   </span>
                   <span className="text-[11px] opacity-85">
                     {(() => {
@@ -1182,7 +1182,7 @@ export default function RestaurantDetails() {
                       const today = days[new Date().getDay()];
                       const todayTiming = outletTimings?.find(t => t?.day?.toLowerCase() === today.toLowerCase());
                       return todayTiming
-                        ? `Aaj (${today}) ke liye opening time: ${todayTiming.openingTime} — Closing: ${todayTiming.closingTime}`
+                        ? `Today (${today}) opening time: ${todayTiming.openingTime} — Closing: ${todayTiming.closingTime}`
                         : 'Ordering is disabled as the restaurant is currently closed.';
                     })()}
                   </span>

@@ -7,7 +7,7 @@ import DeliveryHome from "../pages/DeliveryHome"
 import Notifications from "../pages/Notifications"
 import MyOrders from "../pages/MyOrders"
 import PocketPage from "../pages/PocketPage"
-import GigBooking from "../pages/GigBooking"
+// import GigBooking from "../pages/GigBooking"
 import PickupDirectionsPage from "../pages/PickupDirectionsPage"
 import ProfilePage from "../pages/ProfilePage"
 import ProfileDetails from "../pages/ProfileDetails"
@@ -86,7 +86,7 @@ export default function DeliveryRouter() {
         }
         path="/requests"
       />
-      <Route
+      {/* <Route
         element={
           <ProtectedRoute>
             <DeliveryLayout showGig={true}>
@@ -95,7 +95,7 @@ export default function DeliveryRouter() {
           </ProtectedRoute>
         }
         path="/gig"
-      />
+      /> */}
       <Route
         element={
           <ProtectedRoute>
