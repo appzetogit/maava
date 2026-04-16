@@ -95,8 +95,8 @@ export async function getRazorpayCredentials() {
   const secretKey = await getEnvVar('RAZORPAY_SECRET_KEY');
 
   // Fallback to old env var names
-  const rawKeyId = apiKey || process.env.RAZORPAY_KEY_ID || '';
-  const rawKeySecret = secretKey || process.env.RAZORPAY_KEY_SECRET || '';
+  const rawKeyId = apiKey || process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_API_KEY || '';
+  const rawKeySecret = secretKey || process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_SECRET_KEY || '';
 
   // Treat common placeholder strings as missing (avoids bad 500s)
   const isPlaceholder = (v) => !v || v.startsWith('REPLACE_') || v.startsWith('YOUR_') || v === 'your-secret' || v === 'undefined';

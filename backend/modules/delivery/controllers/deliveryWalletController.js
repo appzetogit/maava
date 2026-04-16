@@ -796,7 +796,7 @@ export const createDepositOrder = asyncHandler(async (req, res) => {
       orderId: razorpayOrder.id,
       amount: razorpayOrder.amount,
       currency: razorpayOrder.currency || 'INR',
-      key: credentials.keyId
+      key: credentials.keyId || process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_API_KEY || ''
     },
     amount
   });
