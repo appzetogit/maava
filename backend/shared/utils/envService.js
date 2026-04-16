@@ -95,22 +95,26 @@ export async function getRazorpayCredentials() {
   const secretKey = await getEnvVar('RAZORPAY_SECRET_KEY');
 
   // Fallback to old env var names
-  const rawKeyId = apiKey || process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_API_KEY || '';
-  const rawKeySecret = secretKey || process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_SECRET_KEY || '';
+  const rawKeyId = (apiKey || process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_API_KEY || '').trim();
+  const rawKeySecret = (secretKey || process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_SECRET_KEY || '').trim();
 
   let finalKeyId = rawKeyId;
   let finalKeySecret = rawKeySecret;
 
   // Priority to rzp_live keys - Ensuring both ID and Secret come from the SAME source
-  if ((process.env.RAZORPAY_API_KEY || '').startsWith('rzp_live')) {
-    finalKeyId = process.env.RAZORPAY_API_KEY;
-    finalKeySecret = process.env.RAZORPAY_SECRET_KEY || process.env.RAZORPAY_KEY_SECRET;
-  } else if ((process.env.RAZORPAY_KEY_ID || '').startsWith('rzp_live')) {
-    finalKeyId = process.env.RAZORPAY_KEY_ID;
-    finalKeySecret = process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_SECRET_KEY;
-  } else if (apiKey?.startsWith('rzp_live')) {
-    finalKeyId = apiKey;
-    finalKeySecret = secretKey;
+  const envKeyId = (process.env.RAZORPAY_KEY_ID || '').trim();
+  const envApiKey = (process.env.RAZORPAY_API_KEY || '').trim();
+  const dbApiKey = (apiKey || '').trim();
+
+  if (envApiKey.startsWith('rzp_live')) {
+    finalKeyId = envApiKey;
+    finalKeySecret = (process.env.RAZORPAY_SECRET_KEY || process.env.RAZORPAY_KEY_SECRET || '').trim();
+  } else if (envKeyId.startsWith('rzp_live')) {
+    finalKeyId = envKeyId;
+    finalKeySecret = (process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_SECRET_KEY || '').trim();
+  } else if (dbApiKey.startsWith('rzp_live')) {
+    finalKeyId = dbApiKey;
+    finalKeySecret = (secretKey || '').trim();
   }
 
   // Treat common placeholder strings as missing (avoids bad 500s)
