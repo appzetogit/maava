@@ -10,11 +10,26 @@ export default function DepositPopup({ onSuccess, cashInHand = 0 }) {
   const [loading, setLoading] = useState(false)
   const [processing, setProcessing] = useState(false)
   const [companyName, setCompanyName] = useState("Maava Delivery")
+  const [profile, setProfile] = useState(null)
 
   const cashInHandNum = Number(cashInHand) || 0
 
+  // Fetch data on mount to avoid delays during payment initiation
   useEffect(() => {
-    getCompanyNameAsync().then(setCompanyName).catch(() => {})
+    const initData = async () => {
+      try {
+        const [name, pr] = await Promise.all([
+          getCompanyNameAsync(),
+          deliveryAPI.getProfile()
+        ])
+        setCompanyName(name)
+        const profileData = pr?.data?.data?.profile || pr?.data?.profile || {}
+        setProfile(profileData)
+      } catch (err) {
+        console.error("Failed to load initial deposit data:", err)
+      }
+    }
+    initData()
   }, [])
 
   const handleAmountChange = (e) => {
@@ -50,16 +65,10 @@ export default function DepositPopup({ onSuccess, cashInHand = 0 }) {
         return
       }
 
-      // Get user profile for pre-fill
-      let profileResult = {}
-      try {
-        const pr = await deliveryAPI.getProfile()
-        profileResult = pr?.data?.data?.profile || pr?.data?.profile || {}
-      } catch (_) {}
-
-      const phone = (profileResult?.phone || "").replace(/\D/g, "").slice(-10)
-      const email = profileResult?.email || ""
-      const name = profileResult?.name || ""
+      // Use pre-fetched profile data
+      const phone = (profile?.phone || "").replace(/\D/g, "").slice(-10)
+      const email = profile?.email || ""
+      const name = profile?.name || ""
 
       setLoading(false)
       setProcessing(true)
@@ -78,7 +87,7 @@ export default function DepositPopup({ onSuccess, cashInHand = 0 }) {
           contact: phone
         },
         notes: {
-          deliveryId: profileResult?._id || "",
+          deliveryId: profile?._id || "",
           type: "cash_limit_deposit"
         },
         handler: async (res) => {

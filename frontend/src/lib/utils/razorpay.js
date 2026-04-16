@@ -68,7 +68,7 @@ export const initRazorpayPayment = async (options) => {
       order_id: options.order_id,
       name: options.name || 'Appzeto Food',
       description: options.description || 'Order Payment',
-      image: options.image || '/logo.png',
+      image: options.image || undefined,
       prefill: {
         name: options.prefill?.name || '',
         email: options.prefill?.email || '',
@@ -78,7 +78,7 @@ export const initRazorpayPayment = async (options) => {
       },
       notes: options.notes || {},
       theme: {
-        color: '#E23744'
+        color: '#dc2626'
       },
       // Razorpay config to control UI behaviour
       config: options.upiApp ? {
