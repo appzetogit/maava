@@ -47,9 +47,9 @@ export const getOutletTimingsByRestaurantId = asyncHandler(async (req, res) => {
     return errorResponse(res, 404, 'Restaurant not found');
   }
 
-  const outletTimings = await OutletTimings.findOne({ 
+  const outletTimings = await OutletTimings.findOne({
     restaurantId,
-    isActive: true 
+    isActive: true
   });
 
   if (!outletTimings) {

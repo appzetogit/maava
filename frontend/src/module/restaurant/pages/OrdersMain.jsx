@@ -1151,9 +1151,9 @@ export default function OrdersMain() {
       case "preparing":
         return <PreparingOrders onSelectOrder={handleSelectOrder} onCancel={handleCancelClick} onMarkReady={handleMarkReady} />
       case "ready":
-        return <ReadyOrders onSelectOrder={handleSelectOrder} />
+        return <ReadyOrders onSelectOrder={handleSelectOrder} onCancel={handleCancelClick} />
       case "out-for-delivery":
-        return <OutForDeliveryOrders onSelectOrder={handleSelectOrder} />
+        return <OutForDeliveryOrders onSelectOrder={handleSelectOrder} onCancel={handleCancelClick} />
       case "completed":
         return <CompletedOrders onSelectOrder={handleSelectOrder} />
       case "cancelled":
@@ -1975,8 +1975,8 @@ function OrderCard({
 
   return (
     <div className="w-full bg-white rounded-2xl p-4 mb-3 border border-gray-200 hover:border-gray-400 transition-colors relative">
-      {/* Cancel button - only show for preparing orders */}
-      {status === 'preparing' && onCancel && (
+      {/* Cancel button - show for preparing and ready orders */}
+      {(status === 'preparing' || status === 'ready' || status === 'out_for_delivery') && onCancel && (
         <button
           type="button"
           onClick={(e) => {
@@ -2074,8 +2074,8 @@ function OrderCard({
                 {type}
                 {tableOrToken ? ` • ${tableOrToken}` : ""}
               </p>
-              {/* Delivery Assignment Status - Only show for preparing orders */}
-              {status === 'preparing' && (
+              {/* Delivery Assignment Status - show for preparing and ready orders */}
+              {(status === 'preparing' || status === 'ready') && (
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${deliveryPartnerId
                     ? 'bg-green-100 text-green-700 border border-green-300'
@@ -2365,7 +2365,7 @@ function PreparingOrders({ onSelectOrder, onCancel, onMarkReady }) {
 }
 
 // Ready Orders List
-function ReadyOrders({ onSelectOrder }) {
+function ReadyOrders({ onSelectOrder, onCancel }) {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -2382,8 +2382,11 @@ function ReadyOrders({ onSelectOrder }) {
 
         if (response.data?.success && response.data.data?.orders) {
           // Filter orders with 'ready' status
+          // Also omit very old orders (e.g. older than 12 hours) to keep the list clean
+          const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000)
+          
           const readyOrders = response.data.data.orders.filter(
-            order => order.status === 'ready'
+            order => order.status === 'ready' && new Date(order.createdAt) > twelveHoursAgo
           )
 
           const transformedOrders = readyOrders.map(order => ({
@@ -2474,6 +2477,7 @@ function ReadyOrders({ onSelectOrder }) {
               key={order.orderId || order.mongoId}
               {...order}
               onSelect={onSelectOrder}
+              onCancel={onCancel}
             />
           ))}
         </div>
@@ -2483,7 +2487,7 @@ function ReadyOrders({ onSelectOrder }) {
 }
 
 // Out for Delivery Orders List
-const OutForDeliveryOrders = ({ onSelectOrder }) => {
+const OutForDeliveryOrders = ({ onSelectOrder, onCancel }) => {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -2500,8 +2504,12 @@ const OutForDeliveryOrders = ({ onSelectOrder }) => {
 
         if (response.data?.success && response.data.data?.orders) {
           // Filter orders with 'out_for_delivery' status
+          // Also omit very old orders (e.g. older than 12 hours) to keep the list clean
+          const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000)
+
           const outForDeliveryOrders = response.data.data.orders.filter(
-            order => order.status === 'out_for_delivery'
+            order => (order.status === 'out_for_delivery' || order.status === 'shipped' || order.status === 'picked_up') && 
+                    new Date(order.createdAt) > twelveHoursAgo
           )
 
           const transformedOrders = outForDeliveryOrders.map(order => ({
@@ -2592,6 +2600,7 @@ const OutForDeliveryOrders = ({ onSelectOrder }) => {
               key={order.orderId || order.mongoId}
               {...order}
               onSelect={onSelectOrder}
+              onCancel={onCancel}
             />
           ))}
         </div>

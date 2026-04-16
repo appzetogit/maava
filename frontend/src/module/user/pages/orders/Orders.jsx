@@ -750,7 +750,7 @@ Order again from this restaurant in the ${companyName} app.`
                               order.payment.method === 'razorpay' ? 'Online' :
                                 order.payment.method || 'N/A'}
                         </span>
-                        {order.payment.status && (
+                        {order.payment.status && !(isCodOrWallet && order.payment.status === 'pending') && (
                           <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-medium ${order.payment.status === 'completed' ? 'bg-green-100 text-green-700' :
                             order.payment.status === 'failed' ? 'bg-red-100 text-red-700' :
                               order.payment.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :

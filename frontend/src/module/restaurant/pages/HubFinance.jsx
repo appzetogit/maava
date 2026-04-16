@@ -125,12 +125,12 @@ export default function HubFinance() {
       const parts = dateRangeStr.split(' - ')
       if (parts.length !== 2) return null
 
-      const startStr = parts[0].trim() // "14 Nov"
+      const startStr = parts[0].trim().replace("'", " ") // "14 Nov" or "14 Nov 25"
       const endStr = parts[1].trim().replace("'", " ") // "14 Dec 25"
 
       const currentYear = new Date().getFullYear()
-      const startParts = startStr.split(' ')
-      const endParts = endStr.split(' ')
+      const startParts = startStr.split(/\s+/)
+      const endParts = endStr.split(/\s+/)
 
       if (startParts.length < 2 || endParts.length < 2) return null
 
@@ -143,7 +143,14 @@ export default function HubFinance() {
       const startMonth = monthMap[startParts[1]]
       const endDay = parseInt(endParts[0])
       const endMonth = monthMap[endParts[1]]
-      const year = endParts.length > 2 ? parseInt('20' + endParts[2]) : currentYear
+      
+      // Determine year - check if provided in start or end parts
+      let year = currentYear
+      if (endParts.length > 2) {
+        year = parseInt('20' + endParts[2])
+      } else if (startParts.length > 2) {
+        year = parseInt('20' + startParts[2])
+      }
 
       // Validate month values
       if (startMonth === undefined || endMonth === undefined || isNaN(startDay) || isNaN(endDay)) {
@@ -904,58 +911,75 @@ export default function HubFinance() {
                   </div>
                 ) : (
                   <>
-                    {/* Show past cycles orders if available */}
-                    {pastCyclesData && pastCyclesData.orders && pastCyclesData.orders.length > 0 && (
-                      <div className="bg-white rounded-lg p-4 space-y-3">
-                        {pastCyclesData.orders.map((order, index) => (
-                          <div key={order.orderId || index} className="border-b border-gray-200 pb-3 last:border-b-0 last:pb-0">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <p className="text-sm font-semibold text-gray-900 mb-1">
-                                  Order ID: {order.orderId || 'N/A'}
-                                </p>
-                                <p className="text-xs text-gray-600">
-                                  {order.foodNames || (order.items && order.items.map(item => item.name).join(', ')) || 'N/A'}
-                                </p>
-                              </div>
-                              <div className="text-right ml-4">
-                                <p className="text-sm font-bold text-gray-900">
-                                  ₹{(order.payout || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  Earning
-                                </p>
+                    {/* Show current cycle orders ALWAYS before past cycles */}
+                    {financeData?.currentCycle?.orders && financeData.currentCycle.orders.length > 0 && (
+                      <div className="space-y-3 mb-6">
+                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider px-1">Current Cycle Orders</h3>
+                        <div className="bg-white rounded-lg p-4 space-y-3 shadow-sm border border-gray-100">
+                          {[...financeData.currentCycle.orders].reverse().map((order, index) => (
+                            <div key={order.orderId || index} className="border-b border-gray-100 pb-3 last:border-b-0 last:pb-0">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <p className="text-sm font-semibold text-gray-900">
+                                      Order ID: {order.orderId || 'N/A'}
+                                    </p>
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${order.paymentMethod?.toLowerCase() === 'cash' || order.paymentMethod?.toLowerCase() === 'cod' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
+                                      {order.paymentMethod || 'Online'}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-gray-600">
+                                    {order.foodNames || (order.items && order.items.map(item => item.name).join(', ')) || 'N/A'}
+                                  </p>
+                                </div>
+                                <div className="text-right ml-4">
+                                  <p className="text-sm font-bold text-gray-900">
+                                    ₹{(order.payout || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    Earning
+                                  </p>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     )}
-                    {/* Show current cycle orders if past cycles data is not available or has no orders */}
-                    {(!pastCyclesData || !pastCyclesData.orders || pastCyclesData.orders.length === 0) && !loadingPastCycles && financeData?.currentCycle?.orders && financeData.currentCycle.orders.length > 0 && (
-                      <div className="bg-white rounded-lg p-4 space-y-3">
-                        {financeData.currentCycle.orders.map((order, index) => (
-                          <div key={order.orderId || index} className="border-b border-gray-200 pb-3 last:border-b-0 last:pb-0">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <p className="text-sm font-semibold text-gray-900 mb-1">
-                                  Order ID: {order.orderId || 'N/A'}
-                                </p>
-                                <p className="text-xs text-gray-600">
-                                  {order.foodNames || (order.items && order.items.map(item => item.name).join(', ')) || 'N/A'}
-                                </p>
-                              </div>
-                              <div className="text-right ml-4">
-                                <p className="text-sm font-bold text-gray-900">
-                                  ₹{(order.payout || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  Earning
-                                </p>
+
+                    {/* Show past cycles orders if available */}
+                    {pastCyclesData && pastCyclesData.orders && pastCyclesData.orders.length > 0 && (
+                      <div className="space-y-3">
+                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider px-1">History</h3>
+                        <div className="bg-white rounded-lg p-4 space-y-3 shadow-sm border border-gray-100">
+                          {[...pastCyclesData.orders].reverse().map((order, index) => (
+                            <div key={order.orderId || index} className="border-b border-gray-100 pb-3 last:border-b-0 last:pb-0">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <p className="text-sm font-semibold text-gray-900">
+                                      Order ID: {order.orderId || 'N/A'}
+                                    </p>
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${order.paymentMethod?.toLowerCase() === 'cash' || order.paymentMethod?.toLowerCase() === 'cod' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
+                                      {order.paymentMethod || 'Online'}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-gray-600">
+                                    {order.foodNames || (order.items && order.items.map(item => item.name).join(', ')) || 'N/A'}
+                                  </p>
+                                </div>
+                                <div className="text-right ml-4">
+                                  <p className="text-sm font-bold text-gray-900">
+                                    ₹{(order.payout || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    Earning
+                                  </p>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     )}
                   </>
