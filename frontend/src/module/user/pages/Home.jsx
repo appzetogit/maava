@@ -65,7 +65,7 @@ function RestaurantImageCarousel({ images, restaurantName, restaurantId, priorit
 
   if (!images || images.length === 0) {
     return (
-      <div className="relative h-48 sm:h-56 md:h-60 lg:h-64 xl:h-72 w-full overflow-hidden rounded-t-md flex-shrink-0 bg-gray-200">
+      <div className="relative h-47 sm:h-54 md:h-58 lg:h-62 xl:h-70 w-full overflow-hidden rounded-t-md flex-shrink-0 bg-gray-200">
         <OptimizedImage
           src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=600&fit=crop"
           alt={restaurantName}
@@ -120,7 +120,7 @@ function RestaurantImageCarousel({ images, restaurantName, restaurantId, priorit
 
   return (
     <div
-      className="relative h-48 sm:h-56 md:h-60 lg:h-64 xl:h-72 w-full overflow-hidden rounded-t-md flex-shrink-0 group"
+      className="relative h-48 sm:h-54 md:h-58 lg:h-62 xl:h-70 w-full overflow-hidden rounded-t-md flex-shrink-0 group"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -434,7 +434,7 @@ export default function Home() {
       if (!isSwiping.current) {
         setCurrentBannerIndex((prev) => (prev + 1) % heroBannerImages.length)
       }
-    }, 10000) // Change every 10 seconds
+    }, 15000) // Change every 15 seconds (Super Slow)
 
     return () => {
       if (autoSlideIntervalRef.current) {
@@ -1077,7 +1077,7 @@ export default function Home() {
   useEffect(() => {
     const interval = setInterval(() => {
       setPlaceholderIndex((prev) => (prev + 1) % placeholders.length)
-    }, 2000) // Change placeholder every 2 seconds (same as RestaurantDetails)
+    }, 6000) // Change placeholder every 6 seconds (Extremely smooth)
 
     return () => clearInterval(interval)
   }, []) // placeholders is a constant, no need for dependency
@@ -1223,6 +1223,14 @@ export default function Home() {
               transform: translateX(200%) skewX(-15deg);
             }
           }
+          @keyframes border-shine {
+            0% { border-image-source: conic-gradient(from 0deg, #faf3d1 0deg, transparent 30deg, transparent 330deg, #faf3d1 360deg); }
+            100% { border-image-source: conic-gradient(from 360deg, #faf3d1 0deg, transparent 30deg, transparent 330deg, #faf3d1 360deg); }
+          }
+          @keyframes clock-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
           @keyframes gold-shimmer {
             0% { background-position: -200% center; }
             100% { background-position: 200% center; }
@@ -1257,7 +1265,7 @@ export default function Home() {
                 x: `-${currentBannerIndex * 100}vw`
               }}
               transition={{
-                duration: 0.6,
+                duration: 1.2,
                 ease: "easeInOut"
               }}
               style={{
@@ -1355,7 +1363,7 @@ export default function Home() {
                                 initial={{ y: 20, opacity: 0 }}
                                 animate={{ y: 0, opacity: 1 }}
                                 exit={{ y: -20, opacity: 0 }}
-                                transition={{ duration: 0.3 }}
+                                transition={{ duration: 1.5, ease: "easeInOut" }}
                                 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-400 dark:text-gray-500 inline-block"
                               >
                                 {placeholders[placeholderIndex]}
@@ -1510,7 +1518,7 @@ export default function Home() {
                   >
                     <Link to={`/user/category/${category.slug || category.name.toLowerCase().replace(/\s+/g, '-')}`}>
                       <div className="flex flex-col items-center gap-2 w-[62px] sm:w-24 md:w-28">
-                        <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md transition-all">
+                        <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md hover:shadow-[0_0_30px_rgba(212,175,55,0.6)] transition-all bg-white shadow-[0_0_20px_rgba(212,175,55,0.45)]">
                           <OptimizedImage
                             src={category.image}
                             alt={category.name}
@@ -1574,7 +1582,7 @@ export default function Home() {
                   >
                     <Link to={`/user/category/${category.slug || category.label.toLowerCase().replace(/\s+/g, '-')}`}>
                       <div className="flex flex-col items-center gap-2 w-[62px] sm:w-24 md:w-28">
-                        <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md transition-all premium-gold-border">
+                        <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md hover:shadow-[0_0_30px_rgba(212,175,55,0.6)] transition-all premium-gold-border shadow-[0_0_20px_rgba(212,175,55,0.45)]">
                           <OptimizedImage
                             src={category.imageUrl}
                             alt={category.label}
@@ -1901,7 +1909,7 @@ export default function Home() {
                 // Check if restaurant is open based on timings
                 const { isOpen: isRestaurantOpenNow } = checkIsRestaurantOpen(restaurant.outletTimings)
                 const isClosedByTiming = !isRestaurantOpenNow
-                
+
                 // Direct favorite check - isFavorite is already memoized in context
                 const favorite = isFavorite(restaurantSlug)
 
@@ -1982,8 +1990,8 @@ export default function Home() {
                         }
                       }}
                     >
-                      <Link 
-                        to={`/user/restaurants/${restaurantSlug}`} 
+                      <Link
+                        to={`/user/restaurants/${restaurantSlug}`}
                         className="h-full flex"
                         onClick={handleRestaurantClick}
                       >
@@ -2007,7 +2015,7 @@ export default function Home() {
                               }}
                               transition={{ duration: 0.3 }}
                             >
-                              <div className="bg-gray-800/90 backdrop-blur-sm text-white px-2 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-medium flex items-center shadow-lg">
+                              <div className="bg-[#1a1a1a]/90 backdrop-blur-md text-white px-2 py-0.5 md:px-2.5 md:py-1 rounded-[4px] text-[10.5px] md:text-[12.5px] font-semibold flex items-center shadow-xl border border-white/5">
                                 {restaurant.featuredDish} · ₹{restaurant.featuredPrice}
                               </div>
                             </motion.div>
@@ -2069,9 +2077,9 @@ export default function Home() {
                             }}
                             transition={{ duration: 0.4, ease: "easeOut" }}
                           >
-                            <CardContent className="p-3 sm:p-4 lg:p-5 pt-3 sm:pt-4 lg:pt-5 flex flex-col flex-grow">
+                            <CardContent className="p-2 sm:p-3 lg:p-4 pt-2 sm:pt-3 lg:pt-4 flex flex-col flex-grow">
                               {/* Restaurant Name & Rating */}
-                              <div className="flex items-start justify-between gap-2 mb-2 lg:mb-3">
+                              <div className="flex items-start justify-between gap-1.5 mb-1.5 lg:mb-2">
                                 <div className="flex-1 min-w-0">
                                   <motion.h3
                                     className="text-md sm:text-md lg:text-xl font-bold line-clamp-1 lg:line-clamp-2 gold-shine-text"
@@ -2099,14 +2107,30 @@ export default function Home() {
 
                               {/* Delivery Time & Distance */}
                               <motion.div
-                                className="flex items-center gap-1 text-sm lg:text-base text-gray-500 mb-2 lg:mb-3"
+                                className="flex items-center gap-1 text-[13px] lg:text-[15px] text-gray-500 mb-1.5 lg:mb-2"
                                 variants={{
                                   rest: { opacity: 0.7 },
                                   hover: { opacity: 1 }
                                 }}
                                 transition={{ duration: 0.3 }}
                               >
-                                <Clock className="h-4 w-4 lg:h-5 lg:w-5 text-gray-500 dark:text-gray-400" strokeWidth={1.5} />
+                                <div className="relative">
+                                  <Clock className="h-4 w-4 lg:h-5 lg:w-5 text-gray-500 dark:text-gray-400" strokeWidth={1.5} />
+                                  <div
+                                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                                    style={{ padding: '0.5px' }}
+                                  >
+                                    <div
+                                      className="w-[1.5px] h-[4px] lg:h-[5px] bg-gray-500 dark:bg-gray-400 rounded-full"
+                                      style={{
+                                        transformOrigin: 'bottom center',
+                                        animation: 'clock-spin 8s linear infinite',
+                                        marginTop: '-4px',
+                                        marginLeft: '1px'
+                                      }}
+                                    />
+                                  </div>
+                                </div>
                                 <span className="font-medium dark:text-gray-300 text-gray-700">{restaurant.deliveryTime}</span>
                                 <span className="mx-1">|</span>
                                 <span className="font-medium dark:text-gray-300 text-gray-700">{restaurant.distance}</span>
@@ -2129,20 +2153,20 @@ export default function Home() {
                             </CardContent>
                           </motion.div>
 
-                          {/* Border Glow Effect */}
+                          {/* Premium Spark Effect - Moving point of light */}
                           <motion.div
-                            className="absolute inset-0 rounded-md pointer-events-none z-0"
-                            variants={{
-                              rest: {
-                                boxShadow: "inset 0 0 0 0px rgba(212, 175, 55, 0)",
-                                border: "1px solid transparent"
-                              },
-                              hover: {
-                                boxShadow: "inset 0 0 0 1px rgba(212, 175, 55, 0.2)",
-                                border: "1px solid rgba(212, 175, 55, 0.4)"
-                              }
+                            className="absolute inset-0 rounded-xl pointer-events-none z-10"
+                            style={{
+                              borderWidth: "1.5px",
+                              borderStyle: "solid",
+                              borderColor: "transparent",
+                              borderImageSlice: 1,
                             }}
-                            transition={{ duration: 0.4 }}
+                            animate={{
+                              opacity: 1,
+                              animation: "border-shine 10s linear infinite",
+                            }}
+                            transition={{ duration: 0.5 }}
                           />
                         </Card>
                       </Link>
@@ -2666,7 +2690,7 @@ export default function Home() {
                   // Confirm veg mode is ON by updating context and prevVegMode
                   setVegModeContext(true)
                   setPrevVegMode(true)
-                  
+
                   if (vegModeOption === "pure-veg") {
                     setIsApplyingVegMode(true)
                     // Simulate applying veg mode settings
