@@ -1193,39 +1193,32 @@ export const getUserOrders = async (req, res) => {
       });
     }
 
-    // Build query - MongoDB should handle string/ObjectId conversion automatically
-    // But we'll try both formats to be safe
     const mongoose = (await import('mongoose')).default;
-    const query = { userId };
+    
+    // Convert userId to ObjectId if it's a valid string
+    const targetUserId = mongoose.Types.ObjectId.isValid(userId) 
+      ? new mongoose.Types.ObjectId(userId) 
+      : userId;
 
-    // If userId is a string that looks like ObjectId, also try ObjectId format
-    if (typeof userId === 'string' && mongoose.Types.ObjectId.isValid(userId)) {
-      query.$or = [
-        { userId: userId },
-        { userId: new mongoose.Types.ObjectId(userId) }
-      ];
-      delete query.userId; // Remove direct userId since we're using $or
-    }
-
+    // Build base query strictly for this user
+    const query = { userId: targetUserId };
 
     // Only show confirmed/completed/delivered orders for online payments
     // Pending orders are only shown for COD or wallet
     const allowedStatuses = ['confirmed', 'completed', 'delivered'];
+    
     if (status) {
-      // If status is explicitly requested, use it (for admin or advanced UI)
-      if (query.$or) {
-        query.$or = query.$or.map(condition => ({ ...condition, status }));
-      } else {
-        query.status = status;
-      }
+      // If status is explicitly requested, use it
+      query.status = status;
     } else {
-      // Default: filter out pending orders for online payments
+      // Default: show specific statuses or pending cash/wallet orders
       query.$or = [
         // Show only confirmed/completed/delivered orders for all
         { status: { $in: allowedStatuses } },
         // Show pending orders only if payment method is cash or wallet
         {
-          status: 'pending', $or: [
+          status: 'pending', 
+          $or: [
             { 'payment.method': 'cash' },
             { 'payment.method': 'wallet' }
           ]

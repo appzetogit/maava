@@ -2457,19 +2457,7 @@ export default function LocationSelectorOverlay({ isOpen, onClose }) {
               <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
             </button>
 
-            {/* Add Address */}
-            <button
-              onClick={handleAddAddress}
-              className="w-full flex items-center justify-between py-4 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors group border-t border-gray-100 dark:border-gray-800"
-            >
-              <div className="flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center group-hover:bg-green-100 dark:group-hover:bg-green-900/30 transition-colors">
-                  <Plus className="h-5 w-5 text-green-600 dark:text-green-400" />
-                </div>
-                <p className="font-semibold text-green-700 dark:text-green-400">Add Address</p>
-              </div>
-              <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-            </button>
+
           </div>
 
           {/* Saved Addresses Section */}
