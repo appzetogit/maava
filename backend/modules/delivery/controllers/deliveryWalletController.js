@@ -177,7 +177,7 @@ export const getWallet = asyncHandler(async (req, res) => {
     // Calculate bonus amount from transactions for logging
     const bonusTransactions = transactions.filter(t => t.type === 'bonus' && t.status === 'Completed');
     const totalBonus = bonusTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
-    
+
     const walletData = {
       totalBalance: wallet.totalBalance || 0,
       cashInHand: cashInHandForLimit,
@@ -864,7 +864,7 @@ export const verifyDepositPayment = asyncHandler(async (req, res) => {
   try {
     const settings = await BusinessSettings.getSettings();
     limit = Number(settings?.deliveryCashLimit) || 0;
-  } catch (_) {}
+  } catch (_) { }
   const cashInHandNow = Math.max(0, Number(wallet.cashInHand) || 0);
   const availableCashLimit = Math.max(0, limit - cashInHandNow);
 

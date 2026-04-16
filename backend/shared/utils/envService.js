@@ -98,22 +98,16 @@ export async function getRazorpayCredentials() {
   const rawKeyId = apiKey || process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_API_KEY || '';
   const rawKeySecret = secretKey || process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_SECRET_KEY || '';
 
-  // Smart selection: If we have multiple keys and one is LIVE, prefer the LIVE one
   let finalKeyId = rawKeyId;
   let finalKeySecret = rawKeySecret;
 
-  const api_key = process.env.RAZORPAY_API_KEY || '';
-  const api_secret = process.env.RAZORPAY_SECRET_KEY || '';
-  const key_id = process.env.RAZORPAY_KEY_ID || '';
-  const key_secret = process.env.RAZORPAY_KEY_SECRET || '';
-
-  // Priority to rzp_live keys
-  if (api_key.startsWith('rzp_live')) {
-    finalKeyId = api_key;
-    finalKeySecret = api_secret;
-  } else if (key_id.startsWith('rzp_live')) {
-    finalKeyId = key_id;
-    finalKeySecret = key_secret;
+  // Priority to rzp_live keys - Ensuring both ID and Secret come from the SAME source
+  if ((process.env.RAZORPAY_API_KEY || '').startsWith('rzp_live')) {
+    finalKeyId = process.env.RAZORPAY_API_KEY;
+    finalKeySecret = process.env.RAZORPAY_SECRET_KEY || process.env.RAZORPAY_KEY_SECRET;
+  } else if ((process.env.RAZORPAY_KEY_ID || '').startsWith('rzp_live')) {
+    finalKeyId = process.env.RAZORPAY_KEY_ID;
+    finalKeySecret = process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_SECRET_KEY;
   } else if (apiKey?.startsWith('rzp_live')) {
     finalKeyId = apiKey;
     finalKeySecret = secretKey;
