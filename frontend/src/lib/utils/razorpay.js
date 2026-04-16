@@ -80,35 +80,6 @@ export const initRazorpayPayment = async (options) => {
       theme: {
         color: '#dc2626'
       },
-      // Razorpay config to control UI behaviour
-      config: {
-        display: {
-          // Priority sequence: UPI first, then Cards, then others
-          sequence: ['block.upiBlock', 'block.other'],
-          preferences: { show_default_blocks: true }
-        },
-        blocks: {
-          upiBlock: {
-            name: 'UPI / Google Pay / PhonePe',
-            instruments: [
-              // If a specific app was tapped, prioritize it
-              ...(options.upiApp === 'google_pay' ? [{ method: 'upi', apps: ['google_pay'] }] : []),
-              ...(options.upiApp === 'paytm' ? [{ method: 'upi', apps: ['paytm'] }] : []),
-              ...(options.upiApp === 'phonepe' ? [{ method: 'upi', apps: ['phonepe'] }] : []),
-              // Show all active UPI apps on the device
-              { method: 'upi' }
-            ]
-          },
-          other: {
-            name: 'Cards / Netbanking / Wallet',
-            instruments: [
-              { method: 'card' },
-              { method: 'netbanking' },
-              { method: 'wallet' }
-            ]
-          }
-        }
-      },
       handler: function (response) {
         if (options.handler) {
           options.handler(response);

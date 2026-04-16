@@ -98,12 +98,33 @@ export async function getRazorpayCredentials() {
   const rawKeyId = apiKey || process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_API_KEY || '';
   const rawKeySecret = secretKey || process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_SECRET_KEY || '';
 
+  // Smart selection: If we have multiple keys and one is LIVE, prefer the LIVE one
+  let finalKeyId = rawKeyId;
+  let finalKeySecret = rawKeySecret;
+
+  const api_key = process.env.RAZORPAY_API_KEY || '';
+  const api_secret = process.env.RAZORPAY_SECRET_KEY || '';
+  const key_id = process.env.RAZORPAY_KEY_ID || '';
+  const key_secret = process.env.RAZORPAY_KEY_SECRET || '';
+
+  // Priority to rzp_live keys
+  if (api_key.startsWith('rzp_live')) {
+    finalKeyId = api_key;
+    finalKeySecret = api_secret;
+  } else if (key_id.startsWith('rzp_live')) {
+    finalKeyId = key_id;
+    finalKeySecret = key_secret;
+  } else if (apiKey?.startsWith('rzp_live')) {
+    finalKeyId = apiKey;
+    finalKeySecret = secretKey;
+  }
+
   // Treat common placeholder strings as missing (avoids bad 500s)
   const isPlaceholder = (v) => !v || v.startsWith('REPLACE_') || v.startsWith('YOUR_') || v === 'your-secret' || v === 'undefined';
 
   return {
-    keyId: isPlaceholder(rawKeyId) ? '' : rawKeyId,
-    keySecret: isPlaceholder(rawKeySecret) ? '' : rawKeySecret
+    keyId: isPlaceholder(finalKeyId) ? '' : finalKeyId,
+    keySecret: isPlaceholder(finalKeySecret) ? '' : finalKeySecret
   };
 }
 
