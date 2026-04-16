@@ -50,10 +50,24 @@ export const getRestaurantOrders = asyncHandler(async (req, res) => {
     // Build query - search for orders with any matching restaurantId variation
     // Use $in for multiple variations and also try direct match as fallback
     const query = {
-      $or: [
-        { restaurantId: { $in: restaurantIdVariations } },
-        // Direct match fallback
-        { restaurantId: restaurantIdString }
+      $and: [
+        {
+          $or: [
+            { restaurantId: { $in: restaurantIdVariations } },
+            // Direct match fallback
+            { restaurantId: restaurantIdString }
+          ]
+        },
+        // Exclude online orders that are still in 'pending' state (cancelled or interrupted flow)
+        {
+          $nor: [
+            { 
+              'payment.method': { $in: ['razorpay', 'online', null] }, 
+              'payment.status': 'pending', 
+              'status': 'pending' 
+            }
+          ]
+        }
       ]
     };
 

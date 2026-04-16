@@ -27,6 +27,24 @@ export const getOrders = asyncHandler(async (req, res) => {
     // Build query
     const query = {};
 
+    // Exclude online orders that are still in 'pending' state (e.g., user initiated 
+    // payment but cancelled or abandoned the checkout flow).
+    // These 'ghost' orders shouldn't clutter the admin dashboard.
+    // We allow them if:
+    // 1. It's a cash/cod/wallet order (which start as pending)
+    // 2. OR the payment is already completed/failed/etc (not pending)
+    // 3. OR the order status has moved past 'pending'
+    // 4. OR the admin is explicitly searching for something
+    if (!search) {
+      query.$nor = [
+        { 
+          'payment.method': { $in: ['razorpay', 'online', null] }, 
+          'payment.status': 'pending', 
+          'status': 'pending' 
+        }
+      ];
+    }
+
     // Status filter
     if (status && status !== 'all') {
       // Map frontend status keys to backend status values
@@ -343,7 +361,7 @@ export const getOrders = asyncHandler(async (req, res) => {
         })(),
         paymentCollectionStatus: (order.payment?.method === 'cash' || order.payment?.method === 'cod')
           ? (order.status === 'delivered' ? 'Collected' : 'Not Collected')
-          : 'Collected',
+          : (order.payment?.status === 'completed' ? 'Collected' : 'Pending'),
         orderStatus: orderStatusDisplay,
         status: order.status, // Backend status
         deliveryType: deliveryType,

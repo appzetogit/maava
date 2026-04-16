@@ -148,7 +148,16 @@ export const getPendingHibermartOrders = asyncHandler(async (req, res) => {
     ]
   };
 
-  const query = { ...hibermartMatch };
+  const query = { 
+    ...hibermartMatch,
+    $nor: [
+      { 
+        'payment.method': { $in: ['razorpay', 'online', null] }, 
+        'payment.status': 'pending', 
+        'status': 'pending' 
+      }
+    ]
+  };
 
   if (status === 'pending') {
     query['adminApproval.status'] = 'pending';
