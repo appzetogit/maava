@@ -290,18 +290,17 @@ export async function notifyDeliveryBoyNewOrder(order, deliveryPartnerId) {
     console.log(`📢 Connected sockets in primary room ${primaryRoom}:`, socketsInRoom.length);
     console.log(`📢 Found room:`, foundRoom || 'none');
 
-    // Emit new order notification to all room variations (even if no sockets found, in case they connect)
-    let notificationSent = false;
-    roomVariations.forEach(room => {
-      deliveryNamespace.to(room).emit('new_order', orderNotification);
-      deliveryNamespace.to(room).emit('play_notification_sound', {
-        type: 'new_order',
-        orderId: order.orderId,
-        message: `New order assigned: ${order.orderId}`
-      });
-      notificationSent = true;
-      console.log(`📤 Emitted notification to room: ${room}`);
+    // Emit new order notification to the found room (or primary room as fallback)
+    // We only emit to ONE room to prevent duplicate notifications for users joined to multiple room aliases.
+    const targetRoom = foundRoom || roomVariations[0];
+    deliveryNamespace.to(targetRoom).emit('new_order', orderNotification);
+    deliveryNamespace.to(targetRoom).emit('play_notification_sound', {
+      type: 'new_order',
+      orderId: order.orderId,
+      message: `New order assigned: ${order.orderId}`
     });
+    console.log(`📤 Emitted notification only to room: ${targetRoom}`);
+    notificationSent = true;
 
     // Also emit to all sockets in the delivery namespace (fallback if no specific room found)
     if (socketsInRoom.length === 0) {
@@ -601,7 +600,8 @@ export async function notifyMultipleDeliveryBoys(order, deliveryPartnerIds, phas
         for (const room of roomVariations) {
           const sockets = await deliveryNamespace.in(room).fetchSockets();
           if (sockets.length > 0) {
-            deliveryNamespace.to(room).emit('new_order_available', orderNotification);
+            // Unified emission: Emit once to the first found room only.
+            // We use 'new_order' as the standard event.
             deliveryNamespace.to(room).emit('new_order', orderNotification);
             deliveryNamespace.to(room).emit('play_notification_sound', {
               type: 'new_order_available',

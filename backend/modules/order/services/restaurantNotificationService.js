@@ -149,16 +149,16 @@ export async function notifyRestaurantNewOrder(order, restaurantId, paymentMetho
     // CRITICAL: Only emit to the specific restaurant room - NEVER broadcast to all restaurants
     // This ensures orders only go to the correct restaurant
     if (socketsInRoom.length > 0) {
-      // Found sockets in the restaurant room - send notification only to that room
-      roomVariations.forEach(room => {
-        restaurantNamespace.to(room).emit('new_order', orderNotification);
-        restaurantNamespace.to(room).emit('play_notification_sound', {
-          type: 'new_order',
-          orderId: order.orderId,
-          message: `New order received: ${order.orderId}`
-        });
-        console.log(`📤 Sent notification to room: ${room}`);
+      // Found sockets in the restaurant room - send notification ONLY ONCE to the primary room
+      // This prevents double notifications if the restaurant is connected through multiple alias rooms.
+      const targetRoom = socketsInRoom.length > 0 ? primaryRoom : roomVariations[0];
+      restaurantNamespace.to(targetRoom).emit('new_order', orderNotification);
+      restaurantNamespace.to(targetRoom).emit('play_notification_sound', {
+        type: 'new_order',
+        orderId: order.orderId,
+        message: `New order received: ${order.orderId}`
       });
+      console.log(`📤 Sent notification only to room: ${targetRoom}`);
       console.log(`✅ Notified restaurant ${normalizedRestaurantId} about new order ${order.orderId} (${socketsInRoom.length} socket(s) connected)`);
     } else {
       // No sockets found in restaurant room - log error but DO NOT broadcast to all restaurants
@@ -185,17 +185,16 @@ export async function notifyRestaurantNewOrder(order, restaurantId, paymentMetho
         console.log(`📊 Connected restaurant sockets and their rooms:`, socketRooms);
       }
 
-      // Still try to emit to room variations (in case socket connects later)
-      // But DO NOT broadcast to all restaurants
-      roomVariations.forEach(room => {
-        restaurantNamespace.to(room).emit('new_order', orderNotification);
-        restaurantNamespace.to(room).emit('play_notification_sound', {
-          type: 'new_order',
-          orderId: order.orderId,
-          message: `New order received: ${order.orderId}`
-        });
-        console.log(`📤 Emitted to room ${room} (no sockets found, but room exists for future connections)`);
+      // Still try to emit to the primary room (in case socket connects later)
+      // But DO NOT broadcast to all restaurants and do NOT loop through aliases
+      const targetRoom = roomVariations[0];
+      restaurantNamespace.to(targetRoom).emit('new_order', orderNotification);
+      restaurantNamespace.to(targetRoom).emit('play_notification_sound', {
+        type: 'new_order',
+        orderId: order.orderId,
+        message: `New order received: ${order.orderId}`
       });
+      console.log(`📤 Emitted only to room ${targetRoom} (no sockets found present, but room exists)`);
 
       // Return error instead of success
       return {
@@ -282,4 +281,3 @@ export async function notifyRestaurantOrderUpdate(orderId, status) {
     throw error;
   }
 }
-

@@ -387,7 +387,7 @@ export default function RestaurantDetails() {
 
     fetchRestaurant()
   }, [slug, zoneId, loadingZone, restaurant?.slug])
-  
+
   // Fetch outlet timings and check if restaurant is open — polls every 30 seconds
   useEffect(() => {
     if (!restaurant) return
@@ -401,12 +401,12 @@ export default function RestaurantDetails() {
         const response = await restaurantAPI.getOutletTimings(restaurantId)
         console.log('[Timing Debug] restaurantId used:', restaurantId)
         console.log('[Timing Debug] API response:', response.data)
-        
+
         if (response.data?.success && response.data.data?.outletTimings) {
           const timings = response.data.data.outletTimings.timings || []
           console.log('[Timing Debug] timings array:', timings)
           setOutletTimings(timings)
-          
+
           const { isOpen, currentDayTiming } = checkIsRestaurantOpen(timings)
           console.log('[Timing Debug] isOpen:', isOpen, '| today timing:', currentDayTiming)
           setIsRestaurantClosedByTiming(!isOpen)
@@ -418,7 +418,7 @@ export default function RestaurantDetails() {
 
     // Initial check
     fetchAndCheckStatus()
-    
+
     // Poll every 30 seconds to catch dashboard updates
     const interval = setInterval(fetchAndCheckStatus, 30000)
     return () => clearInterval(interval)
@@ -877,17 +877,17 @@ export default function RestaurantDetails() {
       e.preventDefault()
       e.stopPropagation()
     }
-    
+
     if (!item) return;
-    
+
     const restaurantId = restaurant?.restaurantId || restaurant?._id || restaurant?.id
     const dishId = item.id || item._id
-    
+
     if (!dishId) {
       toast.error("Could not share this item")
       return;
     }
-    
+
     const restaurantSlug = restaurant?.slug || slug || ""
     const companyName = await getCompanyNameAsync()
 
@@ -1178,7 +1178,7 @@ export default function RestaurantDetails() {
                   </span>
                   <span className="text-[11px] opacity-85">
                     {(() => {
-                      const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+                      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
                       const today = days[new Date().getDay()];
                       const todayTiming = outletTimings?.find(t => t?.day?.toLowerCase() === today.toLowerCase());
                       return todayTiming
@@ -1188,9 +1188,9 @@ export default function RestaurantDetails() {
                   </span>
                 </div>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 className="h-8 border-red-200 text-red-600 hover:bg-red-100 hover:text-red-700 font-bold px-3 text-xs uppercase tracking-wider"
                 onClick={() => navigate(-1)}
               >
@@ -1300,17 +1300,16 @@ export default function RestaurantDetails() {
 
                 {/* Timing Info - shows what system is reading from DB */}
                 {(() => {
-                  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+                  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
                   const today = days[new Date().getDay()];
                   const todayTiming = outletTimings?.find(t => t?.day?.toLowerCase() === today.toLowerCase());
                   if (!todayTiming) return null;
                   return (
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        isRestaurantClosedByTiming 
-                          ? 'bg-red-100 text-red-600' 
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isRestaurantClosedByTiming
+                          ? 'bg-red-100 text-red-600'
                           : 'bg-green-100 text-green-700'
-                      }`}>
+                        }`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${isRestaurantClosedByTiming ? 'bg-red-500' : 'bg-green-500'}`}></span>
                         {isRestaurantClosedByTiming ? 'CLOSED' : 'OPEN'}
                         {' · '}{today} {todayTiming.openingTime} – {todayTiming.closingTime}
@@ -2145,8 +2144,8 @@ export default function RestaurantDetails() {
                       </button>
                     </div>
 
-                    </div>
-                  
+                  </div>
+
                   {/* Bottom Action Bar */}
                   <div className="border-t border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center justify-between bg-white dark:bg-[#1a1a1a]">
                     <button

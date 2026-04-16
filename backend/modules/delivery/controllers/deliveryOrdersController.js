@@ -36,7 +36,17 @@ export const getOrders = asyncHandler(async (req, res) => {
     const { status, page = 1, limit = 20, includeDelivered } = req.query;
 
     // Build query
-    const query = { deliveryPartnerId: delivery._id };
+    const query = { 
+      deliveryPartnerId: delivery._id,
+      // Exclude "ghost" orders: online payments that are still pending (likely abandoned or cancelled by user)
+      $nor: [
+        { 
+          'payment.method': 'razorpay', 
+          'payment.status': 'pending', 
+          status: 'pending' 
+        }
+      ]
+    };
 
     if (status) {
       query.status = status;
