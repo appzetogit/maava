@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react"
+import ShareBottomSheet from "../../components/ShareBottomSheet"
 import { createPortal } from "react-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import { useParams, useNavigate, useSearchParams } from "react-router-dom"
@@ -38,6 +39,10 @@ import {
   AlertCircle,
   Bookmark,
   ChevronUp,
+  Share2,
+  MessageCircle,
+  Link2,
+  Copy,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -83,6 +88,8 @@ export default function RestaurantDetails() {
     sortBy: null, // "low-to-high" | "high-to-low"
     vegNonVeg: null, // "veg" | "non-veg"
   })
+  const [showShareSheet, setShowShareSheet] = useState(false)
+  const [shareData, setShareData] = useState({ title: "", text: "", url: "" })
   // Restaurant data state
   const [restaurant, setRestaurant] = useState(null)
   const [loadingRestaurant, setLoadingRestaurant] = useState(true)
@@ -841,35 +848,33 @@ export default function RestaurantDetails() {
     const companyName = await getCompanyNameAsync()
     const restaurantSlug = restaurant?.slug || slug || ""
     const restaurantName = restaurant?.name || "this restaurant"
-
-    // Create share URL
     const shareUrl = `${window.location.origin}/user/restaurants/${restaurantSlug}`
     const shareText = `Check out ${restaurantName} on ${companyName}! ${shareUrl}`
 
-    // Try Web Share API first (mobile)
+    const data = {
+      title: restaurantName,
+      text: shareText,
+      url: shareUrl,
+    }
+
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: restaurantName,
-          text: shareText,
-          url: shareUrl,
-        })
+        await navigator.share(data)
         toast.success("Restaurant shared successfully")
         setShowMenuOptionsSheet(false)
       } catch (error) {
-        // User cancelled or error occurred
         if (error.name !== "AbortError") {
-          // Fallback to copy to clipboard
-          await copyToClipboard(shareUrl)
+          setShareData(data)
+          setShowShareSheet(true)
+          setShowMenuOptionsSheet(false)
         }
       }
     } else {
-      // Fallback to copy to clipboard
-      await copyToClipboard(shareUrl)
+      setShareData(data)
+      setShowShareSheet(true)
+      setShowMenuOptionsSheet(false)
     }
   }
-
-
 
   // Handle share click for individual dishes
   const handleShareClick = async (item, e) => {
@@ -890,32 +895,28 @@ export default function RestaurantDetails() {
 
     const restaurantSlug = restaurant?.slug || slug || ""
     const companyName = await getCompanyNameAsync()
-
-    // Create share URL with deep link to the dish
     const shareUrl = `${window.location.origin}/user/restaurants/${restaurantSlug}?dish=${dishId}`
     const shareText = `Check out ${item.name} from ${restaurant?.name || "this restaurant"} on ${companyName}! ${shareUrl}`
 
-    // Try Web Share API first (mobile)
+    const data = {
+      title: `${item.name} - ${restaurant?.name || ""}`,
+      text: shareText,
+      url: shareUrl,
+    }
+
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: `${item.name} - ${restaurant?.name || ""}`,
-          text: shareText,
-          url: shareUrl,
-        })
+        await navigator.share(data)
         toast.success("Dish shared successfully")
       } catch (error) {
-        // User cancelled or error occurred
         if (error.name !== "AbortError") {
-          // Fallback to copy to clipboard
-          await copyToClipboard(shareUrl)
-          toast.info("Link copied to clipboard")
+          setShareData(data)
+          setShowShareSheet(true)
         }
       }
     } else {
-      // Fallback to copy to clipboard
-      await copyToClipboard(shareUrl)
-      toast.success("Link copied to clipboard")
+      setShareData(data)
+      setShowShareSheet(true)
     }
   }
 
@@ -2969,11 +2970,18 @@ export default function RestaurantDetails() {
         )
       }
 
-      {/* Add to Cart Animation Component */}
       <AddToCartAnimation
         bottomOffset={150}
         linkTo="/cart"
         hideOnPages={true}
+      />
+
+      {/* Reusable Share Bottom Sheet */}
+      <ShareBottomSheet
+        isOpen={showShareSheet}
+        onClose={() => setShowShareSheet(false)}
+        shareData={shareData}
+        copyToClipboard={copyToClipboard}
       />
     </AnimatedPage >
   )

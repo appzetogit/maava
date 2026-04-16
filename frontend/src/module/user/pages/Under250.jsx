@@ -1,7 +1,8 @@
 import OptimizedImage from "@/components/OptimizedImage"
+import ShareBottomSheet from "../components/ShareBottomSheet"
 import { Link, useNavigate } from "react-router-dom"
 import { useState, useMemo, useCallback, useEffect, useRef } from "react"
-import { Star, Clock, MapPin, ArrowDownUp, Timer, ArrowRight, ChevronDown, Bookmark, Share2, Plus, Minus, X } from "lucide-react"
+import { Star, Clock, MapPin, ArrowDownUp, Timer, ArrowRight, ChevronDown, Bookmark, Share2, Plus, Minus, X, MessageCircle, Copy } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 import AnimatedPage from "../components/AnimatedPage"
@@ -40,6 +41,8 @@ export default function Under250() {
   const [loadingBanner, setLoadingBanner] = useState(true)
   const [under250Restaurants, setUnder250Restaurants] = useState([])
   const [loadingRestaurants, setLoadingRestaurants] = useState(true)
+  const [showShareSheet, setShowShareSheet] = useState(false)
+  const [shareData, setShareData] = useState({ title: "", text: "", url: "" })
 
   const sortOptions = [
     { id: null, label: 'Relevance' },
@@ -418,30 +421,28 @@ export default function Under250() {
     
     const restaurantSlug = item.restaurantSlug || ""
     const companyName = await getCompanyNameAsync()
-
-    // Create share URL with deep link to the dish
     const shareUrl = `${window.location.origin}/user/restaurants/${restaurantSlug}?dish=${dishId}`
     const shareText = `Check out ${item.name} from ${item.restaurant || "this restaurant"} on ${companyName}! ${shareUrl}`
 
-    // Try Web Share API first (mobile)
+    const data = {
+      title: `${item.name} - ${item.restaurant || ""}`,
+      text: shareText,
+      url: shareUrl,
+    }
+
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: `${item.name} - ${item.restaurant || ""}`,
-          text: shareText,
-          url: shareUrl,
-        })
+        await navigator.share(data)
         toast.success("Dish shared successfully")
       } catch (error) {
-        // User cancelled or error occurred
         if (error.name !== "AbortError") {
-          // Fallback to copy to clipboard
-          await copyToClipboard(shareUrl)
+          setShareData(data)
+          setShowShareSheet(true)
         }
       }
     } else {
-      // Fallback to copy to clipboard
-      await copyToClipboard(shareUrl)
+      setShareData(data)
+      setShowShareSheet(true)
     }
   }
 
@@ -1066,6 +1067,14 @@ export default function Under250() {
 
       {/* Desktop Sticky Cart */}
       <StickyCartCard />
+
+      {/* Reusable Share Bottom Sheet */}
+      <ShareBottomSheet
+        isOpen={showShareSheet}
+        onClose={() => setShowShareSheet(false)}
+        shareData={shareData}
+        copyToClipboard={copyToClipboard}
+      />
     </div>
   )
 }
