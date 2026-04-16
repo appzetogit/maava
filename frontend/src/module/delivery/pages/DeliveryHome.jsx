@@ -2137,6 +2137,11 @@ export default function DeliveryHome() {
               console.log('[NewOrder] 🔇 Audio stopped (order accepted successfully)')
             }
 
+            // Record start time for session tracking (used by TimeOnOrders page)
+            const currentTimeStr = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }).slice(0, 5)
+            localStorage.setItem(`delivery_order_start_time_${orderId}`, currentTimeStr)
+            localStorage.setItem(`delivery_order_date_${orderId}`, new Date().toISOString())
+
             const orderData = response.data.data
             const order = orderData.order || orderData // Backend returns { order, route }
             const routeData = response.data.data.route
@@ -8865,10 +8870,6 @@ export default function DeliveryHome() {
                   <Lock className="w-5 h-5 text-white" />
                 </div>
                 <p className="text-white/90 text-center text-sm mb-4">Complete 1 order to unlock ₹{unlockBonus || '100'}</p>
-                <div className="flex items-center text-center justify-center gap-2 text-white/70 text-xs mb-4">
-                  <Clock className="w-4 h-4" />
-                  <span className="text-center">Valid till 10 December {new Date().getFullYear()}</span>
-                </div>
                 <button
                   onClick={() => {
                     if (isOnline) {
@@ -8881,7 +8882,6 @@ export default function DeliveryHome() {
                   className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
                 >
                   <span>{isOnline ? t('delivery.go_offline') : t('delivery.go_online')}</span>
-                  <ArrowRight className="w-5 h-5" />
                 </button>
               </motion.div>
 
@@ -8904,61 +8904,44 @@ export default function DeliveryHome() {
 
                 {/* Content */}
                 <div className="p-4">
-                  {/* Grid Layout - 2x2 */}
-                  <div className="grid grid-cols-2 gap-4">
+                  {/* Grid Layout - 3 columns */}
+                  <div className="grid grid-cols-3 gap-2">
                     {/* Top Left - Earnings */}
                     <button
                       onClick={() => navigate("/delivery/earnings")}
-                      className="flex flex-col items-start gap-1 hover:opacity-80 transition-opacity"
+                      className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity"
                     >
-                      <span className="text-2xl font-bold text-gray-900">
+                      <span className="text-xl font-bold text-gray-900 truncate w-full text-center">
                         {formatCurrency(todayEarnings)}
                       </span>
-                      <div className="flex items-center gap-1 text-sm text-gray-600">
+                      <div className="flex items-center gap-1 text-[10px] text-gray-500 uppercase font-semibold">
                         <span>{t('delivery.earnings')}</span>
-                        <ArrowRight className="w-4 h-4" />
                       </div>
                     </button>
 
                     {/* Top Right - Trips */}
                     <button
                       onClick={() => navigate("/delivery/trip-history")}
-                      className="flex flex-col items-end gap-1 hover:opacity-80 transition-opacity"
+                      className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity"
                     >
-                      <span className="text-2xl font-bold text-gray-900">
+                      <span className="text-xl font-bold text-gray-900">
                         {todayTrips}
                       </span>
-                      <div className="flex items-center gap-1 text-sm text-gray-600">
+                      <div className="flex items-center gap-1 text-[10px] text-gray-500 uppercase font-semibold">
                         <span>{t('delivery.trips')}</span>
-                        <ArrowRight className="w-4 h-4" />
                       </div>
                     </button>
 
                     {/* Bottom Left - Time on orders */}
                     <button
                       onClick={() => navigate("/delivery/time-on-orders")}
-                      className="flex flex-col items-start gap-1 hover:opacity-80 transition-opacity"
+                      className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity"
                     >
-                      <span className="text-2xl font-bold text-gray-900">
-                        {`${formatHours(todayHoursWorked)} hrs`}
+                      <span className="text-xl font-bold text-gray-900">
+                        {`${formatHours(todayHoursWorked)}`}
                       </span>
-                      <div className="flex items-center gap-1 text-sm text-gray-600">
-                        <span>{t('delivery.time_on_orders')}</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </div>
-                    </button>
-
-                    {/* Bottom Right - Gigs History */}
-                    <button
-                      onClick={() => navigate("/delivery/gig")}
-                      className="flex flex-col items-end gap-1 hover:opacity-80 transition-opacity"
-                    >
-                      <span className="text-2xl font-bold text-gray-900">
-                        {`${todayGigsCount} Gigs`}
-                      </span>
-                      <div className="flex items-center gap-1 text-sm text-gray-600">
-                        <span>History</span>
-                        <ArrowRight className="w-4 h-4" />
+                      <div className="flex items-center gap-1 text-[10px] text-gray-500 uppercase font-semibold">
+                        <span>Time</span>
                       </div>
                     </button>
                   </div>
@@ -10515,6 +10498,9 @@ export default function DeliveryHome() {
                     )
 
                     if (response.data?.success) {
+                      // Record end time for session tracking (used by TimeOnOrders page)
+                      const endTimeStr = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }).slice(0, 5)
+                      localStorage.setItem(`delivery_order_end_time_${orderIdForApi}`, endTimeStr)
                       // Get updated earnings from response (either full object or amount)
                       const earningsEntity = response.data.data?.earnings || response.data.data?.totalEarning || orderEarnings
                       setOrderEarnings(earningsEntity)

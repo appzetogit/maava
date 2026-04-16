@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { ArrowLeft, ChevronDown } from "lucide-react"
+import { ArrowLeft, ChevronDown, Clock } from "lucide-react"
 import { useProgressStore } from "../store/progressStore"
+import { getAllDeliveryOrders, DELIVERY_ORDER_STATUS } from "../utils/deliveryOrderStatus"
+import { deliveryAPI } from "@/lib/api"
 
 export default function TimeOnOrders() {
   const navigate = useNavigate()
@@ -9,6 +11,7 @@ export default function TimeOnOrders() {
   const [selectedTimeRange, setSelectedTimeRange] = useState("Select Time")
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [showTimeRangePicker, setShowTimeRangePicker] = useState(false)
+  const [sessions, setSessions] = useState([])
 
   const timeRanges = [
     "Select Time",
@@ -19,289 +22,215 @@ export default function TimeOnOrders() {
     "All Day"
   ]
 
-  // Generate dummy session data
-  const generateDummySessions = (date, timeRange) => {
-    const sessions = []
-    const seed = date.toISOString().split('T')[0].replace(/-/g, '')
-    const seedNum = parseInt(seed) % 1000
-    
-    const count = (seedNum % 8) + 2 // 2-9 sessions
+  const { updateTodayTimeOnOrders } = useProgressStore()
 
-    for (let i = 0; i < count; i++) {
-      const startHour = Math.floor((seedNum + i) % 24)
-      const startMin = Math.floor((seedNum + i * 2) % 60)
-      const duration = ((seedNum + i) % 180) + 30 // 30-210 minutes
-      
-      const endMin = startMin + duration
-      const endHour = startHour + Math.floor(endMin / 60)
-      const finalEndMin = endMin % 60
-      
-      const startTime = `${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`
-      const endTime = `${String(endHour % 24).padStart(2, '0')}:${String(finalEndMin).padStart(2, '0')}`
-      const timeRangeStr = `${startTime} - ${endTime}`
-      
-      const hours = Math.floor(duration / 60)
-      const minutes = duration % 60
-      const timeOnOrders = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
-
-      sessions.push({
-        id: i + 1,
-        session: `Session ${i + 1}`,
-        timeRange: timeRangeStr,
-        timeOnOrders,
-        hours,
-        minutes,
-        duration
-      })
-    }
-
-    // Filter by time range if selected
-    if (timeRange !== "Select Time" && timeRange !== "All Day") {
-      const [start, end] = timeRange.split(' - ').map(t => {
-        const [h, m] = t.split(':').map(Number)
-        return h * 60 + m
-      })
-      
-      return sessions.filter(session => {
-        const [sessionStart] = session.timeRange.split(' - ').map(t => {
-          const [h, m] = t.split(':').map(Number)
-          return h * 60 + m
+  // Load real sessions from orders
+  useEffect(() => {
+    const fetchRealSessions = async () => {
+      try {
+        const todayKey = selectedDate.toISOString().split('T')[0]
+        
+        // Fetch from backend API to get all orders (even those not in local storage)
+        const response = await deliveryAPI.getTripHistory({
+          period: 'daily',
+          date: todayKey,
+          limit: 100
         })
-        return sessionStart >= start && sessionStart < end
-      })
+
+        if (response.data?.success && response.data?.data?.trips) {
+          const tripsData = response.data.data.trips
+          
+          const sessionsData = tripsData.map((trip, index) => {
+            const orderId = trip.orderId || trip.id
+            
+            // Try to get time range from metadata if available
+            const startTimeKey = `delivery_order_start_time_${orderId}`
+            const endTimeKey = `delivery_order_end_time_${orderId}`
+            
+            const localStart = localStorage.getItem(startTimeKey)
+            const localEnd = localStorage.getItem(endTimeKey)
+            
+            // Safe split for trip.time
+            const timeParts = (typeof trip.time === 'string' && trip.time.includes(' - ')) 
+              ? trip.time.split(' - ') 
+              : [trip.time || "09:00", "09:15"]
+
+            const startTime = localStart || timeParts[0] || "09:00"
+            const endTime = localEnd || timeParts[1] || "09:15"
+            
+            // Calculate duration safely
+            const [sH, sM] = (startTime || "09:00").split(':').map(val => Number(val) || 0)
+            const [eH, eM] = (endTime || "00:00").split(':').map(val => Number(val) || 0)
+            
+            let diffMin = (eH * 60 + sM) - (sH * 60 + sM) // Initial guess
+            // If we have actual end time, recalculate
+            if (eH || eM) {
+              diffMin = (eH * 60 + (eM || 0)) - (sH * 60 + (sM || 0))
+            }
+            
+            if (diffMin <= 0) diffMin = 15 // Default 15 min session
+            if (diffMin > 1440) diffMin = 30 // Max 30 min per delivery (sanity check for bad data)
+
+            const hours = Math.floor(diffMin / 60)
+            const minutes = diffMin % 60
+
+            return {
+              id: orderId || index,
+              session: `Order #${String(orderId).slice(-4)}`,
+              timeRange: `${startTime} - ${endTime}`,
+              timeOnOrders: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`,
+              duration: diffMin,
+              status: trip.status
+            }
+          })
+
+          // Filter by time range if selected
+          let finalSessions = sessionsData
+          if (selectedTimeRange !== "Select Time" && selectedTimeRange !== "All Day") {
+            const [startRangeH] = selectedTimeRange.split(' - ')[0].split(':').map(Number)
+            const startRangeMin = startRangeH * 60
+            const endRangeMin = startRangeMin + 360
+            
+            finalSessions = sessionsData.filter(s => {
+              const [sH] = s.timeRange.split(':').map(Number)
+              const timeMin = sH * 60
+              return timeMin >= startRangeMin && timeMin < endRangeMin
+            })
+          }
+
+          setSessions(finalSessions)
+        } else {
+          setSessions([])
+        }
+      } catch (err) {
+        console.error("Failed to fetch sessions:", err)
+        setSessions([])
+      }
     }
 
-    return sessions.sort((a, b) => {
-      const [aStart] = a.timeRange.split(' - ').map(t => {
-        const [h, m] = t.split(':').map(Number)
-        return h * 60 + m
-      })
-      const [bStart] = b.timeRange.split(' - ').map(t => {
-        const [h, m] = t.split(':').map(Number)
-        return h * 60 + m
-      })
-      return aStart - bStart
+    fetchRealSessions()
+  }, [selectedDate, selectedTimeRange])
+
+  // Calculate totals
+  const totalMinutes = sessions.reduce((sum, s) => sum + s.duration, 0)
+  const finalHours = Math.floor(totalMinutes / 60)
+  const finalMinutes = totalMinutes % 60
+
+  // Update store for today
+  useEffect(() => {
+    const today = new Date().toDateString()
+    if (selectedDate.toDateString() === today) {
+      updateTodayTimeOnOrders(finalHours + (finalMinutes / 60))
+    }
+  }, [finalHours, finalMinutes, selectedDate, updateTodayTimeOnOrders])
+
+  const formatDateDisplay = (date) => {
+    const today = new Date().toDateString()
+    if (date.toDateString() === today) return "Today"
+    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'long' })
+  }
+
+  const generateRecentDates = () => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date()
+      d.setDate(d.getDate() - i)
+      return d
     })
   }
 
-  const [sessions, setSessions] = useState(() => 
-    generateDummySessions(selectedDate, selectedTimeRange)
-  )
-
-  const { updateTodayTimeOnOrders } = useProgressStore()
-
-  useEffect(() => {
-    const sessionsData = generateDummySessions(selectedDate, selectedTimeRange)
-    setSessions(sessionsData)
-    
-    // Update store if viewing today's data and all day
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const selectedDateNormalized = new Date(selectedDate)
-    selectedDateNormalized.setHours(0, 0, 0, 0)
-    
-    if (selectedDateNormalized.getTime() === today.getTime() && (selectedTimeRange === "Select Time" || selectedTimeRange === "All Day")) {
-      const totalHours = finalHours + (finalMinutes / 60)
-      updateTodayTimeOnOrders(totalHours)
-    }
-  }, [selectedDate, selectedTimeRange, updateTodayTimeOnOrders])
-
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = () => {
-      setShowDatePicker(false)
-      setShowTimeRangePicker(false)
-    }
-    if (showDatePicker || showTimeRangePicker) {
-      document.addEventListener('click', handleClickOutside)
-      return () => document.removeEventListener('click', handleClickOutside)
-    }
-  }, [showDatePicker, showTimeRangePicker])
-
-  // Calculate total hours
-  const totalHours = sessions.reduce((sum, session) => sum + session.hours, 0)
-  const totalMinutes = sessions.reduce((sum, session) => sum + session.minutes, 0)
-  const finalHours = totalHours + Math.floor(totalMinutes / 60)
-  const finalMinutes = totalMinutes % 60
-
-  // Update store when sessions change
-  useEffect(() => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const selectedDateNormalized = new Date(selectedDate)
-    selectedDateNormalized.setHours(0, 0, 0, 0)
-    
-    if (selectedDateNormalized.getTime() === today.getTime() && (selectedTimeRange === "Select Time" || selectedTimeRange === "All Day")) {
-      const totalHoursValue = finalHours + (finalMinutes / 60)
-      updateTodayTimeOnOrders(totalHoursValue)
-    }
-  }, [sessions, finalHours, finalMinutes, selectedDate, selectedTimeRange, updateTodayTimeOnOrders])
-
-  // Format date for display
-  const formatDateDisplay = (date) => {
-    const today = new Date()
-    const yesterday = new Date(today)
-    yesterday.setDate(yesterday.getDate() - 1)
-    
-    if (date.toDateString() === today.toDateString()) {
-      return "Today"
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return "Yesterday"
-    } else {
-      const options = { day: 'numeric', month: 'long' }
-      return date.toLocaleDateString('en-US', options)
-    }
-  }
-
-  // Generate recent dates for picker
-  const generateRecentDates = () => {
-    const dates = []
-    for (let i = 0; i < 30; i++) {
-      const date = new Date()
-      date.setDate(date.getDate() - i)
-      dates.push(date)
-    }
-    return dates
-  }
-
-  const recentDates = generateRecentDates()
-
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors mr-2"
-        >
+      <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center sticky top-0 z-30">
+        <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-full mr-2">
           <ArrowLeft className="w-5 h-5 text-black" />
         </button>
         <h1 className="text-lg font-bold text-black flex-1 text-center">Time on orders</h1>
         <div className="w-10"></div>
       </div>
 
-      {/* Date and Time Selection */}
-      <div className="px-4 py-4 border-b border-gray-200 flex gap-3">
-        {/* Date Selector */}
+      {/* Selectors */}
+      <div className="px-4 py-4 bg-white shadow-sm flex gap-3 z-20">
         <button
-          onClick={(e) => {
-            e.stopPropagation()
-            setShowDatePicker(!showDatePicker)
-            setShowTimeRangePicker(false)
-          }}
-          className="flex-1 flex items-center justify-between px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+          onClick={() => setShowDatePicker(!showDatePicker)}
+          className="flex-1 flex items-center justify-between px-4 py-2.5 bg-gray-100 rounded-xl border border-transparent focus:border-black transition-all"
         >
-          <span className="text-sm font-medium text-black">
-            {formatDateDisplay(selectedDate)}
-          </span>
-          <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${showDatePicker ? 'rotate-180' : ''}`} />
+          <span className="text-sm font-semibold">{formatDateDisplay(selectedDate)}</span>
+          <ChevronDown className={`w-4 h-4 transition-transform ${showDatePicker ? 'rotate-180' : ''}`} />
         </button>
-
-        {/* Time Range Selector */}
         <button
-          onClick={(e) => {
-            e.stopPropagation()
-            setShowTimeRangePicker(!showTimeRangePicker)
-            setShowDatePicker(false)
-          }}
-          className="flex-1 flex items-center justify-between px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+          onClick={() => setShowTimeRangePicker(!showTimeRangePicker)}
+          className="flex-1 flex items-center justify-between px-4 py-2.5 bg-gray-100 rounded-xl border border-transparent focus:border-black transition-all"
         >
-          <span className="text-sm font-medium text-black">{selectedTimeRange}</span>
-          <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${showTimeRangePicker ? 'rotate-180' : ''}`} />
+          <span className="text-sm font-semibold">{selectedTimeRange}</span>
+          <ChevronDown className={`w-4 h-4 transition-transform ${showTimeRangePicker ? 'rotate-180' : ''}`} />
         </button>
       </div>
 
-      {/* Date Picker Dropdown */}
-      {showDatePicker && (
-        <div className="fixed left-4 right-4 top-32 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
-          {recentDates.map((date, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                setSelectedDate(date)
-                setShowDatePicker(false)
-              }}
-              className={`w-full text-left px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors ${
-                date.toDateString() === selectedDate.toDateString() ? 'bg-gray-50 font-medium' : ''
-              }`}
-            >
-              <span className="text-sm text-black">{formatDateDisplay(date)}</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Time Range Picker Dropdown */}
-      {showTimeRangePicker && (
-        <div className="fixed right-4 top-32 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[180px]">
-          {timeRanges.map((range, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                setSelectedTimeRange(range)
-                setShowTimeRangePicker(false)
-              }}
-              className={`w-full text-left px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors ${
-                range === selectedTimeRange ? 'bg-gray-50 font-medium' : ''
-              }`}
-            >
-              <span className="text-sm text-black">{range}</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Central Display */}
-      <div className="flex flex-col items-center justify-center py-12">
-        <p className="text-6xl font-bold text-black mb-2">
-          {String(finalHours).padStart(2, '0')}:{String(finalMinutes).padStart(2, '0')}
-        </p>
-        <p className="text-base text-gray-600 mt-2">Hours on orders</p>
-      </div>
-
-      {/* Sessions Table */}
-      {sessions.length > 0 && (
-        <div className="px-4 pb-6">
-          {/* Table Headers */}
-          <div className="bg-gray-50 border-b-2 border-gray-300 px-4 py-3 flex items-center">
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-black">Sessions</p>
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-black">Time Range</p>
-            </div>
-            <div className="flex-1 text-right">
-              <p className="text-sm font-semibold text-black">Time on orders</p>
-            </div>
-          </div>
-
-          {/* Table Rows */}
-          <div className="bg-white">
-            {sessions.map((session) => (
-              <div
-                key={session.id}
-                className="border-b border-gray-200 px-4 py-4 flex items-center hover:bg-gray-50 transition-colors"
+      {/* Pickers */}
+      <div className="relative">
+        {showDatePicker && (
+          <div className="absolute left-4 right-4 top-0 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-4">
+            {generateRecentDates().map((d, i) => (
+              <button
+                key={i}
+                onClick={() => { setSelectedDate(d); setShowDatePicker(false); }}
+                className={`w-full text-left px-5 py-4 border-b last:border-0 hover:bg-gray-50 ${d.toDateString() === selectedDate.toDateString() ? 'bg-black text-white' : 'text-gray-900'}`}
               >
-                <div className="flex-1">
-                  <p className="text-sm text-black">{session.session}</p>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-black">{session.timeRange}</p>
-                </div>
-                <div className="flex-1 text-right">
-                  <p className="text-sm font-medium text-black">{session.timeOnOrders}</p>
-                </div>
-              </div>
+                {formatDateDisplay(d)}
+              </button>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {sessions.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-base">No sessions found for selected time range</p>
+      {/* Main Stats */}
+      <div className="flex-1 overflow-y-auto px-4 py-8">
+        <div className="flex flex-col items-center justify-center mb-10">
+          <div className="relative">
+            <span className="text-7xl font-black text-black tracking-tighter">
+              {String(finalHours).padStart(2, '0')}:{String(finalMinutes).padStart(2, '0')}
+            </span>
+            <div className="absolute -top-4 -right-8 w-14 h-14 bg-yellow-400 rounded-2xl rotate-12 flex items-center justify-center -z-10 shadow-lg">
+              <Clock className="w-8 h-8 text-black -rotate-12" />
+            </div>
+          </div>
+          <p className="text-gray-500 font-medium uppercase tracking-[3px] text-xs mt-4">Total Login Hours</p>
         </div>
-      )}
+
+        {/* Sessions List */}
+        <div className="space-y-4">
+          <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest px-1">Completed Sessions</h2>
+          {sessions.length > 0 ? (
+            <div className="bg-white rounded-3xl p-2 shadow-sm border border-gray-100">
+              {sessions.map((s) => (
+                <div key={s.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-gray-400" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-900">{s.session}</p>
+                      <p className="text-xs text-gray-500 font-medium">{s.timeRange}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-black text-black">{s.timeOnOrders}</p>
+                    <p className="text-[10px] text-green-600 font-bold uppercase">Success</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Clock className="w-10 h-10 text-gray-300" />
+              </div>
+              <p className="text-gray-400 font-medium">No sessions recorded yet</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
