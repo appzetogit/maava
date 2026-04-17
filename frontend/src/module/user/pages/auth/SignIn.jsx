@@ -617,9 +617,16 @@ export default function SignIn() {
               By continuing, you agree to our{' '}
               <span 
                 className="underline hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer"
-                onClick={() => navigate("/restaurant/privacy")}
+                onClick={() => navigate("/user/privacy")}
               >
                 Privacy Policy
+              </span>
+              {' '}and{' '}
+              <span 
+                className="underline hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer"
+                onClick={() => navigate("/user/support")}
+              >
+                Support
               </span>
             </p>
           </div>

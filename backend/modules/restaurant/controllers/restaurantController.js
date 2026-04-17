@@ -1,6 +1,13 @@
 import Restaurant from '../models/Restaurant.js';
 import Menu from '../models/Menu.js';
 import OutletTimings from '../models/OutletTimings.js';
+import Inventory from '../models/Inventory.js';
+import StaffManagement from '../models/StaffManagement.js';
+import Offer from '../models/Offer.js';
+import MenuItemSchedule from '../models/MenuItemSchedule.js';
+import RestaurantWallet from '../models/RestaurantWallet.js';
+import WithdrawalRequest from '../models/WithdrawalRequest.js';
+import RestaurantCategory from '../models/RestaurantCategory.js';
 import Zone from '../../admin/models/Zone.js';
 import { successResponse, errorResponse } from '../../../shared/utils/response.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../../../shared/utils/cloudinaryService.js';
@@ -958,7 +965,7 @@ export const deleteRestaurantAccount = asyncHandler(async (req, res) => {
       return errorResponse(res, 404, 'Restaurant not found');
     }
 
-    // Delete Cloudinary images if they exist
+    // 1. Delete Cloudinary images if they exist
     try {
       // Delete profile image
       if (restaurant.profileImage?.publicId) {
@@ -966,7 +973,6 @@ export const deleteRestaurantAccount = asyncHandler(async (req, res) => {
           await deleteFromCloudinary(restaurant.profileImage.publicId);
         } catch (error) {
           console.error('Error deleting profile image from Cloudinary:', error);
-          // Continue with account deletion even if image deletion fails
         }
       }
 
@@ -978,25 +984,40 @@ export const deleteRestaurantAccount = asyncHandler(async (req, res) => {
               await deleteFromCloudinary(menuImage.publicId);
             } catch (error) {
               console.error('Error deleting menu image from Cloudinary:', error);
-              // Continue with account deletion even if image deletion fails
             }
           }
         }
       }
     } catch (error) {
       console.error('Error deleting images from Cloudinary:', error);
-      // Continue with account deletion even if image deletion fails
     }
 
-    // Delete the restaurant from database
+    // 2. Clean up associated data from other collections
+    try {
+      await Promise.allSettled([
+        Menu.deleteMany({ restaurant: restaurantId }),
+        OutletTimings.deleteMany({ restaurantId: restaurantId }),
+        Inventory.deleteMany({ restaurant: restaurantId }),
+        StaffManagement.deleteMany({ restaurantId: restaurantId }),
+        Offer.deleteMany({ restaurant: restaurantId }),
+        MenuItemSchedule.deleteMany({ restaurant: restaurantId }),
+        RestaurantWallet.deleteMany({ restaurantId: restaurantId }),
+        WithdrawalRequest.deleteMany({ restaurantId: restaurantId }),
+        RestaurantCategory.deleteMany({ restaurant: restaurantId })
+      ]);
+    } catch (cleanupError) {
+      console.error('Error during database cleanup:', cleanupError);
+    }
+
+    // 3. Delete the restaurant from database
     await Restaurant.findByIdAndDelete(restaurantId);
 
-    console.log(`Restaurant account deleted: ${restaurantId}`, {
+    console.log(`Restaurant account and all associated data deleted: ${restaurantId}`, {
       restaurantId: restaurant.restaurantId,
       name: restaurant.name
     });
 
-    return successResponse(res, 200, 'Restaurant account deleted successfully');
+    return successResponse(res, 200, 'Account and all associated records deleted successfully');
   } catch (error) {
     console.error('Error deleting restaurant account:', error);
     return errorResponse(res, 500, 'Failed to delete restaurant account');
@@ -1184,3 +1205,4 @@ export const getRestaurantZones = asyncHandler(async (req, res) => {
     return errorResponse(res, 500, 'Failed to fetch zones');
   }
 });
+

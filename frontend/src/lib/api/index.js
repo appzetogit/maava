@@ -218,6 +218,11 @@ export const userAPI = {
   updateLocation: (locationData) => {
     return apiClient.put(API_ENDPOINTS.USER.LOCATION, locationData);
   },
+
+  // Delete user profile
+  deleteProfile: () => {
+    return apiClient.delete(API_ENDPOINTS.USER.PROFILE);
+  },
 };
 
 // Export location API helper functions
@@ -724,6 +729,11 @@ export const deliveryAPI = {
   // Update delivery profile
   updateProfile: (data) => {
     return apiClient.put(API_ENDPOINTS.DELIVERY.PROFILE, data);
+  },
+
+  // Delete delivery profile
+  deleteProfile: () => {
+    return apiClient.delete(API_ENDPOINTS.DELIVERY.PROFILE);
   },
 
   // Get orders

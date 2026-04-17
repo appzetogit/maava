@@ -1,6 +1,7 @@
 import { asyncHandler } from '../../../shared/middleware/asyncHandler.js';
 import { successResponse, errorResponse } from '../../../shared/utils/response.js';
 import User from '../../auth/models/User.js';
+import UserWallet from '../models/UserWallet.js';
 import { uploadToCloudinary } from '../../../shared/utils/cloudinaryService.js';
 import axios from 'axios';
 import winston from 'winston';
@@ -529,6 +530,34 @@ export const deleteUserAddress = asyncHandler(async (req, res) => {
   } catch (error) {
     logger.error(`Error deleting address: ${error.message}`, { error: error.stack });
     return errorResponse(res, 500, 'Failed to delete address');
+  }
+});
+
+/**
+ * Delete user account
+ * DELETE /api/user/profile
+ */
+export const deleteAccount = asyncHandler(async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return errorResponse(res, 404, 'User not found');
+    }
+
+    // Clean up related data
+    await UserWallet.deleteOne({ userId });
+    
+    // Perform deletion
+    await User.findByIdAndDelete(userId);
+
+    logger.info(`User account deleted: ${userId}`);
+
+    return successResponse(res, 200, 'Account deleted successfully');
+  } catch (error) {
+    logger.error(`Error deleting user account: ${error.message}`, { error: error.stack });
+    return errorResponse(res, 500, 'Failed to delete account');
   }
 });
 

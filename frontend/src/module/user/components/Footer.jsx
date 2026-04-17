@@ -45,16 +45,16 @@ export default function Footer() {
 
   const footerLinks = {
     company: [
-      { name: "About Us", href: "/user/help" },
-      { name: "Careers", href: "/user/help" },
-      { name: "Blog", href: "/user/help" },
-      { name: "Press", href: "/user/help" },
+      { name: "About Us", href: "/user/support" },
+      { name: "Careers", href: "/user/support" },
+      { name: "Blog", href: "/user/support" },
+      { name: "Press", href: "/user/support" },
     ],
     support: [
-      { name: "Help Center", href: "/user/help" },
-      { name: "Contact Us", href: "/user/help" },
-      { name: "Privacy Policy", href: "/user/help" },
-      { name: "Terms of Service", href: "/user/help" },
+      { name: "Help Center", href: "/user/support" },
+      { name: "Contact Us", href: "/user/support" },
+      { name: "Privacy Policy", href: "/user/profile/privacy" },
+      { name: "Terms of Service", href: "/user/profile/terms" },
     ],
     user: [
       { name: "My Account", href: "/user/profile" },
@@ -63,7 +63,7 @@ export default function Footer() {
       { name: "Offers", href: "/user/offers" },
     ],
     restaurants: [
-      { name: "Partner With Us", href: "/user/help" },
+      { name: "Partner With Us", href: "/user/support" },
       { name: "Restaurant Login", href: "/restaurant" },
       { name: "Delivery", href: "/delivery" },
     ],
@@ -111,11 +111,11 @@ export default function Footer() {
             >
               <div className="flex items-center gap-2 text-slate-300 text-sm">
                 <Phone className="h-4 w-4" />
-                <span>+1 (555) 123-4567</span>
+                <span>+91 9010551238</span>
               </div>
               <div className="flex items-center gap-2 text-slate-300 text-sm">
                 <Mail className="h-4 w-4" />
-                <span>support@{companyName.toLowerCase().replace(/\s+/g, '')}.com</span>
+                <span>mudavathravi1238@gmail.com</span>
               </div>
               <div className="flex items-center gap-2 text-slate-300 text-sm">
                 <MapPin className="h-4 w-4" />

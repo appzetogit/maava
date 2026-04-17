@@ -102,6 +102,7 @@ import Gallery from "../pages/settings/Gallery";
 import LoginSetup from "../pages/settings/LoginSetup";
 import TermsAndCondition from "../pages/settings/TermsAndCondition";
 import PrivacyPolicy from "../pages/settings/PrivacyPolicy";
+import SupportPage from "../pages/settings/SupportPage";
 import AboutUs from "../pages/settings/AboutUs";
 import RefundPolicy from "../pages/settings/RefundPolicy";
 import ShippingPolicy from "../pages/settings/ShippingPolicy";
@@ -291,6 +292,7 @@ export default function AdminRouter() {
         {/* Pages & Social Media */}
         <Route path="pages-social-media/terms" element={<TermsAndCondition />} />
         <Route path="pages-social-media/privacy" element={<PrivacyPolicy />} />
+        <Route path="pages-social-media/support" element={<SupportPage />} />
         <Route path="pages-social-media/about" element={<AboutUs />} />
         <Route path="pages-social-media/refund" element={<RefundPolicy />} />
         <Route path="pages-social-media/shipping" element={<ShippingPolicy />} />

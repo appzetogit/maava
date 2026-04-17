@@ -78,6 +78,7 @@ import AuthCallback from "../pages/auth/AuthCallback"
 
 // Help
 import Help from "../pages/help/Help"
+import Support from "../pages/help/Support"
 import OrderHelp from "../pages/help/OrderHelp"
 
 // Notifications
@@ -308,6 +309,14 @@ export default function UserRouter() {
           }
         />
         <Route
+          path="/profile/support"
+          element={
+            <ProtectedRoute requiredRole="user" loginPath="/user/auth/sign-in">
+              <Support />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/profile/refund"
           element={
             <ProtectedRoute requiredRole="user" loginPath="/user/auth/sign-in">
@@ -369,9 +378,9 @@ export default function UserRouter() {
         <Route path="/auth/otp" element={<AuthRedirect module="user"><OTP /></AuthRedirect>} />
         <Route path="/auth/callback" element={<AuthRedirect module="user"><AuthCallback /></AuthRedirect>} />
 
-        {/* Help */}
-        <Route path="/help" element={<Help />} />
-        <Route path="/help/orders/:orderId" element={<OrderHelp />} />
+        <Route path="/support" element={<Support />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
 
         {/* Notifications - Protected */}
         <Route

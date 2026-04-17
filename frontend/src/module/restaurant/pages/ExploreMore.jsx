@@ -34,6 +34,7 @@ import { DateRangeCalendar } from "@/components/ui/date-range-calendar"
 import { clearModuleAuth, clearAuthData } from "@/lib/utils/auth"
 import { restaurantAPI } from "@/lib/api"
 import { firebaseAuth } from "@/lib/firebase"
+import { toast } from "sonner"
 
 // Time Picker Wheel Component
 function TimePickerWheel({
@@ -545,6 +546,38 @@ export default function ExploreMore() {
       navigate("/restaurant/welcome", { replace: true })
     } finally {
       setIsLoggingOut(false)
+    }
+  }
+
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+
+  const handleDeleteAccount = async () => {
+    const isConfirmed = window.confirm("Are you sure you want to delete the account? All data will removed")
+    if (!isConfirmed) return
+
+    setIsDeletingAccount(true)
+    try {
+      // Call backend delete API
+      await restaurantAPI.deleteAccount()
+      
+      toast.success("Account deleted successfully")
+
+      // Clear all auth data
+      clearAuthData()
+      localStorage.removeItem("restaurant_onboarding")
+      sessionStorage.removeItem("restaurantAuthData")
+      
+      // Dispatch auth change event
+      window.dispatchEvent(new Event("restaurantAuthChanged"))
+
+      // Navigate to login
+      navigate("/restaurant/login", { replace: true })
+    } catch (error) {
+      console.error("Error deleting account:", error)
+      toast.error(error?.response?.data?.message || "Failed to delete account")
+    } finally {
+      setIsDeletingAccount(false)
+      setProfileOpen(false)
     }
   }
 
@@ -1176,6 +1209,14 @@ export default function ExploreMore() {
                   className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-black py-4 px-6 rounded-2xl transition-all shadow-lg shadow-red-100 active:scale-[0.98] uppercase tracking-widest text-xs"
                 >
                   {isLoggingOut ? "Processing..." : "Logout from all devices"}
+                </button>
+
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={isDeletingAccount || isLoggingOut}
+                  className="w-full bg-white border-2 border-red-600 text-red-600 font-black py-4 px-6 rounded-2xl transition-all hover:bg-red-50 active:scale-[0.98] uppercase tracking-widest text-xs mt-2"
+                >
+                  {isDeletingAccount ? "Deleting..." : "Delete Account"}
                 </button>
               </div>
 

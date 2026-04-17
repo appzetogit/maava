@@ -191,6 +191,10 @@ import {
   updateCancellation
 } from '../controllers/cancellationPolicyController.js';
 import {
+  getSupport,
+  updateSupport
+} from '../controllers/supportController.js';
+import {
   getAllFeedbacks,
   getFeedbackById,
   updateFeedbackStatus,
@@ -448,6 +452,10 @@ router.put('/shipping', updateShipping);
 // Cancellation Policy Management
 router.get('/cancellation', getCancellation);
 router.put('/cancellation', updateCancellation);
+
+// Support & FAQ Management
+router.get('/support', getSupport);
+router.put('/support', updateSupport);
 
 // Feedback Management
 router.get('/feedback', getAllFeedbacks);

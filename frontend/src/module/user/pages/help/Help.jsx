@@ -265,17 +265,19 @@ export default function Help() {
                   </div>
                 </CardContent>
             </Link>
-              <CardContent className="p-4 md:p-5 lg:p-6">
-                <div className="flex items-center gap-3 md:gap-4">
-                  <div className="p-2 md:p-3 bg-green-100 rounded-lg">
-                    <MessageCircle className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
+              <Link to="/user/support">
+                <CardContent className="p-4 md:p-5 lg:p-6">
+                  <div className="flex items-center gap-3 md:gap-4">
+                    <div className="p-2 md:p-3 bg-green-100 rounded-lg">
+                      <MessageCircle className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm md:text-base font-semibold">Contact Support</h3>
+                      <p className="text-xs md:text-sm text-muted-foreground">Get help from our team</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm md:text-base font-semibold">Contact Support</h3>
-                    <p className="text-xs md:text-sm text-muted-foreground">Get help from our team</p>
-                  </div>
-                </div>
-              </CardContent>
+                </CardContent>
+              </Link>
           </div>
         </ScrollReveal>
 
@@ -389,10 +391,10 @@ export default function Help() {
                       Call us anytime
                     </p>
                     <a
-                      href="tel:+1-800-123-4567"
+                      href="tel:+917610416911"
                       className="text-sm text-primary hover:underline font-medium"
                     >
-                      +1 (800) 123-4567
+                      +91 7610416911
                     </a>
                   </div>
                 </div>
@@ -406,10 +408,10 @@ export default function Help() {
                       We'll respond within 24 hours
                     </p>
                     <a
-                      href="mailto:support@appzeto.com"
+                      href="mailto:support@maava.in"
                       className="text-sm text-primary hover:underline font-medium"
                     >
-                      support@appzeto.com
+                      support@maava.in
                     </a>
                   </div>
                 </div>

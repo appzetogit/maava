@@ -1,6 +1,8 @@
 import { asyncHandler } from '../../../shared/middleware/asyncHandler.js';
 import { successResponse, errorResponse } from '../../../shared/utils/response.js';
 import Delivery from '../models/Delivery.js';
+import DeliveryWallet from '../models/DeliveryWallet.js';
+import DeliveryWithdrawalRequest from '../models/DeliveryWithdrawalRequest.js';
 import { validate } from '../../../shared/middleware/validate.js';
 import Joi from 'joi';
 import winston from 'winston';
@@ -186,6 +188,39 @@ export const reverify = asyncHandler(async (req, res) => {
   } catch (error) {
     logger.error(`Error reverifying delivery partner: ${error.message}`);
     return errorResponse(res, 500, 'Failed to resubmit for verification');
+  }
+});
+
+/**
+ * Delete delivery partner account
+ * DELETE /api/delivery/profile
+ */
+export const deleteProfile = asyncHandler(async (req, res) => {
+  try {
+    const deliveryId = req.delivery._id;
+    
+    const delivery = await Delivery.findById(deliveryId);
+    if (!delivery) {
+      return errorResponse(res, 404, 'Delivery partner not found');
+    }
+
+    // Perform deletion
+    await Delivery.findByIdAndDelete(deliveryId);
+
+    // Clean up related data
+    try {
+      await DeliveryWallet.deleteOne({ deliveryId });
+      await DeliveryWithdrawalRequest.deleteMany({ deliveryId });
+    } catch (cleanupError) {
+      logger.error(`Error during delivery partner data cleanup: ${cleanupError.message}`);
+    }
+
+    logger.info(`Delivery partner account deleted: ${deliveryId}`);
+
+    return successResponse(res, 200, 'Account deleted successfully');
+  } catch (error) {
+    logger.error(`Error deleting delivery account: ${error.message}`);
+    return errorResponse(res, 500, 'Failed to delete account');
   }
 });
 

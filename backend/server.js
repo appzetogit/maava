@@ -51,6 +51,7 @@ import aboutPublicRoutes from './modules/admin/routes/aboutPublicRoutes.js';
 import businessSettingsPublicRoutes from './modules/admin/routes/businessSettingsPublicRoutes.js';
 import termsPublicRoutes from './modules/admin/routes/termsPublicRoutes.js';
 import privacyPublicRoutes from './modules/admin/routes/privacyPublicRoutes.js';
+import supportPublicRoutes from './modules/admin/routes/supportPublicRoutes.js';
 import refundPublicRoutes from './modules/admin/routes/refundPublicRoutes.js';
 import shippingPublicRoutes from './modules/admin/routes/shippingPublicRoutes.js';
 import cancellationPublicRoutes from './modules/admin/routes/cancellationPublicRoutes.js';
@@ -67,8 +68,6 @@ import diningAdminRoutes from './modules/dining/routes/diningAdminRoutes.js';
 import inmartRoutes from './modules/inmart/routes/inmartRoutes.js';
 import inmartAdminRoutes from './modules/inmart/routes/inmartAdminRoutes.js';
 import hibermartZoneRoutes from './modules/inmart/routes/hibermartZoneRoutes.js';
-
-
 
 // Validate required environment variables
 const requiredEnvVars = ['JWT_SECRET', 'MONGODB_URI'];
@@ -513,6 +512,7 @@ app.use('/api', aboutPublicRoutes);
 app.use('/api', businessSettingsPublicRoutes);
 app.use('/api', termsPublicRoutes);
 app.use('/api', privacyPublicRoutes);
+app.use('/api', supportPublicRoutes);
 app.use('/api', refundPublicRoutes);
 app.use('/api', shippingPublicRoutes);
 app.use('/api', cancellationPublicRoutes);

@@ -37,7 +37,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { authAPI, notificationAPI } from "@/lib/api"
+import { authAPI, notificationAPI, userAPI } from "@/lib/api"
 import { toast } from "sonner"
 import { firebaseApp, firebaseAuth } from "@/lib/firebase"
 import { clearModuleAuth } from "@/lib/utils/auth"
@@ -285,6 +285,39 @@ export default function Profile() {
     }
   }
 
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+
+  const handleDeleteAccount = async () => {
+    const isConfirmed = window.confirm("Are you sure you want to delete the account? All data will removed")
+    if (!isConfirmed) return
+
+    setIsDeletingAccount(true)
+    try {
+      // Call backend delete API
+      await userAPI.deleteProfile()
+      
+      toast.success("Account deleted successfully")
+
+      // Clear all auth data
+      clearModuleAuth("user")
+      localStorage.removeItem("accessToken")
+      localStorage.removeItem("user_authenticated")
+      localStorage.removeItem("user_user")
+      localStorage.removeItem("user")
+      
+      // Dispatch auth change event
+      window.dispatchEvent(new Event("userAuthChanged"))
+
+      // Navigate to login
+      navigate("/user/auth/sign-in", { replace: true })
+    } catch (error) {
+      console.error("Error deleting account:", error)
+      toast.error(error?.response?.data?.message || "Failed to delete account")
+    } finally {
+      setIsDeletingAccount(false)
+    }
+  }
+
   return (
     <AnimatedPage className="min-h-screen bg-[#f5f5f5] dark:bg-[#0a0a0a]">
       <div className="max-w-md md:max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-4 sm:py-6 md:py-8 lg:py-10">
@@ -330,10 +363,6 @@ export default function Profile() {
                 {!hasValidEmail && !userProfile?.phone && (
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Not available</p>
                 )}
-                {/* <Link to="/user/profile/activity" className="flex items-center gap-1 text-green-600 text-sm font-medium">
-                  View activity
-                  <ChevronRight className="h-4 w-4" />
-                </Link> */}
               </div>
             </div>
           </CardContent>
@@ -389,7 +418,6 @@ export default function Profile() {
 
         {/* Account Options */}
         <div className="space-y-2 mb-3">
-
           <Link to="/user/cart" className="block">
             <motion.div
               whileHover={{ x: 4, scale: 1.01 }}
@@ -417,7 +445,6 @@ export default function Profile() {
               </Card>
             </motion.div>
           </Link>
-
 
           <Link to="/user/profile/edit" className="block">
             <motion.div
@@ -459,7 +486,6 @@ export default function Profile() {
             </motion.div>
           </Link>
 
-
           <motion.div
             whileHover={{ x: 4, scale: 1.01 }}
             transition={{ duration: 0.2, type: "spring", stiffness: 300 }}
@@ -497,7 +523,6 @@ export default function Profile() {
               </CardContent>
             </Card>
           </motion.div>
-
         </div>
 
         {/* Collections Section */}
@@ -569,11 +594,8 @@ export default function Profile() {
                 </Card>
               </motion.div>
             </Link>
-
-
           </div>
         </div>
-
 
         {/* More Section */}
         <div className="mb-6 pb-4">
@@ -694,7 +716,6 @@ export default function Profile() {
               </motion.div>
             </Link>
 
-
             <motion.div
               whileHover={{ x: 4, scale: 1.01 }}
               transition={{ duration: 0.2, type: "spring", stiffness: 300 }}
@@ -725,10 +746,40 @@ export default function Profile() {
                 </CardContent>
               </Card>
             </motion.div>
+
+            <motion.div
+              whileHover={{ x: 4, scale: 1.01 }}
+              transition={{ duration: 0.2, type: "spring", stiffness: 300 }}
+            >
+              <Card
+                className="bg-white dark:bg-[#1a1a1a] py-0 rounded-xl shadow-sm border-0 dark:border-gray-800 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleDeleteAccount}
+              >
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <motion.div
+                      className="bg-gray-100 dark:bg-gray-800 rounded-full p-2"
+                      whileHover={{ rotate: 15, scale: 1.1 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <AlertTriangle className={`h-5 w-5 text-red-600 ${isDeletingAccount ? "animate-pulse" : ""}`} />
+                    </motion.div>
+                    <span className="text-base font-medium text-red-600">
+                      {isDeletingAccount ? "Deleting..." : "Delete Account"}
+                    </span>
+                  </div>
+                  <motion.div
+                    whileHover={{ x: 4 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                  </motion.div>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
         </div>
       </div>
-
 
       {/* Appearance Popup */}
       <Dialog open={appearanceOpen} onOpenChange={setAppearanceOpen}>
@@ -783,8 +834,6 @@ export default function Profile() {
           </div>
         </DialogContent>
       </Dialog>
-
     </AnimatedPage>
   )
 }
-

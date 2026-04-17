@@ -211,6 +211,44 @@ export default function ProfilePage() {
     }, 100)
   }
 
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+
+  const handleDeleteAccount = async () => {
+    const isConfirmed = window.confirm("Are you sure you want to delete the account? All data will removed")
+    if (!isConfirmed) return
+
+    setIsDeletingAccount(true)
+    try {
+      // Call backend delete API
+      await deliveryAPI.deleteProfile()
+      
+      toast.success("Account deleted successfully")
+
+      // Use utility function to clear module auth
+      clearModuleAuth("delivery")
+
+      // Clear all delivery-related data
+      localStorage.removeItem("delivery_gig_storage")
+      localStorage.removeItem("delivery_module_storage")
+      localStorage.removeItem("app:isOnline")
+
+      // Clear sessionStorage
+      sessionStorage.removeItem("deliveryAuthData")
+
+      // Dispatch custom events
+      window.dispatchEvent(new Event('deliveryAuthChanged'))
+      window.dispatchEvent(new Event('onlineStatusChanged'))
+
+      // Navigate to login
+      navigate("/delivery/sign-in", { replace: true })
+    } catch (error) {
+      console.error("Error deleting account:", error)
+      toast.error(error?.response?.data?.message || "Failed to delete account")
+    } finally {
+      setIsDeletingAccount(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 font-poppins overflow-x-hidden">
       {/* Main Content */}
@@ -368,7 +406,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Logout Section */}
-          <div className="pt-4">
+          <div className="pt-4 space-y-3">
             <Card
               onClick={handleLogout}
               className="bg-white py-0 border-0 shadow-none rounded-lg cursor-pointer hover:bg-gray-200 transition-colors"
@@ -377,6 +415,21 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-3">
                   <LogOut className="w-5 h-5 text-red-600" />
                   <span className="text-sm font-medium text-red-600">{t('delivery.logout', { defaultValue: 'Log out' })}</span>
+                </div>
+                <ArrowRight className="w-5 h-5 text-gray-400" />
+              </CardContent>
+            </Card>
+
+            <Card
+              onClick={handleDeleteAccount}
+              className="bg-white py-0 border-0 shadow-none rounded-lg cursor-pointer hover:bg-red-50 transition-colors border-2 border-transparent hover:border-red-200"
+            >
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <X className={`w-5 h-5 text-red-600 ${isDeletingAccount ? 'animate-pulse' : ''}`} />
+                  <span className="text-sm font-medium text-red-600">
+                    {isDeletingAccount ? "Deleting..." : "Delete Account"}
+                  </span>
                 </div>
                 <ArrowRight className="w-5 h-5 text-gray-400" />
               </CardContent>

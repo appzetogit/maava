@@ -316,7 +316,7 @@ export const sidebarMenuData = [
           { label: "Refund Policy", path: "/admin/pages-social-media/refund" },
           { label: "Shipping Policy", path: "/admin/pages-social-media/shipping" },
           { label: "Cancellation Policy", path: "/admin/pages-social-media/cancellation" },
-
+          { label: "Support", path: "/admin/pages-social-media/support" },
         ],
       },
     ],
