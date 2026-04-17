@@ -2644,17 +2644,21 @@ export default function DeliveryHome() {
 
                     // Fit bounds to show entire route - but preserve zoom if user has zoomed in
                     const bounds = directionsResult.routes[0].bounds;
-                    if (bounds) {
+                    if (bounds && !isUserPanningRef.current) {
                       const currentZoom = window.deliveryMapInstance.getZoom();
+                      
+                      // Use a smooth focus approach
                       window.deliveryMapInstance.fitBounds(bounds, { padding: 100 });
-                      // Restore zoom if user had zoomed in more than fitBounds would set
+                      
+                      // Restore zoom gracefully if user had zoomed in deeply
                       setTimeout(() => {
+                        if (!window.deliveryMapInstance) return;
                         const newZoom = window.deliveryMapInstance.getZoom();
                         if (currentZoom > newZoom && currentZoom >= 18) {
                           window.deliveryMapInstance.setZoom(currentZoom);
                         }
                       }, 100);
-                      console.log('✅ Map bounds fitted to route');
+                      console.log('✅ Map bounds fitted to route (smoothed)');
                     }
 
                     console.log('✅ Route displayed on main map using custom polyline');
@@ -5830,21 +5834,30 @@ export default function DeliveryHome() {
         console.log('📍 Origin (Delivery Boy LIVE Location):', currentLocation);
         console.log('📍 Destination:', destinationName, destinationLocation);
 
-        // Create map instance
-        const map = new window.google.maps.Map(directionsMapContainerRef.current, {
-          center: { lat: currentLocation[0], lng: currentLocation[1] },
-          zoom: 18,
-          minZoom: 10, // Minimum zoom level (city/area view)
-          maxZoom: 21, // Maximum zoom level - allow full zoom
-          mapTypeId: window.google.maps.MapTypeId.ROADMAP || 'roadmap',
-          disableDefaultUI: false,
-          zoomControl: true,
-          mapTypeControl: false,
-          streetViewControl: false,
-          fullscreenControl: false
-        });
-
-        directionsMapInstanceRef.current = map;
+        // Re-use map instance if already exists on the same container to prevent BLINK
+        let map = directionsMapInstanceRef.current;
+        
+        if (!map) {
+          console.log('🏗️ Creating directions map instance...');
+          map = new window.google.maps.Map(directionsMapContainerRef.current, {
+            center: { lat: currentLocation[0], lng: currentLocation[1] },
+            zoom: 18,
+            minZoom: 10,
+            maxZoom: 21,
+            mapTypeId: window.google.maps.MapTypeId.ROADMAP || 'roadmap',
+            disableDefaultUI: false,
+            zoomControl: true,
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: false
+          });
+          directionsMapInstanceRef.current = map;
+        } else {
+          // Update center smoothly if not panning
+          if (!isUserPanningRef.current) {
+            map.panTo({ lat: currentLocation[0], lng: currentLocation[1] });
+          }
+        }
 
         // Initialize Directions Service
         if (!directionsServiceRef.current) {
@@ -5892,9 +5905,9 @@ export default function DeliveryHome() {
             console.warn('⚠️ Error cleaning up polyline:', e);
           }
 
-          // Fit bounds to show entire route
+          // Fit bounds to show entire route - ONLY if it's a new result or significant change
           const bounds = routeResult.routes[0].bounds;
-          if (bounds) {
+          if (bounds && !isUserPanningRef.current) {
             map.fitBounds(bounds, { padding: 50 });
           }
 
@@ -6004,10 +6017,9 @@ export default function DeliveryHome() {
         }
       }
     };
+    // Important: Removed riderLocation from dependency to prevent re-initializing Map on every movement
     // Only re-initialize if showDirectionsMap, selectedRestaurant.id, or navigationMode changes
-    // Don't include calculateRouteWithDirectionsAPI to prevent unnecessary re-renders
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showDirectionsMap, selectedRestaurant?.id, navigationMode, selectedRestaurant?.customerLat, selectedRestaurant?.customerLng, riderLocation])
+  }, [showDirectionsMap, selectedRestaurant?.id, navigationMode])
 
   // Helper function to calculate distance in meters (Haversine formula)
   const calculateDistanceInMeters = useCallback((lat1, lng1, lat2, lng2) => {
@@ -6259,7 +6271,7 @@ export default function DeliveryHome() {
       console.error('❌ directionsResponse type:', typeof directionsResponse);
       console.error('❌ directionsResponse:', directionsResponse);
     }
-  }, [directionsResponse, selectedRestaurant])
+  }, [directionsResponse, selectedRestaurant?.id])
 
   // Restore active order from localStorage on page load/refresh
   useEffect(() => {
@@ -7312,11 +7324,12 @@ export default function DeliveryHome() {
 
               // Fit map bounds to show entire route
               const bounds = directionsResult.routes[0].bounds;
-              if (bounds) {
+              if (bounds && !isUserPanningRef.current) {
                 const currentZoomBeforeFit = window.deliveryMapInstance.getZoom();
                 window.deliveryMapInstance.fitBounds(bounds, { padding: 100 });
                 // Preserve zoom if user had zoomed in
                 setTimeout(() => {
+                  if (!window.deliveryMapInstance) return;
                   const newZoom = window.deliveryMapInstance.getZoom();
                   if (currentZoomBeforeFit > newZoom && currentZoomBeforeFit >= 18) {
                     window.deliveryMapInstance.setZoom(currentZoomBeforeFit);
@@ -7782,15 +7795,20 @@ export default function DeliveryHome() {
           const bounds = new window.google.maps.LatLngBounds();
           path.forEach(point => bounds.extend(point));
           // Add padding to bounds for better visibility
-          const currentZoomBeforeFit = map.getZoom();
-          map.fitBounds(bounds, { padding: 50 });
-          // Preserve zoom if user had zoomed in more than fitBounds would set
-          setTimeout(() => {
-            const newZoom = map.getZoom();
-            if (currentZoomBeforeFit > newZoom && currentZoomBeforeFit >= 18) {
-              map.setZoom(currentZoomBeforeFit);
-            }
-          }, 100);
+          // Fit map bounds to show entire route ONLY if not manually panning
+          if (!isUserPanningRef.current) {
+            const currentZoomBeforeFit = map.getZoom();
+            map.fitBounds(bounds, { padding: 50 });
+            // Preserve zoom if user had zoomed in more than fitBounds would set
+            setTimeout(() => {
+              if (window.deliveryMapInstance) {
+                const newZoom = map.getZoom();
+                if (currentZoomBeforeFit > newZoom && currentZoomBeforeFit >= 18) {
+                  map.setZoom(currentZoomBeforeFit);
+                }
+              }
+            }, 100);
+          }
           console.log('✅ Map bounds adjusted to show route');
         }
       }
