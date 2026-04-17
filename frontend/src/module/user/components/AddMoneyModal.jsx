@@ -175,43 +175,43 @@ export default function AddMoneyModal({ open, onOpenChange, onSuccess }) {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md dark:bg-[#1a1a1a] dark:border-gray-800">
-        <DialogHeader>
-          <DialogTitle className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+      <DialogContent className="max-w-[92%] sm:max-w-sm rounded-2xl dark:bg-[#1a1a1a] dark:border-gray-800 p-4 sm:p-6">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="text-lg md:text-xl font-bold text-gray-900 dark:text-white text-center">
             Add Money to Wallet
           </DialogTitle>
-          <DialogDescription className="text-sm md:text-base text-gray-600 dark:text-gray-400">
-            Enter the amount you want to add to your wallet
+          <DialogDescription className="text-xs md:text-sm text-gray-600 dark:text-gray-400 text-center">
+            Enter the amount for your wallet
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-4 py-1">
           {/* Amount Input */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="text-xs font-medium text-gray-700 dark:text-gray-300 block text-center">
               Enter Amount
             </label>
-            <div className="relative">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                <IndianRupee className="h-5 w-5 text-gray-400" />
+            <div className="relative w-[92%] mx-auto">
+              <div className="absolute left-2.5 top-1/2 -translate-y-1/2">
+                <IndianRupee className="h-3.5 w-3.5 text-gray-400" />
               </div>
               <Input
                 type="text"
                 value={amount}
                 onChange={handleAmountChange}
                 placeholder="Enter amount"
-                className="pl-10 h-12 text-lg text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:ring-green-500"
+                className="pl-8 h-8 text-xs text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:ring-green-500 rounded-lg"
                 disabled={loading || processing}
               />
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Minimum: ₹1 | Maximum: ₹50,000
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 text-center">
+              Min: ₹1 | Max: ₹50,000
             </p>
           </div>
 
           {/* Quick Amount Buttons */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="text-xs font-medium text-gray-700 dark:text-gray-300 block text-center">
               Quick Select
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -223,7 +223,7 @@ export default function AddMoneyModal({ open, onOpenChange, onSuccess }) {
                     type="button"
                     variant={isSelected ? "default" : "outline"}
                     className={cn(
-                      "h-10 transition-all",
+                      "h-8 transition-all text-xs",
                       isSelected
                         ? "bg-green-600 hover:bg-green-700 text-white border-transparent"
                         : "bg-transparent text-gray-600 border-gray-200 hover:bg-gray-50 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-800"
@@ -239,20 +239,22 @@ export default function AddMoneyModal({ open, onOpenChange, onSuccess }) {
           </div>
 
           {/* Add Money Button */}
-          <Button
-            onClick={handleAddMoney}
-            disabled={!amount || loading || processing || parseFloat(amount) < 1}
-            className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-semibold text-base"
-          >
-            {loading || processing ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {loading ? "Processing..." : "Opening Payment Gateway..."}
-              </>
-            ) : (
-              `Add ₹${amount || "0"}`
-            )}
-          </Button>
+          <div className="flex justify-center pt-2">
+            <Button
+              onClick={handleAddMoney}
+              disabled={!amount || loading || processing || parseFloat(amount) < 1}
+              className="w-[85%] h-10 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm rounded-xl"
+            >
+              {loading || processing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {loading ? "Processing..." : "Opening..."}
+                </>
+              ) : (
+                `Add ₹${amount || "0"}`
+              )}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
