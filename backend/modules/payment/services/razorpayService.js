@@ -62,8 +62,22 @@ const initializeRazorpay = async () => {
 
 // Get Razorpay instance
 const getRazorpayInstance = async (forceRefresh = false) => {
-  if (!razorpayInstance || forceRefresh) {
-    logger.info('Initializing fresh Razorpay instance...');
+  const credentials = await getRazorpayCredentials();
+  const currentKeyId = credentials.keyId;
+
+  // Re-initialize if:
+  // 1. Instance doesn't exist
+  // 2. forceRefresh is true
+  // 3. The keyId has changed (detects .env / DB updates)
+  if (!razorpayInstance || forceRefresh || razorpayInstance.key_id !== currentKeyId) {
+    if (razorpayInstance && razorpayInstance.key_id !== currentKeyId) {
+      logger.info('Razorpay Key ID change detected. Re-initializing instance...', {
+        oldKeyId: razorpayInstance.key_id,
+        newKeyId: currentKeyId
+      });
+    } else {
+      logger.info('Initializing Razorpay instance...');
+    }
     return await initializeRazorpay();
   }
   return razorpayInstance;

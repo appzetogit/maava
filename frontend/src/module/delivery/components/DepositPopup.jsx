@@ -5,7 +5,7 @@ import { initRazorpayPayment } from "@/lib/utils/razorpay"
 import { toast } from "sonner"
 import { getCompanyNameAsync } from "@/lib/utils/businessSettings"
 
-export default function DepositPopup({ onSuccess, cashInHand = 0 }) {
+export default function DepositPopup({ onSuccess, onClose, cashInHand = 0 }) {
   const [amount, setAmount] = useState("")
   const [loading, setLoading] = useState(false)
   const [processing, setProcessing] = useState(false)
@@ -71,58 +71,67 @@ export default function DepositPopup({ onSuccess, cashInHand = 0 }) {
       const name = profile?.name || "Delivery Partner"
 
       setLoading(false)
-      setProcessing(true)
+      
+      // CLOSE BottomPopup/Overlay if onClose is provided
+      // This ensures Razorpay checkout is not blocked by our own overlays
+      if (onClose) onClose()
 
-      // Open DEFAULT Razorpay Checkout
-      await initRazorpayPayment({
-        key: rp.key,
-        amount: rp.amount,
-        currency: rp.currency || "INR",
-        order_id: rp.orderId,
-        name: companyName,
-        description: `Cash limit deposit - ₹${amt.toFixed(2)}`,
-        prefill: {
-          name: name,
-          email: email,
-          contact: phone
-        },
-        notes: {
-          deliveryId: profile?._id || "",
-          type: "cash_limit_deposit"
-        },
-        handler: async (res) => {
-          try {
-            // Verify payment on backend
-            const verifyRes = await deliveryAPI.verifyDepositPayment({
-              razorpay_order_id: res.razorpay_order_id,
-              razorpay_payment_id: res.razorpay_payment_id,
-              razorpay_signature: res.razorpay_signature,
-              amount: amt
-            })
-            
-            if (verifyRes?.data?.success) {
-              toast.success(`Deposit of ₹${amt.toFixed(2)} successful`)
-              setAmount("")
-              // Refresh wallet state
-              window.dispatchEvent(new CustomEvent("deliveryWalletStateUpdated"))
-              if (onSuccess) onSuccess()
-            } else {
-              toast.error(verifyRes?.data?.message || "Verification failed")
+      // Give a tiny delay for the popup to close before Razorpay takes focus
+      setTimeout(async () => {
+        setProcessing(true)
+
+        // Open DEFAULT Razorpay Checkout
+        await initRazorpayPayment({
+          key: rp.key,
+          amount: rp.amount,
+          currency: rp.currency || "INR",
+          order_id: rp.orderId,
+          name: companyName,
+          description: `Cash limit deposit - ₹${amt.toFixed(2)}`,
+          prefill: {
+            name: name,
+            email: email,
+            contact: phone
+          },
+          notes: {
+            deliveryId: profile?._id || "",
+            type: "cash_limit_deposit"
+          },
+          handler: async (res) => {
+            try {
+              toast.info("Verifying payment...")
+              // Verify payment on backend
+              const verifyRes = await deliveryAPI.verifyDepositPayment({
+                razorpay_order_id: res.razorpay_order_id,
+                razorpay_payment_id: res.razorpay_payment_id,
+                razorpay_signature: res.razorpay_signature,
+                amount: amt
+              })
+              
+              if (verifyRes?.data?.success) {
+                toast.success(`Deposit of ₹${amt.toFixed(2)} successful`)
+                setAmount("")
+                // Refresh wallet state
+                window.dispatchEvent(new CustomEvent("deliveryWalletStateUpdated"))
+                if (onSuccess) onSuccess()
+              } else {
+                toast.error(verifyRes?.data?.message || "Verification failed")
+              }
+            } catch (err) {
+              toast.error(err?.response?.data?.message || "Verification failed. Contact support.")
+            } finally {
+              setProcessing(false)
             }
-          } catch (err) {
-            toast.error(err?.response?.data?.message || "Verification failed. Contact support.")
-          } finally {
+          },
+          onError: (e) => {
+            toast.error(e?.description || "Payment failed")
+            setProcessing(false)
+          },
+          onClose: () => {
             setProcessing(false)
           }
-        },
-        onError: (e) => {
-          toast.error(e?.description || "Payment failed")
-          setProcessing(false)
-        },
-        onClose: () => {
-          setProcessing(false)
-        }
-      })
+        })
+      }, 300)
     } catch (err) {
       setLoading(false)
       setProcessing(false)

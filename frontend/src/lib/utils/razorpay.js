@@ -35,6 +35,23 @@ export const loadRazorpayScript = () => {
   });
 };
 
+const isProbablyWebView = () => {
+  try {
+    const ua = String(navigator?.userAgent || "");
+    // Common WebView indicators:
+    // - Android WebView: "; wv" or "Version/x.x" without Chrome brand
+    // - iOS WebView: AppleWebKit but missing Safari
+    const isAndroid = /Android/i.test(ua);
+    const hasWv = /\bwv\b/i.test(ua);
+    const hasVersion = /Version\/\d+/i.test(ua);
+    const hasSafari = /Safari/i.test(ua);
+    const isIOSWebView = /iPhone|iPad|iPod/i.test(ua) && !hasSafari;
+    return (isAndroid && (hasWv || hasVersion)) || isIOSWebView;
+  } catch {
+    return false;
+  }
+};
+
 /**
  * Initialize Razorpay payment
  * @param {Object} options - Payment options
@@ -69,6 +86,20 @@ export const initRazorpayPayment = async (options) => {
       name: options.name || 'Appzeto Food',
       description: options.description || 'Order Payment',
       image: options.image || undefined,
+      // Explicitly enable all commonly-used methods.
+      // This fixes cases where some environments (e.g., in-app webviews) don't show UPI by default.
+      method: options.method || {
+        upi: true,
+        card: true,
+        netbanking: true,
+        wallet: true,
+        emi: true,
+        paylater: true,
+      },
+      // Allow redirect/deep-link for UPI intent apps (GPay/PhonePe/etc.)
+      redirect: options.redirect ?? true,
+      // Razorpay requirement for enabling UPI Intent inside Android WebView checkout.
+      webview_intent: options.webview_intent ?? isProbablyWebView(),
       prefill: {
         name: options.prefill?.name || '',
         email: options.prefill?.email || '',
@@ -79,6 +110,20 @@ export const initRazorpayPayment = async (options) => {
       notes: options.notes || {},
       theme: {
         color: '#dc2626'
+      },
+      config: {
+        display: {
+          blocks: {
+            upi: {
+              name: "Pay via UPI App",
+              instruments: [{ method: "upi" }]
+            }
+          },
+          sequence: ["block.upi", "block.card", "block.netbanking", "block.wallet"],
+          preferences: {
+            show_default_blocks: true
+          }
+        }
       },
       handler: function (response) {
         if (options.handler) {
