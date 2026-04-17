@@ -72,6 +72,9 @@ export default function ItemDetailsPage() {
   const [categories, setCategories] = useState([])
   const [loadingCategories, setLoadingCategories] = useState(true)
   const [loadingItem, setLoadingItem] = useState(false)
+  const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState("")
+  const [addingCategory, setAddingCategory] = useState(false)
 
   const maxNameLength = 70
   const maxDescriptionLength = 1000
@@ -525,6 +528,33 @@ export default function ItemDetailsPage() {
         : [...prev, tag]
     )
   }
+  
+  const handleAddNewCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    
+    try {
+      setAddingCategory(true);
+      const response = await restaurantAPI.createCategory({ name: newCategoryName.trim() });
+      if (response.data.success) {
+        toast.success("Category added successfully");
+        const addedCategory = response.data.data.category;
+        const newCat = {
+          id: addedCategory._id || addedCategory.id,
+          name: addedCategory.name
+        };
+        setCategories(prev => [...prev, newCat]);
+        setCategory(newCat.name); // Select the new category
+        setIsAddCategoryModalOpen(false);
+        setIsCategoryPopupOpen(false); // Close selection popup too
+        setNewCategoryName("");
+      }
+    } catch (error) {
+      console.error("Error adding category:", error);
+      toast.error(error.response?.data?.message || "Failed to add category");
+    } finally {
+      setAddingCategory(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!itemName || itemName.trim() === "") {
@@ -1246,8 +1276,7 @@ export default function ItemDetailsPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => {
-                      setIsCategoryPopupOpen(false)
-                      navigate('/restaurant/menu-categories')
+                      setIsAddCategoryModalOpen(true)
                     }}
                     className="p-2 rounded-lg bg-black text-white hover:bg-gray-800 transition-colors flex items-center gap-1.5"
                     title="Add Category"
@@ -1273,8 +1302,7 @@ export default function ItemDetailsPage() {
                     <p className="text-sm text-gray-500">No categories available</p>
                     <button
                       onClick={() => {
-                        setIsCategoryPopupOpen(false)
-                        navigate('/restaurant/menu-categories')
+                        setIsAddCategoryModalOpen(true)
                       }}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 transition-colors"
                     >
@@ -1299,6 +1327,84 @@ export default function ItemDetailsPage() {
                     ))}
                   </div>
                 )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Quick Add Category Modal */}
+      <AnimatePresence>
+        {isAddCategoryModalOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                if (!addingCategory) setIsAddCategoryModalOpen(false);
+              }}
+              className="fixed inset-0 bg-black/60 z-[60]"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm bg-white rounded-2xl shadow-2xl z-[60] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-white">
+                <h3 className="text-lg font-bold text-gray-900">Add New Category</h3>
+                <button
+                  onClick={() => setIsAddCategoryModalOpen(false)}
+                  disabled={addingCategory}
+                  className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="p-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Category Name
+                </label>
+                <input
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="e.g. Starters, Desserts..."
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent bg-gray-50 transition-all"
+                  autoFocus
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && newCategoryName.trim()) {
+                      handleAddNewCategory();
+                    }
+                  }}
+                />
+                
+                <div className="flex gap-3 mt-8">
+                  <button
+                    onClick={() => setIsAddCategoryModalOpen(false)}
+                    disabled={addingCategory}
+                    className="flex-1 py-3 px-4 rounded-xl text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleAddNewCategory}
+                    disabled={!newCategoryName.trim() || addingCategory}
+                    className="flex-1 py-3 px-4 rounded-xl text-sm font-semibold text-white bg-black hover:bg-gray-800 transition-colors disabled:bg-gray-400 flex items-center justify-center gap-2"
+                  >
+                    {addingCategory ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Adding...</span>
+                      </>
+                    ) : (
+                      "Create"
+                    )}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </>
