@@ -1,4 +1,6 @@
 import RestaurantComplaint from '../models/RestaurantComplaint.js';
+import Restaurant from '../../restaurant/models/Restaurant.js';
+import mongoose from 'mongoose';
 import { successResponse, errorResponse } from '../../../shared/utils/response.js';
 import { asyncHandler } from '../../../shared/middleware/asyncHandler.js';
 
@@ -68,12 +70,42 @@ export const getAllComplaints = asyncHandler(async (req, res) => {
     const complaints = await RestaurantComplaint.find(query)
       .populate('orderId', 'orderId orderNumber status createdAt')
       .populate('customerId', 'name phone email')
-      .populate('restaurantId', 'name restaurantId')
       .populate('resolvedBy', 'name email')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit))
       .lean();
+
+    // Manually populate restaurantId
+    const restaurantIdsToFetch = [...new Set(complaints
+      .filter(c => c.restaurantId && c.restaurantId !== 'hibermart-id' && mongoose.Types.ObjectId.isValid(c.restaurantId))
+      .map(c => c.restaurantId))];
+
+    const restaurants = await Restaurant.find({ 
+      _id: { $in: restaurantIdsToFetch } 
+    }).select('name restaurantId profileImage').lean();
+
+    const restaurantMap = restaurants.reduce((acc, r) => {
+      acc[r._id.toString()] = r;
+      return acc;
+    }, {});
+
+    complaints.forEach(complaint => {
+      if (complaint.restaurantId === 'hibermart-id') {
+        complaint.restaurantId = {
+          _id: 'hibermart-id',
+          name: 'Hibermart',
+          restaurantId: 'hibermart-id'
+        };
+      } else if (restaurantMap[complaint.restaurantId]) {
+        complaint.restaurantId = restaurantMap[complaint.restaurantId];
+      } else {
+        complaint.restaurantId = {
+          _id: complaint.restaurantId,
+          name: complaint.restaurantName || 'Unknown Restaurant'
+        };
+      }
+    });
 
     const total = await RestaurantComplaint.countDocuments(query);
 
@@ -125,12 +157,38 @@ export const getComplaintDetails = asyncHandler(async (req, res) => {
     const complaint = await RestaurantComplaint.findById(id)
       .populate('orderId')
       .populate('customerId', 'name phone email')
-      .populate('restaurantId', 'name restaurantId profileImage')
       .populate('resolvedBy', 'name email')
       .lean();
 
     if (!complaint) {
       return errorResponse(res, 404, 'Complaint not found');
+    }
+
+    // Manually populate restaurantId for details
+    if (complaint.restaurantId === 'hibermart-id') {
+      complaint.restaurantId = {
+        _id: 'hibermart-id',
+        name: 'Hibermart',
+        restaurantId: 'hibermart-id',
+        profileImage: '' // Add default if needed
+      };
+    } else if (mongoose.Types.ObjectId.isValid(complaint.restaurantId)) {
+      const restaurant = await Restaurant.findById(complaint.restaurantId)
+        .select('name restaurantId profileImage phone')
+        .lean();
+      if (restaurant) {
+        complaint.restaurantId = restaurant;
+      } else {
+        complaint.restaurantId = {
+          _id: complaint.restaurantId,
+          name: complaint.restaurantName || 'Unknown Restaurant'
+        };
+      }
+    } else {
+      complaint.restaurantId = {
+        _id: complaint.restaurantId,
+        name: complaint.restaurantName || 'Unknown Restaurant'
+      };
     }
 
     return successResponse(res, 200, 'Complaint retrieved successfully', {

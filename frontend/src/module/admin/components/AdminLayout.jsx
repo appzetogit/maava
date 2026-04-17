@@ -25,14 +25,26 @@ export default function AdminLayout() {
     setIsSidebarCollapsed(collapsed)
   }
 
-  const handleHibermartNewOrder = useCallback(() => {
-    toast.success("New Hibermart order received")
+  const handleHibermartNewOrder = useCallback((payload) => {
+    // Play notification sound
     try {
-      window.dispatchEvent(new CustomEvent('hibermart_new_order'))
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+      audio.play().catch(e => console.warn("Sound play failed (browser restriction):", e));
+    } catch (e) {
+      console.error("Audio play error:", e);
+    }
+
+    toast.success("New Hibermart order received", {
+      description: `Order ${payload?.orderId || 'Incoming'} from ${payload?.customerName || 'a Customer'}`,
+      duration: 10000,
+    });
+
+    try {
+      window.dispatchEvent(new CustomEvent('hibermart_new_order', { detail: payload }));
     } catch {
       // ignore
     }
-  }, [])
+  }, []);
 
   useHibermartAdminOrderNotifications({ onNewOrder: handleHibermartNewOrder })
 

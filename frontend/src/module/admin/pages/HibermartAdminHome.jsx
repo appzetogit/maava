@@ -618,13 +618,11 @@ export default function HibermartAdminHome() {
             }
 
             const response = await inmartAPI.uploadImage(formData);
-            // inmartAPI.uploadImage returns response.data directly (axios)
-            // so response here is { success, data: { url, ... } } or { success, url }
             const imageUrl = response?.data?.url || response?.url;
             if (response?.success && imageUrl) {
                 const backendRoot = API_BASE_URL.replace(/\/api\/?$/, '').replace(/\/+$/, '');
                 const fullUrl = imageUrl.startsWith('http') ? imageUrl : `${backendRoot}${imageUrl}`;
-                setUploadedImageUrl(fullUrl); // ✅ updates controlled input
+                setUploadedImageUrl(fullUrl); 
                 console.log('✅ Image upload successful:', fullUrl);
             } else {
                 alert('Failed to upload image: ' + (response?.message || 'Unknown error'));
@@ -635,7 +633,6 @@ export default function HibermartAdminHome() {
             alert(`Failed to upload image: ${errMsg}`);
         } finally {
             setIsUploading(false);
-            // Reset file input so same file can be re-selected if needed
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
@@ -647,12 +644,12 @@ export default function HibermartAdminHome() {
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [selectedFeaturedCats, setSelectedFeaturedCats] = useState([])
     const [expandedMainCat, setExpandedMainCat] = useState(null)
-    // The fileInputRef is already declared above, so we remove the duplicate here.
 
     // Reset path when tab changes to avoid mismatched data drill-down and "nothing showing" errors
     useEffect(() => {
         setCurrentPath([])
     }, [activeTab])
+
 
     // Fetch initial data
     const fetchAllData = useCallback(async () => {
@@ -833,47 +830,19 @@ export default function HibermartAdminHome() {
         }
     }, []);
 
-    const fetchOrdersOnly = useCallback(async () => {
-        try {
-            const ordersRes = await inmartAPI.adminGetOrders()
-            if (ordersRes && ordersRes.success) {
-                const transformedOrders = ordersRes.data.orders.map(order => ({
-                    id: order.orderId || order._id,
-                    customer: order.userId?.name || "Guest User",
-                    items: order.items.length,
-                    total: order.pricing.total,
-                    status: order.status.charAt(0).toUpperCase() + order.status.slice(1),
-                    time: new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    fullTime: new Date(order.createdAt).toLocaleString(),
-                    priority: order.status === 'pending',
-                    address: `${order.address?.house || ''} ${order.address?.city || ''}`.trim(),
-                    type: order.payment?.method === 'cash' ? 'COD' : 'Online',
-                    phone: order.userId?.phone || "N/A",
-                    email: order.userId?.email || "N/A",
-                    itemsList: order.items.map((item, idx) => ({
-                        id: item.itemId || idx,
-                        name: item.name,
-                        qty: item.quantity,
-                        price: item.price,
-                        image: item.image
-                    }))
-                }))
-                setOrders(transformedOrders)
-            }
-        } catch (err) {
-            console.error("Error fetching hibermart orders:", err)
-            toast.error("Failed to refresh orders")
-        }
-    }, [])
-
-    useEffect(() => {
-        const handler = () => fetchOrdersOnly()
-        window.addEventListener('hibermart_new_order', handler)
-        return () => window.removeEventListener('hibermart_new_order', handler)
-    }, [fetchOrdersOnly])
-
     useEffect(() => {
         fetchAllData();
+    }, [fetchAllData]);
+
+    // Listen for real-time order notifications
+    useEffect(() => {
+        const handleNewOrder = (event) => {
+            console.log("🔄 Real-time update: Refreshing Hibermart data due to new order");
+            fetchAllData();
+        };
+
+        window.addEventListener('hibermart_new_order', handleNewOrder);
+        return () => window.removeEventListener('hibermart_new_order', handleNewOrder);
     }, [fetchAllData]);
 
     const handleOpenModal = (type, item = null) => {

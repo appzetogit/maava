@@ -112,13 +112,12 @@ export default function UserOrderDetails() {
   const orderIdDisplay = order.orderId || order._id || orderId
   // Use fetched restaurant data if available, otherwise use order.restaurantId or order.restaurant
   const restaurantObj = restaurant || order.restaurantId || order.restaurant || {}
-  const restaurantName =
-    order.restaurantName || restaurantObj.name || "Restaurant"
-
   const isHibermartOrder = 
     order.isHibermartOrder === true || 
     order.restaurantId === 'hibermart-id' || 
-    restaurantName.toLowerCase() === 'hibermart'
+    String(order.restaurantName || order.restaurantId?.name || "").toLowerCase() === 'hibermart'
+
+  const restaurantName = isHibermartOrder ? "Hibermart" : (order.restaurantName || restaurantObj.name || "Restaurant")
 
   // Build restaurant address (try restaurant fields first, then fall back)
   const restaurantLocation = (() => {
@@ -621,7 +620,7 @@ export default function UserOrderDetails() {
             className="w-full bg-orange-50 border border-orange-200 text-orange-700 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-orange-100 transition-colors"
           >
             <FileText className="w-4 h-4" />
-            Restaurant Complaint
+            {isHibermartOrder ? "Hibermart Complaint" : "Restaurant Complaint"}
           </button>
         </div>
       )}

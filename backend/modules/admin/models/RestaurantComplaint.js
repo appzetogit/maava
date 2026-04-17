@@ -31,8 +31,7 @@ const restaurantComplaintSchema = new mongoose.Schema({
     default: ''
   },
   restaurantId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Restaurant',
+    type: String,
     required: true,
     index: true
   },
@@ -42,7 +41,7 @@ const restaurantComplaintSchema = new mongoose.Schema({
   },
   complaintType: {
     type: String,
-    enum: ['food_quality', 'wrong_item', 'missing_item', 'delivery_issue', 'packaging', 'pricing', 'service', 'other'],
+    enum: ['quality_issue', 'food_quality', 'wrong_item', 'missing_item', 'delivery_issue', 'packaging', 'pricing', 'service', 'other'],
     required: true
   },
   subject: {

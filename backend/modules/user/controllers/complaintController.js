@@ -1,6 +1,7 @@
 import RestaurantComplaint from '../../admin/models/RestaurantComplaint.js';
 import Order from '../../order/models/Order.js';
 import Restaurant from '../../restaurant/models/Restaurant.js';
+import mongoose from 'mongoose';
 import { successResponse, errorResponse } from '../../../shared/utils/response.js';
 import { asyncHandler } from '../../../shared/middleware/asyncHandler.js';
 
@@ -28,7 +29,7 @@ export const submitComplaint = asyncHandler(async (req, res) => {
     }
 
     // Validate complaint type
-    const validTypes = ['food_quality', 'wrong_item', 'missing_item', 'delivery_issue', 'packaging', 'pricing', 'service', 'other'];
+    const validTypes = ['quality_issue', 'food_quality', 'wrong_item', 'missing_item', 'delivery_issue', 'packaging', 'pricing', 'service', 'other'];
     if (!validTypes.includes(complaintType)) {
       return errorResponse(res, 400, 'Invalid complaint type');
     }
@@ -52,9 +53,21 @@ export const submitComplaint = asyncHandler(async (req, res) => {
     }
 
     // Get restaurant details
-    const restaurant = await Restaurant.findById(order.restaurantId).lean();
-    if (!restaurant) {
-      return errorResponse(res, 404, 'Restaurant not found');
+    let restaurantIdValue = order.restaurantId;
+    let restaurantNameValue = order.restaurantName || 'Hibermart';
+
+    const isHibermart = 
+      order.isHibermartOrder || 
+      order.restaurantId === 'hibermart-id' || 
+      String(order.restaurantName || '').toLowerCase().trim() === 'hibermart';
+
+    if (!isHibermart) {
+      const restaurant = await Restaurant.findById(order.restaurantId).lean();
+      if (!restaurant) {
+        return errorResponse(res, 404, 'Restaurant not found');
+      }
+      restaurantIdValue = restaurant._id;
+      restaurantNameValue = restaurant.name;
     }
 
     // Create complaint
@@ -65,8 +78,8 @@ export const submitComplaint = asyncHandler(async (req, res) => {
       customerName: req.user.name || 'Customer',
       customerPhone: req.user.phone || '',
       customerEmail: req.user.email || '',
-      restaurantId: restaurant._id,
-      restaurantName: restaurant.name || 'Restaurant',
+      restaurantId: restaurantIdValue,
+      restaurantName: restaurantNameValue,
       complaintType,
       subject: subject.trim(),
       description: description.trim(),
@@ -112,11 +125,41 @@ export const getUserComplaints = asyncHandler(async (req, res) => {
 
     const complaints = await RestaurantComplaint.find(query)
       .populate('orderId', 'orderId orderNumber status')
-      .populate('restaurantId', 'name profileImage')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit))
       .lean();
+
+    // Manually populate restaurant data
+    const restaurantIdsToFetch = [...new Set(complaints
+      .filter(c => c.restaurantId && c.restaurantId !== 'hibermart-id' && mongoose.Types.ObjectId.isValid(c.restaurantId))
+      .map(c => c.restaurantId))];
+
+    const targetRestaurants = await Restaurant.find({ 
+      _id: { $in: restaurantIdsToFetch } 
+    }).select('name profileImage').lean();
+
+    const restaurantMap = targetRestaurants.reduce((acc, r) => {
+      acc[r._id.toString()] = r;
+      return acc;
+    }, {});
+
+    complaints.forEach(complaint => {
+      if (complaint.restaurantId === 'hibermart-id') {
+        complaint.restaurantId = {
+          _id: 'hibermart-id',
+          name: 'Hibermart',
+          profileImage: ''
+        };
+      } else if (restaurantMap[complaint.restaurantId]) {
+        complaint.restaurantId = restaurantMap[complaint.restaurantId];
+      } else {
+        complaint.restaurantId = {
+          _id: complaint.restaurantId,
+          name: complaint.restaurantName || 'Restaurant'
+        };
+      }
+    });
 
     const total = await RestaurantComplaint.countDocuments(query);
 
@@ -146,11 +189,37 @@ export const getComplaintDetails = asyncHandler(async (req, res) => {
 
     const complaint = await RestaurantComplaint.findById(id)
       .populate('orderId')
-      .populate('restaurantId', 'name profileImage phone')
       .lean();
 
     if (!complaint) {
       return errorResponse(res, 404, 'Complaint not found');
+    }
+
+    // Manually populate restaurant data for details
+    if (complaint.restaurantId === 'hibermart-id') {
+      complaint.restaurantId = {
+        _id: 'hibermart-id',
+        name: 'Hibermart',
+        profileImage: '',
+        phone: ''
+      };
+    } else if (mongoose.Types.ObjectId.isValid(complaint.restaurantId)) {
+      const restaurant = await Restaurant.findById(complaint.restaurantId)
+        .select('name profileImage phone')
+        .lean();
+      if (restaurant) {
+        complaint.restaurantId = restaurant;
+      } else {
+        complaint.restaurantId = {
+          _id: complaint.restaurantId,
+          name: complaint.restaurantName || 'Restaurant'
+        };
+      }
+    } else {
+      complaint.restaurantId = {
+        _id: complaint.restaurantId,
+        name: complaint.restaurantName || 'Restaurant'
+      };
     }
 
     // Check if complaint belongs to the user

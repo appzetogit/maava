@@ -52,7 +52,7 @@ export const getRestaurantComplaints = asyncHandler(async (req, res) => {
 
     // Get summary statistics
     const stats = await RestaurantComplaint.aggregate([
-      { $match: { restaurantId } },
+      { $match: { restaurantId: restaurantId.toString() } },
       {
         $group: {
           _id: '$status',

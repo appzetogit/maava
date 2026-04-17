@@ -5,7 +5,7 @@ import { orderAPI } from "@/lib/api"
 import { toast } from "sonner"
 
 const COMPLAINT_TYPES = [
-  { value: 'food_quality', label: 'Food Quality Issue' },
+  { value: 'quality_issue', label: 'Quality Issue' },
   { value: 'wrong_item', label: 'Wrong Item Received' },
   { value: 'missing_item', label: 'Missing Item' },
   { value: 'delivery_issue', label: 'Delivery Issue' },
@@ -145,6 +145,11 @@ export default function SubmitComplaint() {
     return null
   }
 
+  const isHibermartOrder = 
+    order.isHibermartOrder === true || 
+    order.restaurantId === 'hibermart-id' || 
+    String(order.restaurantName || "").toLowerCase() === 'hibermart'
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
       {/* Header */}
@@ -170,7 +175,7 @@ export default function SubmitComplaint() {
               Order #{order.orderId || order._id}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {order.restaurantName || 'Restaurant'}
+              {isHibermartOrder ? "Hibermart" : (order.restaurantName || 'Restaurant')}
             </p>
           </div>
         </div>
@@ -248,7 +253,7 @@ export default function SubmitComplaint() {
           <div className="text-sm text-blue-800 dark:text-blue-300">
             <p className="font-semibold mb-1">What happens next?</p>
             <p className="text-blue-700 dark:text-blue-400/90">
-              Your complaint will be sent to the restaurant. They will review and respond to your complaint. You can track the status in your complaints section.
+              Your complaint will be sent to {isHibermartOrder ? "Hibermart Support" : "the restaurant"}. They will review and respond to your complaint. You can track the status in your complaints section.
             </p>
           </div>
         </div>

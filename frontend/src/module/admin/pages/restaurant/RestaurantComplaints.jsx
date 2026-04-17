@@ -20,7 +20,7 @@ const STATUS_OPTIONS = [
 
 const COMPLAINT_TYPE_OPTIONS = [
   { value: 'all', label: 'All Types' },
-  { value: 'food_quality', label: 'Food Quality' },
+  { value: 'quality_issue', label: 'Quality Issue' },
   { value: 'wrong_item', label: 'Wrong Item' },
   { value: 'missing_item', label: 'Missing Item' },
   { value: 'delivery_issue', label: 'Delivery Issue' },
@@ -190,7 +190,9 @@ export default function RestaurantComplaints() {
                         <p className="font-medium">{complaint.customerName}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">Restaurant</p>
+                        <p className="text-xs text-gray-500">
+                          {complaint.restaurantId?.isHibermart || complaint.restaurantName?.toLowerCase() === 'hibermart' ? 'Store' : 'Restaurant'}
+                        </p>
                         <p className="font-medium">{complaint.restaurantName}</p>
                       </div>
                       <div>

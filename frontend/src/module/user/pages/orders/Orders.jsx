@@ -400,6 +400,13 @@ Order again from this restaurant in the ${companyName} app.`
     navigate(`/user/orders/${order.id}/details`)
   }
 
+  const handleSubmitComplaint = (order) => {
+    setActiveMenuOrderId(null)
+    // Use MongoDB _id if available, otherwise order.id
+    const orderId = order.mongoId || order._id || order.id
+    navigate(`/user/complaints/submit/${encodeURIComponent(orderId)}`)
+  }
+
   // Open rating modal for an order
   const handleOpenRating = (order) => {
     setRatingModal({ open: true, order })
@@ -629,6 +636,13 @@ Order again from this restaurant in the ${companyName} app.`
                       className="w-full text-left px-3 py-2 hover:bg-gray-50 text-gray-800"
                     >
                       Order details
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSubmitComplaint(order)}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-50 text-gray-800 border-t border-gray-100"
+                    >
+                      Submit Complaint
                     </button>
                   </div>
                 )}
