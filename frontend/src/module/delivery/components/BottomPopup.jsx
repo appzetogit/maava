@@ -323,9 +323,6 @@ export default function BottomPopup({
                   background: 'transparent'
                 }}
               >
-                <ChevronDown 
-                  className="w-6 h-6 text-gray-400 mb-1 pointer-events-none"
-                />
                 {/* Drag handle bar removed as per user request */}
               </button>
             )}

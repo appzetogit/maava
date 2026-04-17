@@ -1015,6 +1015,7 @@ export default function PocketPage() {
         title={t('delivery.available_cash_limit')}
         showCloseButton={true}
         closeOnBackdropClick={true}
+        showHandle={false}
         maxHeight="60vh"
       >
         <AvailableCashLimit
@@ -1035,6 +1036,7 @@ export default function PocketPage() {
         title={t('delivery.deposit')}
         showCloseButton={true}
         closeOnBackdropClick={true}
+        showHandle={false}
         maxHeight="50vh"
       >
         <DepositPopup
