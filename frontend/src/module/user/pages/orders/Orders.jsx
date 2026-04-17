@@ -363,37 +363,6 @@ export default function Orders() {
     setActiveMenuOrderId((current) => (current === orderId ? null : orderId))
   }
 
-  const handleShareRestaurant = async (order) => {
-    const companyName = await getCompanyNameAsync()
-    const location =
-      order.restaurantLocation ||
-      `${order.address?.city || ""}, ${order.address?.state || ""}`.trim()
-
-    const shareText = `Check out ${order.restaurant} on ${companyName}.
-Location: ${location || "Location not available"}
-Order again from this restaurant in the ${companyName} app.`
-
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: order.restaurant,
-          text: shareText,
-        })
-      } else if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(shareText)
-        toast.success("Restaurant details copied to clipboard")
-      } else {
-        toast.info("Sharing is not supported on this device")
-      }
-    } catch (error) {
-      if (error?.name !== "AbortError") {
-        console.error("Error sharing restaurant:", error)
-        toast.error("Failed to share restaurant")
-      }
-    } finally {
-      setActiveMenuOrderId(null)
-    }
-  }
 
   const handleViewOrderDetails = (order) => {
     setActiveMenuOrderId(null)
@@ -623,13 +592,6 @@ Order again from this restaurant in the ${companyName} app.`
                 {/* Three-dots dropdown menu */}
                 {activeMenuOrderId === order.id && (
                   <div className="absolute right-3 top-10 z-20 w-40 rounded-xl bg-white shadow-lg border border-gray-100 py-1 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => handleShareRestaurant(order)}
-                      className="w-full text-left px-3 py-2 hover:bg-gray-50 text-gray-800"
-                    >
-                      Share restaurant
-                    </button>
                     <button
                       type="button"
                       onClick={() => handleViewOrderDetails(order)}
