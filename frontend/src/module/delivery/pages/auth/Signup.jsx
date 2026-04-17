@@ -61,6 +61,11 @@ export default function DeliverySignup() {
     }
   }, [navigate])
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const validatePhone = (phone, countryCode) => {
     if (!phone.trim()) {
       return "Phone number is required"

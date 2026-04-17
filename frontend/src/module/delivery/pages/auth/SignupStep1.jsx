@@ -163,6 +163,11 @@ export default function SignupStep1() {
     }
   }
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}

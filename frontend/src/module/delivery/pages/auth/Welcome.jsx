@@ -60,6 +60,11 @@ export default function DeliveryWelcome() {
     setIsPlaying(!isPlaying)
   }
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <div className="min-h-screen bg-white flex flex-col relative overflow-hidden">
       {/* Main Content */}

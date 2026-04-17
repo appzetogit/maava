@@ -75,6 +75,11 @@ export default function DeliveryOTP() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
     // Don't auto-focus - let user manually enter OTP
     // Focus first input only if all fields are empty (small delay to ensure inputs are rendered)

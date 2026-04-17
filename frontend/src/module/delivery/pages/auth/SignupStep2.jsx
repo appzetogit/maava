@@ -143,6 +143,11 @@ export default function SignupStep2() {
     }
   }
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Camera capture handler (mobile support)
   // Flutter InAppWebView camera handler (for mobile app)
   const handleCameraCapture = async (docType) => {
