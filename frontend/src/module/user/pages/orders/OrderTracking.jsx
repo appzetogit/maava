@@ -19,6 +19,7 @@ import {
   Loader2
 } from "lucide-react"
 import AnimatedPage from "../../components/AnimatedPage"
+import ShareBottomSheet from "../../components/ShareBottomSheet"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -227,6 +228,8 @@ export default function OrderTracking() {
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [cancellationReason, setCancellationReason] = useState("")
   const [isCancelling, setIsCancelling] = useState(false)
+  const [showShareSheet, setShowShareSheet] = useState(false)
+  const [shareDataForSheet, setShareDataForSheet] = useState({ title: "", text: "", url: "" })
 
   const defaultAddress = getDefaultAddress()
 
@@ -587,25 +590,48 @@ export default function OrderTracking() {
     }
   };
 
-  const handleShare = async () => {
-    const shareData = {
-      title: `Track my order from ${order?.restaurant || 'the restaurant'}`,
-      text: `follow my order delivery live!`,
-      url: window.location.href,
-    };
-
+  const copyToClipboard = async (text) => {
     try {
-      if (navigator.share) {
-        await navigator.share(shareData);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text)
+        toast.success("Copied to clipboard")
       } else {
-        await navigator.clipboard.writeText(window.location.href);
-        toast.success("Tracking link copied to clipboard!");
+        const textArea = document.createElement("textarea")
+        textArea.value = text
+        document.body.appendChild(textArea)
+        textArea.select()
+        document.execCommand("copy")
+        document.body.removeChild(textArea)
+        toast.success("Copied to clipboard")
       }
     } catch (err) {
-      if (err.name !== 'AbortError') {
-        console.error('Error sharing:', err);
-      }
+      console.error("Failed to copy text: ", err)
+      toast.error("Failed to copy link")
     }
+  }
+
+  const handleShare = async () => {
+    if (!order) return;
+    
+    const companyName = "Maava" // Fallback if business settings not loaded
+    const restaurantName = order.restaurant || "this restaurant"
+    const restaurantId = order.restaurantId?._id || order.restaurantId
+    
+    let shareUrl = window.location.href // Fallback to current tracking page
+    if (isHibermart) {
+      shareUrl = `${window.location.origin}/in-mart`
+    } else if (restaurantId) {
+      shareUrl = `${window.location.origin}/user/restaurants/${restaurantId}`
+    }
+
+    const data = {
+      title: restaurantName,
+      text: shareUrl, // Setting text as just url per last turn's logic
+      url: shareUrl,
+    }
+
+    setShareDataForSheet(data)
+    setShowShareSheet(true)
   };
 
   const handleRefresh = async () => {
@@ -1095,6 +1121,13 @@ export default function OrderTracking() {
           </div>
         </DialogContent>
       </Dialog>
+      {/* Share Bottom Sheet */}
+      <ShareBottomSheet
+        isOpen={showShareSheet}
+        onClose={() => setShowShareSheet(false)}
+        shareData={shareDataForSheet}
+        copyToClipboard={copyToClipboard}
+      />
     </div>
   )
 }
