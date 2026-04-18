@@ -27,6 +27,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { deliveryAPI } from "@/lib/api"
 import { toast } from "sonner"
 import { clearModuleAuth } from "@/lib/utils/auth"
+import { useDeliverySettings } from "@/lib/hooks/useDeliverySettings"
 import alertSound from "@/assets/audio/alert.mp3"
 import originalSound from "@/assets/audio/original.mp3"
 
@@ -45,7 +46,8 @@ export default function ProfilePage() {
     // Load from localStorage, default to "zomato_tone"
     return localStorage.getItem('delivery_alert_sound') || 'zomato_tone'
   })
-
+  const { referralBonus } = useDeliverySettings()
+  
   useEffect(() => {
     // Initialize Lenis for smooth scrolling
     const lenis = new Lenis({
@@ -345,7 +347,7 @@ export default function ProfilePage() {
           >
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <h3 className="text-base font-medium mb-1 text-black">₹2000 {t('delivery.referral_bonus')}</h3>
+                <h3 className="text-base font-medium mb-1 text-black">₹{referralBonus?.toLocaleString('en-IN') || '200'} {t('delivery.referral_bonus')}</h3>
                 <p className="text-gray-600 text-sm">{t('delivery.refer_friends_now')}</p>
               </div>
               <div className="flex items-center justify-center w-12 h-12">

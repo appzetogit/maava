@@ -126,7 +126,7 @@ export default function ReferAndEarn() {
         {/* Earning Potential */}
         <div>
           <p className="text-2xl font-bold text-gray-900 mb-2">
-            Earn upto ₹{referralBonus?.toLocaleString('en-IN') || '6,000'} extra per referral
+            Earn upto ₹{referralBonus?.toLocaleString('en-IN') || '200'} extra per referral
           </p>
           <div className="bg-orange-50 rounded-lg p-3 mb-6 border border-orange-100 flex justify-between items-center">
              <div>
@@ -174,7 +174,7 @@ export default function ReferAndEarn() {
             <span className="text-2xl font-bold text-white">₹</span>
           </div>
           <p className="text-sm text-gray-900 flex-1">
-            Vijay Mourya from Indore has earned ₹{referralBonus?.toLocaleString('en-IN') || '6000'} through referrals
+            Vijay Mourya from Indore has earned ₹{referralBonus?.toLocaleString('en-IN') || '200'} through referrals
           </p>
         </div>
 
@@ -211,7 +211,7 @@ export default function ReferAndEarn() {
                 <div className="w-6 h-6 rounded-full border-6 border-black bg-white flex-shrink-0"></div>
               </div>
               <div className="flex-1 pt-1">
-                <p className="text-base text-gray-900 font-medium">You earn upto ₹{referralBonus?.toLocaleString('en-IN') || '6,000'} bonus</p>
+                <p className="text-base text-gray-900 font-medium">You earn upto ₹{referralBonus?.toLocaleString('en-IN') || '200'} bonus</p>
               </div>
             </div>
           </div>

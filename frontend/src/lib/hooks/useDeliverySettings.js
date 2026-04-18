@@ -10,7 +10,7 @@ export const useDeliverySettings = () => {
     // Initialize with cached value if available
     const cached = getCachedSettings();
     return {
-      referralBonus: cached?.deliveryReferralBonus ?? 6000,
+      referralBonus: cached?.deliveryReferralBonus ?? 200,
       unlockBonus: cached?.deliveryUnlockBonus ?? 100,
       cashLimit: cached?.deliveryCashLimit ?? 750,
       withdrawalLimit: cached?.deliveryWithdrawalLimit ?? 100,
@@ -23,7 +23,7 @@ export const useDeliverySettings = () => {
         const fetchedSettings = await loadBusinessSettings();
         if (fetchedSettings) {
           setSettings({
-            referralBonus: fetchedSettings.deliveryReferralBonus ?? 6000,
+            referralBonus: fetchedSettings.deliveryReferralBonus ?? 200,
             unlockBonus: fetchedSettings.deliveryUnlockBonus ?? 100,
             cashLimit: fetchedSettings.deliveryCashLimit ?? 750,
             withdrawalLimit: fetchedSettings.deliveryWithdrawalLimit ?? 100,
@@ -46,7 +46,7 @@ export const useDeliverySettings = () => {
       const updated = getCachedSettings();
       if (updated) {
         setSettings({
-          referralBonus: updated.deliveryReferralBonus ?? 6000,
+          referralBonus: updated.deliveryReferralBonus ?? 200,
           unlockBonus: updated.deliveryUnlockBonus ?? 100,
           cashLimit: updated.deliveryCashLimit ?? 750,
           withdrawalLimit: updated.deliveryWithdrawalLimit ?? 100,

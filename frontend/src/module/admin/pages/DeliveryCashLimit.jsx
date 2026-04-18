@@ -19,18 +19,18 @@ export default function DeliveryCashLimit() {
       const data = response?.data?.data ?? response?.data ?? {}
       const limit = data.deliveryCashLimit
       const wl = data.deliveryWithdrawalLimit ?? 100
-      const rb = data.deliveryReferralBonus ?? 6000
+      const rb = data.deliveryReferralBonus ?? 200
       const ub = data.deliveryUnlockBonus ?? 100
       setDeliveryCashLimit(limit !== undefined && limit !== null ? String(limit) : "")
       setDeliveryWithdrawalLimit(wl !== undefined && wl !== null ? String(wl) : "100")
-      setDeliveryReferralBonus(rb !== undefined && rb !== null ? String(rb) : "6000")
+      setDeliveryReferralBonus(rb !== undefined && rb !== null ? String(rb) : "200")
       setDeliveryUnlockBonus(ub !== undefined && ub !== null ? String(ub) : "100")
     } catch (error) {
       console.error("Error fetching delivery cash limit:", error)
       toast.error(error.response?.data?.message || "Failed to load delivery cash limit")
       setDeliveryCashLimit("")
       setDeliveryWithdrawalLimit("100")
-      setDeliveryReferralBonus("6000")
+      setDeliveryReferralBonus("200")
       setDeliveryUnlockBonus("100")
     } finally {
       setLoading(false)
@@ -257,7 +257,7 @@ export default function DeliveryCashLimit() {
                       value={deliveryReferralBonus}
                       onChange={(e) => setDeliveryReferralBonus(e.target.value)}
                       className="w-full px-4 py-2.5 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm border-blue-200"
-                      placeholder={loading ? "Loading..." : "e.g., 6000"}
+                      placeholder={loading ? "Loading..." : "e.g., 200"}
                       disabled={loading || saving}
                     />
                     {loading && (
