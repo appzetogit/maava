@@ -197,6 +197,12 @@ export default function UserOrderDetails() {
     ""
 
   const handleCallRestaurant = () => {
+    // For Hibermart orders, always use the default support number
+    if (isHibermartOrder) {
+      window.location.href = "tel:9010551238"
+      return
+    }
+
     if (!restaurantPhone) {
       toast.error("Restaurant phone number not available")
       return

@@ -65,6 +65,18 @@ const formatFullAddress = (address) => {
   return ""
 }
 
+// Leaflet component to fly map to a target location when address is selected from search
+function FlyToLocation({ target, onDone }) {
+  const map = useMap()
+  useEffect(() => {
+    if (target) {
+      map.flyTo([target.lat, target.lng], 16, { animate: true, duration: 1.2 })
+      onDone && onDone()
+    }
+  }, [target, map, onDone])
+  return null
+}
+
 export default function Cart() {
   const navigate = useNavigate()
 
@@ -140,6 +152,13 @@ export default function Cart() {
     city: '',
     formattedAddress: ''
   })
+  // Address search autocomplete state
+  const [addressSearchQuery, setAddressSearchQuery] = useState('')
+  const [addressSuggestions, setAddressSuggestions] = useState([])
+  const [isSearchingAddress, setIsSearchingAddress] = useState(false)
+  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false)
+  const addressSearchTimeoutRef = useRef(null)
+  const [flyToTarget, setFlyToTarget] = useState(null)
   const [receiverDetails, setReceiverDetails] = useState({
     useAccountDetails: true,
     name: userProfile?.name || '',
@@ -2186,17 +2205,98 @@ export default function Cart() {
       <AnimatePresence>
         {checkoutStage === 'map_picker' && (
           <div className="fixed inset-0 z-[60] bg-white flex flex-col">
-            <div className="absolute top-10 left-4 z-[1001] flex items-center gap-2">
-              <button onClick={() => setCheckoutStage('address_selection')} className="p-3 bg-white shadow-lg rounded-full">
+            <div className="absolute top-10 left-4 right-4 z-[1001] flex items-center gap-2">
+              <button onClick={() => {
+                setCheckoutStage('address_selection')
+                setAddressSearchQuery('')
+                setAddressSuggestions([])
+                setShowAddressSuggestions(false)
+              }} className="p-3 bg-white shadow-lg rounded-full flex-shrink-0">
                 <ArrowLeft className="h-6 w-6 text-gray-800" />
               </button>
-              <div className="bg-white px-4 py-2 rounded-full shadow-lg border border-gray-100 flex items-center gap-2">
-                <Search className="h-4 w-4 text-gray-400" />
-                <input placeholder="Search an area or address" className="outline-none text-sm w-48 md:w-64" />
+              <div className="relative flex-1">
+                <div className="bg-white px-4 py-2 rounded-full shadow-lg border border-gray-100 flex items-center gap-2">
+                  {isSearchingAddress ? (
+                    <div className="h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                  ) : (
+                    <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                  )}
+                  <input
+                    placeholder="Search an area or address"
+                    className="outline-none text-sm flex-1 min-w-0"
+                    value={addressSearchQuery}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      setAddressSearchQuery(val)
+                      setShowAddressSuggestions(true)
+                      if (addressSearchTimeoutRef.current) clearTimeout(addressSearchTimeoutRef.current)
+                      if (!val.trim() || val.trim().length < 3) {
+                        setAddressSuggestions([])
+                        return
+                      }
+                      addressSearchTimeoutRef.current = setTimeout(async () => {
+                        setIsSearchingAddress(true)
+                        try {
+                          const res = await fetch(
+                            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=5&addressdetails=1`,
+                            { headers: { 'Accept-Language': 'en' } }
+                          )
+                          const data = await res.json()
+                          setAddressSuggestions(data || [])
+                        } catch {
+                          setAddressSuggestions([])
+                        } finally {
+                          setIsSearchingAddress(false)
+                        }
+                      }, 400)
+                    }}
+                    onFocus={() => addressSuggestions.length > 0 && setShowAddressSuggestions(true)}
+                  />
+                  {addressSearchQuery && (
+                    <button onClick={() => { setAddressSearchQuery(''); setAddressSuggestions([]); setShowAddressSuggestions(false) }} className="flex-shrink-0">
+                      <X className="h-4 w-4 text-gray-400" />
+                    </button>
+                  )}
+                </div>
+                {/* Suggestions Dropdown */}
+                {showAddressSuggestions && addressSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[1002]">
+                    {addressSuggestions.map((suggestion, idx) => (
+                      <button
+                        key={idx}
+                        className="w-full flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-0"
+                        onClick={() => {
+                          const lat = parseFloat(suggestion.lat)
+                          const lng = parseFloat(suggestion.lon)
+                          const displayName = suggestion.display_name || ''
+                          const addr = suggestion.address || {}
+                          const area = addr.suburb || addr.neighbourhood || addr.quarter || addr.road || addr.county || displayName.split(',')[0] || ''
+                          const city = addr.city || addr.town || addr.village || addr.county || ''
+                          setTempMapCoords({ lat, lng })
+                          setFlyToTarget({ lat, lng })
+                          setTempAddressInfo({
+                            area,
+                            city,
+                            formattedAddress: displayName
+                          })
+                          setAddressSearchQuery(displayName)
+                          setShowAddressSuggestions(false)
+                          setAddressSuggestions([])
+                        }}
+                      >
+                        <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-800 truncate">{suggestion.display_name?.split(',')[0]}</p>
+                          <p className="text-xs text-gray-400 truncate">{suggestion.display_name}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="flex-1 relative">
+            <div className="flex-1 relative" onClick={() => setShowAddressSuggestions(false)}>
               <MapContainer
                 center={tempMapCoords ? [tempMapCoords.lat, tempMapCoords.lng] : [17.3850, 78.4867]}
                 zoom={16}
@@ -2208,6 +2308,7 @@ export default function Cart() {
                   position={currentLocation?.latitude ? [currentLocation.latitude, currentLocation.longitude] : null}
                 />
                 <MapEventsHandler setCoords={setTempMapCoords} setAddressInfo={setTempAddressInfo} setIsMapMoving={setIsMapMoving} />
+                {flyToTarget && <FlyToLocation target={flyToTarget} onDone={() => setFlyToTarget(null)} />}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1000]">
                   <div className="relative w-0 h-0">
                     {/* Ripple + pulse are anchored at the exact pin point (map center). */}

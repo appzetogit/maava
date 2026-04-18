@@ -261,8 +261,8 @@ export default function OrderDetailsPage() {
             <Button
               className="bg-[#ff8100] hover:bg-[#e67300] text-white text-xs md:text-sm px-3 md:px-4 py-1.5 md:py-2"
               onClick={() => {
-                // Handle contact support
-                window.location.href = "tel:+1234567890"
+                // Use default support number
+                window.location.href = "tel:9010551238"
               }}
             >
               Call
