@@ -1257,7 +1257,7 @@ export default function Home() {
         {/* Hero Banner Carousel Background */}
         {loadingBanners ? (
           <div className="absolute top-0 left-0 right-0 bottom-0 z-0 bg-black flex items-center justify-center">
-             <ZomatoBanner />
+            <ZomatoBanner />
           </div>
         ) : heroBannerImages.length > 0 ? (
           <div
@@ -1323,7 +1323,7 @@ export default function Home() {
           </div>
         ) : (
           <div className="absolute top-0 left-0 right-0 bottom-0 z-0 bg-black">
-             <ZomatoBanner />
+            <ZomatoBanner />
           </div>
         )}
 
@@ -1479,47 +1479,47 @@ export default function Home() {
             <div className="infinite-scroll-container py-2 sm:py-3 lg:py-4 px-2">
               {/* First Set of Items */}
               <div className="flex gap-3 sm:gap-4 lg:gap-5 xl:gap-6 pr-3 sm:pr-4 lg:pr-5 xl:pr-6">
-                 {/* Offer Image */}
-                 <div className="flex-shrink-0 flex flex-col items-center justify-center cursor-pointer" onClick={() => navigate("/user/under-250")}>
-                    <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl overflow-hidden relative group">
-                      <OptimizedImage src={offerImage} alt="Offer" className="w-full h-full" objectFit="cover" />
-                    </div>
-                 </div>
-                 
-                 {realCategories.map((category, index) => (
-                    <Link key={`cat-1-${index}`} to={`/user/category/${category.slug}`} className="flex-shrink-0">
-                      <div className="flex flex-col items-center gap-2 w-[62px] sm:w-24 md:w-28">
-                        <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md shadow-[0_0_15px_rgba(212,175,55,0.3)]">
-                           <OptimizedImage src={category.image} alt={category.name} className="w-full h-full" objectFit="cover" />
-                        </div>
-                        <span className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 text-center truncate w-full">
-                           {category.name}
-                        </span>
+                {/* Offer Image */}
+                <div className="flex-shrink-0 flex flex-col items-center justify-center cursor-pointer" onClick={() => navigate("/user/under-250")}>
+                  <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl overflow-hidden relative group">
+                    <OptimizedImage src={offerImage} alt="Offer" className="w-full h-full" objectFit="cover" />
+                  </div>
+                </div>
+
+                {realCategories.map((category, index) => (
+                  <Link key={`cat-1-${index}`} to={`/user/category/${category.slug}`} className="flex-shrink-0">
+                    <div className="flex flex-col items-center gap-2 w-[62px] sm:w-24 md:w-28">
+                      <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md shadow-[0_0_15px_rgba(212,175,55,0.3)]">
+                        <OptimizedImage src={category.image} alt={category.name} className="w-full h-full" objectFit="cover" />
                       </div>
-                    </Link>
-                 ))}
+                      <span className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 text-center truncate w-full">
+                        {category.name}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
               </div>
 
               {/* Duplicate Set for Seamless Looping */}
               <div className="flex gap-3 sm:gap-4 lg:gap-5 xl:gap-6 pr-3 sm:pr-4 lg:pr-5 xl:pr-6" aria-hidden="true">
-                 <div className="flex-shrink-0 flex flex-col items-center justify-center cursor-pointer" onClick={() => navigate("/user/under-250")}>
-                    <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl overflow-hidden relative">
-                      <OptimizedImage src={offerImage} alt="Offer" className="w-full h-full" objectFit="cover" />
-                    </div>
-                 </div>
-                 
-                 {realCategories.map((category, index) => (
-                    <div key={`cat-2-${index}`} className="flex-shrink-0">
-                      <div className="flex flex-col items-center gap-2 w-[62px] sm:w-24 md:w-28 opacity-90">
-                        <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md">
-                           <OptimizedImage src={category.image} alt={category.name} className="w-full h-full" objectFit="cover" />
-                        </div>
-                        <span className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 text-center truncate w-full">
-                           {category.name}
-                        </span>
+                <div className="flex-shrink-0 flex flex-col items-center justify-center cursor-pointer" onClick={() => navigate("/user/under-250")}>
+                  <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl overflow-hidden relative">
+                    <OptimizedImage src={offerImage} alt="Offer" className="w-full h-full" objectFit="cover" />
+                  </div>
+                </div>
+
+                {realCategories.map((category, index) => (
+                  <div key={`cat-2-${index}`} className="flex-shrink-0">
+                    <div className="flex flex-col items-center gap-2 w-[62px] sm:w-24 md:w-28 opacity-90">
+                      <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md">
+                        <OptimizedImage src={category.image} alt={category.name} className="w-full h-full" objectFit="cover" />
                       </div>
+                      <span className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 text-center truncate w-full">
+                        {category.name}
+                      </span>
                     </div>
-                 ))}
+                  </div>
+                ))}
               </div>
             </div>
           </div>

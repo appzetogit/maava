@@ -189,6 +189,13 @@ export default function DeliverySignIn() {
             >
               Privacy Policy
             </span>
+            {" and "}
+            <span 
+              className="text-blue-600 hover:underline cursor-pointer"
+              onClick={() => navigate("/support")}
+            >
+              Support
+            </span>
           </p>
         </div>
       </div>

@@ -671,14 +671,19 @@ export default function RestaurantLogin() {
       <div className="px-6 pb-8 pt-4">
         <div className="w-full max-w-md mx-auto">
           <p className="text-xs text-center text-gray-600 leading-relaxed">
-            By continuing, you agree to our
-          </p>
-          <p className="text-xs text-center text-gray-600 underline mt-1">
+            By continuing, you agree to our{" "}
             <span 
-              className="cursor-pointer hover:text-blue-600 transition-colors"
+              className="cursor-pointer hover:text-blue-600 transition-colors underline"
               onClick={() => navigate("/restaurant/privacy")}
             >
               Privacy Policy
+            </span>
+            {" and "}
+            <span 
+              className="cursor-pointer hover:text-blue-600 transition-colors underline"
+              onClick={() => navigate("/support")}
+            >
+              Support
             </span>
           </p>
         </div>

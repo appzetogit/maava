@@ -471,6 +471,25 @@ export default function RestaurantSignIn() {
               </div>
             </div>
           </div>
+          
+          <div className="mt-8 w-full max-w-lg mb-8">
+             <p className="text-xs text-center text-gray-500 leading-relaxed">
+               By continuing, you agree to our{" "}
+               <span 
+                 className="text-primary-orange hover:underline cursor-pointer font-semibold"
+                 onClick={() => navigate("/restaurant/privacy")}
+               >
+                 Privacy Policy
+               </span>
+               {" and "}
+               <span 
+                 className="text-primary-orange hover:underline cursor-pointer font-semibold"
+                 onClick={() => navigate("/support")}
+               >
+                 Support
+               </span>
+             </p>
+          </div>
         </div>
 
         {/* Simple keyframe animations */}

@@ -11,7 +11,7 @@ import { FaLocationDot } from "react-icons/fa6"
 import { getCachedSettings, loadBusinessSettings } from "@/lib/utils/businessSettings"
 // import appzetoFoodLogo from "@/assets/appzetologo.png"
 
-const debugLog = () => {}
+const debugLog = () => { }
 
 export default function PageNavbar({
   textColor = "white",
@@ -25,9 +25,9 @@ export default function PageNavbar({
   const { location, loading, requestLocation } = useLocation()
   const foodCart = useCart()
   const hibermartCart = useHibermartCart()
-  
+
   const { openLocationSelector } = useLocationSelector()
-  
+
   const getCartData = () => {
     if (cartType === "hibermart") {
       return {
@@ -968,7 +968,7 @@ export default function PageNavbar({
             ) : (
               <div className="flex flex-col items-start min-w-0 w-full overflow-hidden">
                 {showTimer && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="flex items-center gap-2 mb-0.5 select-none relative group -mt-1"
@@ -977,8 +977,8 @@ export default function PageNavbar({
                       Delivery in
                     </span>
                     <div className="relative">
-                      <motion.span 
-                        animate={{ 
+                      <motion.span
+                        animate={{
                           scale: [1, 1.03, 1],
                           opacity: [0.9, 1, 0.9]
                         }}
@@ -991,7 +991,7 @@ export default function PageNavbar({
                       >
                         {deliveryTime} minutes
                       </motion.span>
-                      
+
                       {/* Subtile Glow/Pulse */}
                       <motion.div
                         animate={{
