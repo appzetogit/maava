@@ -139,7 +139,7 @@ export default function UserLayout() {
                 <LocationSelectorProvider>
                   {/* <Navbar /> */}
                   {showBottomNav && <DesktopNavbar />}
-                  <LocationPrompt />
+                  {/* <LocationPrompt /> */}   
                   <Outlet />
                   {showBottomNav && (
                     <>
