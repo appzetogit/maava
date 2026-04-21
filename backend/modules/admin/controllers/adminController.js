@@ -12,6 +12,8 @@ import winston from 'winston';
 import mongoose from 'mongoose';
 import { uploadToCloudinary } from '../../../shared/utils/cloudinaryService.js';
 import { initializeCloudinary } from '../../../config/cloudinary.js';
+import Delivery from '../../delivery/models/Delivery.js';
+
 
 const logger = winston.createLogger({
   level: 'info',
@@ -34,18 +36,20 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     const now = new Date();
     const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    // Get total revenue (sum of all completed orders)
-    const revenueStats = await Order.aggregate([
+    // Get total revenue and fees directly from delivered orders for accuracy
+    const orderMetrics = await Order.aggregate([
       {
         $match: {
-          status: 'delivered',
-          'pricing.total': { $exists: true }
+          status: 'delivered'
         }
       },
       {
         $group: {
           _id: null,
           totalRevenue: { $sum: '$pricing.total' },
+          totalPlatformFee: { $sum: '$pricing.platformFee' },
+          totalDeliveryFee: { $sum: '$pricing.deliveryFee' },
+          totalGST: { $sum: '$pricing.tax' },
           last30DaysRevenue: {
             $sum: {
               $cond: [
@@ -54,74 +58,89 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
                 0
               ]
             }
+          },
+          last30DaysPlatformFee: {
+            $sum: {
+              $cond: [
+                { $gte: ['$createdAt', last30Days] },
+                '$pricing.platformFee',
+                0
+              ]
+            }
+          },
+          last30DaysDeliveryFee: {
+            $sum: {
+              $cond: [
+                { $gte: ['$createdAt', last30Days] },
+                '$pricing.deliveryFee',
+                0
+              ]
+            }
+          },
+          last30DaysGST: {
+            $sum: {
+              $cond: [
+                { $gte: ['$createdAt', last30Days] },
+                '$pricing.tax',
+                0
+              ]
+            }
           }
         }
       }
     ]);
 
-    // Get revenue data from aggregation result
-    const revenueData = revenueStats[0] || { totalRevenue: 0, last30DaysRevenue: 0 };
+    const metrics = orderMetrics[0] || { 
+      totalRevenue: 0, 
+      totalPlatformFee: 0, 
+      totalDeliveryFee: 0, 
+      totalGST: 0, 
+      last30DaysRevenue: 0,
+      last30DaysPlatformFee: 0,
+      last30DaysDeliveryFee: 0,
+      last30DaysGST: 0
+    };
 
-    // Get all settlements for delivered orders only (to match with revenue calculation)
-    // First get delivered order IDs
-    const deliveredOrderIds = await Order.find({ status: 'delivered' }).select('_id').lean();
-    const deliveredOrderIdArray = deliveredOrderIds.map(o => o._id);
+    // Get order IDs for commission calculation from settlements
+    // Get order IDs for commission calculation from settlements
+    const deliveredOrders = await Order.find({ status: 'delivered' }).select('_id pricing.total').lean();
+    const deliveredOrderIdArray = deliveredOrders.map(o => o._id);
+    const totalDeliveredRevenue = deliveredOrders.reduce((sum, o) => sum + (o.pricing?.total || 0), 0);
 
-    // Get settlements only for delivered orders
-    const allSettlements = await OrderSettlement.find({
-      orderId: { $in: deliveredOrderIdArray }
-    }).lean();
-
-    console.log(`📊 Dashboard Stats - Total settlements found: ${allSettlements.length}`);
-
-    // Debug: Log first settlement to see actual structure
-    if (allSettlements.length > 0) {
-      const firstSettlement = allSettlements[0];
-      console.log('🔍 First settlement sample:', {
-        orderNumber: firstSettlement.orderNumber,
-        adminEarning: firstSettlement.adminEarning,
-        userPayment: firstSettlement.userPayment
-      });
-    }
-
-    // Calculate totals from all settlements - use adminEarning fields
-    let totalCommission = 0;
-    let totalPlatformFee = 0;
-    let totalDeliveryFee = 0;
-    let totalGST = 0;
-
-    allSettlements.forEach((s, index) => {
-      const commission = s.adminEarning?.commission || 0;
-      const platformFee = s.adminEarning?.platformFee || 0;
-      const deliveryFee = s.adminEarning?.deliveryFee || 0;
-      const gst = s.adminEarning?.gst || 0;
-
-      totalCommission += commission;
-      totalPlatformFee += platformFee;
-      totalDeliveryFee += deliveryFee;
-      totalGST += gst;
-
-      // Log each settlement for debugging
-      if (index < 5) { // Log first 5 settlements
-        console.log(`📦 Settlement ${index + 1} (${s.orderNumber}): Commission: ₹${commission}, Platform: ₹${platformFee}, Delivery: ₹${deliveryFee}, GST: ₹${gst}`);
+    // Calculate commission from settlements
+    const settlementStats = await OrderSettlement.aggregate([
+      {
+        $match: {
+          orderId: { $in: deliveredOrderIdArray }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalCommission: { $sum: '$adminEarning.commission' },
+          settledOrderIds: { $push: '$orderId' },
+          last30DaysCommission: {
+            $sum: {
+              $cond: [
+                { $gte: ['$createdAt', last30Days] },
+                '$adminEarning.commission',
+                0
+              ]
+            }
+          }
+        }
       }
-    });
+    ]);
 
-    totalCommission = Math.round(totalCommission * 100) / 100;
-    totalPlatformFee = Math.round(totalPlatformFee * 100) / 100;
-    totalDeliveryFee = Math.round(totalDeliveryFee * 100) / 100;
-    totalGST = Math.round(totalGST * 100) / 100;
+    const ordSettStats = settlementStats[0] || { totalCommission: 0, last30DaysCommission: 0, settledOrderIds: [] };
+    
+    // Only use actual commission from settlements (proper data)
+    const finalTotalCommission = Math.round(ordSettStats.totalCommission * 100) / 100;
 
-    console.log(`💰 Final calculated totals - Commission: ₹${totalCommission}, Platform Fee: ₹${totalPlatformFee}, Delivery Fee: ₹${totalDeliveryFee}, GST: ₹${totalGST}`);
-
-    // Get last 30 days data from OrderSettlement
-    const last30DaysSettlements = await OrderSettlement.find({
-      createdAt: { $gte: last30Days, $lte: now }
-    }).lean();
-    const last30DaysCommission = last30DaysSettlements.reduce((sum, s) => sum + (s.adminEarning?.commission || 0), 0);
-    const last30DaysPlatformFee = last30DaysSettlements.reduce((sum, s) => sum + (s.adminEarning?.platformFee || 0), 0);
-    const last30DaysDeliveryFee = last30DaysSettlements.reduce((sum, s) => sum + (s.adminEarning?.deliveryFee || 0), 0);
-    const last30DaysGST = last30DaysSettlements.reduce((sum, s) => sum + (s.adminEarning?.gst || 0), 0);
+    // Final clean values for fees (already from Order model, so these are 100% accurate)
+    const finalPlatformFee = Math.round(metrics.totalPlatformFee * 100) / 100;
+    const finalDeliveryFee = Math.round(metrics.totalDeliveryFee * 100) / 100;
+    const finalGST = Math.round(metrics.totalGST * 100) / 100;
 
     // Get order statistics
     const orderStats = await Order.aggregate([
@@ -145,9 +164,9 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     const activeRestaurants = await Restaurant.countDocuments({ isActive: true });
     // Note: Delivery partners are stored in User model
     const User = (await import('../../auth/models/User.js')).default;
-    const activeDeliveryPartners = await User.countDocuments({
-      role: 'delivery',
-      isActive: true
+    const activeDeliveryPartners = await Delivery.countDocuments({
+      isActive: true,
+      status: 'active'
     });
     const activePartners = activeRestaurants + activeDeliveryPartners;
 
@@ -185,15 +204,14 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     const pendingRestaurantRequests = await Restaurant.countDocuments(pendingRestaurantRequestsQuery);
 
     // Total delivery boys (all delivery users)
-    const totalDeliveryBoys = await User.countDocuments({ role: 'delivery' });
+    const totalDeliveryBoys = await Delivery.countDocuments({});
 
     // Delivery boy requests pending (delivery users with isActive: false or verification pending)
     // Assuming deliveryStatus field exists, if not we'll use isActive: false
-    const pendingDeliveryBoyRequests = await User.countDocuments({
-      role: 'delivery',
+    const pendingDeliveryBoyRequests = await Delivery.countDocuments({
       $or: [
-        { isActive: false },
-        { deliveryStatus: 'pending' }
+        { status: 'pending' },
+        { status: 'suspended' }
       ]
     });
 
@@ -342,33 +360,33 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
 
     return successResponse(res, 200, 'Dashboard stats retrieved successfully', {
       revenue: {
-        total: revenueData.totalRevenue || 0,
-        last30Days: revenueData.last30DaysRevenue || 0,
+        total: metrics.totalRevenue || 0,
+        last30Days: metrics.last30DaysRevenue || 0,
         currency: 'INR'
       },
       commission: {
-        total: totalCommission,
-        last30Days: last30DaysCommission,
+        total: finalTotalCommission,
+        last30Days: ordSettStats.last30DaysCommission || 0,
         currency: 'INR'
       },
       platformFee: {
-        total: totalPlatformFee,
-        last30Days: last30DaysPlatformFee,
+        total: finalPlatformFee,
+        last30Days: metrics.last30DaysPlatformFee,
         currency: 'INR'
       },
       deliveryFee: {
-        total: totalDeliveryFee,
-        last30Days: last30DaysDeliveryFee,
+        total: finalDeliveryFee,
+        last30Days: metrics.last30DaysDeliveryFee,
         currency: 'INR'
       },
       gst: {
-        total: totalGST,
-        last30Days: last30DaysGST,
+        total: finalGST,
+        last30Days: metrics.last30DaysGST,
         currency: 'INR'
       },
       totalAdminEarnings: {
-        total: totalCommission + totalPlatformFee + totalDeliveryFee + totalGST,
-        last30Days: last30DaysCommission + last30DaysPlatformFee + last30DaysDeliveryFee + last30DaysGST,
+        total: finalTotalCommission + finalPlatformFee + finalDeliveryFee + finalGST,
+        last30Days: (ordSettStats.last30DaysCommission || 0) + metrics.last30DaysPlatformFee + metrics.last30DaysDeliveryFee + metrics.last30DaysGST,
         currency: 'INR'
       },
       orders: {
