@@ -21,16 +21,6 @@ const ZomatoBanner = () => {
 
       {/* Main Promotion Content */}
       <div className="relative z-20 text-center px-4 pt-36 sm:pt-40 lg:pt-44 pb-10">
-        {/* Express Label */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-2 bg-red-600 text-white px-4 py-1.5 rounded-full mb-6 mx-auto w-fit font-black italic text-xs sm:text-sm uppercase tracking-widest shadow-[0_0_20px_rgba(220,38,38,0.5)]"
-        >
-          <Zap className="w-4 h-4 fill-current text-yellow-400" />
-          Ultra Fast Delivery
-        </motion.div>
-
         {/* Hero Text */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
@@ -56,14 +46,14 @@ const ZomatoBanner = () => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="mt-6 sm:mt-10 flex flex-col items-center gap-6"
+          className="mt-4 sm:mt-6 flex flex-col items-center gap-6"
         >
           <motion.button 
             whileHover={{ scale: 1.05, boxShadow: "0 0 40px rgba(255,255,255,0.2)" }}
             whileTap={{ scale: 0.95 }}
-            className="bg-white text-black hover:bg-neutral-100 transition-all px-12 py-4 rounded-2xl font-black text-sm sm:text-xl flex items-center gap-3 group shadow-2xl"
+            className="bg-white text-black hover:bg-neutral-100 transition-all px-8 py-2.5 rounded-xl font-black text-xs sm:text-lg flex items-center gap-2 group shadow-2xl"
           >
-            ORDER NOW <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+            ORDER NOW <ChevronRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
           </motion.button>
         </motion.div>
       </div>
