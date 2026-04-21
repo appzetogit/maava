@@ -575,7 +575,7 @@ export default function SignIn() {
           {/* Social Login Icons */}
           <div className="flex justify-center gap-4 md:gap-6">
             {/* Google Login */}
-            <button
+            {/* <button
               type="button"
               onClick={handleGoogleSignIn}
               className="w-12 h-12 md:w-14 md:h-14 rounded-full border border-black dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:shadow-md active:scale-95"
@@ -599,17 +599,17 @@ export default function SignIn() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-            </button>
+            </button> */}
 
             {/* Email Login */}
-            <button
+            {/* <button
               type="button"
               onClick={handleLoginMethodChange}
               className="w-12 h-12 md:w-14 md:h-14 rounded-full border border-black dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:shadow-md active:scale-95 bg-white shadow-sm"
               aria-label="Sign in with Email"
             >
               {authMethod == "phone" ? <Mail className="h-5 w-5 md:h-6 md:w-6 text-black dark:text-white" /> : <Phone className="h-5 w-5 md:h-6 md:w-6 text-black dark:text-white" />}
-            </button>
+            </button> */}
           </div>
 
           <div className="text-center text-xs md:text-sm text-gray-500 dark:text-gray-400 pt-1 md:pt-2">
