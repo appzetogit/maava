@@ -1061,8 +1061,8 @@ export default function PageNavbar({
               className="h-8 w-8 sm:h-9 sm:w-9 rounded-full p-0 hover:opacity-80 transition-opacity"
               title="Wallet"
             >
-              <div className={`h-full w-full rounded-full bg-white/20 flex items-center justify-center ring-2 ${ringColor}`}>
-                <Wallet className="h-4 w-4 sm:h-5 sm:w-5 text-gray-800" strokeWidth={2} />
+              <div className={`h-full w-full rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center ring-1 ${ringColor} shadow-[0_0_8px_rgba(255,255,255,0.1)] transition-all`}>
+                <Wallet className={`h-4 w-4 sm:h-5 sm:w-5 ${textColor === "white" ? "text-white" : "text-gray-800"}`} strokeWidth={2.2} />
               </div>
             </Button>
           </Link>
@@ -1075,11 +1075,11 @@ export default function PageNavbar({
               className="relative h-8 w-8 sm:h-9 sm:w-9 rounded-full p-0 hover:opacity-80 transition-opacity"
               title="Cart"
             >
-              <div className={`h-full w-full rounded-full bg-white/20 flex items-center justify-center ring-2 ${ringColor}`}>
-                <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-gray-800" strokeWidth={2} />
+              <div className={`h-full w-full rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center ring-1 ${ringColor} shadow-[0_0_8px_rgba(255,255,255,0.1)] transition-all`}>
+                <ShoppingCart className={`h-4 w-4 sm:h-5 sm:w-5 ${textColor === "white" ? "text-white" : "text-gray-800"}`} strokeWidth={2.2} />
               </div>
               {cartCount > 0 && (
-                <span className={`absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center ring-2 ${textColor === "white" ? "ring-white/50" : "ring-gray-800/30"}`}>
+                <span className={`absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center ring-2 ${textColor === "white" ? "ring-white/50" : "ring-gray-800/30"} shadow-[0_0_10px_rgba(239,68,68,0.5)]`}>
                   <span className="text-[9px] font-bold text-white">{cartCount > 99 ? "99+" : cartCount}</span>
                 </span>
               )}

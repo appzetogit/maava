@@ -1406,7 +1406,7 @@ export default function Home() {
               {/* VEG MODE Toggle - Enhanced Leafy Animation */}
               <motion.div
                 ref={vegModeToggleRef}
-                className="flex flex-col items-center gap-1 sm:gap-1.5 flex-shrink-0 relative cursor-pointer select-none group"
+                className="flex flex-col items-center gap-1 sm:gap-1.5 flex-shrink-0 relative cursor-pointer select-none group p-1.5 rounded-2xl backdrop-blur-sm bg-white/5 shadow-[0_0_10px_rgba(255,255,255,0.05)] transition-all duration-300 hover:bg-white/10"
                 onClick={() => handleVegModeChange(!vegMode)}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -1415,10 +1415,10 @@ export default function Home() {
                 whileTap={{ scale: 0.9 }}
               >
                 <div className="flex flex-col items-center pointer-events-none">
-                  <span className={`text-[12px] sm:text-[14px] font-[1000] tracking-widest leading-none transition-all duration-500 ${vegMode ? 'text-black [text-shadow:0_0_15px_rgba(34,197,94,0.3)]' : 'text-black/60'}`}>
+                  <span className={`text-[12px] sm:text-[14px] font-[1000] tracking-widest leading-none transition-all duration-500 ${vegMode ? 'text-white [text-shadow:0_0_15px_rgba(34,197,94,0.3)]' : 'text-white/80'}`}>
                     VEG
                   </span>
-                  <span className={`text-[6px] sm:text-[7px] font-black tracking-[0.5em] uppercase leading-none mt-1.5 transition-all duration-500 ${vegMode ? 'text-black/80 shadow-sm' : 'text-black/30'}`}>
+                  <span className={`text-[6px] sm:text-[7px] font-black tracking-[0.5em] uppercase leading-none mt-1.5 transition-all duration-500 ${vegMode ? 'text-white/90 shadow-sm' : 'text-white/40'}`}>
                     MODE
                   </span>
                 </div>
