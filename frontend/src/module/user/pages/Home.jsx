@@ -1325,7 +1325,7 @@ export default function Home() {
           <div className="relative z-20 max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto px-3 sm:px-6 lg:px-8">
             {/* Search Bar and VEG MODE Container - Sticky */}
             <motion.div
-              className="sticky top-12 mt-6 z-30 flex items-center gap-3 sm:gap-4 lg:gap-6"
+              className="sticky top-11 mt-2 z-30 flex items-center gap-3 sm:gap-4 lg:gap-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
