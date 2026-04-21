@@ -20,6 +20,8 @@ import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useSearchOverlay, useLocationSelector } from "../components/UserLayout"
 import PageNavbar from "../components/PageNavbar"
+import ZomatoBanner from "../components/ZomatoBanner"
+
 
 
 // Import shared food images - prevents duplication
@@ -1242,11 +1244,8 @@ export default function Home() {
       <div className="relative w-full overflow-hidden min-h-[39vh] lg:min-h-[50vh] md:pt-16">
         {/* Hero Banner Carousel Background */}
         {loadingBanners ? (
-          <div className="absolute top-0 left-0 right-0 bottom-0 z-0 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-            <div className="text-white text-center">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-              <p className="text-sm">Loading banners...</p>
-            </div>
+          <div className="absolute top-0 left-0 right-0 bottom-0 z-0 bg-black flex items-center justify-center">
+             <ZomatoBanner />
           </div>
         ) : heroBannerImages.length > 0 ? (
           <div
@@ -1269,9 +1268,14 @@ export default function Home() {
                 ease: "easeInOut"
               }}
               style={{
-                width: `${heroBannerImages.length * 100}vw`
+                width: `${(heroBannerImages.length + 1) * 100}vw`
               }}
             >
+              {/* Premium Zomato Style Animated Banner as first slide */}
+              <div className="h-full flex-shrink-0" style={{ width: '100vw' }}>
+                <ZomatoBanner />
+              </div>
+
               {heroBannerImages.map((image, index) => {
                 const bannerData = heroBannersData[index]
                 const linkedRestaurants = bannerData?.linkedRestaurants || []
@@ -1295,7 +1299,7 @@ export default function Home() {
                       src={image}
                       alt={`Hero Banner ${index + 1}`}
                       className="w-full h-full"
-                      priority={index === 0}
+                      priority={false}
                       sizes="100vw"
                       objectFit="cover"
                       placeholder="blur"
@@ -1306,7 +1310,9 @@ export default function Home() {
             </motion.div>
           </div>
         ) : (
-          <div className="absolute top-0 left-0 right-0 bottom-0 z-0 bg-gradient-to-br from-green-400 to-green-600" />
+          <div className="absolute top-0 left-0 right-0 bottom-0 z-0 bg-black">
+             <ZomatoBanner />
+          </div>
         )}
 
         {/* Navbar */}
