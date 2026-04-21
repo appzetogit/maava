@@ -1237,6 +1237,18 @@ export default function Home() {
             0% { background-position: -200% center; }
             100% { background-position: 200% center; }
           }
+          @keyframes infinite-scroll {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+          }
+          .infinite-scroll-container {
+            display: flex;
+            width: max-content;
+            animation: infinite-scroll 40s linear infinite;
+          }
+          .infinite-scroll-container:hover {
+            animation-play-state: paused;
+          }
         `}</style>
       </div>
 
@@ -1463,180 +1475,53 @@ export default function Home() {
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.5 }}
         >
-          <div
-            ref={categoryScrollRef}
-            className="flex gap-3 sm:gap-4 lg:gap-5 xl:gap-6 overflow-x-auto overflow-y-visible scrollbar-hide scroll-smooth px-2 sm:px-3 lg:px-4 py-2 sm:py-3 lg:py-4"
-            style={{
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-              touchAction: "pan-x pan-y pinch-zoom",
-              overflowY: "hidden",
-            }}
-          >
-            {/* Offer Image - Static, Centered */}
-            <motion.div
-              className="flex-shrink-0 flex flex-col items-center justify-center cursor-pointer"
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate("/user/under-250")}
-            >
-              <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl overflow-hidden relative group">
-                <OptimizedImage
-                  src={offerImage}
-                  alt="Special Offer"
-                  className="w-full h-full"
-                  sizes="(max-width: 640px) 56px, (max-width: 768px) 80px, 96px"
-                  objectFit="cover"
-                  placeholder="blur"
-                />
-                {/* Shine Effect Overlay */}
-                <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden z-10">
-                  <div className="absolute top-0 -left-[100%] w-full h-full bg-gradient-to-r from-transparent via-white/50 to-transparent skew-x-[-15deg] animate-[shine_3s_infinite] opacity-60" />
-                </div>
-              </div>
-            </motion.div>
-            {loadingRealCategories ? (
-              <div className="flex items-center justify-center py-4">
-                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-              </div>
-            ) : realCategories.length > 0 ? (
-              <>
-                {/* Show only first 10 categories */}
-                {realCategories.slice(0, 10).map((category, index) => (
-                  <motion.div
-                    key={category.id || index}
-                    className="flex-shrink-0"
-                    initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                    whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{
-                      duration: 0.4,
-                      delay: index * 0.05,
-                      type: "spring",
-                      stiffness: 100
-                    }}
-                    whileHover={{ scale: 1.1, y: -5 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Link to={`/user/category/${category.slug || category.name.toLowerCase().replace(/\s+/g, '-')}`}>
+          <div className="overflow-hidden relative w-full group">
+            <div className="infinite-scroll-container py-2 sm:py-3 lg:py-4 px-2">
+              {/* First Set of Items */}
+              <div className="flex gap-3 sm:gap-4 lg:gap-5 xl:gap-6 pr-3 sm:pr-4 lg:pr-5 xl:pr-6">
+                 {/* Offer Image */}
+                 <div className="flex-shrink-0 flex flex-col items-center justify-center cursor-pointer" onClick={() => navigate("/user/under-250")}>
+                    <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl overflow-hidden relative group">
+                      <OptimizedImage src={offerImage} alt="Offer" className="w-full h-full" objectFit="cover" />
+                    </div>
+                 </div>
+                 
+                 {realCategories.map((category, index) => (
+                    <Link key={`cat-1-${index}`} to={`/user/category/${category.slug}`} className="flex-shrink-0">
                       <div className="flex flex-col items-center gap-2 w-[62px] sm:w-24 md:w-28">
-                        <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md hover:shadow-[0_0_30px_rgba(212,175,55,0.6)] transition-all bg-white shadow-[0_0_20px_rgba(212,175,55,0.45)]">
-                          <OptimizedImage
-                            src={category.image}
-                            alt={category.name}
-                            className="w-full h-full bg-white rounded-full"
-                            sizes="(max-width: 640px) 56px, (max-width: 768px) 80px, 96px"
-                            objectFit="cover"
-                            placeholder="blur"
-                            onError={() => { }}
-                          />
+                        <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md shadow-[0_0_15px_rgba(212,175,55,0.3)]">
+                           <OptimizedImage src={category.image} alt={category.name} className="w-full h-full" objectFit="cover" />
                         </div>
-                        <span className="text-xs sm:text-sm md:text-base font-semibold text-gray-800 dark:text-gray-200 text-center">
-                          {category.name.length > 7 ? `${category.name.slice(0, 7)}...` : category.name}
+                        <span className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 text-center truncate w-full">
+                           {category.name}
                         </span>
                       </div>
                     </Link>
-                  </motion.div>
-                ))}
-                {/* See All button - show if there are more than 10 categories */}
-                {realCategories.length > 10 && (
-                  <motion.div
-                    className="flex-shrink-0 cursor-pointer"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.4, delay: 0.1 }}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setShowAllCategoriesModal(true)}
-                  >
-                    <div className="flex flex-col items-center gap-2 w-[62px] sm:w-24 md:w-28">
-                      <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md transition-all bg-gradient-to-br from-pink-100 to-pink-200 dark:from-pink-900 dark:to-pink-800 flex items-center justify-center">
-                        <div className="flex items-center justify-center w-full h-full">
-                          <UtensilsCrossed className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-pink-600 dark:text-pink-300" />
-                        </div>
-                      </div>
-                      <span className="text-xs sm:text-sm md:text-base font-semibold text-gray-800 dark:text-gray-200 text-center">
-                        See all
-                      </span>
+                 ))}
+              </div>
+
+              {/* Duplicate Set for Seamless Looping */}
+              <div className="flex gap-3 sm:gap-4 lg:gap-5 xl:gap-6 pr-3 sm:pr-4 lg:pr-5 xl:pr-6" aria-hidden="true">
+                 <div className="flex-shrink-0 flex flex-col items-center justify-center cursor-pointer" onClick={() => navigate("/user/under-250")}>
+                    <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl overflow-hidden relative">
+                      <OptimizedImage src={offerImage} alt="Offer" className="w-full h-full" objectFit="cover" />
                     </div>
-                  </motion.div>
-                )}
-              </>
-            ) : landingCategories.length > 0 ? (
-              <>
-                {/* Show only first 10 categories */}
-                {landingCategories.slice(0, 10).map((category, index) => (
-                  <motion.div
-                    key={category._id || index}
-                    className="flex-shrink-0"
-                    initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                    whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{
-                      duration: 0.4,
-                      delay: index * 0.05,
-                      type: "spring",
-                      stiffness: 100
-                    }}
-                    whileHover={{ scale: 1.1, y: -5 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Link to={`/user/category/${category.slug || category.label.toLowerCase().replace(/\s+/g, '-')}`}>
-                      <div className="flex flex-col items-center gap-2 w-[62px] sm:w-24 md:w-28">
-                        <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md hover:shadow-[0_0_30px_rgba(212,175,55,0.6)] transition-all premium-gold-border shadow-[0_0_20px_rgba(212,175,55,0.45)]">
-                          <OptimizedImage
-                            src={category.imageUrl}
-                            alt={category.label}
-                            className="w-full h-full bg-white rounded-full"
-                            sizes="(max-width: 640px) 56px, (max-width: 768px) 80px, 96px"
-                            objectFit="cover"
-                            placeholder="blur"
-                            onError={() => { }}
-                          />
+                 </div>
+                 
+                 {realCategories.map((category, index) => (
+                    <div key={`cat-2-${index}`} className="flex-shrink-0">
+                      <div className="flex flex-col items-center gap-2 w-[62px] sm:w-24 md:w-28 opacity-90">
+                        <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md">
+                           <OptimizedImage src={category.image} alt={category.name} className="w-full h-full" objectFit="cover" />
                         </div>
-                        <span className="text-xs sm:text-sm md:text-base font-semibold text-gray-800 dark:text-gray-200 text-center">
-                          {category.label.length > 7 ? `${category.label.slice(0, 7)}...` : category.label}
+                        <span className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 text-center truncate w-full">
+                           {category.name}
                         </span>
                       </div>
-                    </Link>
-                  </motion.div>
-                ))}
-                {/* See All button - show if there are more than 10 categories */}
-                {landingCategories.length > 10 && (
-                  <motion.div
-                    className="flex-shrink-0 cursor-pointer"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.4, delay: 0.1 }}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setShowAllCategoriesModal(true)}
-                  >
-                    <div className="flex flex-col items-center gap-2 w-[62px] sm:w-24 md:w-28">
-                      <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md transition-all bg-gradient-to-br from-pink-100 to-pink-200 dark:from-pink-900 dark:to-pink-800 flex items-center justify-center premium-gold-border">
-                        <div className="flex items-center justify-center w-full h-full">
-                          <UtensilsCrossed className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-pink-600 dark:text-pink-300" />
-                        </div>
-                      </div>
-                      <span className="text-xs sm:text-sm md:text-base font-semibold text-gray-800 dark:text-gray-200 text-center">
-                        See all
-                      </span>
                     </div>
-                  </motion.div>
-                )}
-              </>
-            ) : (
-              // No categories available from API
-              <div className="flex items-center justify-center py-4 text-gray-500 text-sm">
-                No categories available
+                 ))}
               </div>
-            )}
+            </div>
           </div>
         </motion.section>
 
