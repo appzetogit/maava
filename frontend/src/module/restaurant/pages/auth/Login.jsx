@@ -674,7 +674,7 @@ export default function RestaurantLogin() {
             By continuing, you agree to our{" "}
             <span 
               className="cursor-pointer hover:text-blue-600 transition-colors underline"
-              onClick={() => navigate("/restaurant/privacy")}
+              onClick={() => navigate("/privacy")}
             >
               Privacy Policy
             </span>

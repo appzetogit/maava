@@ -477,7 +477,7 @@ export default function RestaurantSignIn() {
                By continuing, you agree to our{" "}
                <span 
                  className="text-primary-orange hover:underline cursor-pointer font-semibold"
-                 onClick={() => navigate("/restaurant/privacy")}
+                 onClick={() => navigate("/privacy")}
                >
                  Privacy Policy
                </span>

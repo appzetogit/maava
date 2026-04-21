@@ -185,7 +185,7 @@ export default function DeliverySignIn() {
             By continuing, you agree to our{" "}
             <span 
               className="text-blue-600 hover:underline cursor-pointer"
-              onClick={() => navigate("/restaurant/privacy")}
+              onClick={() => navigate("/privacy")}
             >
               Privacy Policy
             </span>
