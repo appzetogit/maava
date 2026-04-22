@@ -574,6 +574,8 @@ export default function Home() {
   const [isLoadingFilterResults, setIsLoadingFilterResults] = useState(false)
   const [activeFilterTab, setActiveFilterTab] = useState('sort')
   const categoryScrollRef = useRef(null)
+  const categoryOuterRef = useRef(null)
+  const catDragRef = useRef({ isDragging: false, startX: 0, scrollLeft: 0, startTouchX: 0 })
   const gsapAnimationsRef = useRef([])
   // Safely get profile context - handle case when ProfileProvider is not available
   let profileContext = null
@@ -1248,6 +1250,9 @@ export default function Home() {
           .infinite-scroll-container:hover {
             animation-play-state: paused;
           }
+          .infinite-scroll-container.user-dragging {
+            animation-play-state: paused;
+          }
         `}</style>
       </div>
 
@@ -1469,8 +1474,45 @@ export default function Home() {
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.5 }}
         >
-          <div className="overflow-hidden relative w-full group">
-            <div className="infinite-scroll-container py-2 sm:py-3 lg:py-4 px-2">
+          <div
+            ref={categoryOuterRef}
+            className="overflow-x-auto relative w-full group scrollbar-hide cursor-grab active:cursor-grabbing"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            onMouseDown={(e) => {
+              catDragRef.current.isDragging = true;
+              catDragRef.current.startX = e.pageX - categoryOuterRef.current.offsetLeft;
+              catDragRef.current.scrollLeft = categoryOuterRef.current.scrollLeft;
+              if (categoryScrollRef.current) categoryScrollRef.current.classList.add('user-dragging');
+            }}
+            onMouseMove={(e) => {
+              if (!catDragRef.current.isDragging) return;
+              e.preventDefault();
+              const x = e.pageX - categoryOuterRef.current.offsetLeft;
+              const walk = (x - catDragRef.current.startX) * 1.5;
+              categoryOuterRef.current.scrollLeft = catDragRef.current.scrollLeft - walk;
+            }}
+            onMouseUp={() => {
+              catDragRef.current.isDragging = false;
+              if (categoryScrollRef.current) categoryScrollRef.current.classList.remove('user-dragging');
+            }}
+            onMouseLeave={() => {
+              catDragRef.current.isDragging = false;
+              if (categoryScrollRef.current) categoryScrollRef.current.classList.remove('user-dragging');
+            }}
+            onTouchStart={(e) => {
+              catDragRef.current.startTouchX = e.touches[0].clientX;
+              catDragRef.current.scrollLeft = categoryOuterRef.current.scrollLeft;
+              if (categoryScrollRef.current) categoryScrollRef.current.classList.add('user-dragging');
+            }}
+            onTouchMove={(e) => {
+              const dx = catDragRef.current.startTouchX - e.touches[0].clientX;
+              categoryOuterRef.current.scrollLeft = catDragRef.current.scrollLeft + dx;
+            }}
+            onTouchEnd={() => {
+              if (categoryScrollRef.current) categoryScrollRef.current.classList.remove('user-dragging');
+            }}
+          >
+            <div ref={categoryScrollRef} className="infinite-scroll-container py-2 sm:py-3 lg:py-4 px-2">
               {/* First Set of Items */}
               <div className="flex gap-3 sm:gap-4 lg:gap-5 xl:gap-6 pr-3 sm:pr-4 lg:pr-5 xl:pr-6">
                 {/* Offer Image */}
