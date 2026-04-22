@@ -175,7 +175,7 @@ export default function AdminHome() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <MetricCard
               title="Gross revenue"
-              value={`₹${revenueTotal.toLocaleString("en-IN")}`}
+              value={`₹${revenueTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               helper="Rolling 12 months"
               icon={<ShoppingBag className="h-5 w-5 text-emerald-600" />}
               accent="bg-emerald-200/40"
@@ -183,7 +183,7 @@ export default function AdminHome() {
             />
             <MetricCard
               title="Commission earned"
-              value={`₹${commissionTotal.toLocaleString("en-IN")}`}
+              value={`₹${commissionTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               helper="Restaurant commission"
               icon={<ArrowUpRight className="h-5 w-5 text-indigo-600" />}
               accent="bg-indigo-200/40"
@@ -199,7 +199,7 @@ export default function AdminHome() {
             />
             <MetricCard
               title="Platform fee"
-              value={`₹${platformFeeTotal.toLocaleString("en-IN")}`}
+              value={`₹${platformFeeTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               helper="Total platform fees"
               icon={<CreditCard className="h-5 w-5 text-purple-600" />}
               accent="bg-purple-200/40"
@@ -207,7 +207,7 @@ export default function AdminHome() {
             />
             <MetricCard
               title="Delivery fee"
-              value={`₹${deliveryFeeTotal.toLocaleString("en-IN")}`}
+              value={`₹${deliveryFeeTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               helper="Total delivery fees"
               icon={<Truck className="h-5 w-5 text-blue-600" />}
               accent="bg-blue-200/40"
@@ -215,7 +215,7 @@ export default function AdminHome() {
             />
             <MetricCard
               title="GST"
-              value={`₹${gstTotal.toLocaleString("en-IN")}`}
+              value={`₹${gstTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               helper="Total GST collected"
               icon={<Receipt className="h-5 w-5 text-orange-600" />}
               accent="bg-orange-200/40"

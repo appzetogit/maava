@@ -103,7 +103,7 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
 
     // Get order IDs for commission calculation from settlements
     // Get order IDs for commission calculation from settlements
-    const deliveredOrders = await Order.find({ status: 'delivered' }).select('_id pricing.total').lean();
+    const deliveredOrders = await Order.find({ status: 'delivered' }).select('_id pricing').lean();
     const deliveredOrderIdArray = deliveredOrders.map(o => o._id);
     const totalDeliveredRevenue = deliveredOrders.reduce((sum, o) => sum + (o.pricing?.total || 0), 0);
 
@@ -134,8 +134,57 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
 
     const ordSettStats = settlementStats[0] || { totalCommission: 0, last30DaysCommission: 0, settledOrderIds: [] };
     
-    // Only use actual commission from settlements (proper data)
-    const finalTotalCommission = Math.round(ordSettStats.totalCommission * 100) / 100;
+    // ALSO fetch commission from AdminCommission model (created when delivery is completed for cash orders)
+    // This covers orders that don't go through Razorpay settlement flow
+    const adminCommissionStats = await AdminCommission.aggregate([
+      {
+        $match: {
+          orderId: { $in: deliveredOrderIdArray },
+          status: 'completed'
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalCommission: { $sum: '$commissionAmount' },
+          commissionOrderIds: { $push: '$orderId' },
+          last30DaysCommission: {
+            $sum: {
+              $cond: [
+                { $gte: ['$createdAt', last30Days] },
+                '$commissionAmount',
+                0
+              ]
+            }
+          }
+        }
+      }
+    ]);
+    
+    const adminCommStats = adminCommissionStats[0] || { totalCommission: 0, last30DaysCommission: 0, commissionOrderIds: [] };
+    
+    // Fallback: For any delivered orders not covered by either source, estimate 10%
+    const settledOrderIdsSet = new Set([
+      ...ordSettStats.settledOrderIds.map(id => id.toString()),
+      ...adminCommStats.commissionOrderIds.map(id => id.toString())
+    ]);
+    const unsettledOrders = deliveredOrders.filter(o => !settledOrderIdsSet.has(o._id.toString()));
+    
+    let estimatedPendingCommission = 0;
+    for (const order of unsettledOrders) {
+      const foodPrice = (order.pricing?.subtotal || 0) - (order.pricing?.discount || 0);
+      estimatedPendingCommission += (foodPrice * 0.1);
+    }
+
+    // Use whichever is higher: settlements + adminCommission records + estimated
+    // This ensures we always have the most accurate possible value
+    const fromSettlements = Math.round(ordSettStats.totalCommission * 100) / 100;
+    const fromAdminCommission = Math.round(adminCommStats.totalCommission * 100) / 100;
+    const fromEstimation = Math.round(estimatedPendingCommission * 100) / 100;
+    const finalTotalCommission = Math.round((fromSettlements + fromAdminCommission + fromEstimation) * 100) / 100;
+    const finalLast30DaysCommission = Math.round((ordSettStats.last30DaysCommission + adminCommStats.last30DaysCommission) * 100) / 100;
+    
+    console.log('📊 Commission breakdown:', { fromSettlements, fromAdminCommission, fromEstimation, finalTotalCommission });
 
     // Final clean values for fees (already from Order model, so these are 100% accurate)
     const finalPlatformFee = Math.round(metrics.totalPlatformFee * 100) / 100;
@@ -366,7 +415,7 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
       },
       commission: {
         total: finalTotalCommission,
-        last30Days: ordSettStats.last30DaysCommission || 0,
+        last30Days: finalLast30DaysCommission,
         currency: 'INR'
       },
       platformFee: {

@@ -112,7 +112,7 @@ export const calculateGST = async (subtotal, discount = 0) => {
   const taxableAmount = subtotal - discount;
   const feeSettings = await getFeeSettings();
   const gstRate = (feeSettings.gstRate || 5) / 100; // Convert percentage to decimal
-  return Math.round(taxableAmount * gstRate);
+  return Math.round(taxableAmount * gstRate * 100) / 100;
 };
 
 /**
@@ -299,25 +299,25 @@ export const calculateOrderPricing = async ({
     const savings = discount + (deliveryFee > finalDeliveryFee ? deliveryFee - finalDeliveryFee : 0);
     
     return {
-      subtotal: Math.round(subtotal),
-      discount: Math.round(discount),
-      deliveryFee: Math.round(finalDeliveryFee),
-      platformFee: Math.round(platformFee),
-      tax: gst, // Already rounded in calculateGST
-      total: Math.round(total),
-      savings: Math.round(savings),
+      subtotal: Math.round(subtotal * 100) / 100,
+      discount: Math.round(discount * 100) / 100,
+      deliveryFee: Math.round(finalDeliveryFee * 100) / 100,
+      platformFee: Math.round(platformFee * 100) / 100,
+      tax: gst, 
+      total: Math.round(total * 100) / 100,
+      savings: Math.round(savings * 100) / 100,
       appliedCoupon: appliedCoupon ? {
         code: appliedCoupon.code,
-        discount: discount,
+        discount: Math.round(discount * 100) / 100,
         freeDelivery: appliedCoupon.freeDelivery || false
       } : null,
       breakdown: {
-        itemTotal: Math.round(subtotal),
-        discountAmount: Math.round(discount),
-        deliveryFee: Math.round(finalDeliveryFee),
-        platformFee: Math.round(platformFee),
+        itemTotal: Math.round(subtotal * 100) / 100,
+        discountAmount: Math.round(discount * 100) / 100,
+        deliveryFee: Math.round(finalDeliveryFee * 100) / 100,
+        platformFee: Math.round(platformFee * 100) / 100,
         gst: gst,
-        total: Math.round(total)
+        total: Math.round(total * 100) / 100
       }
     };
   } catch (error) {
