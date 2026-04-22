@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react"
-import { Search, Edit, Trash2, IndianRupee, Settings, Check, Columns, MapPin, Loader2 } from "lucide-react"
+import { Search, Edit, Trash2, IndianRupee, Settings, Check, Columns, MapPin, Loader2, Plus } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { adminAPI } from "@/lib/api"
 import { API_BASE_URL } from "@/lib/api/config"
@@ -76,7 +76,7 @@ export default function DeliveryBoyCommission() {
   const fetchCommissionRules = async () => {
     try {
       setLoading(true)
-      const response = await adminAPI.getCommissionRules({ status: true })
+      const response = await adminAPI.getCommissionRules()
       
       // Handle different response structures
       let commissionsData = null
@@ -400,6 +400,13 @@ export default function DeliveryBoyCommission() {
             </div>
 
             <div className="flex items-center gap-2">
+              <button 
+                onClick={handleAdd}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-md font-semibold"
+              >
+                <Plus className="w-5 h-5" />
+                <span className="hidden sm:inline">Add Commission Rule</span>
+              </button>
               <button 
                 onClick={() => setIsSettingsOpen(true)}
                 className="p-2.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition-all"
