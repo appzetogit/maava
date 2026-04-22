@@ -20,7 +20,6 @@ import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useSearchOverlay, useLocationSelector } from "../components/UserLayout"
 import PageNavbar from "../components/PageNavbar"
-import ZomatoBanner from "../components/ZomatoBanner"
 
 
 
@@ -1256,8 +1255,8 @@ export default function Home() {
       <div className="relative w-full overflow-hidden min-h-[39vh] lg:min-h-[50vh] md:pt-16">
         {/* Hero Banner Carousel Background */}
         {loadingBanners ? (
-          <div className="absolute top-0 left-0 right-0 bottom-0 z-0 bg-black flex items-center justify-center">
-            <ZomatoBanner />
+          <div className="absolute top-0 left-0 right-0 bottom-0 z-0 bg-slate-900 animate-pulse flex items-center justify-center">
+            {/* Simple Loading Placeholder */}
           </div>
         ) : heroBannerImages.length > 0 ? (
           <div
@@ -1280,14 +1279,9 @@ export default function Home() {
                 ease: "easeInOut"
               }}
               style={{
-                width: `${(heroBannerImages.length + 1) * 100}vw`
+                width: `${heroBannerImages.length * 100}vw`
               }}
             >
-              {/* Premium Zomato Style Animated Banner as first slide */}
-              <div className="h-full flex-shrink-0" style={{ width: '100vw' }}>
-                <ZomatoBanner />
-              </div>
-
               {heroBannerImages.map((image, index) => {
                 const bannerData = heroBannersData[index]
                 const linkedRestaurants = bannerData?.linkedRestaurants || []
@@ -1322,8 +1316,8 @@ export default function Home() {
             </motion.div>
           </div>
         ) : (
-          <div className="absolute top-0 left-0 right-0 bottom-0 z-0 bg-black">
-            <ZomatoBanner />
+          <div className="absolute top-0 left-0 right-0 bottom-0 z-0 bg-slate-800">
+            {/* Fallback for no banners */}
           </div>
         )}
 

@@ -397,6 +397,7 @@
   border-color: rgba(212, 175, 55, 0.5) !important;
   box-shadow: 0 0 15px rgba(212, 175, 55, 0.15) !important;
 }
+
 /* Global Admin Panel Overrides */
 .admin-panel input,
 .admin-panel select,
