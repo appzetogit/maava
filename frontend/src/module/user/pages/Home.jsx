@@ -1085,6 +1085,27 @@ export default function Home() {
     return () => clearInterval(interval)
   }, []) // placeholders is a constant, no need for dependency
 
+  // Infinite loop for manual category scroll — mirrors the CSS animation looping behavior
+  useEffect(() => {
+    const outer = categoryOuterRef.current
+    const inner = categoryScrollRef.current
+    if (!outer || !inner) return
+
+    const handleScroll = () => {
+      const halfWidth = inner.scrollWidth / 2
+      if (outer.scrollLeft >= halfWidth) {
+        // Reached end of first set — jump to beginning seamlessly
+        outer.scrollLeft = outer.scrollLeft - halfWidth
+      } else if (outer.scrollLeft < 0) {
+        // Scrolled past start — jump to end of first set
+        outer.scrollLeft = halfWidth + outer.scrollLeft
+      }
+    }
+
+    outer.addEventListener('scroll', handleScroll, { passive: true })
+    return () => outer.removeEventListener('scroll', handleScroll)
+  }, [realCategories]) // re-attach when categories load
+
   // Lightweight ScrollReveal replacement - CSS only, no IntersectionObserver
   const ScrollRevealSimple = ({ children, delay = 0, className = "" }) => (
     <div className={className}>
