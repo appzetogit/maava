@@ -375,7 +375,6 @@ apiClient.interceptors.response.use(
             localStorage.removeItem('admin_user');
             window.location.href = '/admin/login';
           } else if (currentPath.startsWith('/restaurant') && !currentPath.startsWith('/restaurants')) {
-            // /restaurant/* is for restaurant module, /restaurants/* is for user module viewing restaurants
             localStorage.removeItem('restaurant_accessToken');
             localStorage.removeItem('restaurant_authenticated');
             localStorage.removeItem('restaurant_user');
@@ -386,16 +385,37 @@ apiClient.interceptors.response.use(
             localStorage.removeItem('delivery_user');
             window.location.href = '/delivery/sign-in';
           } else {
-            // User module includes /restaurants/* paths
+            // User module - discovery routes should be public
+            // Clear tokens but only redirect if NOT on a public discovery page
             localStorage.removeItem('user_accessToken');
             localStorage.removeItem('user_authenticated');
             localStorage.removeItem('user');
-            window.location.href = '/user/auth/sign-in';
+            
+            // Define public discovery paths that should NOT force redirect on auth failure
+            const publicDiscoveryPaths = [
+              '/',
+              '/user',
+              '/restaurants',
+              '/in-mart',
+              '/under-250',
+              '/search',
+              '/category',
+              '/product'
+            ];
+            
+            const isPublicDiscoveryPath = publicDiscoveryPaths.some(p => 
+              currentPath === p || (p !== '/' && currentPath.startsWith(p))
+            );
+
+            if (!isPublicDiscoveryPath) {
+              window.location.href = '/user/auth/sign-in';
+            } else {
+              // On public pages, just notify the app that auth has changed (to guest mode)
+              window.dispatchEvent(new Event('userAuthChanged'));
+              console.log('ℹ️ [API] Session expired on public page, switching to guest mode');
+            }
           }
         }
-
-        // For onboarding page, reject the promise so component can handle it
-        return Promise.reject(refreshError);
 
         return Promise.reject(refreshError);
       }
