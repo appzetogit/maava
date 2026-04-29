@@ -1,9 +1,14 @@
-import { Plus, Minus } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useNavigate, useLocation } from "react-router-dom"
+import { useProfile } from "../context/ProfileContext"
 import { useCart } from "../context/CartContext"
 import { useHibermartCart } from "../context/HibermartCartContext"
+import { Button } from "@/components/ui/button"
+import { Plus, Minus } from "lucide-react"
 
 export default function AddToCartButton({ item, className = "", disabled = false }) {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { userProfile } = useProfile()
   const isHibermartItem = item?.restaurantId === 'hibermart-id' || item?.restaurant === 'Hibermart'
   const foodCart = useCart()
   const hibermartCartCtx = useHibermartCart()
@@ -26,6 +31,13 @@ export default function AddToCartButton({ item, className = "", disabled = false
     e.preventDefault()
     e.stopPropagation()
     if (disabled) return
+
+    // Delayed login for guests
+    if (!userProfile) {
+      navigate("/user/auth/sign-in", { state: { from: location.pathname } })
+      return
+    }
+
     const sourcePosition = getSourcePosition(e)
     addToCart(item, sourcePosition)
   }
@@ -34,6 +46,13 @@ export default function AddToCartButton({ item, className = "", disabled = false
     e.preventDefault()
     e.stopPropagation()
     if (disabled) return
+    
+    // Delayed login for guests
+    if (!userProfile) {
+      navigate("/user/auth/sign-in", { state: { from: location.pathname } })
+      return
+    }
+
     const sourcePosition = getSourcePosition(e)
     updateQuantity(item.id, (cartItem?.quantity || 0) + 1, sourcePosition, item)
   }
@@ -42,6 +61,13 @@ export default function AddToCartButton({ item, className = "", disabled = false
     e.preventDefault()
     e.stopPropagation()
     if (disabled) return
+    
+    // Delayed login for guests
+    if (!userProfile) {
+      navigate("/user/auth/sign-in", { state: { from: location.pathname } })
+      return
+    }
+
     const sourcePosition = getSourcePosition(e)
     updateQuantity(item.id, (cartItem?.quantity || 0) - 1, sourcePosition, item)
   }

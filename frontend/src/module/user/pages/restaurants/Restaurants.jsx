@@ -50,7 +50,7 @@ const formatRestaurant = (restaurant) => {
 }
 
 export default function Restaurants() {
-  const { addFavorite, removeFavorite, isFavorite } = useProfile()
+  const { addFavorite, removeFavorite, isFavorite, userProfile } = useProfile()
   const { location: userLocation } = useLocation()
   const { zoneId } = useZone(userLocation)
 
@@ -135,6 +135,12 @@ export default function Restaurants() {
               const handleToggleFavorite = (e) => {
                 e.preventDefault()
                 e.stopPropagation()
+
+                if (!userProfile) {
+                  navigate("/user/auth/sign-in", { state: { from: window.location.pathname } });
+                  return;
+                }
+
                 if (favorite) {
                   removeFavorite(restaurant.slug)
                   return

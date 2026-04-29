@@ -97,11 +97,7 @@ export default function UserRouter() {
         {/* Home & Discovery */}
         <Route
           path="/"
-          element={
-            <ProtectedRoute requiredRole="user" loginPath="/user/auth/sign-in">
-              <Home />
-            </ProtectedRoute>
-          }
+          element={<Home />}
         />
         <Route path="/in-mart" element={<InMart />} />
 

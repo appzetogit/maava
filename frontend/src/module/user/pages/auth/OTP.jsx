@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import AnimatedPage from "../../components/AnimatedPage"
 import { Input } from "@/components/ui/input"
@@ -9,6 +9,8 @@ import { setAuthData as setUserAuthData } from "@/lib/utils/auth"
 
 export default function OTP() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const from = location.state?.from || "/user"
   const [otp, setOtp] = useState(["", "", "", "", "", ""])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -27,7 +29,7 @@ export default function OTP() {
     // Redirect to home if already authenticated
     const isAuthenticated = localStorage.getItem("user_authenticated") === "true"
     if (isAuthenticated) {
-      navigate("/user", { replace: true })
+      navigate(from, { replace: true })
       return
     }
 
@@ -35,7 +37,7 @@ export default function OTP() {
     const stored = sessionStorage.getItem("userAuthData")
     if (!stored) {
       // No auth data, redirect to sign in
-      navigate("/user/auth/sign-in", { replace: true })
+      navigate("/user/auth/sign-in", { replace: true, state: { from } })
       return
     }
     const data = JSON.parse(stored)
@@ -216,7 +218,7 @@ export default function OTP() {
 
       // Redirect to user home after short delay
       setTimeout(() => {
-        navigate("/user")
+        navigate(from)
       }, 500)
     } catch (err) {
       const message =
@@ -280,7 +282,7 @@ export default function OTP() {
 
       // Redirect to user home after short delay
       setTimeout(() => {
-        navigate("/user")
+        navigate(from)
       }, 500)
     } catch (err) {
       const message =
@@ -347,7 +349,7 @@ export default function OTP() {
       {/* Header */}
       <div className="relative flex items-center justify-center py-4 px-4 md:py-6 md:px-6 lg:px-8 border-b border-gray-200 dark:border-gray-800">
         <button
-          onClick={() => navigate("/user/auth/sign-in")}
+          onClick={() => navigate("/user/auth/sign-in", { state: { from } })}
           className="absolute left-4 md:left-6 lg:left-8 top-1/2 -translate-y-1/2 hover:opacity-70 transition-opacity"
           aria-label="Go back"
         >
@@ -475,7 +477,7 @@ export default function OTP() {
       <div className="pt-4 md:pt-6 mt-auto px-6 md:px-8 lg:px-12 text-center pb-8 md:pb-12">
         <button
           type="button"
-          onClick={() => navigate("/user/auth/sign-in")}
+          onClick={() => navigate("/user/auth/sign-in", { state: { from } })}
           className="text-sm md:text-base text-black hover:underline dark:text-white transition-colors font-bold"
         >
           Go back to login methods

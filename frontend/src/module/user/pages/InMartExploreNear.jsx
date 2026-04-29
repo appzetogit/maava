@@ -112,7 +112,7 @@ export default function InMartExploreNear() {
   const { openSearch, closeSearch, setSearchValue } = useSearchOverlay()
   const { openLocationSelector } = useLocationSelector()
   const { location, loading } = useLocationHook()
-  const { addFavorite, removeFavorite, isFavorite } = useProfile()
+  const { addFavorite, removeFavorite, isFavorite, userProfile } = useProfile()
   const cityName = location?.city || "Select"
   const stateName = location?.state || "Location"
 
@@ -336,6 +336,12 @@ export default function InMartExploreNear() {
                 const handleToggleFavorite = (e) => {
                   e.preventDefault()
                   e.stopPropagation()
+
+                  if (!userProfile) {
+                    navigate("/user/auth/sign-in", { state: { from: window.location.pathname } });
+                    return;
+                  }
+
                   if (favorite) {
                     removeFavorite(restaurantSlug)
                   } else {

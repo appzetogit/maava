@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react"
-import { useNavigate, useSearchParams } from "react-router-dom"
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom"
 import { Mail, Phone, AlertCircle, Loader2 } from "lucide-react"
 import AnimatedPage from "../../components/AnimatedPage"
 import { Button } from "@/components/ui/button"
@@ -17,6 +17,8 @@ const countryCodes = [
 
 export default function SignIn() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const from = location.state?.from || "/"
   const [searchParams] = useSearchParams()
   const isSignUp = searchParams.get("mode") === "signup"
 
@@ -78,9 +80,9 @@ export default function SignIn() {
           window.history.replaceState({}, document.title, window.location.pathname)
         }
 
-        console.log(`✅ [Auth] Sign-in successful! Navigating to home...`)
-        // Direct navigation to home to avoid intermediate redirects
-        navigate("/", { replace: true })
+        console.log(`✅ [Auth] Sign-in successful! Navigating to ${from}...`)
+        // Direct navigation to home or original page to avoid intermediate redirects
+        navigate(from, { replace: true })
       } else {
         throw new Error("Invalid response from server. Missing access token or user data.")
       }
@@ -282,7 +284,7 @@ export default function SignIn() {
       sessionStorage.setItem("userAuthData", JSON.stringify(authData))
 
       // Navigate to OTP page
-      navigate("/user/auth/otp")
+      navigate("/user/auth/otp", { state: { from } })
     } catch (error) {
       const message =
         error?.response?.data?.message ||
@@ -383,7 +385,7 @@ export default function SignIn() {
 
   const toggleMode = () => {
     const newMode = isSignUp ? "signin" : "signup"
-    navigate(`/user/auth/sign-in?mode=${newMode}`, { replace: true })
+    navigate(`/user/auth/sign-in?mode=${newMode}`, { replace: true, state: { from } })
     // Reset form
     setFormData({ phone: "", countryCode: "+91", email: "", name: "", rememberMe: false })
     setErrors({ phone: "", email: "", name: "" })

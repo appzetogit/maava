@@ -7,7 +7,10 @@ import { useCart } from "../context/CartContext"
 import { useLocationSelector } from "./UserLayout"
 import { FaLocationDot } from "react-icons/fa6"
 
+import { useProfile } from "../context/ProfileContext"
+
 export default function DesktopNavbar() {
+  const { userProfile } = useProfile()
   const location = useLocation()
   const { location: userLocation, loading: locationLoading } = useLocationHook()
   const { getCartCount } = useCart()
@@ -186,7 +189,7 @@ export default function DesktopNavbar() {
                   : "text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-500"
                   }`}
               >
-                <span className="relative z-10">Profile</span>
+                <span className="relative z-10">{userProfile ? 'Profile' : 'Login'}</span>
                 {isProfile && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-600 dark:bg-green-500 rounded-t-full" />
                 )}

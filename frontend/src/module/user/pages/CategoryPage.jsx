@@ -29,7 +29,7 @@ const filterOptions = [
 export default function CategoryPage() {
   const { category } = useParams()
   const navigate = useNavigate()
-  const { vegMode } = useProfile()
+  const { vegMode, userProfile } = useProfile()
   const { location } = useLocation()
   const { zoneId, isOutOfService } = useZone(location)
   const [searchQuery, setSearchQuery] = useState("")
@@ -433,6 +433,10 @@ export default function CategoryPage() {
   }, [isFilterOpen])
 
   const toggleFavorite = (id) => {
+    if (!userProfile) {
+      navigate("/user/auth/sign-in", { state: { from: window.location.pathname } });
+      return;
+    }
     setFavorites(prev => {
       const newSet = new Set(prev)
       if (newSet.has(id)) {
