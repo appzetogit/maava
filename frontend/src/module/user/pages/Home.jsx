@@ -1993,7 +1993,7 @@ export default function Home() {
                             </motion.div>
 
                             {/* FREE delivery Badge - Bottom Left (only for first 3 restaurants) */}
-                            {index < 3 && (
+                            {/* {index < 3 && (
                               <motion.div
                                 className="absolute bottom-2 left-0 sm:bottom-2 sm:left-0 z-10"
                                 variants={{
@@ -2006,7 +2006,7 @@ export default function Home() {
                                   FREE delivery
                                 </div>
                               </motion.div>
-                            )}
+                            )} */}
                             {/* Closed Overlay */}
                             {isClosedByTiming && (
                               <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
