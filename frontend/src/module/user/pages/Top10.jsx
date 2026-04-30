@@ -5,14 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { heroBannerAPI } from "@/lib/api"
 import { toast } from "sonner"
-import { useProfile } from "../context/ProfileContext"
 
 // Import banner
 import top10Banner from "@/assets/top10pagebanner.png"
 
 export default function Top10() {
   const navigate = useNavigate()
-  const { userProfile } = useProfile()
   const [favorites, setFavorites] = useState(new Set())
   const [top10Restaurants, setTop10Restaurants] = useState([])
   const [loading, setLoading] = useState(true)
@@ -47,10 +45,6 @@ export default function Top10() {
   }, [])
 
   const toggleFavorite = (id) => {
-    if (!userProfile) {
-      navigate("/user/auth/sign-in", { state: { from: window.location.pathname } });
-      return;
-    }
     setFavorites(prev => {
       const newSet = new Set(prev)
       if (newSet.has(id)) {

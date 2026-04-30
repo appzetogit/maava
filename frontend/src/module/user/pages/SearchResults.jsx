@@ -30,7 +30,6 @@ export default function SearchResults() {
   const navigate = useNavigate()
   const { location } = useLocation()
   const { zoneId, isOutOfService } = useZone(location)
-  const { userProfile } = useProfile()
   const [searchQuery, setSearchQuery] = useState(query)
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [activeFilters, setActiveFilters] = useState(new Set())
@@ -420,10 +419,6 @@ export default function SearchResults() {
   }
 
   const toggleFavorite = (id) => {
-    if (!userProfile) {
-      navigate("/user/auth/sign-in", { state: { from: window.location.pathname } });
-      return;
-    }
     setFavorites(prev => {
       const newSet = new Set(prev)
       if (newSet.has(id)) {

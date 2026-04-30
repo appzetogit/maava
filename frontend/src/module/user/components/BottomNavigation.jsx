@@ -2,10 +2,8 @@ import { Link, useLocation } from "react-router-dom"
 import { ShoppingBag, BadgePercent, User, Bike } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useScrollDirection } from "../hooks/useScrollDirection"
-import { useProfile } from "../context/ProfileContext"
 
 export default function BottomNavigation() {
-  const { userProfile } = useProfile()
   const location = useLocation()
   const scrollDirection = useScrollDirection()
 
@@ -98,7 +96,7 @@ export default function BottomNavigation() {
             >
               <User className={`h-5 w-5 ${isProfile ? "text-green-600" : "text-gray-400"}`} strokeWidth={2.5} />
               <span className={`text-xs sm:text-sm font-medium ${isProfile ? "text-green-600 font-semibold" : "text-gray-400"}`}>
-                {userProfile ? 'Profile' : 'Login'}
+                Profile
               </span>
               {isProfile && (
                 <div className="absolute top-0 left-0 right-0 h-0.5 bg-green-600 rounded-b-full" />

@@ -10,7 +10,6 @@ import AnimatedPage from "../components/AnimatedPage"
 import Footer from "../components/Footer"
 import ScrollReveal from "../components/ScrollReveal"
 import { useCart } from "../context/CartContext"
-import { useProfile } from "../context/ProfileContext"
 import { useOrders } from "../context/OrdersContext"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -96,7 +95,6 @@ export default function ProductDetail() {
   const navigate = useNavigate()
   const product = productsData[parseInt(id)]
   const { addToCart, isInCart, getCartItem, updateQuantity } = useCart()
-  const { userProfile } = useProfile()
   const { getAllOrders } = useOrders()
   const [quantity, setQuantity] = useState(1)
   const [showReviewForm, setShowReviewForm] = useState(false)
@@ -132,11 +130,6 @@ export default function ProductDetail() {
   }, [reviews, product])
 
   const handleAddToCart = () => {
-    if (!userProfile) {
-      navigate("/user/auth/sign-in", { state: { from: window.location.pathname } });
-      return;
-    }
-
     if (product) {
       for (let i = 0; i < quantity; i++) {
         addToCart(product)

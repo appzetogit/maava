@@ -27,7 +27,7 @@ export default function Under250() {
   const { zoneId, zoneStatus, isInService, isOutOfService } = useZone(location)
   const navigate = useNavigate()
   const { addToCart, updateQuantity, removeFromCart, getCartItem, cart } = useCart()
-  const { userProfile, addDishFavorite, removeDishFavorite, isDishFavorite } = useProfile()
+  const { addDishFavorite, removeDishFavorite, isDishFavorite } = useProfile()
   const [activeCategory, setActiveCategory] = useState(null)
   const [showSortPopup, setShowSortPopup] = useState(false)
   const [selectedSort, setSelectedSort] = useState(null)
@@ -235,12 +235,6 @@ export default function Under250() {
 
   // Helper function to update item quantity in both local state and cart
   const updateItemQuantity = (item, newQuantity, event = null, restaurantName = null) => {
-    // Delayed login for guests
-    if (!userProfile) {
-      navigate("/user/auth/sign-in", { state: { from: window.location.pathname } });
-      return;
-    }
-
     // CRITICAL: Check if user is in service zone
     if (isOutOfService) {
       toast.error('You are outside the service zone. Please select a location within the service area.')
@@ -343,11 +337,6 @@ export default function Under250() {
 
   // Handle bookmark click using useProfile context
   const handleBookmarkClick = (item) => {
-    if (!userProfile) {
-      navigate("/user/auth/sign-in", { state: { from: window.location.pathname } });
-      return;
-    }
-
     const restaurantId = item.restaurantId
     if (!restaurantId) {
       toast.error("Restaurant information is missing")

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react"
-import { useNavigate, useSearchParams, useLocation } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { Mail, Phone, AlertCircle, Loader2 } from "lucide-react"
 import AnimatedPage from "../../components/AnimatedPage"
 import { Button } from "@/components/ui/button"
@@ -17,8 +17,6 @@ const countryCodes = [
 
 export default function SignIn() {
   const navigate = useNavigate()
-  const location = useLocation()
-  const from = location.state?.from || "/"
   const [searchParams] = useSearchParams()
   const isSignUp = searchParams.get("mode") === "signup"
 
@@ -80,9 +78,9 @@ export default function SignIn() {
           window.history.replaceState({}, document.title, window.location.pathname)
         }
 
-        console.log(`✅ [Auth] Sign-in successful! Navigating to ${from}...`)
-        // Direct navigation to home or original page to avoid intermediate redirects
-        navigate(from, { replace: true })
+        console.log(`✅ [Auth] Sign-in successful! Navigating to home...`)
+        // Direct navigation to home to avoid intermediate redirects
+        navigate("/", { replace: true })
       } else {
         throw new Error("Invalid response from server. Missing access token or user data.")
       }
@@ -177,7 +175,7 @@ export default function SignIn() {
       return "Phone number is required"
     }
     const cleanPhone = phone.replace(/[\s\-\(\)]/g, "")
-    
+
     // India specific validation
     if (countryCode === "+91") {
       if (cleanPhone.length !== 10) {
@@ -284,7 +282,7 @@ export default function SignIn() {
       sessionStorage.setItem("userAuthData", JSON.stringify(authData))
 
       // Navigate to OTP page
-      navigate("/user/auth/otp", { state: { from } })
+      navigate("/user/auth/otp")
     } catch (error) {
       const message =
         error?.response?.data?.message ||
@@ -318,17 +316,17 @@ export default function SignIn() {
       if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
         try {
           console.log("📱 [Flutter] Detected Flutter WebView, using native bridge...")
-          
+
           // 2. Call the Native Android/iOS Google Account List handled by Flutter
           const result = await window.flutter_inappwebview.callHandler('nativeGoogleSignIn')
-          
+
           if (result && result.success && result.idToken) {
             console.log("✅ [Flutter] Received ID token from Flutter App")
-            
+
             // 3. Authenticate with Firebase using the Flutter App's ID Token
             const credential = GoogleAuthProvider.credential(result.idToken)
             const userCredential = await signInWithCredential(firebaseAuth, credential)
-            
+
             if (userCredential?.user) {
               console.log("✅ [Flutter] Firebase login successful via native bridge")
               await processSignedInUser(userCredential.user, "flutter-native-bridge")
@@ -353,7 +351,7 @@ export default function SignIn() {
         }
       } catch (popupError) {
         console.warn("ℹ️ Popup failed or blocked, falling back to redirect:", popupError.code)
-        
+
         // If popup was blocked or failed, fallback to redirect
         if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/cancelled-popup-request' || popupError.code === 'auth/popup-closed-by-user') {
           await signInWithRedirect(firebaseAuth, googleProvider)
@@ -385,7 +383,7 @@ export default function SignIn() {
 
   const toggleMode = () => {
     const newMode = isSignUp ? "signin" : "signup"
-    navigate(`/user/auth/sign-in?mode=${newMode}`, { replace: true, state: { from } })
+    navigate(`/user/auth/sign-in?mode=${newMode}`, { replace: true })
     // Reset form
     setFormData({ phone: "", countryCode: "+91", email: "", name: "", rememberMe: false })
     setErrors({ phone: "", email: "", name: "" })
@@ -393,6 +391,11 @@ export default function SignIn() {
 
   const handleLoginMethodChange = () => {
     setAuthMethod(authMethod === "email" ? "phone" : "email")
+  }
+
+  const handleSkip = () => {
+    sessionStorage.setItem("user_skipped_login", "true")
+    window.location.href = "/" // Force refresh to re-evaluate auth status
   }
 
   return (
@@ -427,9 +430,18 @@ export default function SignIn() {
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-black dark:text-white leading-tight">
               Local Food & Grocery Delivery App
             </h2>
-            <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-400">
-              Log in or sign up
-            </p>
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-400">
+                Log in or sign up
+              </p>
+              <button
+                type="button"
+                onClick={handleSkip}
+                className="text-green-600 hover:text-green-700 font-bold text-sm flex items-center gap-1 transition-colors border border-green-600/20 px-3 py-1 rounded-full bg-green-50/50"
+              >
+                Skip for now
+              </button>
+            </div>
           </div>
 
           {/* Form */}
@@ -617,14 +629,14 @@ export default function SignIn() {
           <div className="text-center text-xs md:text-sm text-gray-500 dark:text-gray-400 pt-1 md:pt-2">
             <p className="mb-2">
               By continuing, you agree to our{' '}
-              <span 
+              <span
                 className="underline hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer"
                 onClick={() => navigate("/user/privacy")}
               >
                 Privacy Policy
               </span>
               {' '}and{' '}
-              <span 
+              <span
                 className="underline hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer"
                 onClick={() => navigate("/user/support")}
               >

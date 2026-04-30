@@ -213,7 +213,7 @@ export default function Home() {
   const [heroSearch, setHeroSearch] = useState("")
   const { openSearch, closeSearch, searchValue, setSearchValue } = useSearchOverlay()
   const { openLocationSelector } = useLocationSelector()
-  const { vegMode, setVegMode: setVegModeContext, userProfile } = useProfile()
+  const { vegMode, setVegMode: setVegModeContext } = useProfile()
   const [appliedVegModeOption, setAppliedVegModeOption] = useState(() => {
     if (typeof window === "undefined") return "all"
     const savedOption = localStorage.getItem("userVegModeOption")
@@ -1864,12 +1864,6 @@ export default function Home() {
                 const handleToggleFavorite = (e) => {
                   e.preventDefault()
                   e.stopPropagation()
-
-                  if (!userProfile) {
-                    navigate("/user/auth/sign-in", { state: { from: window.location.pathname } });
-                    return;
-                  }
-
                   if (favorite) {
                     // If already bookmarked, show Manage Collections modal
                     setSelectedRestaurantSlug(restaurantSlug)

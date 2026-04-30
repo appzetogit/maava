@@ -62,7 +62,7 @@ export default function RestaurantDetails() {
   const [searchParams] = useSearchParams()
   const showOnlyUnder250 = searchParams.get('under250') === 'true'
   const { addToCart, updateQuantity, removeFromCart, getCartItem, cart } = useCart()
-  const { userProfile, vegMode, addDishFavorite, removeDishFavorite, isDishFavorite, getDishFavorites, getFavorites, addFavorite, removeFavorite, isFavorite } = useProfile()
+  const { vegMode, addDishFavorite, removeDishFavorite, isDishFavorite, getDishFavorites, getFavorites, addFavorite, removeFavorite, isFavorite } = useProfile()
   const { location: userLocation } = useLocation() // Get user's current location
   const { zoneId, zone, loading: loadingZone, isOutOfService } = useZone(userLocation) // Get user's zone for zone-based filtering
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
@@ -584,12 +584,6 @@ export default function RestaurantDetails() {
 
   // Helper function to update item quantity in both local state and cart
   const updateItemQuantity = (item, newQuantity, event = null) => {
-    // Delayed login for guests
-    if (!userProfile) {
-      navigate("/user/auth/sign-in", { state: { from: window.location.pathname } });
-      return;
-    }
-
     // CRITICAL: Check if user is in service zone or restaurant is available
     if (isOutOfService) {
       toast.error('You are outside the service zone. Please select a location within the service area.');
@@ -772,11 +766,6 @@ export default function RestaurantDetails() {
 
   // Handle bookmark click
   const handleBookmarkClick = (item) => {
-    if (!userProfile) {
-      navigate("/user/auth/sign-in", { state: { from: window.location.pathname } });
-      return;
-    }
-
     const restaurantId = restaurant?.restaurantId || restaurant?._id || restaurant?.id
     if (!restaurantId) {
       toast.error("Restaurant information is missing")
@@ -818,11 +807,6 @@ export default function RestaurantDetails() {
 
   // Handle add to collection
   const handleAddToCollection = () => {
-    if (!userProfile) {
-      navigate("/user/auth/sign-in", { state: { from: window.location.pathname } });
-      return;
-    }
-
     const restaurantSlug = restaurant?.slug || slug || ""
 
     if (!restaurantSlug) {
