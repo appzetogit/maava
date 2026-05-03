@@ -1140,18 +1140,111 @@ export default function HibermartAdminHome() {
                     >
                         {activeTab === "overview" && <DashboardOverview stats={stats} onToggleStore={handleToggleStoreStatus} />}
 
-                        {/* Catalog Sections */}
-                        {["grocery", "beauty", "household", "snacks", "overview"].includes(activeTab) && (
+                        {/* Catalog Sections - individual category drill-down */}
+                        {["grocery", "beauty", "household", "snacks"].includes(activeTab) && (
                             <NestedManagement
                                 rootName="Main Catalog"
                                 items={catalogItems}
                                 path={currentPath}
                                 setPath={setCurrentPath}
-                                activeRootId={activeTab === "overview" ? null : activeTab}
+                                activeRootId={activeTab}
                                 onAdd={(type = "category") => handleOpenModal(type)}
                                 onEdit={(item) => handleOpenModal(item.type === "product" ? "product" : "category", item)}
                                 onDelete={(item) => handleDeleteItem(item)}
                             />
+                        )}
+
+                        {/* Main Catalog Table - Store Overview tab */}
+                        {activeTab === "overview" && (
+                            <div className="mt-8 space-y-4">
+                                <div className="flex items-end justify-between">
+                                    <div>
+                                        <h2 className="text-2xl font-black text-neutral-900 tracking-tight">Main Catalog</h2>
+                                        <p className="text-sm text-neutral-400 font-medium mt-0.5">All categories with sub-category and product counts</p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-2xl border border-neutral-100 shadow-sm overflow-hidden">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="border-b border-neutral-100 bg-neutral-50">
+                                                <th className="text-left px-5 py-3.5 text-[11px] font-black text-neutral-400 uppercase tracking-widest w-10">#</th>
+                                                <th className="text-left px-5 py-3.5 text-[11px] font-black text-neutral-400 uppercase tracking-widest">Category Name</th>
+                                                <th className="text-center px-5 py-3.5 text-[11px] font-black text-neutral-400 uppercase tracking-widest">Sub-Categories</th>
+                                                <th className="text-center px-5 py-3.5 text-[11px] font-black text-neutral-400 uppercase tracking-widest">Total Products</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {catalogItems.map((category, index) => {
+                                                const subCatCount = (category.children || []).filter(c => c.type === 'category' || c.level === 'sub' || (!c.type && c.children)).length
+                                                    || category.subCategories?.length || 0;
+
+                                                const countProducts = (items = []) => {
+                                                    let total = 0;
+                                                    for (const item of items) {
+                                                        if (item.type === 'product') total += 1;
+                                                        else if (item.children?.length) total += countProducts(item.children);
+                                                    }
+                                                    return total;
+                                                };
+                                                const productCount = countProducts(category.children || []);
+
+                                                return (
+                                                    <tr key={category._id || category.id} className="border-b border-neutral-50 last:border-none hover:bg-neutral-50/60 transition-colors">
+                                                        <td className="px-5 py-4 text-neutral-400 font-bold text-xs">{index + 1}</td>
+                                                        <td className="px-5 py-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-9 h-9 rounded-xl overflow-hidden bg-neutral-100 flex-shrink-0 border border-neutral-100">
+                                                                    {category.image ? (
+                                                                        <img src={category.image} alt={category.name} className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <div className="w-full h-full flex items-center justify-center text-neutral-300">
+                                                                            <Package size={16} />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="font-black text-neutral-900 text-sm leading-tight">{category.name}</p>
+                                                                    {category.slug && <p className="text-[10px] text-neutral-400 font-mono mt-0.5">{category.slug}</p>}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-5 py-4 text-center">
+                                                            <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-black ${subCatCount > 0 ? 'bg-blue-50 text-blue-700 border border-blue-100' : 'bg-neutral-100 text-neutral-400'}`}>
+                                                                {subCatCount}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-5 py-4 text-center">
+                                                            <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-black ${productCount > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-neutral-100 text-neutral-400'}`}>
+                                                                {productCount}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+
+                                    {catalogItems.length === 0 && !loading && (
+                                        <div className="text-center py-16">
+                                            <Package className="w-10 h-10 text-neutral-200 mx-auto mb-3" />
+                                            <p className="text-neutral-400 font-semibold text-sm">No categories found.</p>
+                                        </div>
+                                    )}
+
+                                    {catalogItems.length > 0 && (
+                                        <div className="px-5 py-3 border-t border-neutral-100 bg-neutral-50 flex items-center justify-between">
+                                            <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">{catalogItems.length} categories</span>
+                                            <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                                                {catalogItems.reduce((acc, cat) => {
+                                                    const cp = (items = []) => { let t = 0; for (const i of items) { if (i.type === 'product') t++; else if (i.children?.length) t += cp(i.children); } return t; };
+                                                    return acc + cp(cat.children || []);
+                                                }, 0)} total products
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         )}
 
                         {/* All Categories Management */}
@@ -1171,56 +1264,149 @@ export default function HibermartAdminHome() {
                                     </button>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                    {catalogItems.map((category) => (
-                                        <div
-                                            key={category._id || category.id}
-                                            className="bg-white rounded-2xl border border-neutral-100 shadow-md overflow-hidden group hover:shadow-xl transition-all"
-                                        >
-                                            <div className="relative aspect-square bg-neutral-50 overflow-hidden">
-                                                <img
-                                                    src={category.image || "https://via.placeholder.com/300"}
-                                                    alt={category.name}
-                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform"
-                                                />
-                                                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button
-                                                        onClick={() => handleOpenModal("category", category)}
-                                                        className="p-2 bg-white rounded-full shadow-lg hover:bg-neutral-50"
-                                                    >
-                                                        <Edit className="w-4 h-4 text-black" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteItem(category)}
-                                                        className="p-2 bg-white rounded-full shadow-lg hover:bg-red-50"
-                                                    >
-                                                        <Trash2 className="w-4 h-4 text-red-500" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div className="p-4 space-y-2">
-                                                <h3 className="font-black text-neutral-900 text-base">{category.name}</h3>
-                                                <div className="flex items-center justify-between text-xs">
-                                                    <span className="text-neutral-500 font-semibold">
-                                                        {category.subCategories?.length || 0} subcategories
-                                                    </span>
-                                                    {category.themeColor && (
-                                                        <div
-                                                            className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
-                                                            style={{ backgroundColor: category.themeColor }}
-                                                        />
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                {/* Table */}
+                                <div className="bg-white rounded-2xl border border-neutral-100 shadow-sm overflow-hidden">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="border-b border-neutral-100 bg-neutral-50">
+                                                <th className="text-left px-5 py-3.5 text-[11px] font-black text-neutral-400 uppercase tracking-widest w-10">#</th>
+                                                <th className="text-left px-5 py-3.5 text-[11px] font-black text-neutral-400 uppercase tracking-widest">Category Name</th>
+                                                <th className="text-center px-5 py-3.5 text-[11px] font-black text-neutral-400 uppercase tracking-widest">Sub-Categories</th>
+                                                <th className="text-center px-5 py-3.5 text-[11px] font-black text-neutral-400 uppercase tracking-widest">Total Products</th>
+                                                <th className="text-right px-5 py-3.5 text-[11px] font-black text-neutral-400 uppercase tracking-widest">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {catalogItems.map((category, index) => {
+                                                // Count sub-categories (non-product children)
+                                                const subCatCount = (category.children || []).filter(c => c.type === 'category' || !c.type || c.level === 'sub').length
+                                                    || category.subCategories?.length
+                                                    || 0;
 
-                                {catalogItems.length === 0 && !loading && (
-                                    <div className="text-center py-12">
-                                        <p className="text-neutral-400 font-medium">No categories found. Add your first category!</p>
-                                    </div>
-                                )}
+                                                // Recursively count all products across all levels
+                                                const countProducts = (items = []) => {
+                                                    let total = 0;
+                                                    for (const item of items) {
+                                                        if (item.type === 'product') {
+                                                            total += 1;
+                                                        } else if (item.children?.length) {
+                                                            total += countProducts(item.children);
+                                                        }
+                                                    }
+                                                    return total;
+                                                };
+                                                const productCount = countProducts(category.children || []);
+
+                                                return (
+                                                    <tr
+                                                        key={category._id || category.id}
+                                                        className="border-b border-neutral-50 last:border-none hover:bg-neutral-50/60 transition-colors"
+                                                    >
+                                                        {/* # */}
+                                                        <td className="px-5 py-4 text-neutral-400 font-bold text-xs">{index + 1}</td>
+
+                                                        {/* Category Name */}
+                                                        <td className="px-5 py-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-9 h-9 rounded-xl overflow-hidden bg-neutral-100 flex-shrink-0 border border-neutral-100">
+                                                                    {category.image ? (
+                                                                        <img
+                                                                            src={category.image}
+                                                                            alt={category.name}
+                                                                            className="w-full h-full object-cover"
+                                                                        />
+                                                                    ) : (
+                                                                        <div className="w-full h-full flex items-center justify-center text-neutral-300">
+                                                                            <Package size={16} />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="font-black text-neutral-900 text-sm leading-tight">{category.name}</p>
+                                                                    {category.slug && (
+                                                                        <p className="text-[10px] text-neutral-400 font-mono mt-0.5">{category.slug}</p>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+
+                                                        {/* Sub-Categories */}
+                                                        <td className="px-5 py-4 text-center">
+                                                            <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-black ${
+                                                                subCatCount > 0
+                                                                    ? 'bg-blue-50 text-blue-700 border border-blue-100'
+                                                                    : 'bg-neutral-100 text-neutral-400'
+                                                            }`}>
+                                                                {subCatCount}
+                                                            </span>
+                                                        </td>
+
+                                                        {/* Total Products */}
+                                                        <td className="px-5 py-4 text-center">
+                                                            <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-black ${
+                                                                productCount > 0
+                                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                                                                    : 'bg-neutral-100 text-neutral-400'
+                                                            }`}>
+                                                                {productCount}
+                                                            </span>
+                                                        </td>
+
+                                                        {/* Actions */}
+                                                        <td className="px-5 py-4">
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                <button
+                                                                    onClick={() => handleOpenModal("category", category)}
+                                                                    className="p-2 rounded-lg hover:bg-neutral-100 text-neutral-500 hover:text-black transition-all"
+                                                                    title="Edit"
+                                                                >
+                                                                    <Edit className="w-4 h-4" />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleDeleteItem(category)}
+                                                                    className="p-2 rounded-lg hover:bg-red-50 text-neutral-400 hover:text-red-500 transition-all"
+                                                                    title="Delete"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+
+                                    {catalogItems.length === 0 && !loading && (
+                                        <div className="text-center py-16">
+                                            <Package className="w-10 h-10 text-neutral-200 mx-auto mb-3" />
+                                            <p className="text-neutral-400 font-semibold text-sm">No categories found.</p>
+                                            <p className="text-neutral-300 text-xs mt-1">Add your first category to get started.</p>
+                                        </div>
+                                    )}
+
+                                    {/* Table Footer Summary */}
+                                    {catalogItems.length > 0 && (
+                                        <div className="px-5 py-3 border-t border-neutral-100 bg-neutral-50 flex items-center justify-between">
+                                            <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                                                Total: {catalogItems.length} categories
+                                            </span>
+                                            <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                                                {catalogItems.reduce((acc, cat) => {
+                                                    const countProducts = (items = []) => {
+                                                        let total = 0;
+                                                        for (const item of items) {
+                                                            if (item.type === 'product') total += 1;
+                                                            else if (item.children?.length) total += countProducts(item.children);
+                                                        }
+                                                        return total;
+                                                    };
+                                                    return acc + countProducts(cat.children || []);
+                                                }, 0)} total products
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
 
