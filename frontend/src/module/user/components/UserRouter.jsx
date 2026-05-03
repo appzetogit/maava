@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import AuthRedirect from "@/components/AuthRedirect"
 import UserLayout from "./UserLayout"
-import { useProfile } from "../context/ProfileContext"
+import { isModuleAuthenticated } from "@/lib/utils/auth"
 
 
 
@@ -92,18 +92,11 @@ import Wallet from "../pages/Wallet"
 import SubmitComplaint from "../pages/complaints/SubmitComplaint"
 
 export default function UserRouter() {
-  const { userProfile, loading } = useProfile()
-  const isAuthenticated = !!userProfile
-  // Check sessionStorage directly in the render cycle
+  // Use synchronous localStorage check — ProfileProvider lives inside UserLayout (the Outlet),
+  // so useProfile() cannot be called here without causing an "outside provider" warning loop.
+  const isAuthenticated = isModuleAuthenticated("user")
   const hasSkipped = sessionStorage.getItem("user_skipped_login") === "true"
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#0a0a0a]">
-        <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    )
-  }
 
   return (
     <Routes>
