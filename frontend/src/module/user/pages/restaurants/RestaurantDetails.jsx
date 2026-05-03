@@ -1622,9 +1622,9 @@ export default function RestaurantDetails() {
 
                                   {/* Preparation Time - Light Gray styling */}
                                   {item.preparationTime && (
-                                    <div className="flex items-center gap-0.5 bg-neutral-100 text-neutral-400 px-1 rounded-md border border-neutral-200/50">
-                                      <Clock className="w-2 h-2" />
-                                      <span className="text-[9px] font-bold">
+                                    <div className="flex items-center gap-0.5 bg-neutral-100 text-neutral-400 px-1 rounded-md border border-neutral-200/50 whitespace-nowrap">
+                                      <Clock className="w-2 h-2 flex-shrink-0" />
+                                      <span className="text-[9px] font-bold whitespace-nowrap">
                                         {item.preparationTime}
                                       </span>
                                     </div>
