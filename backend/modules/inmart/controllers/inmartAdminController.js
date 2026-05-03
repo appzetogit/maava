@@ -232,11 +232,56 @@ export const createCategory = async (req, res) => {
 // @access  Private/Admin
 export const updateCategory = async (req, res) => {
     try {
-        const category = await InMartCategory.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true, runValidators: true }
-        );
+        const { id } = req.params;
+        const isObjectId = mongoose.Types.ObjectId.isValid(id) && String(id).length === 24;
+
+        // 1. Try to update as a main category
+        let category = null;
+        if (isObjectId) {
+            category = await InMartCategory.findByIdAndUpdate(id, req.body, { new: true });
+        }
+        if (!category) {
+            category = await InMartCategory.findOneAndUpdate({ slug: id }, req.body, { new: true });
+        }
+
+        // 2. If not found, it might be a nested sub/child category
+        if (!category) {
+            const allCats = await InMartCategory.find();
+            const idStr = String(id);
+
+            for (let mainCat of allCats) {
+                let updated = false;
+
+                // Check subcategories
+                if (mainCat.subCategories) {
+                    for (let sub of mainCat.subCategories) {
+                        if (String(sub._id) === idStr || String(sub.id) === idStr || sub.slug === idStr) {
+                            if (req.body.name) sub.name = req.body.name;
+                            if (req.body.image) sub.image = req.body.image;
+                            updated = true;
+                            break;
+                        }
+                        // Check child categories
+                        if (sub.children) {
+                            for (let child of sub.children) {
+                                if (String(child._id) === idStr || String(child.id) === idStr || child.slug === idStr) {
+                                    if (req.body.name) child.name = req.body.name;
+                                    if (req.body.image) child.image = req.body.image;
+                                    updated = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (updated) break;
+                    }
+                }
+
+                if (updated) {
+                    category = await mainCat.save();
+                    break;
+                }
+            }
+        }
 
         if (!category) {
             return res.status(404).json({

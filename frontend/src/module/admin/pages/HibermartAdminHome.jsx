@@ -622,7 +622,7 @@ export default function HibermartAdminHome() {
             if (response?.success && imageUrl) {
                 const backendRoot = API_BASE_URL.replace(/\/api\/?$/, '').replace(/\/+$/, '');
                 const fullUrl = imageUrl.startsWith('http') ? imageUrl : `${backendRoot}${imageUrl}`;
-                setUploadedImageUrl(fullUrl); 
+                setUploadedImageUrl(fullUrl);
                 console.log('✅ Image upload successful:', fullUrl);
             } else {
                 alert('Failed to upload image: ' + (response?.message || 'Unknown error'));
@@ -1332,22 +1332,20 @@ export default function HibermartAdminHome() {
 
                                                         {/* Sub-Categories */}
                                                         <td className="px-5 py-4 text-center">
-                                                            <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-black ${
-                                                                subCatCount > 0
+                                                            <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-black ${subCatCount > 0
                                                                     ? 'bg-blue-50 text-blue-700 border border-blue-100'
                                                                     : 'bg-neutral-100 text-neutral-400'
-                                                            }`}>
+                                                                }`}>
                                                                 {subCatCount}
                                                             </span>
                                                         </td>
 
                                                         {/* Total Products */}
                                                         <td className="px-5 py-4 text-center">
-                                                            <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-black ${
-                                                                productCount > 0
+                                                            <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-black ${productCount > 0
                                                                     ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
                                                                     : 'bg-neutral-100 text-neutral-400'
-                                                            }`}>
+                                                                }`}>
                                                                 {productCount}
                                                             </span>
                                                         </td>
