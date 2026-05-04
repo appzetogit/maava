@@ -34,8 +34,8 @@ export default function BottomNavigation() {
                 : "text-gray-400"
                 }`}
             >
-              <Bike className={`h-5 w-5 ${isDelivery ? "text-green-600" : "text-gray-400"}`} strokeWidth={2.5} />
-              <span className={`text-xs sm:text-sm font-medium ${isDelivery ? "text-green-600 font-semibold" : "text-gray-400"}`}>
+              <Bike className={`h-4 w-4 ${isDelivery ? "text-green-600" : "text-gray-400"}`} strokeWidth={2.5} />
+              <span className={`text-[10px] sm:text-xs font-medium ${isDelivery ? "text-green-600 font-semibold" : "text-gray-400"}`}>
                 Delivery
               </span>
               {isDelivery && (
@@ -54,8 +54,8 @@ export default function BottomNavigation() {
                 : "text-gray-400"
                 }`}
             >
-              <BadgePercent className={`h-5 w-5 ${isUnder250 ? "text-green-600" : "text-gray-400"}`} strokeWidth={2.5} />
-              <span className={`text-xs sm:text-sm font-medium ${isUnder250 ? "text-green-600 font-semibold" : "text-gray-400"}`}>
+              <BadgePercent className={`h-4 w-4 ${isUnder250 ? "text-green-600" : "text-gray-400"}`} strokeWidth={2.5} />
+              <span className={`text-[10px] sm:text-xs font-medium ${isUnder250 ? "text-green-600 font-semibold" : "text-gray-400"}`}>
                 Under 250
               </span>
               {isUnder250 && (
@@ -74,8 +74,8 @@ export default function BottomNavigation() {
                 : "text-gray-400"
                 }`}
             >
-              <ShoppingBag className={`h-5 w-5 ${isInMart ? "text-green-600" : "text-gray-400"}`} strokeWidth={2.5} />
-              <span className={`text-xs sm:text-sm font-medium ${isInMart ? "text-green-600 font-semibold" : "text-gray-400"}`}>
+              <ShoppingBag className={`h-4 w-4 ${isInMart ? "text-green-600" : "text-gray-400"}`} strokeWidth={2.5} />
+              <span className={`text-[10px] sm:text-xs font-medium ${isInMart ? "text-green-600 font-semibold" : "text-gray-400"}`}>
                 Hibermart
               </span>
               {isInMart && (
@@ -94,8 +94,8 @@ export default function BottomNavigation() {
                 : "text-gray-400"
                 }`}
             >
-              <User className={`h-5 w-5 ${isProfile ? "text-green-600" : "text-gray-400"}`} strokeWidth={2.5} />
-              <span className={`text-xs sm:text-sm font-medium ${isProfile ? "text-green-600 font-semibold" : "text-gray-400"}`}>
+              <User className={`h-4 w-4 ${isProfile ? "text-green-600" : "text-gray-400"}`} strokeWidth={2.5} />
+              <span className={`text-[10px] sm:text-xs font-medium ${isProfile ? "text-green-600 font-semibold" : "text-gray-400"}`}>
                 Profile
               </span>
               {isProfile && (

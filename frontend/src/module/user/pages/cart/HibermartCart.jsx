@@ -1466,7 +1466,7 @@ export default function Cart() {
   return (
     <div className="relative min-h-screen bg-white dark:bg-[#0a0a0a]">
       {/* Header - Sticky at top */}
-      <div className="bg-white dark:bg-[#1a1a1a] border-b dark:border-gray-800 sticky top-0 z-20 flex-shrink-0 pt-8">
+      <div className="bg-white dark:bg-[#1a1a1a] border-b dark:border-gray-800 sticky top-0 z-20 flex-shrink-0 pt-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between px-3 md:px-6 py-2 md:py-3">
             <div className="flex items-center gap-2 flex-1 min-w-0">

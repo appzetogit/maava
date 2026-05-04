@@ -191,7 +191,7 @@ export default function PaymentPage() {
   return (
     <div className="min-h-screen bg-[#f6e9dc] pb-32 md:pb-24">
       {/* Header */}
-      <div className="bg-white sticky top-0 z-50 rounded-b-3xl pt-8">
+      <div className="bg-white sticky top-0 z-50 rounded-b-3xl pt-4">
         <div className="px-4 py-2.5 md:py-3 flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
