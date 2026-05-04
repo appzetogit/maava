@@ -410,3 +410,9 @@
 .admin-panel textarea::placeholder {
   color: #64748b !important;
 }
+
+/* Razorpay Modal Fix - move down slightly to avoid notch/status bar collision */
+iframe.razorpay-checkout-frame {
+  top: env(safe-area-inset-top, 20px) !important;
+  height: calc(100% - env(safe-area-inset-top, 20px)) !important;
+}

@@ -83,7 +83,7 @@ export const initRazorpayPayment = async (options) => {
       amount: options.amount,
       currency: options.currency || 'INR',
       order_id: options.order_id,
-      name: options.name || 'Appzeto Food',
+      name: options.name || 'Maava',
       description: options.description || 'Order Payment',
       image: options.image || undefined,
       // Explicitly enable all commonly-used methods.
@@ -109,7 +109,7 @@ export const initRazorpayPayment = async (options) => {
       },
       notes: options.notes || {},
       theme: {
-        color: '#dc2626'
+        color: '#E23744'
       },
       config: {
         display: {

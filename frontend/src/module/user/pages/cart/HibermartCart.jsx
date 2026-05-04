@@ -1466,7 +1466,7 @@ export default function Cart() {
   return (
     <div className="relative min-h-screen bg-white dark:bg-[#0a0a0a]">
       {/* Header - Sticky at top */}
-      <div className="bg-white dark:bg-[#1a1a1a] border-b dark:border-gray-800 sticky top-0 z-20 flex-shrink-0">
+      <div className="bg-white dark:bg-[#1a1a1a] border-b dark:border-gray-800 sticky top-0 z-20 flex-shrink-0 pt-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between px-3 md:px-6 py-2 md:py-3">
             <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -2582,10 +2582,10 @@ export default function Cart() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 260 }}
-              className="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#111] rounded-t-3xl shadow-2xl max-h-[90vh] overflow-y-auto"
+              className="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#111] rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto"
             >
               {/* Header */}
-              <div className="sticky top-0 bg-white dark:bg-[#111] px-5 pt-5 pb-4 border-b dark:border-gray-800 z-10">
+              <div className="sticky top-0 bg-white dark:bg-[#111] px-5 pt-10 pb-4 border-b dark:border-gray-800 z-10">
                 <div className="flex items-center gap-3 mb-1">
                   <button onClick={() => setShowPaymentOptions(false)} className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-full">
                     <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
