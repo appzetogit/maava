@@ -434,13 +434,13 @@ export default function SignIn() {
               <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-400">
                 Log in or sign up
               </p>
-              <button
+             {/*<button
                 type="button"
                 onClick={handleSkip}
                 className="text-green-600 hover:text-green-700 font-bold text-sm flex items-center gap-1 transition-colors border border-green-600/20 px-3 py-1 rounded-full bg-green-50/50"
               >
                 Skip for now
-              </button>
+              </button>*/}
             </div>
           </div>
 
