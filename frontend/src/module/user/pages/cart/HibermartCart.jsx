@@ -2500,9 +2500,9 @@ export default function Cart() {
       </AnimatePresence>
 
       {/* Bottom Sticky - CTA Area */}
-      <div className="bg-white dark:bg-[#1a1a1a] border-t dark:border-gray-800 shadow-lg z-30 flex-shrink-0 fixed bottom-0 left-0 right-0" >
+      <div className="bg-white dark:bg-[#1a1a1a] border dark:border-gray-800 shadow-2xl z-30 flex-shrink-0 fixed bottom-6 left-4 right-4 rounded-3xl overflow-hidden" >
         <div className="max-w-7xl mx-auto">
-          <div className="px-4 md:px-6 py-3 md:py-4 pb-12 md:pb-8">
+          <div className="px-4 md:px-6 py-3 md:py-4 pb-16 md:pb-10">
             <div className="w-full max-w-md md:max-w-lg mx-auto">
               {!isAddressConfirmed ? (
                 /* Address Prompt Flow */
@@ -2582,7 +2582,7 @@ export default function Cart() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 260 }}
-              className="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#111] rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto"
+              className="absolute bottom-6 left-4 right-4 bg-white dark:bg-[#111] rounded-3xl shadow-2xl max-h-[85vh] overflow-y-auto"
             >
               {/* Header */}
               <div className="sticky top-0 bg-white dark:bg-[#111] px-5 pt-10 pb-4 border-b dark:border-gray-800 z-10">
