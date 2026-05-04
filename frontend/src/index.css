@@ -414,6 +414,6 @@
 /* Razorpay Modal Fix - move down slightly to avoid notch/status bar collision while keeping bottom visible */
 iframe.razorpay-checkout-frame {
   top: env(safe-area-inset-top, 20px) !important;
-  bottom: env(safe-area-inset-bottom, 120px) !important;
-  height: calc(100% - env(safe-area-inset-top, 20px) - env(safe-area-inset-bottom, 120px)) !important;
+  bottom: env(safe-area-inset-bottom, 160px) !important;
+  height: calc(100% - env(safe-area-inset-top, 20px) - env(safe-area-inset-bottom, 160px)) !important;
 }
