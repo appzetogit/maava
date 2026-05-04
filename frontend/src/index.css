@@ -411,9 +411,9 @@
   color: #64748b !important;
 }
 
-/* Razorpay Modal Fix - move down slightly to avoid notch/status bar collision while keeping bottom visible */
+/* Razorpay Modal Fix - keep bottom visible while starting from the top */
 iframe.razorpay-checkout-frame {
-  top: env(safe-area-inset-top, 10px) !important;
+  top: env(safe-area-inset-top, 0px) !important;
   bottom: env(safe-area-inset-bottom, 160px) !important;
-  height: calc(100% - env(safe-area-inset-top, 10px) - env(safe-area-inset-bottom, 160px)) !important;
+  height: calc(100% - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 160px)) !important;
 }
