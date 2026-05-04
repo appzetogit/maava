@@ -2502,7 +2502,7 @@ export default function Cart() {
       {/* Bottom Sticky - CTA Area */}
       <div className="bg-white dark:bg-[#1a1a1a] border-t dark:border-gray-800 shadow-lg z-30 flex-shrink-0 fixed bottom-0 left-0 right-0" >
         <div className="max-w-7xl mx-auto">
-          <div className="px-4 md:px-6 py-3 md:py-4">
+          <div className="px-4 md:px-6 py-3 md:py-4 pb-8 md:pb-6">
             <div className="w-full max-w-md md:max-w-lg mx-auto">
               {!isAddressConfirmed ? (
                 /* Address Prompt Flow */
@@ -2665,7 +2665,7 @@ export default function Cart() {
                 </div>
 
                 {/* Bottom Confirm */}
-                <div className="pb-safe">
+                <div className="pb-safe pb-10">
                   <button
                     onClick={() => {
                       setShowPaymentOptions(false)
