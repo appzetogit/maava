@@ -413,7 +413,8 @@
 
 /* Razorpay Modal Fix - keep bottom visible while starting from the top */
 iframe.razorpay-checkout-frame {
-  top: env(safe-area-inset-top, 0px) !important;
-  bottom: env(safe-area-inset-bottom, 160px) !important;
-  height: calc(100% - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 160px)) !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  height: 100% !important;
+  z-index: 99999999 !important;
 }

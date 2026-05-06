@@ -1512,7 +1512,7 @@ export default function Cart() {
               <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#1a1200] via-[#2d2000] to-[#1a1200] border border-yellow-600/30 px-4 py-3 flex items-center justify-center shadow-lg shadow-yellow-900/10 mb-2 md:mb-4">
                 {/* Shimmer stripe */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/5 to-transparent pointer-events-none" />
-                
+
                 {/* Crown icon - Positioned absolute left */}
                 <div className="absolute left-4 flex-shrink-0 w-8 h-8 rounded-full bg-yellow-500/15 border border-yellow-500/30 flex items-center justify-center z-10">
                   <span className="text-[16px] leading-none" role="img" aria-label="crown">👑</span>
@@ -1539,8 +1539,8 @@ export default function Cart() {
                       <div className="flex-1 min-w-0 flex items-start gap-2.5 md:gap-4">
                         {/* Product Image */}
                         <div className="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700">
-                          <img 
-                            src={item.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop"} 
+                          <img
+                            src={item.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop"}
                             alt={item.name}
                             className="w-full h-full object-cover"
                             onError={(e) => {
@@ -1552,9 +1552,9 @@ export default function Cart() {
 
                         <div className="flex-1 min-w-0">
                           <p className="text-sm md:text-base font-medium text-gray-800 dark:text-gray-200 leading-tight">{item.name}</p>
-                        <button className="text-xs md:text-sm text-blue-600 dark:text-blue-400 font-medium flex items-center gap-0.5 mt-0.5">
-                          Edit <ChevronRight className="h-3 w-3 md:h-4 md:w-4" />
-                        </button>
+                          <button className="text-xs md:text-sm text-blue-600 dark:text-blue-400 font-medium flex items-center gap-0.5 mt-0.5">
+                            Edit <ChevronRight className="h-3 w-3 md:h-4 md:w-4" />
+                          </button>
                         </div>
                       </div>
 
@@ -1844,7 +1844,7 @@ export default function Cart() {
                 </Link>
               </div>
 
-              
+
             </div>
 
             {/* Right Column - Order Summary (Desktop) */}
@@ -1968,7 +1968,7 @@ export default function Cart() {
                   <div className="space-y-3">
                     {recentAddresses.map((addr, index) => {
                       const label = addr.label || addr.saveAs || 'Recent'
-                      
+
                       return (
                         <button
                           key={`recent-${index}`}
@@ -2004,12 +2004,12 @@ export default function Cart() {
                 {/* Quick Select Address Types */}
                 <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                   {['Home', 'Office', 'Other'].map((label) => {
-                    const addr = addresses.find(a => 
-                      (a.label?.toLowerCase() === label.toLowerCase()) || 
+                    const addr = addresses.find(a =>
+                      (a.label?.toLowerCase() === label.toLowerCase()) ||
                       (label === 'Home' && a.label?.toLowerCase() === 'house')
                     );
                     if (!addr) return null;
-                    
+
                     return (
                       <button
                         key={label}
@@ -2065,7 +2065,7 @@ export default function Cart() {
                     </div>
                   </div>
                 )}
-                
+
                 {addresses.length === 0 && !lastOrderAddress && (
                   <div className="py-10 text-center">
                     <MapPin className="h-12 w-12 text-gray-300 mx-auto mb-3" />
@@ -2585,7 +2585,7 @@ export default function Cart() {
               className="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#111] rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto"
             >
               {/* Header */}
-              <div className="sticky top-0 bg-white dark:bg-[#111] px-5 pt-10 pb-4 border-b dark:border-gray-800 z-10">
+              <div className="sticky top-0 bg-white dark:bg-[#111] px-5 pt-4 pb-4 border-b dark:border-gray-800 z-10">
                 <div className="flex items-center gap-3 mb-1">
                   <button onClick={() => setShowPaymentOptions(false)} className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-full">
                     <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
@@ -3244,17 +3244,17 @@ function MapEventsHandler({ setCoords, setAddressInfo, setIsMapMoving }) {
         if (data && data.address) {
           // Check for area names in order of specificity
           const address = data.address;
-          const area = address.suburb || 
-                       address.neighbourhood || 
-                       address.residential || 
-                       address.road || 
-                       address.city_district || 
-                       address.county || 
-                       address.district || 
-                       (data.display_name ? data.display_name.split(',')[0] : 'Unknown Area');
-                       
+          const area = address.suburb ||
+            address.neighbourhood ||
+            address.residential ||
+            address.road ||
+            address.city_district ||
+            address.county ||
+            address.district ||
+            (data.display_name ? data.display_name.split(',')[0] : 'Unknown Area');
+
           const city = address.city || address.town || address.village || 'Unknown City'
-          
+
           setAddressInfo({
             area,
             city,

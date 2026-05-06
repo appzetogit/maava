@@ -1966,7 +1966,7 @@ export default function Cart() {
                 </Link>
               </div>
 
-              
+
             </div>
 
             {/* Right Column - Order Summary (Desktop) */}
@@ -2707,7 +2707,7 @@ export default function Cart() {
               className="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#111] rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto"
             >
               {/* Header */}
-              <div className="sticky top-0 bg-white dark:bg-[#111] px-5 pt-10 pb-4 border-b dark:border-gray-800 z-10">
+              <div className="sticky top-0 bg-white dark:bg-[#111] px-5 pt-4 pb-4 border-b dark:border-gray-800 z-10">
                 <div className="flex items-center gap-3 mb-1">
                   <button onClick={() => setShowPaymentOptions(false)} className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-full">
                     <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
@@ -3366,17 +3366,17 @@ function MapEventsHandler({ setCoords, setAddressInfo, setIsMapMoving }) {
         if (data && data.address) {
           // Check for area names in order of specificity
           const address = data.address;
-          const area = address.suburb || 
-                       address.neighbourhood || 
-                       address.residential || 
-                       address.road || 
-                       address.city_district || 
-                       address.county || 
-                       address.district || 
-                       (data.display_name ? data.display_name.split(',')[0] : 'Unknown Area');
-                       
+          const area = address.suburb ||
+            address.neighbourhood ||
+            address.residential ||
+            address.road ||
+            address.city_district ||
+            address.county ||
+            address.district ||
+            (data.display_name ? data.display_name.split(',')[0] : 'Unknown Area');
+
           const city = address.city || address.town || address.village || 'Unknown City'
-          
+
           setAddressInfo({
             area,
             city,
