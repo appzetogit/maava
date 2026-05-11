@@ -9,12 +9,12 @@ const isDuplicateNotification = (userId, title, body, data = {}, tokens = []) =>
     const sUserId = String(userId || '');
     const sOrderId = String(data.orderId || data.orderMongoId || '');
     const cleanTitle = (title || '').replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F100}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim() || title;
-    
+
     const now = Date.now();
-    const userKey = sOrderId 
+    const userKey = sOrderId
         ? `notif:user:${sUserId}:${sOrderId}:${cleanTitle.toLowerCase()}`
         : `notif:user:${sUserId}:${cleanTitle.toLowerCase()}`;
-        
+
     // 1. Check User-based duplication
     if (sentHistory.has(userKey)) {
         const lastSent = sentHistory.get(userKey);
@@ -23,14 +23,14 @@ const isDuplicateNotification = (userId, title, body, data = {}, tokens = []) =>
             return true;
         }
     }
-    
+
     // 2. Check Token-based duplication (CRITICAL: prevents double alerts when multiple users share the same token)
     if (tokens && tokens.length > 0) {
         for (const token of tokens) {
-            const tokenKey = sOrderId 
+            const tokenKey = sOrderId
                 ? `notif:token:${token}:${sOrderId}:${cleanTitle.toLowerCase()}`
                 : `notif:token:${token}:${cleanTitle.toLowerCase()}`;
-            
+
             if (sentTokensHistory.has(tokenKey)) {
                 const lastTokenSent = sentTokensHistory.get(tokenKey);
                 if (now - lastTokenSent < 30000) {
@@ -40,18 +40,18 @@ const isDuplicateNotification = (userId, title, body, data = {}, tokens = []) =>
             }
         }
     }
-    
+
     // Record sent events
     sentHistory.set(userKey, now);
     if (tokens && tokens.length > 0) {
         for (const token of tokens) {
-            const tokenKey = sOrderId 
+            const tokenKey = sOrderId
                 ? `notif:token:${token}:${sOrderId}:${cleanTitle.toLowerCase()}`
                 : `notif:token:${token}:${cleanTitle.toLowerCase()}`;
             sentTokensHistory.set(tokenKey, now);
         }
     }
-    
+
     console.log(`🆕 [ALLOW] Sending notification to User:${sUserId} | Order:${sOrderId}`);
 
     // Cleanup (Occasional)
@@ -309,7 +309,7 @@ export const sendNotificationToTarget = async (target, title, body, data = {}) =
  */
 export const sendNotificationToUser = async (userId, role, title, body, data = {}) => {
     if (!userId) return { success: false, message: 'User ID is required' };
-    
+
     // Normalize casing for easier debugging
     const sUserId = String(userId);
     const sRole = String(role || 'user').toLowerCase();
@@ -349,10 +349,10 @@ export const sendNotificationToUser = async (userId, role, title, body, data = {
             ...(entity.fcmTokens || []),
             ...(entity.fcmTokenMobile || [])
         ];
-        
+
         const cleanTokens = normalizeTokens(allTokens);
         console.log(`   📱 [NOTIF-TRACE] Found ${allTokens.length} raw tokens. Normalized to ${cleanTokens.length} active tokens.`);
-        
+
         // Pick only the absolute latest token 
         const latestToken = cleanTokens.length > 0 ? cleanTokens[cleanTokens.length - 1] : null;
         const uniqueTokens = latestToken ? [latestToken] : [];
@@ -371,7 +371,7 @@ export const sendNotificationToUser = async (userId, role, title, body, data = {
         console.log(`   🚀 [NOTIF-TRACE] Dispatching to LATEST TOKEN: ${latestToken.substring(0, 10)}... (Total: 1)`);
 
         const result = await sendPushNotification(uniqueTokens, title, body, data);
-        
+
         if (result?.invalidTokens?.length) {
             console.log(`   🧹 [NOTIF-TRACE] Cleaning up ${result.invalidTokens.length} invalid tokens`);
             await cleanupInvalidTokens(targetType, result.invalidTokens);

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import { createPortal } from "react-dom"
 import { X, ChevronRight } from "lucide-react"
 import { useCart } from "../context/CartContext"
 import { useState, useEffect, useRef } from "react"
@@ -83,7 +84,9 @@ export default function StickyCartCard() {
   // Don't render if cart is empty
   if (cartCount === 0) return null
 
-  return (
+  if (typeof window === "undefined") return null
+
+  return createPortal(
     <AnimatePresence>
       {isVisible && (
         <motion.div
@@ -142,7 +145,8 @@ export default function StickyCartCard() {
           </div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }
 

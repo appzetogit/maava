@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom"
+import { createPortal } from "react-dom"
 import { ChevronUp } from "lucide-react"
 import { useCart } from "../context/CartContext"
 import { useHibermartCart } from "../context/HibermartCartContext"
@@ -60,7 +61,9 @@ export default function CartSummaryBar() {
     // Determine if it should be in the "up" position (above nav) or "down" position (at bottom)
     const isNavVisible = scrollDirection === "up"
 
-    return (
+    if (typeof window === "undefined") return null
+
+    return createPortal(
         <AnimatePresence mode="wait">
             <motion.div
                 key="cart-summary-bar"
@@ -109,6 +112,7 @@ export default function CartSummaryBar() {
                     </Link>
                 </div>
             </motion.div>
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
     )
 }

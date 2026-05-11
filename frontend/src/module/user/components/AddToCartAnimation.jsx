@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useEffect, useRef, useState } from 'react';
@@ -366,7 +367,9 @@ export default function AddToCartAnimation({
   // Since items are added to the end of the array, we take the last 3
   const thumbnailItems = items.slice(-3).reverse();
 
-  return (
+  if (typeof window === 'undefined') return null;
+
+  return createPortal(
     <>
       {/* Removed product thumbnail - flying back to source */}
       {removedProduct && (
@@ -519,6 +522,7 @@ export default function AddToCartAnimation({
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </>,
+    document.body
   );
 }

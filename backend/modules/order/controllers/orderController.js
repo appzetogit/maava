@@ -1194,10 +1194,10 @@ export const getUserOrders = async (req, res) => {
     }
 
     const mongoose = (await import('mongoose')).default;
-    
+
     // Convert userId to ObjectId if it's a valid string
-    const targetUserId = mongoose.Types.ObjectId.isValid(userId) 
-      ? new mongoose.Types.ObjectId(userId) 
+    const targetUserId = mongoose.Types.ObjectId.isValid(userId)
+      ? new mongoose.Types.ObjectId(userId)
       : userId;
 
     // Build base query strictly for this user
@@ -1206,7 +1206,7 @@ export const getUserOrders = async (req, res) => {
     // Only show confirmed/completed/delivered orders for online payments
     // Pending orders are only shown for COD or wallet
     const allowedStatuses = ['confirmed', 'completed', 'delivered'];
-    
+
     if (status) {
       // If status is explicitly requested, use it
       query.status = status;
@@ -1217,7 +1217,7 @@ export const getUserOrders = async (req, res) => {
         { status: { $in: allowedStatuses } },
         // Show pending orders only if payment method is cash or wallet
         {
-          status: 'pending', 
+          status: 'pending',
           $or: [
             { 'payment.method': 'cash' },
             { 'payment.method': 'wallet' }
