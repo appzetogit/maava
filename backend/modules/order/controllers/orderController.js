@@ -897,15 +897,10 @@ export const createOrder = async (req, res) => {
     // Online payment orders are notified after payment verification.
     if (order.payment?.method === 'cash') {
       try {
-        await sendNotificationToUser(
-          order.restaurantId,
-          'restaurant',
-          '🔔 New Order Received!',
-          `You have a new order! Open your Maava app to view details.`,
-          { orderId: order._id.toString(), type: 'NEW_ORDER' }
-        );
+        await notifyRestaurantNewOrder(order, order.restaurantId, 'cash');
+        logger.info('✅ Initial COD notification sent to restaurant');
       } catch (notifErr) {
-        logger.warn(`Failed to send initial COD push notification: ${notifErr.message}`);
+        logger.warn(`Failed to send initial COD notification: ${notifErr.message}`);
       }
     }
     res.status(201).json({
@@ -1398,6 +1393,14 @@ export const cancelOrder = async (req, res) => {
     order.cancelledBy = 'user';
     order.cancelledAt = new Date();
     await order.save();
+    
+    // Notify restaurant about cancellation
+    try {
+      const { notifyRestaurantOrderUpdate } = await import('../services/restaurantNotificationService.js');
+      await notifyRestaurantOrderUpdate(order._id, 'cancelled');
+    } catch (notifErr) {
+      logger.warn(`Failed to notify restaurant about cancellation: ${notifErr.message}`);
+    }
 
     // Calculate refund amount only for online payments (Razorpay) and wallet
     // COD orders don't need refund since payment hasn't been made

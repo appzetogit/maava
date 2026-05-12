@@ -333,15 +333,17 @@ export const sendNotificationToUser = async (userId, role, title, body, data = {
         const idField = targetType === 'restaurant' ? 'restaurantId' : (targetType === 'delivery' ? 'deliveryId' : '_id');
 
         if (mongoose.Types.ObjectId.isValid(sUserId)) {
+            console.log(`   🔍 [NOTIF-TRACE] Attempting findById for ${targetType}: ${sUserId}`);
             entity = await Model.findById(sUserId).select('fcmTokens fcmTokenMobile restaurantId deliveryId').lean();
         }
 
         if (!entity && typeof sUserId === 'string') {
+            console.log(`   🔍 [NOTIF-TRACE] Attempting findOne by ${idField} for ${targetType}: ${sUserId}`);
             entity = await Model.findOne({ [idField]: sUserId }).select('fcmTokens fcmTokenMobile').lean();
         }
 
         if (!entity) {
-            console.warn(`   ⚠️ [NOTIF-TRACE] Entity not found in DB: ${sUserId}`);
+            console.warn(`   ⚠️ [NOTIF-TRACE] Entity not found in DB: ${sUserId} (Target: ${targetType}, ID Field: ${idField})`);
             return { success: false, message: 'Entity not found' };
         }
 
@@ -353,9 +355,7 @@ export const sendNotificationToUser = async (userId, role, title, body, data = {
         const cleanTokens = normalizeTokens(allTokens);
         console.log(`   📱 [NOTIF-TRACE] Found ${allTokens.length} raw tokens. Normalized to ${cleanTokens.length} active tokens.`);
 
-        // Pick only the absolute latest token 
-        const latestToken = cleanTokens.length > 0 ? cleanTokens[cleanTokens.length - 1] : null;
-        const uniqueTokens = latestToken ? [latestToken] : [];
+        const uniqueTokens = cleanTokens;
 
         if (uniqueTokens.length === 0) {
             console.log(`   ℹ️ [NOTIF-TRACE] No active device tokens found for ${sUserId}`);
@@ -368,7 +368,7 @@ export const sendNotificationToUser = async (userId, role, title, body, data = {
             return { success: true, message: 'Duplicate skipped (by token)' };
         }
 
-        console.log(`   🚀 [NOTIF-TRACE] Dispatching to LATEST TOKEN: ${latestToken.substring(0, 10)}... (Total: 1)`);
+        console.log(`   🚀 [NOTIF-TRACE] Dispatching to ${uniqueTokens.length} active tokens...`);
 
         const result = await sendPushNotification(uniqueTokens, title, body, data);
 

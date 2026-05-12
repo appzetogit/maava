@@ -275,6 +275,29 @@ export async function notifyRestaurantOrderUpdate(orderId, status) {
       updatedAt: new Date()
     });
 
+    // --- PUSH NOTIFICATION ---
+    try {
+      const pushService = await getPushService();
+      
+      let title = '🔔 Order Update';
+      let body = `Order #${order.orderId} status updated to ${status}.`;
+
+      if (status === 'cancelled') {
+        title = '🛑 Order Cancelled';
+        body = `Order #${order.orderId} has been cancelled by the customer.`;
+      }
+
+      await pushService.sendNotificationToUser(
+        order.restaurantId,
+        'restaurant',
+        title,
+        body,
+        { orderId: order._id.toString(), type: 'ORDER_UPDATE', status }
+      );
+    } catch (pushErr) {
+      console.warn('⚠️ Failed to send order update push notification to restaurant:', pushErr.message);
+    }
+
     console.log(`📢 Notified restaurant ${order.restaurantId} about order ${order.orderId} status: ${status}`);
   } catch (error) {
     console.error('Error notifying restaurant about order update:', error);
