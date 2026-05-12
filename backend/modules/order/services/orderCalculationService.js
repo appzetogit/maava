@@ -50,7 +50,7 @@ export const calculateDeliveryFee = async (orderValue, restaurant, deliveryAddre
     }
   } else {
     // Use admin settings for free delivery threshold
-    const freeDeliveryThreshold = feeSettings.freeDeliveryThreshold || 149;
+    const freeDeliveryThreshold = feeSettings.freeDeliveryThreshold ?? 149;
     if (orderValue >= freeDeliveryThreshold) {
       return 0;
     }
@@ -82,7 +82,7 @@ export const calculateDeliveryFee = async (orderValue, restaurant, deliveryAddre
   }
   
   // Fallback to default delivery fee if no range matches
-  const baseDeliveryFee = feeSettings.deliveryFee || 25;
+  const baseDeliveryFee = feeSettings.deliveryFee ?? 25;
   
   // TODO: Add distance-based calculation when address coordinates are available
   // if (deliveryAddress?.location?.coordinates && restaurant?.location?.coordinates) {
@@ -101,7 +101,7 @@ export const calculateDeliveryFee = async (orderValue, restaurant, deliveryAddre
  */
 export const calculatePlatformFee = async () => {
   const feeSettings = await getFeeSettings();
-  return feeSettings.platformFee || 5;
+  return feeSettings.platformFee ?? 5;
 };
 
 /**
@@ -111,7 +111,7 @@ export const calculatePlatformFee = async () => {
 export const calculateGST = async (subtotal, discount = 0) => {
   const taxableAmount = subtotal - discount;
   const feeSettings = await getFeeSettings();
-  const gstRate = (feeSettings.gstRate || 5) / 100; // Convert percentage to decimal
+  const gstRate = (feeSettings.gstRate ?? 5) / 100; // Convert percentage to decimal
   return Math.round(taxableAmount * gstRate * 100) / 100;
 };
 

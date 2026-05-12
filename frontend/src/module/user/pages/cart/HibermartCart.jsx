@@ -791,10 +791,10 @@ export default function Cart() {
         const response = await adminAPI.getPublicFeeSettings()
         if (response.data.success && response.data.data.feeSettings) {
           setFeeSettings({
-            deliveryFee: response.data.data.feeSettings.deliveryFee || 25,
-            freeDeliveryThreshold: response.data.data.feeSettings.freeDeliveryThreshold || 149,
-            platformFee: response.data.data.feeSettings.platformFee || 5,
-            gstRate: response.data.data.feeSettings.gstRate || 5,
+            deliveryFee: response.data.data.feeSettings.deliveryFee ?? 25,
+            freeDeliveryThreshold: response.data.data.feeSettings.freeDeliveryThreshold ?? 149,
+            platformFee: response.data.data.feeSettings.platformFee ?? 5,
+            gstRate: response.data.data.feeSettings.gstRate ?? 5,
           })
         }
       } catch (error) {
@@ -806,14 +806,14 @@ export default function Cart() {
   }, [])
 
   // Use backend pricing if available, otherwise fallback to database settings
-  const subtotal = pricing?.subtotal || cart.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0)
-  const deliveryFee = pricing?.deliveryFee ?? (subtotal >= feeSettings.freeDeliveryThreshold || appliedCoupon?.freeDelivery ? 0 : feeSettings.deliveryFee)
-  const platformFee = pricing?.platformFee || feeSettings.platformFee
-  const gstCharges = pricing?.tax || Math.round(subtotal * (feeSettings.gstRate / 100))
-  const discount = isHibermartCart ? 0 : (pricing?.discount || (appliedCoupon ? Math.min(appliedCoupon.discount, subtotal * 0.5) : 0))
+  const subtotal = pricing?.subtotal ?? cart.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0)
+  const deliveryFee = pricing?.deliveryFee ?? (subtotal >= (feeSettings.freeDeliveryThreshold ?? 149) || appliedCoupon?.freeDelivery ? 0 : (feeSettings.deliveryFee ?? 25))
+  const platformFee = pricing?.platformFee ?? (feeSettings.platformFee ?? 5)
+  const gstCharges = pricing?.tax ?? Math.round(subtotal * ((feeSettings.gstRate ?? 5) / 100))
+  const discount = isHibermartCart ? 0 : (pricing?.discount ?? (appliedCoupon ? Math.min(appliedCoupon.discount, subtotal * 0.5) : 0))
   const totalBeforeDiscount = subtotal + deliveryFee + platformFee + gstCharges
-  const total = (pricing?.total || (totalBeforeDiscount - discount)) + tipAmount
-  const savings = isHibermartCart ? 0 : (pricing?.savings || (discount + (subtotal > 500 ? 32 : 0)))
+  const total = (pricing?.total ?? (totalBeforeDiscount - discount)) + tipAmount
+  const savings = isHibermartCart ? 0 : (pricing?.savings ?? (discount + (subtotal > 500 ? 32 : 0)))
 
   // Restaurant name from data or cart
   const restaurantName = restaurantData?.name || cart[0]?.restaurant || "Restaurant"
@@ -1866,11 +1866,15 @@ export default function Cart() {
                     </div>
                     <div className="flex justify-between text-sm md:text-base">
                       <span className="text-gray-600 dark:text-gray-400">Platform Fee</span>
-                      <span className="text-gray-800 dark:text-gray-200">₹{platformFee}</span>
+                      <span className={platformFee === 0 ? "text-green-600 dark:text-green-400 font-bold" : "text-gray-800 dark:text-gray-200"}>
+                        {platformFee === 0 ? "FREE" : `₹${platformFee}`}
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm md:text-base">
                       <span className="text-gray-600 dark:text-gray-400">GST</span>
-                      <span className="text-gray-800 dark:text-gray-200">₹{gstCharges}</span>
+                      <span className={gstCharges === 0 ? "text-green-600 dark:text-green-400 font-bold" : "text-gray-800 dark:text-gray-200"}>
+                        {gstCharges === 0 ? "FREE" : `₹${gstCharges}`}
+                      </span>
                     </div>
                     {discount > 0 && (
                       <div className="flex justify-between text-sm md:text-base text-red-600 dark:text-red-400">

@@ -444,8 +444,8 @@ export default function UserOrderDetails() {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">GST (govt. taxes)</span>
-              <span className="text-gray-800">
-                ₹{Number(pricing.tax || 0).toFixed(2)}
+              <span className={Number(pricing.tax || 0) === 0 ? "text-green-600 font-medium" : "text-gray-800"}>
+                {Number(pricing.tax || 0) === 0 ? "Included" : `₹${Number(pricing.tax || 0).toFixed(2)}`}
               </span>
             </div>
             <div className="flex justify-between">
@@ -463,8 +463,8 @@ export default function UserOrderDetails() {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Platform fee</span>
-              <span className="text-gray-800">
-                ₹{Number(pricing.platformFee || 0).toFixed(2)}
+              <span className={Number(pricing.platformFee || 0) === 0 ? "text-green-600 font-medium" : "text-gray-800"}>
+                {Number(pricing.platformFee || 0) === 0 ? "Free" : `₹${Number(pricing.platformFee || 0).toFixed(2)}`}
               </span>
             </div>
             <div className="flex justify-between">
