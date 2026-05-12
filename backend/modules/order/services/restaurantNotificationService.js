@@ -1,4 +1,4 @@
-import Order from '../models/Order.js';
+  import Order from '../models/Order.js';
 import Payment from '../../payment/models/Payment.js';
 import Restaurant from '../../restaurant/models/Restaurant.js';
 import mongoose from 'mongoose';
@@ -230,7 +230,7 @@ export async function notifyRestaurantNewOrder(order, restaurantId, paymentMetho
         normalizedRestaurantId,
         'restaurant',
         '🔔 New Order Received!',
-        `You have a new order from ${customerName}. Total: ₹${order.pricing.total}`,
+        `You have a new order! Open your Maava app to view details.`,
         { orderId: order._id.toString(), type: 'NEW_ORDER' }
       );
     } catch (pushErr) {

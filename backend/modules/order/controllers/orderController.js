@@ -900,8 +900,8 @@ export const createOrder = async (req, res) => {
         await sendNotificationToUser(
           order.restaurantId,
           'restaurant',
-          '🔔 New COD Order!',
-          `New order #${order.orderId} received. Please approve to start preparation.`,
+          '🔔 New Order Received!',
+          `You have a new order! Open your Maava app to view details.`,
           { orderId: order._id.toString(), type: 'NEW_ORDER' }
         );
       } catch (notifErr) {
