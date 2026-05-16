@@ -38,7 +38,9 @@ export const getRestaurantFinance = asyncHandler(async (req, res) => {
     currentCycleEnd.setDate(currentCycleStart.getDate() + 6);
     currentCycleEnd.setHours(23, 59, 59, 999);
 
-    // Query for restaurant orders - handle multiple restaurantId formats
+    // Query for restaurant orders - handle multiple restaurantId formats.
+    // We include both the MongoDB ObjectId string and the human-readable restaurantId
+    // (e.g. "REST-1768762345335-5678") so orders created with either format are matched.
     const restaurantIdVariations = [restaurantId];
     if (mongoose.Types.ObjectId.isValid(restaurantId)) {
       const objectIdString = new mongoose.Types.ObjectId(restaurantId).toString();
@@ -46,12 +48,16 @@ export const getRestaurantFinance = asyncHandler(async (req, res) => {
         restaurantIdVariations.push(objectIdString);
       }
     }
+    // Also include the human-readable restaurantId field if it differs from _id
+    const humanReadableId = restaurant.restaurantId;
+    if (humanReadableId && !restaurantIdVariations.includes(humanReadableId)) {
+      restaurantIdVariations.push(humanReadableId);
+    }
 
+    // NOTE: Do NOT use $or here as a top-level key alongside other $or keys.
+    // Instead this object is always wrapped inside $and at query time.
     const restaurantIdQuery = {
-      $or: [
-        { restaurantId: { $in: restaurantIdVariations } },
-        { restaurantId: restaurantId }
-      ]
+      restaurantId: { $in: restaurantIdVariations }
     };
 
     // Get commission setup for restaurant
@@ -131,12 +137,19 @@ export const getRestaurantFinance = asyncHandler(async (req, res) => {
     // Get current cycle orders (delivered orders in current week)
     // Query orders that were delivered in the current cycle
     // First try with deliveredAt, if not found, use tracking.delivered.timestamp as fallback
+    // IMPORTANT: Use $and to combine restaurantIdQuery ($or) with the date $or.
+    // Spreading both into one object causes the second $or key to silently overwrite
+    // the first, which removes the restaurant filter and leaks all restaurants' data.
     let currentCycleOrders = await Order.find({
-      ...restaurantIdQuery,
-      status: 'delivered',
-      $or: [
-        { deliveredAt: { $gte: currentCycleStart, $lte: currentCycleEnd } },
-        { 'tracking.delivered.timestamp': { $gte: currentCycleStart, $lte: currentCycleEnd } }
+      $and: [
+        restaurantIdQuery,
+        { status: 'delivered' },
+        {
+          $or: [
+            { deliveredAt: { $gte: currentCycleStart, $lte: currentCycleEnd } },
+            { 'tracking.delivered.timestamp': { $gte: currentCycleStart, $lte: currentCycleEnd } }
+          ]
+        }
       ]
     })
       .populate('userId', 'name phone email')
@@ -146,9 +159,11 @@ export const getRestaurantFinance = asyncHandler(async (req, res) => {
     // If no orders found with deliveredAt/tracking, check by createdAt as last resort
     if (currentCycleOrders.length === 0) {
       currentCycleOrders = await Order.find({
-        ...restaurantIdQuery,
-        status: 'delivered',
-        createdAt: { $gte: currentCycleStart, $lte: currentCycleEnd }
+        $and: [
+          restaurantIdQuery,
+          { status: 'delivered' },
+          { createdAt: { $gte: currentCycleStart, $lte: currentCycleEnd } }
+        ]
       })
         .populate('userId', 'name phone email')
         .select('orderId userId items pricing payment status address createdAt deliveredAt tracking')
@@ -326,13 +341,19 @@ export const getRestaurantFinance = asyncHandler(async (req, res) => {
       end.setHours(23, 59, 59, 999);
 
       // Query orders that were delivered in the past cycle
-      // First try with deliveredAt, if not found, use tracking.delivered.timestamp as fallback
+      // IMPORTANT: Use $and to combine restaurantIdQuery ($or) with the date $or.
+      // Spreading both into one object causes the second $or key to silently overwrite
+      // the first, which removes the restaurant filter and leaks all restaurants' data.
       let pastCycleOrders = await Order.find({
-        ...restaurantIdQuery,
-        status: 'delivered',
-        $or: [
-          { deliveredAt: { $gte: start, $lte: end } },
-          { 'tracking.delivered.timestamp': { $gte: start, $lte: end } }
+        $and: [
+          restaurantIdQuery,
+          { status: 'delivered' },
+          {
+            $or: [
+              { deliveredAt: { $gte: start, $lte: end } },
+              { 'tracking.delivered.timestamp': { $gte: start, $lte: end } }
+            ]
+          }
         ]
       })
         .populate('userId', 'name phone email')
@@ -341,9 +362,11 @@ export const getRestaurantFinance = asyncHandler(async (req, res) => {
       // If no orders found with deliveredAt/tracking, check by createdAt as last resort
       if (pastCycleOrders.length === 0) {
         pastCycleOrders = await Order.find({
-          ...restaurantIdQuery,
-          status: 'delivered',
-          createdAt: { $gte: start, $lte: end }
+          $and: [
+            restaurantIdQuery,
+            { status: 'delivered' },
+            { createdAt: { $gte: start, $lte: end } }
+          ]
         })
           .populate('userId', 'name phone email')
           .select('orderId userId items pricing payment status address createdAt deliveredAt tracking')
