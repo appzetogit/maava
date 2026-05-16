@@ -451,61 +451,53 @@ export default function CategoryPage() {
     let filtered = [...sourceData]
 
     // Filter by category - Dynamic filtering based on menu items
+    // Each restaurant appears ONCE even if it has multiple dishes in this category.
+    // We show only the best-matched (first) dish as the category preview.
     if (selectedCategory && selectedCategory !== 'all') {
-      const expandedDishes = []
+      const matchedRestaurants = []
 
       filtered.forEach(r => {
         if (r.menu) {
           const hasCategoryItem = checkCategoryInMenu(r.menu, selectedCategory)
           if (hasCategoryItem) {
-            // Get ALL matching dishes for this category
             const categoryDishes = getAllCategoryDishesFromMenu(r.menu, selectedCategory)
-
             if (categoryDishes.length > 0) {
-              // Create one card per dish
-              categoryDishes.forEach((dish, index) => {
-                expandedDishes.push({
-                  ...r,
-                  // Unique ID for each dish card
-                  id: `${r.id}-dish-${dish.itemId || index}`,
-                  dishId: dish.itemId || `${r.id}-dish-${index}`,
-                  // Category dish info for this specific dish
-                  categoryDish: dish,
-                  categoryDishName: dish.name,
-                  categoryDishPrice: dish.price,
-                  categoryDishImage: dish.image,
-                })
+              // Show restaurant once — use first matching dish as the featured preview
+              const dish = categoryDishes[0]
+              matchedRestaurants.push({
+                ...r,
+                categoryDish: dish,
+                categoryDishName: dish.name,
+                categoryDishPrice: dish.price,
+                categoryDishImage: dish.image,
               })
-            } else {
-              // If no dishes found but menu exists, skip this restaurant
             }
           }
         } else {
           // No menu - check other criteria
           if (r.category === selectedCategory) {
-            expandedDishes.push(r)
+            matchedRestaurants.push(r)
           } else if (selectedCategory === 'paneer-tikka' && r.hasPaneer) {
-            expandedDishes.push(r)
+            matchedRestaurants.push(r)
           } else {
             const keywords = categoryKeywords[selectedCategory] || []
             if (keywords.length > 0) {
               const featuredDishLower = (r.featuredDish || '').toLowerCase()
               const cuisineLower = (r.cuisine || '').toLowerCase()
               const nameLower = (r.name || '').toLowerCase()
-
               if (keywords.some(keyword =>
                 featuredDishLower.includes(keyword) ||
                 cuisineLower.includes(keyword) ||
                 nameLower.includes(keyword)
               )) {
-                expandedDishes.push(r)
+                matchedRestaurants.push(r)
               }
             }
           }
         }
       })
 
-      filtered = expandedDishes
+      filtered = matchedRestaurants
     }
 
     // Apply filters
@@ -521,6 +513,16 @@ export default function CategoryPage() {
     }
     if (activeFilters.has('flat-50-off')) {
       filtered = filtered.filter(r => r.offer && r.offer.includes('50%'))
+    }
+    if (activeFilters.has('under-250')) {
+      // When a category is selected, check the category dish price shown on the card.
+      // For 'all' view, fall back to the restaurant's general featuredPrice.
+      filtered = filtered.filter(r => {
+        const priceToCheck = (selectedCategory && selectedCategory !== 'all' && r.categoryDishPrice)
+          ? r.categoryDishPrice
+          : r.featuredPrice
+        return priceToCheck && priceToCheck <= 250
+      })
     }
 
     // Filter by search
@@ -541,65 +543,58 @@ export default function CategoryPage() {
     let filtered = [...sourceData]
 
     // Filter by category - Dynamic filtering based on menu items
-    // If category is selected, expand restaurants into dish cards (one card per matching dish)
+    // Each restaurant appears ONCE even if it has multiple dishes in this category.
     if (selectedCategory && selectedCategory !== 'all') {
-      const expandedDishes = []
+      const matchedRestaurants = []
 
       filtered.forEach(r => {
         if (r.menu) {
           const hasCategoryItem = checkCategoryInMenu(r.menu, selectedCategory)
           if (hasCategoryItem) {
-            // Get ALL matching dishes for this category
             const categoryDishes = getAllCategoryDishesFromMenu(r.menu, selectedCategory)
 
-            if (categoryDishes.length > 0) {
-              // Create one card per dish
-              categoryDishes.forEach((dish, index) => {
-                // Filter by vegMode if enabled
-                if (vegMode && dish.foodType !== "Veg") {
-                  return // Skip non-veg dishes when vegMode is ON
-                }
+            // Filter by vegMode — pick first veg dish if vegMode ON, else first dish
+            const eligibleDishes = vegMode
+              ? categoryDishes.filter(d => d.foodType === 'Veg')
+              : categoryDishes
 
-                expandedDishes.push({
-                  ...r,
-                  // Unique ID for each dish card
-                  id: `${r.id}-dish-${dish.itemId || index}`,
-                  dishId: dish.itemId || `${r.id}-dish-${index}`,
-                  // Category dish info for this specific dish
-                  categoryDish: dish,
-                  categoryDishName: dish.name,
-                  categoryDishPrice: dish.price,
-                  categoryDishImage: dish.image,
-                })
+            if (eligibleDishes.length > 0) {
+              // Show restaurant once — use first eligible dish as the featured preview
+              const dish = eligibleDishes[0]
+              matchedRestaurants.push({
+                ...r,
+                categoryDish: dish,
+                categoryDishName: dish.name,
+                categoryDishPrice: dish.price,
+                categoryDishImage: dish.image,
               })
             }
           }
         } else {
           // No menu - check other criteria
           if (r.category === selectedCategory) {
-            expandedDishes.push(r)
+            matchedRestaurants.push(r)
           } else if (selectedCategory === 'paneer-tikka' && r.hasPaneer) {
-            expandedDishes.push(r)
+            matchedRestaurants.push(r)
           } else {
             const keywords = categoryKeywords[selectedCategory] || []
             if (keywords.length > 0) {
               const featuredDishLower = (r.featuredDish || '').toLowerCase()
               const cuisineLower = (r.cuisine || '').toLowerCase()
               const nameLower = (r.name || '').toLowerCase()
-
               if (keywords.some(keyword =>
                 featuredDishLower.includes(keyword) ||
                 cuisineLower.includes(keyword) ||
                 nameLower.includes(keyword)
               )) {
-                expandedDishes.push(r)
+                matchedRestaurants.push(r)
               }
             }
           }
         }
       })
 
-      filtered = expandedDishes
+      filtered = matchedRestaurants
     }
 
     // Apply filters
@@ -614,7 +609,14 @@ export default function CategoryPage() {
       filtered = filtered.filter(r => r.rating && r.rating >= 4.0)
     }
     if (activeFilters.has('under-250')) {
-      filtered = filtered.filter(r => r.featuredPrice && r.featuredPrice <= 250)
+      // When a category is selected, check the category dish price shown on the card.
+      // For 'all' view, fall back to the restaurant's general featuredPrice.
+      filtered = filtered.filter(r => {
+        const priceToCheck = (selectedCategory && selectedCategory !== 'all' && r.categoryDishPrice)
+          ? r.categoryDishPrice
+          : r.featuredPrice
+        return priceToCheck && priceToCheck <= 250
+      })
     }
     if (activeFilters.has('flat-50-off')) {
       filtered = filtered.filter(r => r.offer && r.offer.includes('50%'))
