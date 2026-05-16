@@ -146,67 +146,10 @@ export async function notifyRestaurantNewOrder(order, restaurantId, paymentMetho
     console.log(`📢 Room variations to try:`, roomVariations);
     console.log(`📢 Connected sockets in primary room ${primaryRoom}: ${socketsInRoom.length}`);
 
-    // CRITICAL: Only emit to the specific restaurant room - NEVER broadcast to all restaurants
-    // This ensures orders only go to the correct restaurant
-    if (socketsInRoom.length > 0) {
-      // Found sockets in the restaurant room - send notification ONLY ONCE to the primary room
-      // This prevents double notifications if the restaurant is connected through multiple alias rooms.
-      const targetRoom = socketsInRoom.length > 0 ? primaryRoom : roomVariations[0];
-      restaurantNamespace.to(targetRoom).emit('new_order', orderNotification);
-      restaurantNamespace.to(targetRoom).emit('play_notification_sound', {
-        type: 'new_order',
-        orderId: order.orderId,
-        message: `New order received: ${order.orderId}`
-      });
-      console.log(`📤 Sent notification only to room: ${targetRoom}`);
-      console.log(`✅ Notified restaurant ${normalizedRestaurantId} about new order ${order.orderId} (${socketsInRoom.length} socket(s) connected)`);
-    } else {
-      // No sockets found in restaurant room - log error but DO NOT broadcast to all restaurants
-      console.error(`❌ CRITICAL: No sockets found for restaurant ${normalizedRestaurantId} in any room!`);
-      console.error(`❌ Order ${order.orderId} will NOT be delivered to restaurant ${normalizedRestaurantId}`);
-      console.error(`❌ Room variations tried:`, roomVariations);
-      console.error(`❌ Restaurant name: ${order.restaurantName}`);
-      console.error(`❌ Restaurant ID from order: ${order.restaurantId}`);
-      console.error(`❌ Normalized restaurant ID: ${normalizedRestaurantId}`);
-
-      // Log all connected restaurant sockets for debugging (but don't send to them)
-      const allSockets = await restaurantNamespace.fetchSockets();
-      console.log(`📊 Total restaurant sockets connected: ${allSockets.length}`);
-      if (allSockets.length > 0) {
-        // Get room information for each socket
-        const socketRooms = [];
-        for (const socket of allSockets) {
-          const rooms = Array.from(socket.rooms);
-          socketRooms.push({
-            socketId: socket.id,
-            rooms: rooms.filter(r => r.startsWith('restaurant:'))
-          });
-        }
-        console.log(`📊 Connected restaurant sockets and their rooms:`, socketRooms);
-      }
-
-      // Still try to emit to the primary room (in case socket connects later)
-      // But DO NOT broadcast to all restaurants and do NOT loop through aliases
-      const targetRoom = roomVariations[0];
-      restaurantNamespace.to(targetRoom).emit('new_order', orderNotification);
-      restaurantNamespace.to(targetRoom).emit('play_notification_sound', {
-        type: 'new_order',
-        orderId: order.orderId,
-        message: `New order received: ${order.orderId}`
-      });
-      console.log(`📤 Emitted only to room ${targetRoom} (no sockets found present, but room exists)`);
-
-      // Return error instead of success
-      return {
-        success: false,
-        restaurantId,
-        orderId: order.orderId,
-        error: 'Restaurant not connected to Socket.IO',
-        message: `Restaurant ${normalizedRestaurantId} (${order.restaurantName}) is not connected. Order notification not sent.`
-      };
-    }
-
-    // --- PUSH NOTIFICATION (AUTOMATED) ---
+    // --- PUSH NOTIFICATION (ALWAYS) ---
+    // Send Firebase FCM push notification FIRST, independent of Socket.IO status.
+    // This ensures the restaurant gets a push notification even when their app is closed/background.
+    // Same pattern as how cancel notifications reach the user regardless of socket state.
     try {
       const pushService = await getPushService();
 
@@ -226,15 +169,46 @@ export async function notifyRestaurantNewOrder(order, restaurantId, paymentMetho
         }
       }
 
+      const orderTotal = order.pricing?.total || 0;
       await pushService.sendNotificationToUser(
         normalizedRestaurantId,
         'restaurant',
         '🔔 New Order Received!',
-        `You have a new order! Open your Maava app to view details.`,
-        { orderId: order._id.toString(), type: 'NEW_ORDER' }
+        `New order from ${customerName} — ₹${orderTotal}. Tap to view.`,
+        { orderId: order._id.toString(), type: 'NEW_ORDER', orderIdStr: order.orderId }
       );
+      console.log(`✅ Push notification sent to restaurant ${normalizedRestaurantId} for order ${order.orderId}`);
     } catch (pushErr) {
-      console.warn('⚠️ Failed to send backup push notification to restaurant:', pushErr.message);
+      console.warn('⚠️ Failed to send push notification to restaurant:', pushErr.message);
+    }
+
+    // --- SOCKET.IO REAL-TIME NOTIFICATION ---
+    // This is in addition to push — gives instant in-app bell + sound when app is open.
+    // CRITICAL: Only emit to the specific restaurant room - NEVER broadcast to all restaurants
+    if (socketsInRoom.length > 0) {
+      // Found sockets - send real-time notification to the specific restaurant room only
+      const targetRoom = primaryRoom;
+      restaurantNamespace.to(targetRoom).emit('new_order', orderNotification);
+      restaurantNamespace.to(targetRoom).emit('play_notification_sound', {
+        type: 'new_order',
+        orderId: order.orderId,
+        message: `New order received: ${order.orderId}`
+      });
+      console.log(`📤 Socket.IO: sent to room ${targetRoom} (${socketsInRoom.length} socket(s))`);
+      console.log(`✅ Notified restaurant ${normalizedRestaurantId} about new order ${order.orderId}`);
+    } else {
+      // Restaurant app is not open — Socket.IO won't deliver, but push notification above already fired.
+      console.warn(`⚠️ No sockets found for restaurant ${normalizedRestaurantId} — push notification sent, socket skipped.`);
+      console.warn(`⚠️ Room variations tried:`, roomVariations);
+
+      // Still emit to the room — it will be buffered by Socket.IO if restaurant reconnects soon
+      const targetRoom = roomVariations[0];
+      restaurantNamespace.to(targetRoom).emit('new_order', orderNotification);
+      restaurantNamespace.to(targetRoom).emit('play_notification_sound', {
+        type: 'new_order',
+        orderId: order.orderId,
+        message: `New order received: ${order.orderId}`
+      });
     }
 
     return {
