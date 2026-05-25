@@ -38,7 +38,8 @@ import { useProgressStore } from "../store/progressStore"
 import { formatTimeDisplay, calculateTotalHours } from "../utils/gigUtils"
 import {
   fetchDeliveryWallet,
-  calculatePeriodEarnings
+  calculatePeriodEarnings,
+  calculateDeliveryBalances
 } from "../utils/deliveryWalletState"
 import { formatCurrency } from "../../restaurant/utils/currency"
 import { getAllDeliveryOrders } from "../utils/deliveryOrderStatus"
@@ -385,6 +386,17 @@ export default function DeliveryHome() {
     transactions: [],
     joiningBonusClaimed: false
   })
+
+  const availableCashLimit = useMemo(() => {
+    const totalCashLimit = Number.isFinite(Number(walletState?.totalCashLimit))
+      ? Number(walletState.totalCashLimit)
+      : 0;
+    const balances = calculateDeliveryBalances(walletState);
+    return Number.isFinite(Number(walletState?.availableCashLimit)) &&
+      Number(walletState?.availableCashLimit) >= 0
+      ? Number(walletState.availableCashLimit)
+      : Math.max(0, totalCashLimit - (Number(balances.cashInHand) || 0));
+  }, [walletState]);
   const [activeOrder, setActiveOrder] = useState(() => {
     const stored = localStorage.getItem('activeOrder')
     return stored ? JSON.parse(stored) : null
@@ -4107,6 +4119,17 @@ export default function DeliveryHome() {
         return;
       }
 
+      // Check if available cash limit is exhausted
+      if (availableCashLimit <= 0) {
+        console.log('🚫 Available cash limit exhausted, ignoring order request');
+        toast.error("Cash Limit Exhausted", {
+          description: "Settlement your amount to start getting orders.",
+          id: "cash-limit-exhausted-notification"
+        });
+        clearNewOrder();
+        return;
+      }
+
       const orderId = newOrder.orderMongoId || newOrder.orderId;
 
       // Check if this order has already been accepted
@@ -4228,7 +4251,7 @@ export default function DeliveryHome() {
       // Clear popup if newOrder is removed (e.g., accepted by someone else)
       setShowNewOrderPopup(false)
     }
-  }, [newOrder, calculateTimeAway, riderLocation, isOnline, clearNewOrder])
+  }, [newOrder, calculateTimeAway, riderLocation, isOnline, clearNewOrder, availableCashLimit])
 
   // Recalculate distance when rider location becomes available
   useEffect(() => {
@@ -4498,6 +4521,11 @@ export default function DeliveryHome() {
       return
     }
 
+    if (availableCashLimit <= 0) {
+      console.log('⚠️ Available cash limit exhausted, skipping order fetch')
+      return
+    }
+
     // Check if delivery partner is already on a trip
     const hasActiveOrder = activeOrder || selectedRestaurant || localStorage.getItem('deliveryActiveOrder');
     if (hasActiveOrder) {
@@ -4653,7 +4681,7 @@ export default function DeliveryHome() {
       console.error('❌ Error fetching assigned orders:', error)
       // Don't show error to user, just log it
     }
-  }, [isOnline, calculateTimeAway])
+  }, [isOnline, calculateTimeAway, availableCashLimit])
 
   // Fetch assigned orders when delivery person goes online
   useEffect(() => {
@@ -8435,6 +8463,21 @@ export default function DeliveryHome() {
                   }`}
               />
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Available Cash Limit Warning */}
+      {availableCashLimit <= 0 && (
+        <div className="mx-4 mt-4 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3 shadow-sm flex-shrink-0">
+          <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0 text-red-600">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <h4 className="text-red-800 font-bold text-sm">Settlement your amount to start getting orders</h4>
+            <p className="text-red-700 text-xs mt-1">Please settle your outstanding amount immediately. Otherwise, you will not receive new orders.</p>
           </div>
         </div>
       )}
