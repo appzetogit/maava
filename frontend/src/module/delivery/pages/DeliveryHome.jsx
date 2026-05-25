@@ -8891,7 +8891,7 @@ export default function DeliveryHome() {
                 <button
                   onClick={() => {
                     if (isOnline) {
-                      goOffline()
+                      navigate("/delivery/requests")
                     } else {
                       // Always show the popup when offline (same as navbar behavior)
                       setShowBookGigsPopup(true)
