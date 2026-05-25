@@ -8385,8 +8385,8 @@ export default function DeliveryHome() {
         </motion.div>
       )}
 
-      {/* Carousel - Only show if there are slides */}
-      {carouselSlides.length > 0 && (
+      {/* Carousel - Only show if there are slides and the sheet is down */}
+      {carouselSlides.length > 0 && !showHomeSections && swipeBarPosition < 0.1 && (
         <div
           ref={carouselRef}
           className="relative overflow-hidden bg-gray-700 cursor-grab active:cursor-grabbing select-none flex-shrink-0"
@@ -8468,7 +8468,7 @@ export default function DeliveryHome() {
       )}
 
       {/* Available Cash Limit Warning */}
-      {availableCashLimit <= 0 && (
+      {availableCashLimit <= 0 && !showHomeSections && swipeBarPosition < 0.1 && (
         <div className="mx-4 mt-4 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3 shadow-sm flex-shrink-0">
           <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0 text-red-600">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
