@@ -46,6 +46,7 @@ import {
   Coffee,
   Sun,
   Moon,
+  Sparkles,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -1499,136 +1500,225 @@ export default function RestaurantDetails() {
         <div className="max-w-7xl mx-auto">
 
           {/* Filter/Category Buttons */}
-          <div className="border-y border-gray-200 py-3 -mx-4 px-4 overflow-x-auto scrollbar-hide">
-            <div className="flex items-center gap-2 w-max">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-1.5 whitespace-nowrap border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] relative"
-                onClick={() => setShowFilterSheet(true)}
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-                Filters
-                {activeFilterCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-semibold">
-                    {activeFilterCount}
-                  </span>
-                )}
-                <ChevronDown className="h-3 w-3" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className={`flex items-center gap-1.5 whitespace-nowrap border-gray-300 bg-white rounded-full ${filters.vegNonVeg === "veg" ? "border-green-500 bg-green-50" : ""
-                  }`}
-                onClick={() =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    vegNonVeg: prev.vegNonVeg === "veg" ? null : "veg",
-                  }))
-                }
-              >
-                <div className="h-3 w-3 rounded-full bg-green-500" />
-                Veg
-                {filters.vegNonVeg === "veg" && (
-                  <X className="h-3 w-3 text-gray-600" />
-                )}
-              </Button>
-              {!vegMode && (
+          <div className="border-y border-gray-200 dark:border-zinc-800 py-2.5 -mx-4 px-4 space-y-2.5 bg-white dark:bg-[#0a0a0a]">
+            {/* Line 1: Primary Filters */}
+            <div className="overflow-x-auto scrollbar-hide">
+              <div className="flex items-center gap-2 w-max">
                 <Button
                   variant="outline"
                   size="sm"
-                  className={`flex items-center gap-1.5 whitespace-nowrap border-gray-300 bg-white rounded-full ${filters.vegNonVeg === "non-veg" ? "border-amber-700 bg-amber-50" : ""
+                  className="flex items-center gap-1.5 whitespace-nowrap border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] relative"
+                  onClick={() => setShowFilterSheet(true)}
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                  Filters
+                  {activeFilterCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-semibold">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={`flex items-center gap-1.5 whitespace-nowrap border-gray-300 bg-white rounded-full ${filters.vegNonVeg === "veg" ? "border-green-500 bg-green-50" : ""
                     }`}
                   onClick={() =>
                     setFilters((prev) => ({
                       ...prev,
-                      vegNonVeg: prev.vegNonVeg === "non-veg" ? null : "non-veg",
+                      vegNonVeg: prev.vegNonVeg === "veg" ? null : "veg",
                     }))
                   }
                 >
-                  <div className="h-3 w-3 rounded-full bg-amber-700" />
-                  Non-veg
-                  {filters.vegNonVeg === "non-veg" && (
+                  <div className="h-3 w-3 rounded-full bg-green-500" />
+                  Veg
+                  {filters.vegNonVeg === "veg" && (
                     <X className="h-3 w-3 text-gray-600" />
                   )}
                 </Button>
-              )}
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={`flex items-center gap-1.5 whitespace-nowrap border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] rounded-full transition-all duration-300 ${
-                    filters.mealType === "breakfast"
-                      ? "border-amber-400 bg-gradient-to-r from-amber-50 to-orange-100 text-amber-800 dark:from-amber-950/30 dark:to-orange-950/20 dark:text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.25)] font-black"
-                      : "hover:border-amber-300 hover:bg-amber-50/20"
-                  }`}
-                  onClick={() => handleMealTypeClick("breakfast")}
-                >
-                  <motion.div
-                    animate={filters.mealType === "breakfast" ? { rotate: [0, -7, 7, -7, 7, 0] } : {}}
-                    transition={{ duration: 0.5, repeat: filters.mealType === "breakfast" ? Infinity : 0, repeatDelay: 2 }}
+                {!vegMode && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`flex items-center gap-1.5 whitespace-nowrap border-gray-300 bg-white rounded-full ${filters.vegNonVeg === "non-veg" ? "border-amber-700 bg-amber-50" : ""
+                      }`}
+                    onClick={() =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        vegNonVeg: prev.vegNonVeg === "non-veg" ? null : "non-veg",
+                      }))
+                    }
                   >
-                    <Coffee className={`h-3.5 w-3.5 transition-colors ${filters.mealType === "breakfast" ? "text-amber-600 fill-amber-400" : "text-amber-500"}`} />
-                  </motion.div>
-                  <span>Breakfast</span>
-                  {filters.mealType === "breakfast" && (
-                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                      <X className="h-3 w-3 text-amber-700 dark:text-amber-300" />
-                    </motion.span>
-                  )}
-                </Button>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={`flex items-center gap-1.5 whitespace-nowrap border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] rounded-full transition-all duration-300 ${
-                    filters.mealType === "lunch"
-                      ? "border-orange-400 bg-gradient-to-r from-amber-100 to-orange-100 text-orange-900 dark:from-amber-900/30 dark:to-orange-950/20 dark:text-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.25)] font-black"
-                      : "hover:border-orange-300 hover:bg-orange-50/20"
-                  }`}
-                  onClick={() => handleMealTypeClick("lunch")}
-                >
+                    <div className="h-3 w-3 rounded-full bg-amber-700" />
+                    Non-veg
+                    {filters.vegNonVeg === "non-veg" && (
+                      <X className="h-3 w-3 text-gray-600" />
+                    )}
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Line 2: Meal Category Quick Filters */}
+            <div className="overflow-x-auto scrollbar-hide pt-2.5 border-t border-gray-100 dark:border-zinc-900">
+              <div className="flex items-center gap-2 w-max py-0.5">
+                <div className="relative flex items-center justify-center h-10 w-10 mr-2 flex-shrink-0">
+                  {/* Outer spinning container holding the 3 icons */}
                   <motion.div
-                    animate={filters.mealType === "lunch" ? { rotate: 360 } : {}}
-                    transition={filters.mealType === "lunch" ? { repeat: Infinity, duration: 6, ease: "linear" } : {}}
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-0"
                   >
-                    <Sun className={`h-3.5 w-3.5 transition-colors ${filters.mealType === "lunch" ? "text-orange-600 fill-orange-400" : "text-orange-500"}`} />
+                    {/* Breakfast (Coffee) Icon on top */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-amber-50 dark:bg-amber-950 p-0.5 rounded-full border border-amber-200 dark:border-amber-800 shadow-xs">
+                      <Coffee className="h-2.5 w-2.5 text-amber-600" />
+                    </div>
+
+                    {/* Lunch (Sun) Icon bottom right */}
+                    <div className="absolute bottom-[2px] right-[2px] bg-orange-50 dark:bg-orange-950 p-0.5 rounded-full border border-orange-200 dark:border-orange-800 shadow-xs">
+                      <Sun className="h-2.5 w-2.5 text-orange-600" />
+                    </div>
+
+                    {/* Dinner (Moon) Icon bottom left */}
+                    <div className="absolute bottom-[2px] left-[2px] bg-indigo-50 dark:bg-indigo-950 p-0.5 rounded-full border border-indigo-200 dark:border-indigo-800 shadow-xs">
+                      <Moon className="h-2.5 w-2.5 text-indigo-600" />
+                    </div>
                   </motion.div>
-                  <span>Lunch</span>
-                  {filters.mealType === "lunch" && (
-                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                      <X className="h-3 w-3 text-orange-700 dark:text-orange-400" />
-                    </motion.span>
-                  )}
-                </Button>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={`flex items-center gap-1.5 whitespace-nowrap border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] rounded-full transition-all duration-300 ${
-                    filters.mealType === "dinner"
-                      ? "border-indigo-400 bg-gradient-to-r from-indigo-50 to-violet-100 text-indigo-800 dark:from-indigo-950/30 dark:to-violet-950/20 dark:text-indigo-300 shadow-[0_0_12px_rgba(99,102,241,0.25)] font-black"
-                      : "hover:border-indigo-300 hover:bg-indigo-50/20"
-                  }`}
-                  onClick={() => handleMealTypeClick("dinner")}
+                </div>
+                <motion.div
+                  whileHover={{ scale: 1.06 }}
+                  whileTap={{ scale: 0.94 }}
+                  animate={filters.mealType === "breakfast" ? {
+                    scale: [1, 1.03, 1],
+                    boxShadow: [
+                      "0 0 4px rgba(245,158,11,0.2)",
+                      "0 0 14px rgba(245,158,11,0.55)",
+                      "0 0 4px rgba(245,158,11,0.2)"
+                    ]
+                  } : {
+                    scale: 1,
+                    boxShadow: "0 0 0px rgba(0,0,0,0)"
+                  }}
+                  transition={filters.mealType === "breakfast" ? {
+                    scale: { repeat: Infinity, duration: 2, ease: "easeInOut" },
+                    boxShadow: { repeat: Infinity, duration: 2, ease: "easeInOut" }
+                  } : { type: "spring", stiffness: 400, damping: 15 }}
+                  className="rounded-full"
                 >
-                  <motion.div
-                    animate={filters.mealType === "dinner" ? { y: [0, -2, 2, 0] } : {}}
-                    transition={filters.mealType === "dinner" ? { repeat: Infinity, duration: 2.5, ease: "easeInOut" } : {}}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`flex items-center gap-1.5 whitespace-nowrap border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] rounded-full transition-all duration-300 ${
+                      filters.mealType === "breakfast"
+                        ? "border-amber-400 bg-gradient-to-r from-amber-50 to-orange-100 text-amber-800 dark:from-amber-950/30 dark:to-orange-950/20 dark:text-amber-300 font-black"
+                        : "hover:border-amber-300 hover:bg-amber-50/20"
+                    }`}
+                    onClick={() => handleMealTypeClick("breakfast")}
                   >
-                    <Moon className={`h-3.5 w-3.5 transition-colors ${filters.mealType === "dinner" ? "text-indigo-600 fill-indigo-300" : "text-indigo-500"}`} />
-                  </motion.div>
-                  <span>Dinner</span>
-                  {filters.mealType === "dinner" && (
-                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                      <X className="h-3 w-3 text-indigo-700 dark:text-indigo-300" />
-                    </motion.span>
-                  )}
-                </Button>
-              </motion.div>
+                    <motion.div
+                      animate={filters.mealType === "breakfast" ? { rotate: [0, -7, 7, -7, 7, 0] } : {}}
+                      transition={{ duration: 0.5, repeat: filters.mealType === "breakfast" ? Infinity : 0, repeatDelay: 2 }}
+                    >
+                      <Coffee className={`h-3.5 w-3.5 transition-colors ${filters.mealType === "breakfast" ? "text-amber-600 fill-amber-400" : "text-amber-500"}`} />
+                    </motion.div>
+                    <span>Breakfast</span>
+                    {filters.mealType === "breakfast" && (
+                      <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                        <X className="h-3 w-3 text-amber-700 dark:text-amber-300" />
+                      </motion.span>
+                    )}
+                  </Button>
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.06 }}
+                  whileTap={{ scale: 0.94 }}
+                  animate={filters.mealType === "lunch" ? {
+                    scale: [1, 1.03, 1],
+                    boxShadow: [
+                      "0 0 4px rgba(249,115,22,0.2)",
+                      "0 0 14px rgba(249,115,22,0.55)",
+                      "0 0 4px rgba(249,115,22,0.2)"
+                    ]
+                  } : {
+                    scale: 1,
+                    boxShadow: "0 0 0px rgba(0,0,0,0)"
+                  }}
+                  transition={filters.mealType === "lunch" ? {
+                    scale: { repeat: Infinity, duration: 2, ease: "easeInOut" },
+                    boxShadow: { repeat: Infinity, duration: 2, ease: "easeInOut" }
+                  } : { type: "spring", stiffness: 400, damping: 15 }}
+                  className="rounded-full"
+                >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`flex items-center gap-1.5 whitespace-nowrap border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] rounded-full transition-all duration-300 ${
+                      filters.mealType === "lunch"
+                        ? "border-orange-400 bg-gradient-to-r from-amber-100 to-orange-100 text-orange-900 dark:from-amber-900/30 dark:to-orange-950/20 dark:text-orange-400 font-black"
+                        : "hover:border-orange-300 hover:bg-orange-50/20"
+                    }`}
+                    onClick={() => handleMealTypeClick("lunch")}
+                  >
+                    <motion.div
+                      animate={filters.mealType === "lunch" ? { rotate: 360 } : {}}
+                      transition={filters.mealType === "lunch" ? { repeat: Infinity, duration: 6, ease: "linear" } : {}}
+                    >
+                      <Sun className={`h-3.5 w-3.5 transition-colors ${filters.mealType === "lunch" ? "text-orange-600 fill-orange-400" : "text-orange-500"}`} />
+                    </motion.div>
+                    <span>Lunch</span>
+                    {filters.mealType === "lunch" && (
+                      <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                        <X className="h-3 w-3 text-orange-700 dark:text-orange-400" />
+                      </motion.span>
+                    )}
+                  </Button>
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.06 }}
+                  whileTap={{ scale: 0.94 }}
+                  animate={filters.mealType === "dinner" ? {
+                    scale: [1, 1.03, 1],
+                    boxShadow: [
+                      "0 0 4px rgba(99,102,241,0.2)",
+                      "0 0 14px rgba(99,102,241,0.55)",
+                      "0 0 4px rgba(99,102,241,0.2)"
+                    ]
+                  } : {
+                    scale: 1,
+                    boxShadow: "0 0 0px rgba(0,0,0,0)"
+                  }}
+                  transition={filters.mealType === "dinner" ? {
+                    scale: { repeat: Infinity, duration: 2, ease: "easeInOut" },
+                    boxShadow: { repeat: Infinity, duration: 2, ease: "easeInOut" }
+                  } : { type: "spring", stiffness: 400, damping: 15 }}
+                  className="rounded-full"
+                >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`flex items-center gap-1.5 whitespace-nowrap border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] rounded-full transition-all duration-300 ${
+                      filters.mealType === "dinner"
+                        ? "border-indigo-400 bg-gradient-to-r from-indigo-50 to-violet-100 text-indigo-800 dark:from-indigo-950/30 dark:to-violet-950/20 dark:text-indigo-300 font-black"
+                        : "hover:border-indigo-300 hover:bg-indigo-50/20"
+                    }`}
+                    onClick={() => handleMealTypeClick("dinner")}
+                  >
+                    <motion.div
+                      animate={filters.mealType === "dinner" ? { y: [0, -2, 2, 0] } : {}}
+                      transition={filters.mealType === "dinner" ? { repeat: Infinity, duration: 2.5, ease: "easeInOut" } : {}}
+                    >
+                      <Moon className={`h-3.5 w-3.5 transition-colors ${filters.mealType === "dinner" ? "text-indigo-600 fill-indigo-300" : "text-indigo-500"}`} />
+                    </motion.div>
+                    <span>Dinner</span>
+                    {filters.mealType === "dinner" && (
+                      <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                        <X className="h-3 w-3 text-indigo-700 dark:text-indigo-300" />
+                      </motion.span>
+                    )}
+                  </Button>
+                </motion.div>
+              </div>
             </div>
           </div>
 
