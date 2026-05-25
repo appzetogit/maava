@@ -35,6 +35,7 @@ export default function SearchResults() {
   const [activeFilters, setActiveFilters] = useState(new Set())
   const [favorites, setFavorites] = useState(new Set())
   const categoryScrollRef = useRef(null)
+  const lastRequestRef = useRef(0)
   const [restaurantsData, setRestaurantsData] = useState([])
   const [loadingRestaurants, setLoadingRestaurants] = useState(true)
   const [categories, setCategories] = useState([
@@ -163,6 +164,8 @@ export default function SearchResults() {
 
   // Fetch restaurants from API
   useEffect(() => {
+    const requestId = Date.now()
+    lastRequestRef.current = requestId
     const fetchRestaurants = async () => {
       try {
         setLoadingRestaurants(true)
@@ -173,6 +176,11 @@ export default function SearchResults() {
           params.zoneId = zoneId
         }
         const response = await restaurantAPI.getRestaurants(params)
+
+        if (lastRequestRef.current !== requestId) {
+          console.log('⏳ Ignoring stale restaurant response in SearchResults')
+          return
+        }
 
         console.log('📦 Full API Response:', response)
         console.log('📦 Response Data:', response?.data)
@@ -367,9 +375,15 @@ export default function SearchResults() {
           // Wait for all menu fetches to complete
           const transformedRestaurants = await Promise.all(menuPromises)
 
+          if (lastRequestRef.current !== requestId) {
+            console.log('⏳ Ignoring stale restaurant response in SearchResults (after menu fetches)')
+            return
+          }
+
           console.log(`✅ Final transformed restaurants: ${transformedRestaurants.length}`)
           setRestaurantsData(transformedRestaurants)
         } else {
+          if (lastRequestRef.current !== requestId) return
           console.warn('⚠️ No restaurants in API response. Response structure:', {
             hasData: !!response.data,
             hasSuccess: response.data?.success,
@@ -380,11 +394,14 @@ export default function SearchResults() {
           setRestaurantsData([])
         }
       } catch (error) {
+        if (lastRequestRef.current !== requestId) return
         console.error('❌ Error fetching restaurants:', error)
         console.error('❌ Error response:', error.response?.data)
         setRestaurantsData([])
       } finally {
-        setLoadingRestaurants(false)
+        if (lastRequestRef.current === requestId) {
+          setLoadingRestaurants(false)
+        }
       }
     }
 

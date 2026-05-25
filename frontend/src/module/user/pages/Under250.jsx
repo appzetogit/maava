@@ -43,6 +43,7 @@ export default function Under250() {
   const [loadingRestaurants, setLoadingRestaurants] = useState(true)
   const [showShareSheet, setShowShareSheet] = useState(false)
   const [shareData, setShareData] = useState({ title: "", text: "", url: "" })
+  const lastRequestRef = useRef(0)
 
   const sortOptions = [
     { id: null, label: 'Relevance' },
@@ -160,21 +161,32 @@ export default function Under250() {
 
   // Fetch restaurants with dishes under ₹250 from backend
   useEffect(() => {
+    const requestId = Date.now()
+    lastRequestRef.current = requestId
     const fetchRestaurantsUnder250 = async () => {
       try {
         setLoadingRestaurants(true)
         // Optional: Add zoneId if available (for sorting/filtering, but show all restaurants)
         const response = await restaurantAPI.getRestaurantsUnder250(zoneId)
+        
+        if (lastRequestRef.current !== requestId) {
+          console.log('⏳ Ignoring stale response in Under250')
+          return
+        }
+
         if (response.data.success && response.data.data.restaurants) {
           setUnder250Restaurants(response.data.data.restaurants)
         } else {
           setUnder250Restaurants([])
         }
       } catch (error) {
+        if (lastRequestRef.current !== requestId) return
         console.error('Error fetching restaurants under 250:', error)
         setUnder250Restaurants([])
       } finally {
-        setLoadingRestaurants(false)
+        if (lastRequestRef.current === requestId) {
+          setLoadingRestaurants(false)
+        }
       }
     }
 

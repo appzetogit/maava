@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, useRef } from "react"
 import { Link } from "react-router-dom"
 import { ArrowLeft, Clock, Heart, Loader2, MapPin, Star } from "lucide-react"
 import { restaurantAPI } from "@/lib/api"
@@ -57,8 +57,11 @@ export default function Restaurants() {
   const [restaurants, setRestaurants] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const lastRequestRef = useRef(0)
 
   const fetchRestaurants = async () => {
+    const requestId = Date.now()
+    lastRequestRef.current = requestId
     try {
       setLoading(true)
       setError("")
@@ -67,6 +70,12 @@ export default function Restaurants() {
       if (zoneId) params.zoneId = zoneId
 
       const response = await restaurantAPI.getRestaurants(params)
+
+      if (lastRequestRef.current !== requestId) {
+        console.log('⏳ Ignoring stale restaurant response in Restaurants.jsx')
+        return
+      }
+
       const source = response?.data?.data?.restaurants || response?.data?.data || []
 
       const normalized = Array.isArray(source)
@@ -75,11 +84,14 @@ export default function Restaurants() {
 
       setRestaurants(normalized)
     } catch (err) {
+      if (lastRequestRef.current !== requestId) return
       console.error("Failed to fetch restaurants:", err)
       setError("Failed to load restaurants")
       setRestaurants([])
     } finally {
-      setLoading(false)
+      if (lastRequestRef.current === requestId) {
+        setLoading(false)
+      }
     }
   }
 

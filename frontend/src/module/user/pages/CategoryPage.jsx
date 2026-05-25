@@ -45,6 +45,7 @@ export default function CategoryPage() {
   const filterSectionRefs = useRef({})
   const rightContentRef = useRef(null)
   const categoryScrollRef = useRef(null)
+  const lastRequestRef = useRef(0)
 
   // State for categories from admin
   const [categories, setCategories] = useState([])
@@ -197,6 +198,8 @@ export default function CategoryPage() {
 
   // Fetch restaurants from API
   useEffect(() => {
+    const requestId = Date.now()
+    lastRequestRef.current = requestId
     const fetchRestaurants = async () => {
       try {
         setLoadingRestaurants(true)
@@ -206,6 +209,11 @@ export default function CategoryPage() {
           params.zoneId = zoneId
         }
         const response = await restaurantAPI.getRestaurants(params)
+
+        if (lastRequestRef.current !== requestId) {
+          console.log('⏳ Ignoring stale restaurant response in CategoryPage')
+          return
+        }
 
         if (response.data && response.data.success && response.data.data && response.data.data.restaurants) {
           const restaurantsArray = response.data.data.restaurants
@@ -352,15 +360,24 @@ export default function CategoryPage() {
           })
 
           const transformedRestaurants = await Promise.all(menuPromises)
+
+          if (lastRequestRef.current !== requestId) {
+            console.log('⏳ Ignoring stale restaurant response in CategoryPage (after menu fetches)')
+            return
+          }
           setRestaurantsData(transformedRestaurants)
         } else {
+          if (lastRequestRef.current !== requestId) return
           setRestaurantsData([])
         }
       } catch (error) {
+        if (lastRequestRef.current !== requestId) return
         console.error('Error fetching restaurants:', error)
         setRestaurantsData([])
       } finally {
-        setLoadingRestaurants(false)
+        if (lastRequestRef.current === requestId) {
+          setLoadingRestaurants(false)
+        }
       }
     }
 

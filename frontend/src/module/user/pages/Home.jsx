@@ -577,6 +577,7 @@ export default function Home() {
   const categoryOuterRef = useRef(null)
   const catDragRef = useRef({ isDragging: false, startX: 0, scrollLeft: 0, startTouchX: 0 })
   const gsapAnimationsRef = useRef([])
+  const lastRequestRef = useRef(0)
   // Safely get profile context - handle case when ProfileProvider is not available
   let profileContext = null
   try {
@@ -664,6 +665,8 @@ export default function Home() {
 
   // Fetch restaurants from API with filters
   const fetchRestaurants = useCallback(async (filters = {}) => {
+    const requestId = Date.now()
+    lastRequestRef.current = requestId
     try {
       setLoadingRestaurants(true)
 
@@ -676,6 +679,7 @@ export default function Home() {
           throw new Error(`Backend health check failed: ${healthCheck.status}`)
         }
       } catch (healthError) {
+        if (lastRequestRef.current !== requestId) return
         // Backend connection error - handled silently, toast notifications shown via axios interceptor
         setRestaurantsData([])
         setLoadingRestaurants(false)
@@ -744,6 +748,11 @@ export default function Home() {
       // Note: We show all restaurants regardless of zone, but apply grayscale styling if user is out of service
 
       const response = await restaurantAPI.getRestaurants(params)
+
+      if (lastRequestRef.current !== requestId) {
+        console.log('⏳ Ignoring stale restaurant response')
+        return
+      }
 
       if (response.data && response.data.success && response.data.data && response.data.data.restaurants) {
         const restaurantsArray = response.data.data.restaurants
@@ -876,13 +885,16 @@ export default function Home() {
         setRestaurantsData([])
       }
     } catch (error) {
+      if (lastRequestRef.current !== requestId) return
       console.error('Error fetching restaurants:', error)
       console.error('Error details:', error.response?.data || error.message)
       // Don't set hardcoded data here - let the useMemo fallback handle it
       // This way, if API succeeds later, it will show the real data
       setRestaurantsData([])
     } finally {
-      setLoadingRestaurants(false)
+      if (lastRequestRef.current === requestId) {
+        setLoadingRestaurants(false)
+      }
     }
   }, [zoneId])
 
