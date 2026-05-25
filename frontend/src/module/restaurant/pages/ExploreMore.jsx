@@ -1211,13 +1211,13 @@ export default function ExploreMore() {
                   {isLoggingOut ? "Processing..." : "Logout from all devices"}
                 </button>
 
-                <button
+                {/* <button
                   onClick={handleDeleteAccount}
                   disabled={isDeletingAccount || isLoggingOut}
                   className="w-full bg-white border-2 border-red-600 text-red-600 font-black py-4 px-6 rounded-2xl transition-all hover:bg-red-50 active:scale-[0.98] uppercase tracking-widest text-xs mt-2"
                 >
                   {isDeletingAccount ? "Deleting..." : "Delete Account"}
-                </button>
+                </button> */}
               </div>
 
               {/* Footer Links */}

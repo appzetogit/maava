@@ -747,7 +747,7 @@ export default function Profile() {
               </Card>
             </motion.div>
 
-            <motion.div
+            {/* <motion.div
               whileHover={{ x: 4, scale: 1.01 }}
               transition={{ duration: 0.2, type: "spring", stiffness: 300 }}
             >
@@ -776,7 +776,7 @@ export default function Profile() {
                   </motion.div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </motion.div> */}
           </div>
         </div>
       </div>

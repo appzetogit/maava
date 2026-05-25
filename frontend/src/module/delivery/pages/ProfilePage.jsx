@@ -422,7 +422,7 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
 
-            <Card
+            {/* <Card
               onClick={handleDeleteAccount}
               className="bg-white py-0 border-0 shadow-none rounded-lg cursor-pointer hover:bg-red-50 transition-colors border-2 border-transparent hover:border-red-200"
             >
@@ -435,7 +435,7 @@ export default function ProfilePage() {
                 </div>
                 <ArrowRight className="w-5 h-5 text-gray-400" />
               </CardContent>
-            </Card>
+            </Card> */}
           </div>
         </div>
       </div>
