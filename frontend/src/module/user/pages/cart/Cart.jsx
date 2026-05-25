@@ -204,23 +204,57 @@ export default function Cart() {
   const [showExclusiveOfferPopup, setShowExclusiveOfferPopup] = useState(false)
   const [hasShownOfferPopup, setHasShownOfferPopup] = useState(false)
 
-  // Celebration / Confetti Effect - Swiggy Style Top-to-Bottom Shower
+  // Celebration / Confetti Effect - Zomato Style Left & Right Cannons Pop (Optimized & Vibrant)
   const triggerCelebration = () => {
-    const end = Date.now() + 3 * 1000;
+    const duration = 1.2 * 1000; // Only 1.2 seconds for a fast, punchy feel
+    const end = Date.now() + duration;
     const colors = ["#22c55e", "#3b82f6", "#ef4444", "#eab308", "#ec4899", "#8b5cf6"];
 
+    // Initial decent burst from left and right corners
+    confetti({
+      particleCount: 40,
+      angle: 60,
+      spread: 60,
+      origin: { x: 0, y: 0.8 },
+      colors: colors,
+      gravity: 1.1,
+      zIndex: 9999,
+    });
+    confetti({
+      particleCount: 40,
+      angle: 120,
+      spread: 60,
+      origin: { x: 1, y: 0.8 },
+      colors: colors,
+      gravity: 1.1,
+      zIndex: 9999,
+    });
+
     (function frame() {
+      // Small continuous pops from left
       confetti({
-        particleCount: 3,
-        angle: 270, // Straight down
-        spread: 90,
-        origin: { x: Math.random(), y: -0.2 }, // Random top position
+        particleCount: 1,
+        angle: 60,
+        spread: 45,
+        origin: { x: 0, y: 0.8 },
         colors: colors,
-        gravity: 0.8,
+        gravity: 1.0,
         scalar: Math.random() * 0.8 + 0.5,
-        drift: Math.random() * 2 - 1,
+        drift: Math.random() * 1.5 - 0.5,
         zIndex: 9999,
-        ticks: 300
+      });
+
+      // Small continuous pops from right
+      confetti({
+        particleCount: 1,
+        angle: 120,
+        spread: 45,
+        origin: { x: 1, y: 0.8 },
+        colors: colors,
+        gravity: 1.0,
+        scalar: Math.random() * 0.8 + 0.5,
+        drift: Math.random() * 1.5 - 1.0,
+        zIndex: 9999,
       });
 
       if (Date.now() < end) {
