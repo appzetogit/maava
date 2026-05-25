@@ -824,86 +824,88 @@ export default function CategoryPage() {
               </h2>
 
               {/* Small Restaurant Cards - Grid - Show all dishes when category is selected */}
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
-                {(selectedCategory && selectedCategory !== 'all'
-                  ? filteredRecommended
-                  : filteredRecommended.slice(0, 6)
-                ).map((restaurant) => {
-                  return (
-                    <Link
-                      key={restaurant.id}
-                      to={`/user/restaurants/${restaurant.name.toLowerCase().replace(/\s+/g, '-')}`}
-                      className="block"
-                    >
-                      <div className={`group ${shouldShowGrayscale ? 'grayscale opacity-75' : ''}`}>
-                        {/* Image Container */}
-                        <div className="relative aspect-square rounded-xl md:rounded-2xl overflow-hidden mb-2">
-                          {/* Use category dish image if available, otherwise restaurant image */}
-                          {restaurant.categoryDishImage ? (
-                            <img
-                              src={restaurant.categoryDishImage}
-                              alt={restaurant.categoryDishName || restaurant.name}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                              onError={(e) => {
-                                // Fallback to restaurant image if dish image fails
-                                if (restaurant.image) {
-                                  e.target.src = restaurant.image
-                                } else {
+              <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 pb-3">
+                <div className="grid grid-rows-2 grid-flow-col gap-3 md:gap-4 auto-cols-[115px] sm:auto-cols-[140px] md:auto-cols-[160px] w-max">
+                  {(selectedCategory && selectedCategory !== 'all'
+                    ? filteredRecommended
+                    : filteredRecommended.slice(0, 6)
+                  ).map((restaurant) => {
+                    return (
+                      <Link
+                        key={restaurant.id}
+                        to={`/user/restaurants/${restaurant.name.toLowerCase().replace(/\s+/g, '-')}`}
+                        className="block w-full"
+                      >
+                        <div className={`group ${shouldShowGrayscale ? 'grayscale opacity-75' : ''}`}>
+                          {/* Image Container */}
+                          <div className="relative aspect-square rounded-xl md:rounded-2xl overflow-hidden mb-2">
+                            {/* Use category dish image if available, otherwise restaurant image */}
+                            {restaurant.categoryDishImage ? (
+                              <img
+                                src={restaurant.categoryDishImage}
+                                alt={restaurant.categoryDishName || restaurant.name}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                onError={(e) => {
+                                  // Fallback to restaurant image if dish image fails
+                                  if (restaurant.image) {
+                                    e.target.src = restaurant.image
+                                  } else {
+                                    // Show emoji placeholder
+                                    e.target.style.display = 'none'
+                                    const placeholder = document.createElement('div')
+                                    placeholder.className = 'w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-6xl'
+                                    placeholder.textContent = '🍽️'
+                                    e.target.parentElement.appendChild(placeholder)
+                                  }
+                                }}
+                              />
+                            ) : restaurant.image ? (
+                              <img
+                                src={restaurant.image}
+                                alt={restaurant.name}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                onError={(e) => {
                                   // Show emoji placeholder
                                   e.target.style.display = 'none'
                                   const placeholder = document.createElement('div')
                                   placeholder.className = 'w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-6xl'
                                   placeholder.textContent = '🍽️'
                                   e.target.parentElement.appendChild(placeholder)
-                                }
-                              }}
-                            />
-                          ) : restaurant.image ? (
-                            <img
-                              src={restaurant.image}
-                              alt={restaurant.name}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                              onError={(e) => {
-                                // Show emoji placeholder
-                                e.target.style.display = 'none'
-                                const placeholder = document.createElement('div')
-                                placeholder.className = 'w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-6xl'
-                                placeholder.textContent = '🍽️'
-                                e.target.parentElement.appendChild(placeholder)
-                              }}
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-6xl">
-                              🍽️
-                            </div>
-                          )}
+                                }}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-6xl">
+                                🍽️
+                              </div>
+                            )}
 
-                          {/* Offer Badge */}
-                          {restaurant.offer && (
-                            <div className="absolute top-1.5 left-1.5 bg-blue-600 text-white text-[10px] md:text-xs font-semibold px-1.5 py-0.5 rounded">
-                              {restaurant.offer}
-                            </div>
-                          )}
+                            {/* Offer Badge */}
+                            {restaurant.offer && (
+                              <div className="absolute top-1.5 left-1.5 bg-blue-600 text-white text-[10px] md:text-xs font-semibold px-1.5 py-0.5 rounded">
+                                {restaurant.offer}
+                              </div>
+                            )}
 
-                          {/* Rating Badge (NOW ON IMAGE, bottom-left with white border) */}
-                          <div className="absolute bottom-0 left-0 bg-green-600 border-[4px] rounded-md border-white text-white text-[11px] md:text-xs font-bold px-1.5 py-0.5 flex items-center gap-0.5">
-                            {restaurant.rating}
-                            <Star className="h-2.5 w-2.5 md:h-3 md:w-3 fill-white star-shine" />
+                            {/* Rating Badge (NOW ON IMAGE, bottom-left with white border) */}
+                            <div className="absolute bottom-0 left-0 bg-green-600 border-[4px] rounded-md border-white text-white text-[11px] md:text-xs font-bold px-1.5 py-0.5 flex items-center gap-0.5">
+                              {restaurant.rating}
+                              <Star className="h-2.5 w-2.5 md:h-3 md:w-3 fill-white star-shine" />
+                            </div>
+                          </div>
+
+                          {/* Restaurant Info - Show category dish name if available, otherwise restaurant name */}
+                          <h3 className="font-semibold text-xs md:text-sm line-clamp-1 gold-shine-text">
+                            {restaurant.categoryDishName || restaurant.name}
+                          </h3>
+                          <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-[10px] md:text-xs">
+                            <Clock className="h-2.5 w-2.5 md:h-3 md:w-3" />
+                            <span>{restaurant.deliveryTime || 'Not available'}</span>
                           </div>
                         </div>
-
-                        {/* Restaurant Info - Show category dish name if available, otherwise restaurant name */}
-                        <h3 className="font-semibold text-xs md:text-sm line-clamp-1 gold-shine-text">
-                          {restaurant.categoryDishName || restaurant.name}
-                        </h3>
-                        <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-[10px] md:text-xs">
-                          <Clock className="h-2.5 w-2.5 md:h-3 md:w-3" />
-                          <span>{restaurant.deliveryTime || 'Not available'}</span>
-                        </div>
-                      </div>
-                    </Link>
-                  )
-                })}
+                      </Link>
+                    )
+                  })}
+                </div>
               </div>
             </section>
           )}
