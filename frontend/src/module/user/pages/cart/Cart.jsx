@@ -1664,7 +1664,7 @@ export default function Cart() {
               )}
 
               {/* Complete your meal section - Approved Addons */}
-              {addons.length > 0 && (
+              {addons.some(addon => !cart.some(item => item.id === addon.id)) && (
                 <div className="bg-white dark:bg-[#1a1a1a] px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl">
                   <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
                     <div className="w-6 h-6 md:w-8 md:h-8 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center">
@@ -1684,64 +1684,76 @@ export default function Cart() {
                     </div>
                   ) : (
                     <div className="flex gap-3 md:gap-4 overflow-x-auto pb-2 -mx-4 md:-mx-6 px-4 md:px-6 scrollbar-hide">
-                      {addons.map((addon) => (
-                        <div key={addon.id} className="flex-shrink-0 w-28 md:w-36">
-                          <div className="relative bg-gray-100 dark:bg-gray-800 rounded-lg md:rounded-xl overflow-hidden">
-                            <img
-                              src={addon.image || (addon.images && addon.images[0]) || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop"}
-                              alt={addon.name}
-                              className="w-full h-28 md:h-36 object-cover rounded-lg md:rounded-xl"
-                              onError={(e) => {
-                                e.target.onerror = null
-                                e.target.src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop"
-                              }}
-                            />
-                            <div className="absolute top-1 md:top-2 left-1 md:left-2">
-                              <div className="w-3.5 h-3.5 md:w-4 md:h-4 bg-white border border-green-600 flex items-center justify-center rounded">
-                                <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-green-600" />
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => {
-                                // Use restaurant info from existing cart items to ensure format consistency
-                                const cartRestaurantId = cart[0]?.restaurantId || restaurantId;
-                                const cartRestaurantName = cart[0]?.restaurant || restaurantName;
-
-                                if (!cartRestaurantId || !cartRestaurantName) {
-                                  console.error('❌ Cannot add addon: Missing restaurant information', {
-                                    cartRestaurantId,
-                                    cartRestaurantName,
-                                    restaurantId,
-                                    restaurantName,
-                                    cartItem: cart[0]
-                                  });
-                                  toast.error('Restaurant information is missing. Please refresh the page.');
-                                  return;
-                                }
-
-                                addToCart({
-                                  id: addon.id,
-                                  name: addon.name,
-                                  price: addon.price,
-                                  image: addon.image || (addon.images && addon.images[0]) || "",
-                                  description: addon.description || "",
-                                  isVeg: true,
-                                  restaurant: cartRestaurantName,
-                                  restaurantId: cartRestaurantId
-                                });
-                              }}
-                              className="absolute bottom-1 md:bottom-2 right-1 md:right-2 w-6 h-6 md:w-7 md:h-7 bg-white border border-black rounded flex items-center justify-center shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      <AnimatePresence mode="popLayout">
+                        {addons
+                          .filter(addon => !cart.some(item => item.id === addon.id))
+                          .map((addon) => (
+                            <motion.div
+                              key={addon.id}
+                              layout
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.8 }}
+                              transition={{ duration: 0.25 }}
+                              className="flex-shrink-0 w-28 md:w-36"
                             >
-                              <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 text-black" />
-                            </button>
-                          </div>
-                          <p className="text-xs md:text-sm font-medium text-gray-800 dark:text-gray-200 mt-1.5 md:mt-2 line-clamp-2 leading-tight">{addon.name}</p>
-                          {addon.description && (
-                            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">{addon.description}</p>
-                          )}
-                          <p className="text-xs md:text-sm text-gray-800 dark:text-gray-200 font-semibold mt-0.5">₹{addon.price}</p>
-                        </div>
-                      ))}
+                              <div className="relative bg-gray-100 dark:bg-gray-800 rounded-lg md:rounded-xl overflow-hidden">
+                                <img
+                                  src={addon.image || (addon.images && addon.images[0]) || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop"}
+                                  alt={addon.name}
+                                  className="w-full h-28 md:h-36 object-cover rounded-lg md:rounded-xl"
+                                  onError={(e) => {
+                                    e.target.onerror = null
+                                    e.target.src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop"
+                                  }}
+                                />
+                                <div className="absolute top-1 md:top-2 left-1 md:left-2">
+                                  <div className="w-3.5 h-3.5 md:w-4 md:h-4 bg-white border border-green-600 flex items-center justify-center rounded">
+                                    <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-green-600" />
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    // Use restaurant info from existing cart items to ensure format consistency
+                                    const cartRestaurantId = cart[0]?.restaurantId || restaurantId;
+                                    const cartRestaurantName = cart[0]?.restaurant || restaurantData?.name || "";
+
+                                    if (!cartRestaurantId || !cartRestaurantName) {
+                                      console.error('❌ Cannot add addon: Missing restaurant information', {
+                                        cartRestaurantId,
+                                        cartRestaurantName,
+                                        restaurantId,
+                                        restaurantData,
+                                        cartItem: cart[0]
+                                      });
+                                      toast.error('Restaurant information is missing. Please refresh the page.');
+                                      return;
+                                    }
+
+                                    addToCart({
+                                      id: addon.id,
+                                      name: addon.name,
+                                      price: addon.price,
+                                      image: addon.image || (addon.images && addon.images[0]) || "",
+                                      description: addon.description || "",
+                                      isVeg: true,
+                                      restaurant: cartRestaurantName,
+                                      restaurantId: cartRestaurantId
+                                    });
+                                  }}
+                                  className="absolute bottom-1 md:bottom-2 right-1 md:right-2 w-6 h-6 md:w-7 md:h-7 bg-white border border-black rounded flex items-center justify-center shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                                >
+                                  <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 text-black" />
+                                </button>
+                              </div>
+                              <p className="text-xs md:text-sm font-medium text-gray-800 dark:text-gray-200 mt-1.5 md:mt-2 line-clamp-2 leading-tight">{addon.name}</p>
+                              {addon.description && (
+                                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">{addon.description}</p>
+                              )}
+                              <p className="text-xs md:text-sm text-gray-800 dark:text-gray-200 font-semibold mt-0.5">₹{addon.price}</p>
+                            </motion.div>
+                          ))}
+                      </AnimatePresence>
                     </div>
                   )}
                 </div>
