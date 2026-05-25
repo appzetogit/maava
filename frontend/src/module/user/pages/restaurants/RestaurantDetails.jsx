@@ -43,6 +43,9 @@ import {
   MessageCircle,
   Link2,
   Copy,
+  Coffee,
+  Sun,
+  Moon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -87,6 +90,7 @@ export default function RestaurantDetails() {
   const [filters, setFilters] = useState({
     sortBy: null, // "low-to-high" | "high-to-low"
     vegNonVeg: null, // "veg" | "non-veg"
+    mealType: null, // "breakfast" | "lunch" | "dinner"
   })
   const [showShareSheet, setShowShareSheet] = useState(false)
   const [shareData, setShareData] = useState({ title: "", text: "", url: "" })
@@ -759,6 +763,7 @@ export default function RestaurantDetails() {
     let count = 0
     if (filters.sortBy) count++
     if (filters.vegNonVeg) count++
+    if (filters.mealType) count++
     return count
   }
 
@@ -966,6 +971,42 @@ export default function RestaurantDetails() {
     return Math.max(0, item.price || 0);
   };
 
+  // Helper to check if item matches selected meal type (breakfast/lunch/dinner)
+  const matchesMealType = (item, type) => {
+    if (!type) return true;
+    const t = type.toLowerCase();
+
+    // 1. Check tags
+    if (item.tags && Array.isArray(item.tags)) {
+      if (item.tags.some(tag => tag.toLowerCase() === t)) return true;
+    }
+
+    // 2. Check category / subCategory
+    if (item.category && item.category.toLowerCase().includes(t)) return true;
+    if (item.subCategory && item.subCategory.toLowerCase().includes(t)) return true;
+
+    // 3. Check name / description
+    if (item.name && item.name.toLowerCase().includes(t)) return true;
+    if (item.description && item.description.toLowerCase().includes(t)) return true;
+
+    return false;
+  };
+
+  // Helper to check if a section contains items that match the current filters
+  const sectionHasMatchingItems = (section) => {
+    if (section.items && section.items.length > 0) {
+      if (filterMenuItems(section.items).length > 0) return true;
+    }
+    if (section.subsections && section.subsections.length > 0) {
+      for (const sub of section.subsections) {
+        if (sub.items && sub.items.length > 0) {
+          if (filterMenuItems(sub.items).length > 0) return true;
+        }
+      }
+    }
+    return false;
+  };
+
   // Filter menu items based on active filters
   const filterMenuItems = (items) => {
     if (!items) return items
@@ -1001,6 +1042,10 @@ export default function RestaurantDetails() {
         if (itemFoodType !== "non-veg" && itemFoodType !== "egg") return false
       }
 
+      // Meal Type filter (Breakfast / Lunch / Dinner)
+      if (filters.mealType) {
+        if (!matchesMealType(item, filters.mealType)) return false;
+      }
 
       return true
     })
@@ -1051,18 +1096,83 @@ export default function RestaurantDetails() {
     return false;
   }
 
-  // Filter sections to only show those with items under ₹250
+  // Filter sections to only show those with items matching the filters
   // Returns array of { section, originalIndex } to preserve original index for expanded sections
   const getFilteredSections = () => {
     if (!restaurant?.menuSections) return [];
-    if (!showOnlyUnder250) {
-      return restaurant.menuSections.map((section, index) => ({ section, originalIndex: index }));
-    }
 
     return restaurant.menuSections
       .map((section, index) => ({ section, originalIndex: index }))
-      .filter(({ section }) => sectionHasItemsUnder250(section));
+      .filter(({ section }) => {
+        if (showOnlyUnder250 && !sectionHasItemsUnder250(section)) return false;
+        return sectionHasMatchingItems(section);
+      });
   }
+
+  // Handle meal type filter selection and auto-expand matching sections
+  const handleMealTypeClick = (type) => {
+    setFilters((prev) => {
+      const newMealType = prev.mealType === type ? null : type;
+      
+      if (newMealType && restaurant?.menuSections) {
+        const newExpanded = new Set();
+        
+        // We construct the next filters to check matches before state updates
+        const nextFilters = { ...prev, mealType: newMealType };
+        
+        restaurant.menuSections.forEach((section, index) => {
+          const hasMatchingItemsWithFilters = (sec) => {
+            const filterItemsTest = (items) => {
+              if (!items) return [];
+              return items.filter(item => {
+                if (showOnlyUnder250) {
+                  const finalPrice = getFinalPrice(item);
+                  if (finalPrice > 250) return false;
+                }
+                if (searchQuery.trim()) {
+                  const query = searchQuery.toLowerCase().trim();
+                  if (!item.name?.toLowerCase().includes(query)) return false;
+                }
+                const itemFoodType = (item.foodType || "").toLowerCase();
+                if (vegMode === true && itemFoodType !== "veg") return false;
+                if (nextFilters.vegNonVeg === "veg" && itemFoodType !== "veg") return false;
+                if (nextFilters.vegNonVeg === "non-veg" && itemFoodType !== "non-veg" && itemFoodType !== "egg") return false;
+                if (nextFilters.mealType && !matchesMealType(item, nextFilters.mealType)) return false;
+                return true;
+              });
+            };
+            
+            if (sec.items && sec.items.length > 0 && filterItemsTest(sec.items).length > 0) return true;
+            if (sec.subsections && sec.subsections.length > 0) {
+              for (const sub of sec.subsections) {
+                if (sub.items && sub.items.length > 0 && filterItemsTest(sub.items).length > 0) return true;
+              }
+            }
+            return false;
+          };
+
+          if (hasMatchingItemsWithFilters(section)) {
+            newExpanded.add(index);
+            if (section.subsections) {
+              section.subsections.forEach((sub, subIdx) => {
+                newExpanded.add(`${index}-${subIdx}`);
+              });
+            }
+          }
+        });
+        
+        setExpandedSections(newExpanded);
+      } else if (!newMealType) {
+        // Reset to default (expand first section / index 0)
+        setExpandedSections(new Set([0]));
+      }
+      
+      return {
+        ...prev,
+        mealType: newMealType
+      };
+    });
+  };
 
   // Highlight offers/texts for the blue offer line
   const highlightOffers = [
@@ -1444,6 +1554,81 @@ export default function RestaurantDetails() {
                   )}
                 </Button>
               )}
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={`flex items-center gap-1.5 whitespace-nowrap border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] rounded-full transition-all duration-300 ${
+                    filters.mealType === "breakfast"
+                      ? "border-amber-400 bg-gradient-to-r from-amber-50 to-orange-100 text-amber-800 dark:from-amber-950/30 dark:to-orange-950/20 dark:text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.25)] font-black"
+                      : "hover:border-amber-300 hover:bg-amber-50/20"
+                  }`}
+                  onClick={() => handleMealTypeClick("breakfast")}
+                >
+                  <motion.div
+                    animate={filters.mealType === "breakfast" ? { rotate: [0, -7, 7, -7, 7, 0] } : {}}
+                    transition={{ duration: 0.5, repeat: filters.mealType === "breakfast" ? Infinity : 0, repeatDelay: 2 }}
+                  >
+                    <Coffee className={`h-3.5 w-3.5 transition-colors ${filters.mealType === "breakfast" ? "text-amber-600 fill-amber-400" : "text-amber-500"}`} />
+                  </motion.div>
+                  <span>Breakfast</span>
+                  {filters.mealType === "breakfast" && (
+                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                      <X className="h-3 w-3 text-amber-700 dark:text-amber-300" />
+                    </motion.span>
+                  )}
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={`flex items-center gap-1.5 whitespace-nowrap border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] rounded-full transition-all duration-300 ${
+                    filters.mealType === "lunch"
+                      ? "border-orange-400 bg-gradient-to-r from-amber-100 to-orange-100 text-orange-900 dark:from-amber-900/30 dark:to-orange-950/20 dark:text-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.25)] font-black"
+                      : "hover:border-orange-300 hover:bg-orange-50/20"
+                  }`}
+                  onClick={() => handleMealTypeClick("lunch")}
+                >
+                  <motion.div
+                    animate={filters.mealType === "lunch" ? { rotate: 360 } : {}}
+                    transition={filters.mealType === "lunch" ? { repeat: Infinity, duration: 6, ease: "linear" } : {}}
+                  >
+                    <Sun className={`h-3.5 w-3.5 transition-colors ${filters.mealType === "lunch" ? "text-orange-600 fill-orange-400" : "text-orange-500"}`} />
+                  </motion.div>
+                  <span>Lunch</span>
+                  {filters.mealType === "lunch" && (
+                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                      <X className="h-3 w-3 text-orange-700 dark:text-orange-400" />
+                    </motion.span>
+                  )}
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={`flex items-center gap-1.5 whitespace-nowrap border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] rounded-full transition-all duration-300 ${
+                    filters.mealType === "dinner"
+                      ? "border-indigo-400 bg-gradient-to-r from-indigo-50 to-violet-100 text-indigo-800 dark:from-indigo-950/30 dark:to-violet-950/20 dark:text-indigo-300 shadow-[0_0_12px_rgba(99,102,241,0.25)] font-black"
+                      : "hover:border-indigo-300 hover:bg-indigo-50/20"
+                  }`}
+                  onClick={() => handleMealTypeClick("dinner")}
+                >
+                  <motion.div
+                    animate={filters.mealType === "dinner" ? { y: [0, -2, 2, 0] } : {}}
+                    transition={filters.mealType === "dinner" ? { repeat: Infinity, duration: 2.5, ease: "easeInOut" } : {}}
+                  >
+                    <Moon className={`h-3.5 w-3.5 transition-colors ${filters.mealType === "dinner" ? "text-indigo-600 fill-indigo-300" : "text-indigo-500"}`} />
+                  </motion.div>
+                  <span>Dinner</span>
+                  {filters.mealType === "dinner" && (
+                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                      <X className="h-3 w-3 text-indigo-700 dark:text-indigo-300" />
+                    </motion.span>
+                  )}
+                </Button>
+              </motion.div>
             </div>
           </div>
 
@@ -2125,6 +2310,58 @@ export default function RestaurantDetails() {
                       </div>
                     </div>
 
+                    {/* Meal type preference */}
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Meal preference:</h3>
+                      <div className="flex gap-2 flex-wrap">
+                        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="flex-1 min-w-[100px]">
+                          <button
+                            onClick={() => handleMealTypeClick("breakfast")}
+                            className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all ${
+                              filters.mealType === "breakfast"
+                                ? "border-amber-400 bg-gradient-to-r from-amber-50 to-orange-100 text-amber-800 dark:from-amber-950/30 dark:to-orange-950/20 dark:text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.2)] font-semibold"
+                                : "border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
+                            }`}
+                          >
+                            <motion.div animate={filters.mealType === "breakfast" ? { rotate: [0, -5, 5, -5, 5, 0] } : {}} transition={{ duration: 0.5, repeat: filters.mealType === "breakfast" ? Infinity : 0, repeatDelay: 2 }}>
+                              <Coffee className={`h-4 w-4 ${filters.mealType === "breakfast" ? "text-amber-600 fill-amber-400" : "text-amber-500"}`} />
+                            </motion.div>
+                            <span className="font-medium">Breakfast</span>
+                          </button>
+                        </motion.div>
+                        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="flex-1 min-w-[100px]">
+                          <button
+                            onClick={() => handleMealTypeClick("lunch")}
+                            className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all ${
+                              filters.mealType === "lunch"
+                                ? "border-orange-400 bg-gradient-to-r from-amber-100 to-orange-100 text-orange-900 dark:from-amber-900/30 dark:to-orange-950/20 dark:text-orange-400 shadow-[0_0_8px_rgba(249,115,22,0.2)] font-semibold"
+                                : "border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
+                            }`}
+                          >
+                            <motion.div animate={filters.mealType === "lunch" ? { rotate: 360 } : {}} transition={filters.mealType === "lunch" ? { repeat: Infinity, duration: 6, ease: "linear" } : {}}>
+                              <Sun className={`h-4 w-4 ${filters.mealType === "lunch" ? "text-orange-600 fill-orange-400" : "text-orange-500"}`} />
+                            </motion.div>
+                            <span className="font-medium">Lunch</span>
+                          </button>
+                        </motion.div>
+                        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="flex-1 min-w-[100px]">
+                          <button
+                            onClick={() => handleMealTypeClick("dinner")}
+                            className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all ${
+                              filters.mealType === "dinner"
+                                ? "border-indigo-400 bg-gradient-to-r from-indigo-50 to-violet-100 text-indigo-800 dark:from-indigo-950/30 dark:to-violet-950/20 dark:text-indigo-300 shadow-[0_0_8px_rgba(99,102,241,0.2)] font-semibold"
+                                : "border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
+                            }`}
+                          >
+                            <motion.div animate={filters.mealType === "dinner" ? { y: [0, -2, 2, 0] } : {}} transition={filters.mealType === "dinner" ? { repeat: Infinity, duration: 2.5, ease: "easeInOut" } : {}}>
+                              <Moon className={`h-4 w-4 ${filters.mealType === "dinner" ? "text-indigo-600 fill-indigo-300" : "text-indigo-500"}`} />
+                            </motion.div>
+                            <span className="font-medium">Dinner</span>
+                          </button>
+                        </motion.div>
+                      </div>
+                    </div>
+
                     {/* Top picks */}
                     <div className="space-y-2">
                       <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Top picks:</h3>
@@ -2154,8 +2391,10 @@ export default function RestaurantDetails() {
                         setFilters({
                           sortBy: null,
                           vegNonVeg: null,
+                          mealType: null,
                           highlyReordered: false,
                         })
+                        setExpandedSections(new Set([0]))
                       }}
                       className="text-red-600 dark:text-red-400 font-medium text-sm hover:text-red-700 dark:hover:text-red-500"
                     >
