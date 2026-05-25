@@ -792,8 +792,7 @@ export default function PocketPage() {
             </svg>
           </div>
           <div className="flex-1">
-            <h4 className="text-red-800 font-bold text-sm">Settlement your amount to start getting orders</h4>
-            <p className="text-red-700 text-xs mt-1">Please settle your outstanding amount immediately. Otherwise, you will not receive new orders.</p>
+            <p className="text-red-700 text-xs font-semibold">Please settle your outstanding amount immediately. Otherwise, you will not receive new orders.</p>
           </div>
         </div>
       )}
