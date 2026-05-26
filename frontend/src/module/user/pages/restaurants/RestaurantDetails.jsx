@@ -1561,26 +1561,23 @@ export default function RestaurantDetails() {
             </div>
 
             {/* Line 2: Meal Category Quick Filters */}
+            {/*
             <div className="overflow-x-auto scrollbar-hide pt-2.5 border-t border-gray-100 dark:border-zinc-900">
               <div className="flex items-center gap-2 w-max py-0.5">
                 <div className="relative flex items-center justify-center h-10 w-10 mr-2 flex-shrink-0">
-                  {/* Outer spinning container holding the 3 icons */}
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
                     className="absolute inset-0"
                   >
-                    {/* Breakfast (Coffee) Icon on top */}
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-amber-50 dark:bg-amber-950 p-0.5 rounded-full border border-amber-200 dark:border-amber-800 shadow-xs">
                       <Coffee className="h-2.5 w-2.5 text-amber-600" />
                     </div>
 
-                    {/* Lunch (Sun) Icon bottom right */}
                     <div className="absolute bottom-[2px] right-[2px] bg-orange-50 dark:bg-orange-950 p-0.5 rounded-full border border-orange-200 dark:border-orange-800 shadow-xs">
                       <Sun className="h-2.5 w-2.5 text-orange-600" />
                     </div>
 
-                    {/* Dinner (Moon) Icon bottom left */}
                     <div className="absolute bottom-[2px] left-[2px] bg-indigo-50 dark:bg-indigo-950 p-0.5 rounded-full border border-indigo-200 dark:border-indigo-800 shadow-xs">
                       <Moon className="h-2.5 w-2.5 text-indigo-600" />
                     </div>
@@ -1720,6 +1717,7 @@ export default function RestaurantDetails() {
                 </motion.div>
               </div>
             </div>
+            */}
           </div>
 
         </div>

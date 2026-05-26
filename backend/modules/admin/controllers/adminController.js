@@ -252,8 +252,10 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     };
     const pendingRestaurantRequests = await Restaurant.countDocuments(pendingRestaurantRequestsQuery);
 
-    // Total delivery boys (all delivery users)
-    const totalDeliveryBoys = await Delivery.countDocuments({});
+    // Total delivery boys (only approved/active delivery partners)
+    const totalDeliveryBoys = await Delivery.countDocuments({
+      status: { $in: ['approved', 'active'] }
+    });
 
     // Delivery boy requests pending (delivery users with isActive: false or verification pending)
     // Assuming deliveryStatus field exists, if not we'll use isActive: false
