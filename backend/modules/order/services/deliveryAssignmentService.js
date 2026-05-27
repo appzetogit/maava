@@ -83,7 +83,25 @@ export async function findNearestDeliveryBoys(restaurantLat, restaurantLng, rest
             restaurantId: restaurantIdStr,
             isActive: true
           }).lean();
-          if (zone) console.log(`✅ Found restaurant zone: ${zone.name} for restaurant ${restaurantId}`);
+          if (zone) {
+            console.log(`✅ Found restaurant zone by ID: ${zone.name} for restaurant ${restaurantId}`);
+          } else {
+            const allZones = await Zone.find({ isActive: true }).lean();
+            zone = allZones.find(z => {
+              if (!z.coordinates || z.coordinates.length < 3) return false;
+              const [lat, lng] = [restaurantLat, restaurantLng];
+              const coords = z.coordinates;
+              let inside = false;
+              for (let i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+                const xi = coords[i].longitude, yi = coords[i].latitude;
+                const xj = coords[j].longitude, yj = coords[j].latitude;
+                const intersect = ((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+              }
+              return inside;
+            });
+            if (zone) console.log(`✅ Found restaurant zone by polygon geo-check: ${zone.name}`);
+          }
         }
       } catch (zoneError) {
         console.warn(`⚠️ Error finding zone:`, zoneError.message);
@@ -249,7 +267,25 @@ export async function findNearestDeliveryBoy(restaurantLat, restaurantLng, resta
             restaurantId: restaurantIdStr,
             isActive: true
           }).lean();
-          if (zone) console.log(`✅ Found restaurant zone: ${zone.name} for restaurant ${restaurantId}`);
+          if (zone) {
+            console.log(`✅ Found restaurant zone by ID: ${zone.name} for restaurant ${restaurantId}`);
+          } else {
+            const allZones = await Zone.find({ isActive: true }).lean();
+            zone = allZones.find(z => {
+              if (!z.coordinates || z.coordinates.length < 3) return false;
+              const [lat, lng] = [restaurantLat, restaurantLng];
+              const coords = z.coordinates;
+              let inside = false;
+              for (let i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+                const xi = coords[i].longitude, yi = coords[i].latitude;
+                const xj = coords[j].longitude, yj = coords[j].latitude;
+                const intersect = ((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+              }
+              return inside;
+            });
+            if (zone) console.log(`✅ Found restaurant zone by polygon geo-check: ${zone.name}`);
+          }
         }
       } catch (zoneError) {
         console.warn(`⚠️ Error finding zone for restaurant ${restaurantId}:`, zoneError.message);
