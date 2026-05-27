@@ -1147,14 +1147,22 @@ export const getRestaurantsWithDishesUnder250 = async (req, res) => {
       }
     };
 
-    // Get all active restaurants - Show ALL restaurants regardless of zone
+    // Get all active restaurants
     let restaurants = await Restaurant.find({ isActive: true })
       .select('-owner -createdAt -updatedAt')
-      .lean()
-      .limit(100); // Limit to first 100 restaurants for performance
+      .lean();
 
-    // Note: We show all restaurants regardless of zone. Zone-based filtering is removed.
-    // Users in any zone will see all restaurants.
+    // If zoneId is provided, filter out restaurants outside the zone
+    if (userZone && userZone.coordinates && userZone.coordinates.length >= 3) {
+      restaurants = restaurants.filter(r => {
+        const lat = r?.location?.latitude;
+        const lng = r?.location?.longitude;
+        return typeof lat === 'number' && typeof lng === 'number' && isPointInZone(lat, lng, userZone.coordinates);
+      });
+    }
+
+    // Limit to first 100 restaurants for performance after filtering
+    restaurants = restaurants.slice(0, 100);
 
     // Process restaurants in parallel (batch processing for better performance)
     const batchSize = 10; // Process 10 restaurants at a time
