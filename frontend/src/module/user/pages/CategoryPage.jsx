@@ -198,15 +198,22 @@ export default function CategoryPage() {
 
   // Fetch restaurants from API
   useEffect(() => {
+    const activeZoneId = zoneId || localStorage.getItem('userZoneId')
+    
+    // If zoneId is not available yet, wait for it (unless we are out of service)
+    if (!activeZoneId && !isOutOfService) {
+      setLoadingRestaurants(true)
+      return
+    }
+
     const requestId = Date.now()
     lastRequestRef.current = requestId
     const fetchRestaurants = async () => {
       try {
         setLoadingRestaurants(true)
-        // Optional: Add zoneId if available (for sorting/filtering, but show all restaurants)
         const params = {}
-        if (zoneId) {
-          params.zoneId = zoneId
+        if (activeZoneId) {
+          params.zoneId = activeZoneId
         }
         const response = await restaurantAPI.getRestaurants(params)
 

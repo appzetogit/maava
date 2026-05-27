@@ -8918,31 +8918,21 @@ export default function DeliveryHome() {
                 </div>
               </motion.div>
 
-              {/* Unlock Offer Card */}
+              {/* Incentive Banner */}
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.1 }}
-                className="w-full rounded-xl p-6 shadow-lg bg-black text-white"
+                onClick={() => navigate("/delivery/req")}
+                className="w-full bg-white rounded-xl py-4 px-5 shadow-sm flex items-center justify-between cursor-pointer"
               >
-                <div className="flex items-center text-center justify-center gap-2 mb-2">
-                  <div className="text-4xl font-bold text-center">₹{unlockBonus || '100'}</div>
-                  <Lock className="w-5 h-5 text-white" />
+                <div className="flex items-center gap-4">
+                  <span className="text-3xl">🎁</span>
+                  <span className="text-black font-bold text-2xl tracking-tight">Incentives</span>
                 </div>
-                <p className="text-white/90 text-center text-sm mb-4">Complete 1 order to unlock ₹{unlockBonus || '100'}</p>
-                <button
-                  onClick={() => {
-                    if (isOnline) {
-                      navigate("/delivery/requests")
-                    } else {
-                      // Always show the popup when offline (same as navbar behavior)
-                      setShowBookGigsPopup(true)
-                    }
-                  }}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
-                >
-                  <span>{isOnline ? t('delivery.go_offline') : t('delivery.go_online')}</span>
-                </button>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-black w-6 h-6">
+                  <path d="m9 18 6-6-6-6"/>
+                </svg>
               </motion.div>
 
 

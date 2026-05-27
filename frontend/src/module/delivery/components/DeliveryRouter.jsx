@@ -41,6 +41,7 @@ import TimeOnOrders from "../pages/TimeOnOrders"
 import PocketBalancePage from "../pages/PocketBalance"
 import CustomerTipsBalancePage from "../pages/CustomerTips"
 import PocketDetails from "../pages/PocketDetails"
+import IncentivesPage from "../pages/IncentivesPage"
 
 export default function DeliveryRouter() {
   return (
@@ -133,6 +134,16 @@ export default function DeliveryRouter() {
           </ProtectedRoute>
         }
         path="/offers"
+      />
+      <Route
+        element={
+          <ProtectedRoute>
+            <DeliveryLayout>
+              <IncentivesPage />
+            </DeliveryLayout>
+          </ProtectedRoute>
+        }
+        path="/req"
       />
       <Route
         element={
