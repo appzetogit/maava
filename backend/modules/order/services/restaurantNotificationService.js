@@ -1,4 +1,4 @@
-  import Order from '../models/Order.js';
+import Order from '../models/Order.js';
 import Payment from '../../payment/models/Payment.js';
 import Restaurant from '../../restaurant/models/Restaurant.js';
 import mongoose from 'mongoose';
@@ -170,16 +170,19 @@ export async function notifyRestaurantNewOrder(order, restaurantId, paymentMetho
       }
 
       const orderTotal = order.pricing?.total || 0;
-      await pushService.sendNotificationToUser(
+      pushService.sendNotificationToUser(
         normalizedRestaurantId,
         'restaurant',
         '🔔 New Order Received!',
         `New order from ${customerName} — ₹${orderTotal}. Tap to view.`,
         { orderId: order._id.toString(), type: 'NEW_ORDER', orderIdStr: order.orderId }
-      );
-      console.log(`✅ Push notification sent to restaurant ${normalizedRestaurantId} for order ${order.orderId}`);
+      ).then(() => {
+        console.log(`✅ Push notification sent to restaurant ${normalizedRestaurantId} for order ${order.orderId}`);
+      }).catch((pushErr) => {
+        console.warn('⚠️ Failed to send push notification to restaurant:', pushErr.message);
+      });
     } catch (pushErr) {
-      console.warn('⚠️ Failed to send push notification to restaurant:', pushErr.message);
+      console.warn('⚠️ Failed to initiate push notification to restaurant:', pushErr.message);
     }
 
     // --- SOCKET.IO REAL-TIME NOTIFICATION ---
@@ -252,7 +255,7 @@ export async function notifyRestaurantOrderUpdate(orderId, status) {
     // --- PUSH NOTIFICATION ---
     try {
       const pushService = await getPushService();
-      
+
       let title = '🔔 Order Update';
       let body = `Order #${order.orderId} status updated to ${status}.`;
 
