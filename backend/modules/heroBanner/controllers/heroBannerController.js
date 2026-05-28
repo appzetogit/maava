@@ -11,6 +11,33 @@ import { successResponse, errorResponse } from '../../../shared/utils/response.j
 import { uploadToCloudinary } from '../../../shared/utils/cloudinaryService.js';
 import { cloudinary } from '../../../config/cloudinary.js';
 import mongoose from 'mongoose';
+import Zone from '../../admin/models/Zone.js';
+
+/**
+ * Check if a point is within a zone polygon using ray casting algorithm
+ */
+function isPointInZone(lat, lng, zoneCoordinates) {
+  if (!zoneCoordinates || zoneCoordinates.length < 3) return false;
+
+  let inside = false;
+  for (let i = 0, j = zoneCoordinates.length - 1; i < zoneCoordinates.length; j = i++) {
+    const coordI = zoneCoordinates[i];
+    const coordJ = zoneCoordinates[j];
+
+    const xi = typeof coordI === 'object' ? (coordI.latitude || coordI.lat) : null;
+    const yi = typeof coordI === 'object' ? (coordI.longitude || coordI.lng) : null;
+    const xj = typeof coordJ === 'object' ? (coordJ.latitude || coordJ.lat) : null;
+    const yj = typeof coordJ === 'object' ? (coordJ.longitude || coordJ.lng) : null;
+
+    if (xi === null || yi === null || xj === null || yj === null) continue;
+
+    const intersect = ((yi > lng) !== (yj > lng)) &&
+      (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
 
 /**
  * Get all active hero banners (public endpoint)
@@ -1255,17 +1282,36 @@ export const getAllTop10Restaurants = async (req, res) => {
  */
 export const getTop10Restaurants = async (req, res) => {
   try {
+    const { zoneId } = req.query;
+    let userZone = null;
+    if (zoneId) {
+      userZone = await Zone.findById(zoneId).lean();
+      if (!userZone || !userZone.isActive) {
+        return errorResponse(res, 400, 'Invalid or inactive zone.');
+      }
+    }
+
     const restaurants = await Top10Restaurant.find({ isActive: true })
-      .populate('restaurant', 'name restaurantId slug profileImage coverImages menuImages rating estimatedDeliveryTime distance offer featuredDish featuredPrice')
+      .populate('restaurant', 'name restaurantId slug profileImage coverImages menuImages rating estimatedDeliveryTime distance offer featuredDish featuredPrice location')
       .sort({ rank: 1, order: 1 })
       .lean();
 
+    let filteredRestaurants = restaurants.map(r => ({
+      ...r.restaurant,
+      rank: r.rank,
+      _id: r._id
+    }));
+
+    if (userZone && userZone.coordinates && userZone.coordinates.length >= 3) {
+      filteredRestaurants = filteredRestaurants.filter(r => {
+        const lat = r?.location?.latitude;
+        const lng = r?.location?.longitude;
+        return typeof lat === 'number' && typeof lng === 'number' && isPointInZone(lat, lng, userZone.coordinates);
+      });
+    }
+
     return successResponse(res, 200, 'Top 10 restaurants retrieved successfully', {
-      restaurants: restaurants.map(r => ({
-        ...r.restaurant,
-        rank: r.rank,
-        _id: r._id
-      }))
+      restaurants: filteredRestaurants
     });
   } catch (error) {
     console.error('Error fetching Top 10 restaurants:', error);
@@ -1490,16 +1536,35 @@ export const getAllGourmetRestaurants = async (req, res) => {
  */
 export const getGourmetRestaurants = async (req, res) => {
   try {
+    const { zoneId } = req.query;
+    let userZone = null;
+    if (zoneId) {
+      userZone = await Zone.findById(zoneId).lean();
+      if (!userZone || !userZone.isActive) {
+        return errorResponse(res, 400, 'Invalid or inactive zone.');
+      }
+    }
+
     const restaurants = await GourmetRestaurant.find({ isActive: true })
-      .populate('restaurant', 'name restaurantId slug profileImage coverImages menuImages rating estimatedDeliveryTime distance offer featuredDish featuredPrice')
+      .populate('restaurant', 'name restaurantId slug profileImage coverImages menuImages rating estimatedDeliveryTime distance offer featuredDish featuredPrice location')
       .sort({ order: 1, createdAt: -1 })
       .lean();
 
+    let filteredRestaurants = restaurants.map(r => ({
+      ...r.restaurant,
+      _id: r._id
+    }));
+
+    if (userZone && userZone.coordinates && userZone.coordinates.length >= 3) {
+      filteredRestaurants = filteredRestaurants.filter(r => {
+        const lat = r?.location?.latitude;
+        const lng = r?.location?.longitude;
+        return typeof lat === 'number' && typeof lng === 'number' && isPointInZone(lat, lng, userZone.coordinates);
+      });
+    }
+
     return successResponse(res, 200, 'Gourmet restaurants retrieved successfully', {
-      restaurants: restaurants.map(r => ({
-        ...r.restaurant,
-        _id: r._id
-      }))
+      restaurants: filteredRestaurants
     });
   } catch (error) {
     console.error('Error fetching Gourmet restaurants:', error);

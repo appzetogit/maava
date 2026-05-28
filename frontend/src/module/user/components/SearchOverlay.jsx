@@ -7,9 +7,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { restaurantAPI } from "@/lib/api"
 import { useDebounce } from "@/lib/hooks/use-debounce"
+import { useLocation } from "../hooks/useLocation"
+import { useZone } from "../hooks/useZone"
+
 
 export default function SearchOverlay({ isOpen, onClose, searchValue, onSearchChange }) {
   const navigate = useNavigate()
+  const { location } = useLocation()
+  const { zoneId } = useZone(location)
   const inputRef = useRef(null)
   const debouncedSearch = useDebounce(searchValue, 300)
   const [results, setResults] = useState({ restaurants: [], foods: [] })
@@ -58,8 +63,8 @@ export default function SearchOverlay({ isOpen, onClose, searchValue, onSearchCh
       try {
         // Fetch both restaurants and foods in parallel
         const [restRes, foodRes] = await Promise.all([
-          restaurantAPI.getRestaurants({ search: debouncedSearch, limit: 10 }),
-          restaurantAPI.searchFoods(debouncedSearch, 10)
+          restaurantAPI.getRestaurants({ search: debouncedSearch, limit: 10, zoneId }),
+          restaurantAPI.searchFoods(debouncedSearch, 10, zoneId)
         ])
 
         setResults({
@@ -74,7 +79,7 @@ export default function SearchOverlay({ isOpen, onClose, searchValue, onSearchCh
     }
 
     fetchResults()
-  }, [debouncedSearch])
+  }, [debouncedSearch, zoneId])
 
   const handleSuggestionClick = (suggestion) => {
     onSearchChange(suggestion)

@@ -1,8 +1,35 @@
 import Offer from '../models/Offer.js';
 import Restaurant from '../models/Restaurant.js';
 import mongoose from 'mongoose';
+import Zone from '../../admin/models/Zone.js';
 import { successResponse, errorResponse } from '../../../shared/utils/response.js';
 import asyncHandler from '../../../shared/middleware/asyncHandler.js';
+
+/**
+ * Check if a point is within a zone polygon using ray casting algorithm
+ */
+function isPointInZone(lat, lng, zoneCoordinates) {
+  if (!zoneCoordinates || zoneCoordinates.length < 3) return false;
+
+  let inside = false;
+  for (let i = 0, j = zoneCoordinates.length - 1; i < zoneCoordinates.length; j = i++) {
+    const coordI = zoneCoordinates[i];
+    const coordJ = zoneCoordinates[j];
+
+    const xi = typeof coordI === 'object' ? (coordI.latitude || coordI.lat) : null;
+    const yi = typeof coordI === 'object' ? (coordI.longitude || coordI.lng) : null;
+    const xj = typeof coordJ === 'object' ? (coordJ.latitude || coordJ.lat) : null;
+    const yj = typeof coordJ === 'object' ? (coordJ.longitude || coordJ.lng) : null;
+
+    if (xi === null || yi === null || xj === null || yj === null) continue;
+
+    const intersect = ((yi > lng) !== (yj > lng)) &&
+      (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
 
 // Create/Activate offer
 export const createOffer = asyncHandler(async (req, res) => {
@@ -368,13 +395,22 @@ export const getCouponsByItemIdPublic = asyncHandler(async (req, res) => {
 export const getPublicOffers = asyncHandler(async (req, res) => {
   try {
     console.log('[PUBLIC-OFFERS] Request received');
+    const { zoneId } = req.query;
     const now = new Date();
+
+    let userZone = null;
+    if (zoneId) {
+      userZone = await Zone.findById(zoneId).lean();
+      if (!userZone || !userZone.isActive) {
+        return errorResponse(res, 400, 'Invalid or inactive zone.');
+      }
+    }
     
     // Find all active offers
     const offers = await Offer.find({
       status: 'active',
     })
-      .populate('restaurant', 'name restaurantId slug profileImage rating estimatedDeliveryTime distance')
+      .populate('restaurant', 'name restaurantId slug profileImage rating estimatedDeliveryTime distance location')
       .sort({ createdAt: -1 })
       .lean();
     
@@ -400,6 +436,16 @@ export const getPublicOffers = asyncHandler(async (req, res) => {
       // Skip if restaurant is not found or not active
       if (!offer.restaurant || !offer.restaurant.name) {
         return;
+      }
+
+      // Filter by zone
+      if (userZone && userZone.coordinates && userZone.coordinates.length >= 3) {
+        const lat = offer.restaurant.location?.latitude;
+        const lng = offer.restaurant.location?.longitude;
+        const inZone = typeof lat === 'number' && typeof lng === 'number' && isPointInZone(lat, lng, userZone.coordinates);
+        if (!inZone) {
+          return; // Skip this offer
+        }
       }
 
       // Process each item in the offer

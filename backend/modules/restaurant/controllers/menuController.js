@@ -1,8 +1,35 @@
 import Menu from '../models/Menu.js';
 import Restaurant from '../models/Restaurant.js';
+import mongoose from 'mongoose';
+import Zone from '../../admin/models/Zone.js';
 import { successResponse, errorResponse } from '../../../shared/utils/response.js';
 import asyncHandler from '../../../shared/middleware/asyncHandler.js';
-import mongoose from 'mongoose';
+
+/**
+ * Check if a point is within a zone polygon using ray casting algorithm
+ */
+function isPointInZone(lat, lng, zoneCoordinates) {
+  if (!zoneCoordinates || zoneCoordinates.length < 3) return false;
+
+  let inside = false;
+  for (let i = 0, j = zoneCoordinates.length - 1; i < zoneCoordinates.length; j = i++) {
+    const coordI = zoneCoordinates[i];
+    const coordJ = zoneCoordinates[j];
+
+    const xi = typeof coordI === 'object' ? (coordI.latitude || coordI.lat) : null;
+    const yi = typeof coordI === 'object' ? (coordI.longitude || coordI.lng) : null;
+    const xj = typeof coordJ === 'object' ? (coordJ.latitude || coordJ.lat) : null;
+    const yj = typeof coordJ === 'object' ? (coordJ.longitude || coordJ.lng) : null;
+
+    if (xi === null || yi === null || xj === null || yj === null) continue;
+
+    const intersect = ((yi > lng) !== (yj > lng)) &&
+      (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
 
 // Get menu for a restaurant
 export const getMenu = asyncHandler(async (req, res) => {
@@ -999,7 +1026,7 @@ export const deleteAddon = asyncHandler(async (req, res) => {
 
 // Search food items (dishes) across all restaurants
 export const searchFoodItems = asyncHandler(async (req, res) => {
-  const { q, limit = 20 } = req.query;
+  const { q, limit = 20, zoneId } = req.query;
 
   if (!q || !q.trim()) {
     return successResponse(res, 200, 'Empty search query', { items: [] });
@@ -1007,6 +1034,14 @@ export const searchFoodItems = asyncHandler(async (req, res) => {
 
   const searchTerm = q.trim();
   const searchRegex = new RegExp(searchTerm, 'i');
+
+  let userZone = null;
+  if (zoneId) {
+    userZone = await Zone.findById(zoneId).lean();
+    if (!userZone || !userZone.isActive) {
+      return errorResponse(res, 400, 'Invalid or inactive zone.');
+    }
+  }
 
   // Find menus that contain matching items
   const menus = await Menu.find({
@@ -1029,6 +1064,14 @@ export const searchFoodItems = asyncHandler(async (req, res) => {
 
   for (const menu of menus) {
     if (!menu.restaurant) continue; // Skip if restaurant is not active or missing
+
+    // Zone filter
+    if (userZone && userZone.coordinates && userZone.coordinates.length >= 3) {
+      const lat = menu.restaurant.location?.latitude;
+      const lng = menu.restaurant.location?.longitude;
+      const inZone = typeof lat === 'number' && typeof lng === 'number' && isPointInZone(lat, lng, userZone.coordinates);
+      if (!inZone) continue; // Skip restaurant outside zone
+    }
 
     const restaurantInfo = {
       _id: menu.restaurant._id,

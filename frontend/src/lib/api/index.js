@@ -466,8 +466,10 @@ export const restaurantAPI = {
   },
 
   // Search food items/dishes (for user module)
-  searchFoods: (query, limit = 20) => {
-    return apiClient.get('/restaurant/search/food', { params: { q: query, limit } });
+  searchFoods: (query, limit = 20, zoneId = null) => {
+    const params = { q: query, limit };
+    if (zoneId) params.zoneId = zoneId;
+    return apiClient.get('/restaurant/search/food', { params });
   },
 
   // Get restaurants with dishes under ₹250
@@ -497,8 +499,8 @@ export const restaurantAPI = {
     );
   },
   // Get public offers (for user offers page)
-  getPublicOffers: () => {
-    return apiClient.get(API_ENDPOINTS.RESTAURANT.OFFERS_PUBLIC);
+  getPublicOffers: (params = {}) => {
+    return apiClient.get(API_ENDPOINTS.RESTAURANT.OFFERS_PUBLIC, { params });
   },
 
   // Get restaurant by owner (for restaurant module)
@@ -1632,13 +1634,13 @@ export const diningAPI = {
 // Export hero banner API helper functions
 export const heroBannerAPI = {
   // Get Top 10 restaurants (public)
-  getTop10Restaurants: () => {
-    return apiClient.get(API_ENDPOINTS.HERO_BANNER.TOP_10_PUBLIC);
+  getTop10Restaurants: (params = {}) => {
+    return apiClient.get(API_ENDPOINTS.HERO_BANNER.TOP_10_PUBLIC, { params });
   },
 
   // Get Gourmet restaurants (public)
-  getGourmetRestaurants: () => {
-    return apiClient.get(API_ENDPOINTS.HERO_BANNER.GOURMET_PUBLIC);
+  getGourmetRestaurants: (params = {}) => {
+    return apiClient.get(API_ENDPOINTS.HERO_BANNER.GOURMET_PUBLIC, { params });
   },
 };
 
