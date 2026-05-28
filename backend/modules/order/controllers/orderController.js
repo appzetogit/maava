@@ -1376,6 +1376,15 @@ export const cancelOrder = async (req, res) => {
       });
     }
 
+    // Check if 2 minutes have passed since order placement (120000 ms)
+    const timeElapsedMs = Date.now() - new Date(order.createdAt).getTime();
+    if (timeElapsedMs > 2 * 60 * 1000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot cancel order after 2 minutes of placement'
+      });
+    }
+
     // Get payment method from order or payment record
     const paymentMethod = order.payment?.method;
     const payment = await Payment.findOne({ orderId: order._id });

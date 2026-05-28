@@ -233,6 +233,37 @@ export default function OrderTracking() {
 
   const defaultAddress = getDefaultAddress()
 
+  const [timeLeft, setTimeLeft] = useState(120)
+
+  const formatTimeLeft = (seconds) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
+  useEffect(() => {
+    if (!order?.createdAt) return
+
+    const calculateTimeLeft = () => {
+      const orderTime = new Date(order.createdAt).getTime()
+      const elapsedMs = Date.now() - orderTime
+      const remainingMs = (2 * 60 * 1000) - elapsedMs
+      return Math.max(0, Math.floor(remainingMs / 1000))
+    }
+
+    setTimeLeft(calculateTimeLeft())
+
+    const interval = setInterval(() => {
+      const remaining = calculateTimeLeft()
+      setTimeLeft(remaining)
+      if (remaining <= 0) {
+        clearInterval(interval)
+      }
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [order?.createdAt])
+
   // Poll for order updates (especially when delivery partner accepts)
   // Only poll if delivery partner is not yet assigned to avoid unnecessary updates
   useEffect(() => {
@@ -434,6 +465,7 @@ export default function OrderTracking() {
             })) || [],
             total: apiOrder.pricing?.total || 0,
             status: apiOrder.status || 'pending',
+            createdAt: apiOrder.createdAt,
             deliveryPartner: apiOrder.deliveryPartnerId ? {
               name: apiOrder.deliveryPartnerId.name || 'Delivery Partner',
               avatar: null
@@ -704,6 +736,7 @@ export default function OrderTracking() {
           })) || [],
           total: apiOrder.pricing?.total || 0,
           status: apiOrder.status || 'pending',
+          createdAt: apiOrder.createdAt,
           deliveryPartner: apiOrder.deliveryPartnerId ? {
             name: apiOrder.deliveryPartnerId.name || 'Delivery Partner',
             avatar: null
@@ -1055,21 +1088,70 @@ export default function OrderTracking() {
           </div>
         </motion.div>
 
-        {/* Help Section */}
-        <motion.div
-          className="bg-white rounded-xl shadow-sm overflow-hidden"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-        >
-          <SectionItem
-            icon={CircleSlash}
-            title="Cancel order"
-            subtitle=""
-            onClick={handleCancelOrder}
-            showArrow={false}
-          />
-        </motion.div>
+        {/* Cancel Order / Timer Section */}
+        {order.status !== 'cancelled' && order.status !== 'delivered' && (
+          <motion.div
+            className="bg-white rounded-xl shadow-sm p-4 space-y-4 overflow-hidden dark:bg-[#1a1a1a]"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+          >
+            {timeLeft > 0 ? (
+              <>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <span className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200">
+                      <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
+                      You can cancel order before 2 mins
+                    </span>
+                    <span className="font-mono bg-red-50 text-red-600 px-2 py-0.5 rounded text-xs sm:text-sm font-bold dark:bg-red-950/35 dark:text-red-400">
+                      {formatTimeLeft(timeLeft)}
+                    </span>
+                  </div>
+                  {/* Progress Bar */}
+                  <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden dark:bg-gray-800">
+                    <div
+                      className="h-full bg-gradient-to-r from-red-500 to-orange-500 rounded-full transition-all duration-1000 ease-linear"
+                      style={{ width: `${(timeLeft / 120) * 100}%` }}
+                    />
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleCancelOrder}
+                  className="w-full flex items-center justify-center gap-2 p-3.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30 text-red-600 dark:text-red-400 font-bold rounded-xl transition-all duration-200 text-sm"
+                >
+                  <CircleSlash className="w-4 h-4" />
+                  Cancel order
+                </button>
+              </>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex items-center justify-between gap-3 p-3 bg-green-50/50 dark:bg-green-950/10 border border-green-100 dark:border-green-900/30 rounded-xl"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0 text-green-600 dark:text-green-400 font-semibold text-lg">
+                    🍜
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-base">
+                      Enjoy your meal! Order placed
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Food preparation is underway
+                    </p>
+                  </div>
+                </div>
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                  <Check className="w-3.5 h-3.5" />
+                  Active
+                </span>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
 
       </div>
 
