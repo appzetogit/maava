@@ -68,6 +68,8 @@ export default function RestaurantDetails() {
   const showOnlyUnder250 = searchParams.get('under250') === 'true'
   const { addToCart, updateQuantity, removeFromCart, getCartItem, cart } = useCart()
   const { vegMode, addDishFavorite, removeDishFavorite, isDishFavorite, getDishFavorites, getFavorites, addFavorite, removeFavorite, isFavorite } = useProfile()
+  const [cartItemsCount, setCartItemsCount] = useState(0)
+  const [isCustomizingItem, setIsCustomizingItem] = useState(false)
   const { location: userLocation } = useLocation() // Get user's current location
   const { zoneId, zone, loading: loadingZone, isOutOfService } = useZone(userLocation) // Get user's zone for zone-based filtering
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
@@ -2625,7 +2627,7 @@ export default function RestaurantDetails() {
               <>
                 {/* Backdrop */}
                 <motion.div
-                  className="fixed inset-0 bg-black/40 z-[9999]"
+                  className={`fixed inset-0 bg-black/40 z-[9999] transition-opacity duration-300 ${isCustomizingItem ? 'opacity-0 pointer-events-none' : ''}`}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -2635,7 +2637,7 @@ export default function RestaurantDetails() {
 
                 {/* Item Detail Bottom Sheet */}
                 <motion.div
-                  className="fixed left-0 right-0 bottom-0 md:left-1/2 md:right-auto md:-translate-x-1/2 md:bottom-auto md:top-1/2 md:-translate-y-1/2 z-[10000] bg-white dark:bg-[#1a1a1a] rounded-t-3xl md:rounded-3xl shadow-2xl max-h-[90vh] md:max-w-2xl lg:max-w-3xl w-full md:w-auto flex flex-col"
+                  className={`fixed left-0 right-0 bottom-0 md:left-1/2 md:right-auto md:-translate-x-1/2 md:bottom-auto md:top-1/2 md:-translate-y-1/2 z-[10000] bg-white dark:bg-[#1a1a1a] rounded-t-3xl md:rounded-3xl shadow-2xl max-h-[90vh] md:max-w-2xl lg:max-w-3xl w-full md:w-auto flex flex-col transition-opacity duration-300 ${isCustomizingItem ? 'opacity-0 pointer-events-none' : ''}`}
                   initial={{ y: "100%" }}
                   animate={{ y: 0 }}
                   exit={{ y: "100%" }}
@@ -2780,6 +2782,17 @@ export default function RestaurantDetails() {
                         disabled={shouldShowGrayscale} 
                         size="lg" 
                         className="w-full h-[44px]"
+                        onClickAction={(hasVariations) => {
+                          if (!hasVariations) {
+                            setShowItemDetail(false)
+                          }
+                        }}
+                        onModalStateChange={(isOpen) => {
+                          setIsCustomizingItem(isOpen)
+                          if (!isOpen) {
+                            setShowItemDetail(false)
+                          }
+                        }}
                       />
                     </div>
                   </div>

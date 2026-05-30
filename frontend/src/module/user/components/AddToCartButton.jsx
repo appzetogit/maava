@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { useCart } from "../context/CartContext"
 import { useHibermartCart } from "../context/HibermartCartContext"
 
-export default function AddToCartButton({ item, className = "", disabled = false, size = "sm" }) {
+export default function AddToCartButton({ item, className = "", disabled = false, size = "sm", onClickAction, onModalStateChange }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const isHibermartItem = item?.restaurantId === 'hibermart-id' || item?.restaurant === 'Hibermart'
   const foodCart = useCart()
@@ -49,11 +49,14 @@ export default function AddToCartButton({ item, className = "", disabled = false
     
     if (hasVariations) {
       setIsModalOpen(true)
+      if (onModalStateChange) onModalStateChange(true)
+      if (onClickAction) onClickAction(true) // Pass true indicating it has variations
       return
     }
     
     const sourcePosition = getSourcePosition(e)
     addToCart(item, sourcePosition)
+    if (onClickAction) onClickAction(false) // Pass false indicating it has no variations
   }
 
   const handleIncrease = (e) => {
@@ -153,7 +156,12 @@ export default function AddToCartButton({ item, className = "", disabled = false
         <div 
           className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm"
           style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsModalOpen(false); }}
+          onClick={(e) => { 
+            e.preventDefault(); 
+            e.stopPropagation(); 
+            setIsModalOpen(false);
+            if (onModalStateChange) onModalStateChange(false);
+          }}
         >
           <div 
             className="bg-white w-full sm:w-[400px] sm:rounded-xl rounded-t-xl p-5 shadow-xl animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10 max-h-[90vh] flex flex-col"
@@ -165,7 +173,12 @@ export default function AddToCartButton({ item, className = "", disabled = false
                 <p className="text-sm text-gray-500">{item.name}</p>
               </div>
               <button 
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsModalOpen(false); }} 
+                onClick={(e) => { 
+                  e.preventDefault(); 
+                  e.stopPropagation(); 
+                  setIsModalOpen(false);
+                  if (onModalStateChange) onModalStateChange(false);
+                }} 
                 className="p-1.5 rounded-full hover:bg-gray-100 bg-gray-50 text-gray-500"
               >
                 <X className="w-5 h-5" />
