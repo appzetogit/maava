@@ -55,6 +55,7 @@ import AnimatedPage from "../../components/AnimatedPage"
 import { useCart } from "../../context/CartContext"
 import { useProfile } from "../../context/ProfileContext"
 import AddToCartAnimation from "../../components/AddToCartAnimation"
+import AddToCartButton from "../../components/AddToCartButton"
 import { getCompanyNameAsync } from "@/lib/utils/businessSettings"
 import offersIcon from "@/assets/explore more icons/offers.png"
 
@@ -739,9 +740,7 @@ export default function RestaurantDetails() {
     ? restaurant.menuSections.map((section, index) => {
       // Handle section name - check for valid non-empty string
       let sectionTitle = "Unnamed Section"
-      if (index === 0) {
-        sectionTitle = "Recommended for you"
-      } else if (section?.name && typeof section.name === 'string' && section.name.trim()) {
+      if (section?.name && typeof section.name === 'string' && section.name.trim()) {
         sectionTitle = section.name.trim()
       } else if (section?.title && typeof section.title === 'string' && section.title.trim()) {
         sectionTitle = section.title.trim()
@@ -1729,9 +1728,7 @@ export default function RestaurantDetails() {
               {getFilteredSections().map(({ section, originalIndex }, sectionIndex) => {
                 // Handle section name - check for valid non-empty string
                 let sectionTitle = "Unnamed Section"
-                if (originalIndex === 0) {
-                  sectionTitle = "Recommended for you"
-                } else if (section?.name && typeof section.name === 'string' && section.name.trim()) {
+                if (section?.name && typeof section.name === 'string' && section.name.trim()) {
                   sectionTitle = section.name.trim()
                 } else if (section?.title && typeof section.title === 'string' && section.title.trim()) {
                   sectionTitle = section.title.trim()
@@ -1743,71 +1740,38 @@ export default function RestaurantDetails() {
                 return (
                   <div key={sectionIndex} id={sectionId} className="space-y-4 scroll-mt-20">
                     {/* Section Header */}
-                    {sectionIndex === 0 && (
-                      <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
                         <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                          Recommended for you
+                          {sectionTitle}
                         </h2>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setExpandedSections(prev => {
-                              const newSet = new Set(prev)
-                              if (newSet.has(originalIndex)) {
-                                newSet.delete(originalIndex)
-                              } else {
-                                newSet.add(originalIndex)
-                              }
-                              return newSet
-                            })
-                          }}
-                          className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-                        >
-                          <ChevronDown
-                            className={`h-5 w-5 text-gray-600 dark:text-gray-400 transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'
-                              }`}
-                          />
-                        </button>
+                        {section.subtitle && (
+                          <button className="text-sm text-blue-600 dark:text-blue-400 underline">
+                            {section.subtitle}
+                          </button>
+                        )}
                       </div>
-                    )}
-                    {sectionIndex > 0 && (
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                            {(section?.name && typeof section.name === 'string' && section.name.trim())
-                              ? section.name.trim()
-                              : (section?.title && typeof section.title === 'string' && section.title.trim())
-                                ? section.title.trim()
-                                : "Unnamed Section"}
-                          </h2>
-                          {section.subtitle && (
-                            <button className="text-sm text-blue-600 dark:text-blue-400 underline">
-                              {section.subtitle}
-                            </button>
-                          )}
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setExpandedSections(prev => {
-                              const newSet = new Set(prev)
-                              if (newSet.has(originalIndex)) {
-                                newSet.delete(originalIndex)
-                              } else {
-                                newSet.add(originalIndex)
-                              }
-                              return newSet
-                            })
-                          }}
-                          className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-                        >
-                          <ChevronDown
-                            className={`h-5 w-5 text-gray-600 dark:text-gray-400 transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'
-                              }`}
-                          />
-                        </button>
-                      </div>
-                    )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setExpandedSections(prev => {
+                            const newSet = new Set(prev)
+                            if (newSet.has(originalIndex)) {
+                              newSet.delete(originalIndex)
+                            } else {
+                              newSet.add(originalIndex)
+                            }
+                            return newSet
+                          })
+                        }}
+                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+                      >
+                        <ChevronDown
+                          className={`h-5 w-5 text-gray-600 dark:text-gray-400 transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'
+                            }`}
+                        />
+                      </button>
+                    </div>
 
                     {/* Direct Items */}
                     {isExpanded && originalIndex === 0 && section.items && section.items.length === 0 && (
@@ -1928,31 +1892,17 @@ export default function RestaurantDetails() {
                                 </div>
 
                                 {/* Overlaid ADD Button matching Screenshot 2 */}
-                                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 min-w-[100px]">
-                                  {quantity > 0 ? (
-                                    <div className="bg-white border-2 border-emerald-500 font-black text-emerald-600 px-3 py-1.5 rounded-xl shadow-xl flex items-center justify-between">
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); updateItemQuantity(item, Math.max(0, quantity - 1), e); }}
-                                        className="hover:scale-125 transition-transform"
-                                      >
-                                        <Minus size={14} strokeWidth={4} />
-                                      </button>
-                                      <span className="mx-2 text-sm">{quantity}</span>
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); updateItemQuantity(item, quantity + 1, e); }}
-                                        className="hover:scale-125 transition-transform"
-                                      >
-                                        <Plus size={14} strokeWidth={4} />
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); updateItemQuantity(item, 1, e); }}
-                                      className="w-full bg-white border border-neutral-200 font-black text-emerald-600 px-6 py-2 rounded-xl shadow-lg hover:border-emerald-500 transition-all uppercase tracking-widest text-sm active:scale-95"
-                                    >
-                                      ADD
-                                    </button>
-                                  )}
+                                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 min-w-[100px] w-11/12">
+                                  <AddToCartButton 
+                                    item={{
+                                      ...item, 
+                                      restaurantId: restaurant?.restaurantId || restaurant?._id || restaurant?.id,
+                                      restaurant: restaurant?.name
+                                    }} 
+                                    disabled={shouldShowGrayscale} 
+                                    size="lg" 
+                                    className="w-full"
+                                  />
                                 </div>
                               </div>
                             </div>
@@ -2113,62 +2063,18 @@ export default function RestaurantDetails() {
                                               <span className="text-xs text-gray-400">No image</span>
                                             </div>
                                           )}
-                                          {quantity > 0 ? (
-                                            <motion.div
-                                              initial={{ opacity: 0, scale: 0.8 }}
-                                              animate={{ opacity: 1, scale: 1 }}
-                                              className={`absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white border font-bold px-4 py-1.5 rounded-lg shadow-md flex items-center gap-1 ${shouldShowGrayscale
-                                                ? 'border-gray-300 text-gray-400 cursor-not-allowed opacity-50'
-                                                : 'border-green-600 text-green-600 hover:bg-green-50'
-                                                }`}
-                                            >
-                                              <button
-                                                onClick={(e) => {
-                                                  e.stopPropagation()
-                                                  if (!shouldShowGrayscale) {
-                                                    updateItemQuantity(item, Math.max(0, quantity - 1), e)
-                                                  }
-                                                }}
-                                                disabled={shouldShowGrayscale}
-                                                className={shouldShowGrayscale ? 'text-gray-400 cursor-not-allowed' : 'text-green-600 hover:text-green-700'}
-                                              >
-                                                <Minus size={14} />
-                                              </button>
-                                              <span className={`mx-2 text-sm ${shouldShowGrayscale ? 'text-gray-400' : ''}`}>{quantity}</span>
-                                              <button
-                                                onClick={(e) => {
-                                                  e.stopPropagation()
-                                                  if (!shouldShowGrayscale) {
-                                                    updateItemQuantity(item, quantity + 1, e)
-                                                  }
-                                                }}
-                                                disabled={shouldShowGrayscale}
-                                                className={shouldShowGrayscale ? 'text-gray-400 cursor-not-allowed' : 'text-green-600 hover:text-green-700'}
-                                              >
-                                                <Plus size={14} className="stroke-[3px]" />
-                                              </button>
-                                            </motion.div>
-                                          ) : (
-                                            <motion.button
-                                              layoutId={`add-button-sub-${item.id}`}
-                                              initial={{ opacity: 0, scale: 0.9 }}
-                                              animate={{ opacity: 1, scale: 1 }}
-                                              transition={{ duration: 0.3, type: "spring", damping: 20, stiffness: 300 }}
-                                              onClick={(e) => {
-                                                e.stopPropagation()
-                                                if (!shouldShowGrayscale) {
-                                                  updateItemQuantity(item, 1, e)
-                                                }
-                                              }}
-                                              disabled={shouldShowGrayscale}
-                                              className={`absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white border font-bold px-6 py-1.5 rounded-lg shadow-md flex items-center gap-1 transition-colors ${shouldShowGrayscale
-                                                ? 'border-gray-300 text-gray-400 cursor-not-allowed opacity-50'
-                                                : 'border-green-600 text-green-600 hover:bg-green-50'
-                                                }`}
-                                            >
-                                              ADD <Plus size={14} className="stroke-[3px]" />
-                                            </motion.button>
-                                          )}
+                                          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 min-w-[100px] w-11/12 z-10">
+                                            <AddToCartButton 
+                                              item={{
+                                                ...item, 
+                                                restaurantId: restaurant?.restaurantId || restaurant?._id || restaurant?.id,
+                                                restaurant: restaurant?.name
+                                              }} 
+                                              disabled={shouldShowGrayscale} 
+                                              size="lg" 
+                                              className="w-full"
+                                            />
+                                          </div>
                                         </div>
                                       </div>
                                     )
@@ -2864,74 +2770,17 @@ export default function RestaurantDetails() {
 
                   {/* Bottom Action Bar */}
                   <div className="border-t border-gray-200 dark:border-gray-800 px-4 py-4 bg-white dark:bg-[#1a1a1a]">
-                    <div className="flex items-center gap-4">
-                      {/* Quantity Selector */}
-                      <div className={`flex items-center gap-3 border-2 rounded-lg px-3 h-[44px] bg-white dark:bg-[#2a2a2a] ${shouldShowGrayscale
-                        ? 'border-gray-300 dark:border-gray-700 opacity-50'
-                        : 'border-gray-300 dark:border-gray-700'
-                        }`}>
-                        <button
-                          onClick={(e) => {
-                            if (!shouldShowGrayscale) {
-                              updateItemQuantity(selectedItem, Math.max(0, (quantities[selectedItem.id] || 0) - 1), e)
-                            }
-                          }}
-                          disabled={(quantities[selectedItem.id] || 0) === 0 || shouldShowGrayscale}
-                          className={`${shouldShowGrayscale
-                            ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:text-gray-300 dark:disabled:text-gray-600 disabled:cursor-not-allowed'
-                            }`}
-                        >
-                          <Minus className="h-5 w-5" />
-                        </button>
-                        <span className={`text-lg font-semibold min-w-[2rem] text-center ${shouldShowGrayscale
-                          ? 'text-gray-400 dark:text-gray-600'
-                          : 'text-gray-900 dark:text-white'
-                          }`}>
-                          {quantities[selectedItem.id] || 0}
-                        </span>
-                        <button
-                          onClick={(e) => {
-                            if (!shouldShowGrayscale) {
-                              updateItemQuantity(selectedItem, (quantities[selectedItem.id] || 0) + 1, e)
-                            }
-                          }}
-                          disabled={shouldShowGrayscale}
-                          className={shouldShowGrayscale
-                            ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                          }
-                        >
-                          <Plus className="h-5 w-5" />
-                        </button>
-                      </div>
-
-                      {/* Add Item Button */}
-                      <Button
-                        className={`flex-1 h-[44px] rounded-lg font-semibold flex items-center justify-center gap-2 ${shouldShowGrayscale
-                          ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-600 cursor-not-allowed opacity-50'
-                          : 'bg-black hover:bg-gray-900 text-white transition-colors shadow-lg'
-                          }`}
-                        onClick={(e) => {
-                          if (!shouldShowGrayscale) {
-                            updateItemQuantity(selectedItem, (quantities[selectedItem.id] || 0) + 1, e)
-                            setShowItemDetail(false)
-                          }
-                        }}
-                        disabled={shouldShowGrayscale}
-                      >
-                        <span>Add item</span>
-                        <div className="flex items-center gap-1">
-                          {selectedItem.originalPrice && selectedItem.originalPrice > selectedItem.price && (
-                            <span className="text-sm line-through text-red-200">
-                              ₹{Math.round(selectedItem.originalPrice)}
-                            </span>
-                          )}
-                          <span className="text-base font-bold">
-                            ₹{Math.round(selectedItem.price)}
-                          </span>
-                        </div>
-                      </Button>
+                    <div className="w-full">
+                      <AddToCartButton 
+                        item={{
+                          ...selectedItem, 
+                          restaurantId: restaurant?.restaurantId || restaurant?._id || restaurant?.id,
+                          restaurant: restaurant?.name
+                        }} 
+                        disabled={shouldShowGrayscale} 
+                        size="lg" 
+                        className="w-full h-[44px]"
+                      />
                     </div>
                   </div>
                 </motion.div>

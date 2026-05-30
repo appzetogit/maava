@@ -42,6 +42,8 @@ export default function ItemDetailsPage() {
   const [itemDescription, setItemDescription] = useState("")
   const [foodType, setFoodType] = useState("Non-Veg")
   const [basePrice, setBasePrice] = useState("")
+  const [hasVariations, setHasVariations] = useState(false)
+  const [variations, setVariations] = useState([])
   const [preparationTime, setPreparationTime] = useState("")
   const [gst, setGst] = useState("5.0")
   const [isRecommended, setIsRecommended] = useState(false)
@@ -100,6 +102,13 @@ export default function ItemDetailsPage() {
         setItemDescription(item.description || "")
         setFoodType(item.foodType === "Veg" ? "Veg" : (item.foodType === "Egg" ? "Egg" : "Non-Veg"))
         setBasePrice(item.price?.toString() || "")
+        if (item.variations && item.variations.length > 0) {
+          setHasVariations(true)
+          setVariations(item.variations)
+        } else {
+          setHasVariations(false)
+          setVariations([])
+        }
         setPreparationTime(item.preparationTime || "")
         setGst(item.gst?.toString() || "5.0")
         setIsRecommended(item.isRecommended || false)
@@ -192,6 +201,13 @@ export default function ItemDetailsPage() {
             setItemDescription(foundItem.description || "")
             setFoodType(foundItem.foodType === "Veg" ? "Veg" : (foundItem.foodType === "Egg" ? "Egg" : "Non-Veg"))
             setBasePrice(foundItem.price?.toString() || "")
+            if (foundItem.variations && foundItem.variations.length > 0) {
+              setHasVariations(true)
+              setVariations(foundItem.variations)
+            } else {
+              setHasVariations(false)
+              setVariations([])
+            }
             setPreparationTime(foundItem.preparationTime || "")
             setGst(foundItem.gst?.toString() || "5.0")
             setIsRecommended(foundItem.isRecommended || false)
@@ -568,9 +584,26 @@ export default function ItemDetailsPage() {
     }
 
     const priceNum = parseFloat(basePrice)
-    if (isNaN(priceNum) || priceNum <= 0) {
+    if (!hasVariations && (isNaN(priceNum) || priceNum <= 0)) {
       toast.error("Please enter a valid base price greater than 0")
       return
+    }
+
+    if (hasVariations) {
+      if (variations.length === 0) {
+        toast.error("Please add at least one variant")
+        return
+      }
+      for (let i = 0; i < variations.length; i++) {
+        if (!variations[i].name || variations[i].name.trim() === "") {
+          toast.error(`Please enter a name for variant ${i + 1}`)
+          return
+        }
+        if (!variations[i].price || isNaN(parseFloat(variations[i].price)) || parseFloat(variations[i].price) <= 0) {
+          toast.error(`Please enter a valid price for variant "${variations[i].name || i + 1}"`)
+          return
+        }
+      }
     }
 
     if (!preparationTime || preparationTime === "") {
@@ -759,7 +792,7 @@ export default function ItemDetailsPage() {
         category: category,
         rating: parseFloat(rating) || 0.0,
         reviews: itemData?.reviews || 0,
-        price: parseFloat(basePrice) || 0,
+        price: hasVariations ? (variations.length > 0 ? parseFloat(variations[0].price) : 0) : (parseFloat(basePrice) || 0),
         preparationTime: preparationTime || "",
         stock: "Unlimited",
         discount: null,
@@ -772,7 +805,12 @@ export default function ItemDetailsPage() {
         discountAmount: 0.0,
         isAvailable: isInStock,
         isRecommended: isRecommended,
-        variations: [],
+        variations: hasVariations ? variations.map((v, index) => ({
+          id: v.id || `var-${Date.now()}-${index}`,
+          name: v.name.trim(),
+          price: parseFloat(v.price) || 0,
+          stock: "Unlimited"
+        })) : [],
         tags: [],
         nutrition: nutritionStrings,
         allergies: [],
@@ -1132,41 +1170,116 @@ export default function ItemDetailsPage() {
 
           {/* Item Price */}
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
-              Item price
-            </label>
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-medium text-gray-900">
+                Item price
+              </label>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-600">Multiple sizes/variants?</span>
+                <Switch
+                  checked={hasVariations}
+                  onCheckedChange={(checked) => {
+                    setHasVariations(checked)
+                    if (checked && variations.length === 0) {
+                      setVariations([{ id: `var-${Date.now()}-1`, name: "Half", price: "" }, { id: `var-${Date.now()}-2`, name: "Full", price: "" }])
+                    }
+                  }}
+                  className="data-[state=checked]:bg-green-600"
+                />
+              </div>
+            </div>
+
             <div className="space-y-3">
-              <div className="relative">
-                <label className="block text-xs text-gray-600 mb-1">Base price *</label>
+              {!hasVariations ? (
                 <div className="relative">
-                  <input
-                    type="text"
-                    value={basePrice}
-                    onChange={(e) => {
-                      // Remove rupee symbol and any non-numeric characters except decimal point
-                      const value = e.target.value.replace(/[₹\s,]/g, '').replace(/[^0-9.]/g, '')
-                      // Allow only one decimal point
-                      const parts = value.split('.')
-                      const cleanedValue = parts.length > 2 
-                        ? parts[0] + '.' + parts.slice(1).join('')
-                        : value
-                      setBasePrice(cleanedValue)
+                  <label className="block text-xs text-gray-600 mb-1">Base price *</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={basePrice}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[₹\s,]/g, '').replace(/[^0-9.]/g, '')
+                        const parts = value.split('.')
+                        const cleanedValue = parts.length > 2 
+                          ? parts[0] + '.' + parts.slice(1).join('')
+                          : value
+                        setBasePrice(cleanedValue)
+                      }}
+                      onFocus={(e) => {
+                        if (e.target.value.startsWith('₹')) {
+                          e.target.value = e.target.value.replace(/₹\s*/g, '')
+                        }
+                      }}
+                      placeholder="Enter price"
+                      className="w-full pl-8 pr-12 py-3 border border-gray-300 rounded-lg text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-600">₹</span>
+                    <button className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-100">
+                      <EditIcon className="w-4 h-4 text-gray-500" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <label className="block text-xs text-gray-600 mb-1">Variants (e.g. Half / Full) *</label>
+                  {variations.map((variant, index) => (
+                    <div key={variant.id} className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          value={variant.name}
+                          onChange={(e) => {
+                            const newVars = [...variations]
+                            newVars[index].name = e.target.value
+                            setVariations(newVars)
+                          }}
+                          placeholder="Variant name"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div className="flex-1 relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-600">₹</span>
+                        <input
+                          type="text"
+                          value={variant.price}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/[₹\s,]/g, '').replace(/[^0-9.]/g, '')
+                            const parts = value.split('.')
+                            const cleanedValue = parts.length > 2 
+                              ? parts[0] + '.' + parts.slice(1).join('')
+                              : value
+                            const newVars = [...variations]
+                            newVars[index].price = cleanedValue
+                            setVariations(newVars)
+                          }}
+                          placeholder="Price"
+                          className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newVars = [...variations]
+                          newVars.splice(index, 1)
+                          setVariations(newVars)
+                        }}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVariations([...variations, { id: `var-${Date.now()}`, name: "", price: "" }])
                     }}
-                    onFocus={(e) => {
-                      // Remove rupee symbol when focused for easier editing
-                      if (e.target.value.startsWith('₹')) {
-                        e.target.value = e.target.value.replace(/₹\s*/g, '')
-                      }
-                    }}
-                    placeholder="Enter price"
-                    className="w-full pl-8 pr-12 py-3 border border-gray-300 rounded-lg text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-600">₹</span>
-                  <button className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-100">
-                    <EditIcon className="w-4 h-4 text-gray-500" />
+                    className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 py-1"
+                  >
+                    <Plus className="w-4 h-4" /> Add another variant
                   </button>
                 </div>
-              </div>
+              )}
               
               {/* Preparation Time */}
               <div className="relative">
