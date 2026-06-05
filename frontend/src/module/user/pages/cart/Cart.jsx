@@ -830,11 +830,19 @@ export default function Cart() {
     fetchWalletBalance()
   }, [])
 
-  // Fetch fee settings on mount
+  // Fetch fee settings when activeAddress changes
   useEffect(() => {
     const fetchFeeSettings = async () => {
       try {
-        const response = await adminAPI.getPublicFeeSettings()
+        const params = {}
+        if (activeAddress && activeAddress.location && Array.isArray(activeAddress.location.coordinates)) {
+          const [lng, lat] = activeAddress.location.coordinates;
+          if (lng !== 0 || lat !== 0) {
+            params.latitude = lat;
+            params.longitude = lng;
+          }
+        }
+        const response = await adminAPI.getPublicFeeSettings(params)
         if (response.data.success && response.data.data.feeSettings) {
           setFeeSettings({
             deliveryFee: response.data.data.feeSettings.deliveryFee || 25,
@@ -849,7 +857,7 @@ export default function Cart() {
       }
     }
     fetchFeeSettings()
-  }, [])
+  }, [activeAddress])
 
   // Use backend pricing if available, otherwise fallback to database settings
   const subtotal = pricing?.subtotal ?? cart.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0)

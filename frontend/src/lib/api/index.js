@@ -1229,12 +1229,12 @@ export const adminAPI = {
   },
 
   // Fee Settings Management (Delivery & Platform Fee)
-  getFeeSettings: () => {
-    return apiClient.get(API_ENDPOINTS.ADMIN.FEE_SETTINGS);
+  getFeeSettings: (params = {}) => {
+    return apiClient.get(API_ENDPOINTS.ADMIN.FEE_SETTINGS, { params });
   },
 
-  getPublicFeeSettings: () => {
-    return apiClient.get(API_ENDPOINTS.ADMIN.FEE_SETTINGS_PUBLIC);
+  getPublicFeeSettings: (params = {}) => {
+    return apiClient.get(API_ENDPOINTS.ADMIN.FEE_SETTINGS_PUBLIC, { params });
   },
 
   getFeeSettingsHistory: (params = {}) => {

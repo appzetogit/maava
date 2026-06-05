@@ -1,4 +1,6 @@
 import FeeSettings from '../models/FeeSettings.js';
+import Zone from '../models/Zone.js';
+import mongoose from 'mongoose';
 import { successResponse, errorResponse } from '../../../shared/utils/response.js';
 import asyncHandler from '../../../shared/middleware/asyncHandler.js';
 import winston from 'winston';
@@ -19,19 +21,28 @@ const logger = winston.createLogger({
  */
 export const getFeeSettings = asyncHandler(async (req, res) => {
   try {
+    const { zoneId } = req.query;
+    
+    // Normalize string representation of null/undefined
+    const targetZoneId = (zoneId && zoneId !== 'null' && zoneId !== 'undefined') ? zoneId : null;
+
+    // Build query
+    const query = { isActive: true, zoneId: targetZoneId };
+
     // Get the most recent active fee settings
-    let feeSettings = await FeeSettings.findOne({ isActive: true })
+    let feeSettings = await FeeSettings.findOne(query)
       .sort({ createdAt: -1 })
       .lean();
 
-    // If no active settings exist, create default ones
-    if (!feeSettings) {
+    // If no active settings exist, and we requested global, create default ones
+    if (!feeSettings && (!zoneId || zoneId === 'null')) {
       const defaultSettings = new FeeSettings({
         deliveryFee: 25,
         freeDeliveryThreshold: 149,
         platformFee: 5,
         gstRate: 5,
         isActive: true,
+        zoneId: null,
         createdBy: req.admin?._id || null,
       });
 
@@ -54,7 +65,7 @@ export const getFeeSettings = asyncHandler(async (req, res) => {
  */
 export const createOrUpdateFeeSettings = asyncHandler(async (req, res) => {
   try {
-    const { deliveryFee, deliveryFeeRanges, freeDeliveryThreshold, platformFee, gstRate, isActive } = req.body;
+    const { deliveryFee, deliveryFeeRanges, freeDeliveryThreshold, platformFee, gstRate, isActive, zoneId } = req.body;
 
     // Validate platform fee
     if (platformFee === undefined || platformFee < 0) {
@@ -83,10 +94,12 @@ export const createOrUpdateFeeSettings = asyncHandler(async (req, res) => {
       }
     }
 
-    // Deactivate all existing settings if this is being set as active
+    const targetZoneId = (zoneId && zoneId !== 'null' && zoneId !== 'undefined') ? zoneId : null;
+
+    // Deactivate all existing settings for this zone if this is being set as active
     if (isActive !== false) {
       await FeeSettings.updateMany(
-        { isActive: true },
+        { isActive: true, zoneId: targetZoneId },
         { isActive: false, updatedBy: req.admin?._id || null }
       );
     }
@@ -98,6 +111,7 @@ export const createOrUpdateFeeSettings = asyncHandler(async (req, res) => {
       platformFee: Number(platformFee),
       gstRate: Number(gstRate),
       isActive: isActive !== false,
+      zoneId: targetZoneId,
       createdBy: req.admin?._id || null,
       updatedBy: req.admin?._id || null,
     };
@@ -219,15 +233,18 @@ export const updateFeeSettings = asyncHandler(async (req, res) => {
  */
 export const getFeeSettingsHistory = asyncHandler(async (req, res) => {
   try {
-    const { limit = 50, offset = 0 } = req.query;
+    const { limit = 50, offset = 0, zoneId } = req.query;
 
-    const feeSettings = await FeeSettings.find()
+    const targetZoneId = (zoneId && zoneId !== 'null' && zoneId !== 'undefined') ? zoneId : null;
+    const query = { zoneId: targetZoneId };
+
+    const feeSettings = await FeeSettings.find(query)
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
       .skip(parseInt(offset))
       .lean();
 
-    const total = await FeeSettings.countDocuments();
+    const total = await FeeSettings.countDocuments(query);
 
     return successResponse(res, 200, 'Fee settings history retrieved successfully', {
       feeSettings,
@@ -247,10 +264,40 @@ export const getFeeSettingsHistory = asyncHandler(async (req, res) => {
  */
 export const getPublicFeeSettings = asyncHandler(async (req, res) => {
   try {
-    const feeSettings = await FeeSettings.findOne({ isActive: true })
+    const { latitude, longitude } = req.query;
+    let query = { isActive: true, zoneId: null };
+
+    if (latitude && longitude) {
+      const lat = parseFloat(latitude);
+      const lng = parseFloat(longitude);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        const matchedZone = await Zone.findOne({
+          boundary: {
+            $geoIntersects: {
+              $geometry: { type: 'Point', coordinates: [lng, lat] }
+            }
+          },
+          isActive: true
+        });
+
+        if (matchedZone) {
+          query = { isActive: true, zoneId: matchedZone._id };
+        }
+      }
+    }
+
+    let feeSettings = await FeeSettings.findOne(query)
       .sort({ createdAt: -1 })
       .select('deliveryFee deliveryFeeRanges freeDeliveryThreshold platformFee gstRate')
       .lean();
+
+    // Fallback to global active fee settings if zone-specific active settings not found
+    if (!feeSettings && query.zoneId !== null) {
+      feeSettings = await FeeSettings.findOne({ isActive: true, zoneId: null })
+        .sort({ createdAt: -1 })
+        .select('deliveryFee deliveryFeeRanges freeDeliveryThreshold platformFee gstRate')
+        .lean();
+    }
 
     // If no active settings, return default values
     if (!feeSettings) {

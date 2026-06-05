@@ -17,12 +17,27 @@ export default function FeeSettings() {
   const [savingFeeSettings, setSavingFeeSettings] = useState(false)
   const [editingRangeIndex, setEditingRangeIndex] = useState(null)
   const [newRange, setNewRange] = useState({ min: '', max: '', fee: '' })
+  const [zones, setZones] = useState([])
+  const [selectedZoneId, setSelectedZoneId] = useState("null") // "null" represents Global/Default
+
+  // Fetch all zones
+  const fetchZones = async () => {
+    try {
+      const response = await adminAPI.getZones({ limit: 100 })
+      if (response.data.success && response.data.data.zones) {
+        setZones(response.data.data.zones)
+      }
+    } catch (error) {
+      console.error('Error fetching zones:', error)
+    }
+  }
 
   // Fetch fee settings
-  const fetchFeeSettings = async () => {
+  const fetchFeeSettings = async (zoneId = selectedZoneId) => {
     try {
       setLoadingFeeSettings(true)
-      const response = await adminAPI.getFeeSettings()
+      const params = zoneId && zoneId !== "null" ? { zoneId } : { zoneId: 'null' }
+      const response = await adminAPI.getFeeSettings(params)
       if (response.data.success && response.data.data.feeSettings) {
         setFeeSettings({
           deliveryFee: response.data.data.feeSettings.deliveryFee ?? 25,
@@ -30,6 +45,15 @@ export default function FeeSettings() {
           freeDeliveryThreshold: response.data.data.feeSettings.freeDeliveryThreshold ?? 149,
           platformFee: response.data.data.feeSettings.platformFee ?? 5,
           gstRate: response.data.data.feeSettings.gstRate ?? 5,
+        })
+      } else {
+        // Reset to empty/default settings if no configuration exists for this zone
+        setFeeSettings({
+          deliveryFee: 25,
+          deliveryFeeRanges: [],
+          freeDeliveryThreshold: 149,
+          platformFee: 5,
+          gstRate: 5,
         })
       }
     } catch (error) {
@@ -40,10 +64,15 @@ export default function FeeSettings() {
     }
   }
 
-  // Fetch fee settings on mount
+  // Fetch zones on mount
   useEffect(() => {
-    fetchFeeSettings()
+    fetchZones()
   }, [])
+
+  // Fetch fee settings when selected zone changes
+  useEffect(() => {
+    fetchFeeSettings(selectedZoneId)
+  }, [selectedZoneId])
 
   // Save fee settings
   const handleSaveFeeSettings = async () => {
@@ -62,11 +91,12 @@ export default function FeeSettings() {
         platformFee: Number(feeSettings.platformFee),
         gstRate: Number(feeSettings.gstRate),
         isActive: true,
+        zoneId: selectedZoneId === "null" ? null : selectedZoneId,
       })
 
       if (response.data.success) {
         toast.success('Fee settings saved successfully')
-        fetchFeeSettings()
+        fetchFeeSettings(selectedZoneId)
       } else {
         toast.error(response.data.message || 'Failed to save fee settings')
       }
@@ -206,9 +236,23 @@ export default function FeeSettings() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-xl font-bold text-slate-900">Fee Configuration</h2>
-              <p className="text-sm text-slate-500 mt-1">
-                Set the fees and charges that will be applied to all orders
-              </p>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-2">
+                <p className="text-sm text-slate-500">
+                  Select a zone to configure specific fees, or keep it Global
+                </p>
+                <select
+                  value={selectedZoneId}
+                  onChange={(e) => setSelectedZoneId(e.target.value)}
+                  className="px-3 py-1.5 text-sm rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 outline-none max-w-xs font-semibold text-slate-700 shadow-sm"
+                >
+                  <option value="null">🌐 Global (Default)</option>
+                  {zones.map(zone => (
+                    <option key={zone._id} value={zone._id}>
+                      📍 {zone.name || zone.zoneName}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <Button
               onClick={handleSaveFeeSettings}

@@ -51,6 +51,11 @@ const feeSettingsSchema = new mongoose.Schema(
       max: 100,
       comment: 'GST rate in percentage (e.g., 5 for 5%)'
     },
+    zoneId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Zone',
+      default: null
+    },
     isActive: {
       type: Boolean,
       default: true,
@@ -71,6 +76,7 @@ const feeSettingsSchema = new mongoose.Schema(
 
 // Indexes
 feeSettingsSchema.index({ isActive: 1 });
+feeSettingsSchema.index({ zoneId: 1, isActive: 1 });
 feeSettingsSchema.index({ createdAt: -1 });
 
 const FeeSettings = mongoose.model('FeeSettings', feeSettingsSchema);

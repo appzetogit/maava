@@ -1,17 +1,45 @@
 import Restaurant from '../../restaurant/models/Restaurant.js';
 import Offer from '../../restaurant/models/Offer.js';
 import FeeSettings from '../../admin/models/FeeSettings.js';
+import Zone from '../../admin/models/Zone.js';
 import mongoose from 'mongoose';
 
 /**
  * Get active fee settings from database
  * Returns default values if no settings found
  */
-const getFeeSettings = async () => {
+const getFeeSettings = async (deliveryAddress = null) => {
   try {
-    const feeSettings = await FeeSettings.findOne({ isActive: true })
+    let query = { isActive: true, zoneId: null }; // default to global
+
+    if (deliveryAddress && deliveryAddress.location && Array.isArray(deliveryAddress.location.coordinates)) {
+      const [lng, lat] = deliveryAddress.location.coordinates;
+      if (lng !== 0 || lat !== 0) {
+        const matchedZone = await Zone.findOne({
+          boundary: {
+            $geoIntersects: {
+              $geometry: { type: 'Point', coordinates: [lng, lat] }
+            }
+          },
+          isActive: true
+        });
+
+        if (matchedZone) {
+          query = { isActive: true, zoneId: matchedZone._id };
+        }
+      }
+    }
+
+    let feeSettings = await FeeSettings.findOne(query)
       .sort({ createdAt: -1 })
       .lean();
+
+    // Fallback to global active fee settings if zone-specific active settings not found
+    if (!feeSettings && query.zoneId !== null) {
+      feeSettings = await FeeSettings.findOne({ isActive: true, zoneId: null })
+        .sort({ createdAt: -1 })
+        .lean();
+    }
     
     if (feeSettings) {
       return feeSettings;
@@ -41,7 +69,7 @@ const getFeeSettings = async () => {
  */
 export const calculateDeliveryFee = async (orderValue, restaurant, deliveryAddress = null) => {
   // Get fee settings from database
-  const feeSettings = await getFeeSettings();
+  const feeSettings = await getFeeSettings(deliveryAddress);
   
   // Check restaurant settings for free delivery threshold (takes priority)
   if (restaurant?.freeDeliveryAbove) {
@@ -99,8 +127,8 @@ export const calculateDeliveryFee = async (orderValue, restaurant, deliveryAddre
 /**
  * Calculate platform fee
  */
-export const calculatePlatformFee = async () => {
-  const feeSettings = await getFeeSettings();
+export const calculatePlatformFee = async (deliveryAddress = null) => {
+  const feeSettings = await getFeeSettings(deliveryAddress);
   return feeSettings.platformFee ?? 5;
 };
 
@@ -108,9 +136,9 @@ export const calculatePlatformFee = async () => {
  * Calculate GST (Goods and Services Tax)
  * GST is calculated on subtotal after discounts
  */
-export const calculateGST = async (subtotal, discount = 0) => {
+export const calculateGST = async (subtotal, discount = 0, deliveryAddress = null) => {
   const taxableAmount = subtotal - discount;
-  const feeSettings = await getFeeSettings();
+  const feeSettings = await getFeeSettings(deliveryAddress);
   const gstRate = (feeSettings.gstRate ?? 5) / 100; // Convert percentage to decimal
   return Math.round(taxableAmount * gstRate * 100) / 100;
 };
@@ -287,10 +315,10 @@ export const calculateOrderPricing = async ({
     const finalDeliveryFee = appliedCoupon?.freeDelivery ? 0 : deliveryFee;
     
     // Calculate platform fee
-    const platformFee = await calculatePlatformFee();
+    const platformFee = await calculatePlatformFee(deliveryAddress);
     
     // Calculate GST on subtotal after discount
-    const gst = await calculateGST(subtotal, discount);
+    const gst = await calculateGST(subtotal, discount, deliveryAddress);
     
     // Calculate total
     const total = subtotal - discount + finalDeliveryFee + platformFee + gst;
