@@ -243,23 +243,10 @@ export default function DeliveryBoyCommission() {
         }
         
         if (commission) {
-          const updatedCommission = {
-            ...commission,
-            sl: selectedCommission.sl
-          }
-          setCommissions(commissions.map(c =>
-            c._id === selectedCommission._id ? updatedCommission : c
-          ))
           toast.success('Commission rule updated successfully')
         }
       } else {
-        // Only allow one commission rule - check if one already exists
-        if (commissions.length > 0) {
-          toast.error('Only one commission rule is allowed. Please edit the existing rule instead.')
-          return
-        }
-        
-        // Create new commission (only if no existing rule)
+        // Create new commission
         const response = await adminAPI.createCommissionRule(commissionData)
         let commission = null
         if (response?.data?.success && response?.data?.data?.commission) {
@@ -271,14 +258,12 @@ export default function DeliveryBoyCommission() {
         }
         
         if (commission) {
-          const newCommission = {
-            ...commission,
-            sl: 1
-          }
-          setCommissions([newCommission])
           toast.success('Commission rule created successfully')
         }
       }
+      
+      // Refresh list from backend to get the newly added/updated rules sorted correctly with correct serial numbers
+      await fetchCommissionRules()
       
       setIsAddEditOpen(false)
       setFormData({ name: "", minDistance: "", maxDistance: "", commissionPerKm: "", basePayout: "" })

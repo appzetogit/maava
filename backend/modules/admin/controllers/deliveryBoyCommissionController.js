@@ -181,16 +181,14 @@ export const createCommissionRule = asyncHandler(async (req, res) => {
         // Both are unlimited - they overlap if min distances are compatible
         overlaps = true; // Both cover everything from their min, so they overlap
       } else if (newMaxDist === null) {
-        // New range is unlimited, overlaps if it starts before or at rule's end
-        overlaps = newMinDist <= ruleMax;
+        // New range is unlimited, overlaps if it starts before rule's end
+        overlaps = newMinDist < ruleMax;
       } else if (ruleMax === null) {
-        // Existing rule is unlimited, overlaps if it starts before or at new range's end
-        overlaps = ruleMin <= newMaxDist;
+        // Existing rule is unlimited, overlaps if it starts before new range's end
+        overlaps = ruleMin < newMaxDist;
       } else {
         // Both have finite ranges - check if they overlap
         // Ranges overlap if: newMinDist < ruleMax && ruleMin < newMaxDist
-        // But we want to allow adjacent ranges (e.g., 0-2 and 2-5 should NOT overlap)
-        // So we use <= for one side to allow exact boundaries
         overlaps = newMinDist < ruleMax && ruleMin < newMaxDist;
       }
 
@@ -362,11 +360,11 @@ export const updateCommissionRule = asyncHandler(async (req, res) => {
         // Both are unlimited - they overlap if min distances are compatible
         overlaps = true;
       } else if (newMaxDist === null) {
-        // New range is unlimited, overlaps if it starts before or at rule's end
-        overlaps = newMinDist <= ruleMax;
+        // New range is unlimited, overlaps if it starts before rule's end
+        overlaps = newMinDist < ruleMax;
       } else if (ruleMax === null) {
-        // Existing rule is unlimited, overlaps if it starts before or at new range's end
-        overlaps = ruleMin <= newMaxDist;
+        // Existing rule is unlimited, overlaps if it starts before new range's end
+        overlaps = ruleMin < newMaxDist;
       } else {
         // Both have finite ranges - check if they overlap
         // Ranges overlap if: newMinDist < ruleMax && ruleMin < newMaxDist
