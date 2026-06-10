@@ -507,25 +507,25 @@ export const getRestaurantFinance = asyncHandler(async (req, res) => {
     // Calculate current cycle payout (total - commission)
     const currentCyclePayout = Math.round((currentCycleTotal - currentCycleCommission) * 100) / 100;
 
-    // Get all withdrawal requests (pending + approved) to subtract from estimatedPayout
-    // This ensures that once a withdrawal is made, it's immediately reflected in the available balance
-    const allWithdrawals = await WithdrawalRequest.find({
+    // Get ONLY PENDING withdrawal requests to subtract from estimatedPayout.
+    // 'Pending' = withdrawal requested but not yet paid → hold back from display.
+    // 'Approved' = already paid out → should NOT be subtracted again from current earnings.
+    const pendingWithdrawals = await WithdrawalRequest.find({
       restaurantId: restaurant._id,
-      status: { $in: ['Pending', 'Approved'] }
+      status: 'Pending'
     }).lean();
 
-    const totalWithdrawals = allWithdrawals.reduce((sum, req) => sum + (req.amount || 0), 0);
+    const totalWithdrawals = pendingWithdrawals.reduce((sum, req) => sum + (req.amount || 0), 0);
 
-    // Subtract all withdrawals (pending + approved) from estimatedPayout to show available balance
-    // This ensures end-to-end withdrawal calculation works correctly
+    // Subtract only pending withdrawals from estimatedPayout to show available balance
     const availablePayout = Math.max(0, Math.round((currentCyclePayout - totalWithdrawals) * 100) / 100);
 
     console.log('💰 Finance Calculation:', {
       currentCyclePayout,
       totalWithdrawals,
       availablePayout,
-      withdrawalsCount: allWithdrawals.length,
-      withdrawals: allWithdrawals.map(w => ({ id: w._id, amount: w.amount, status: w.status }))
+      pendingWithdrawalsCount: pendingWithdrawals.length,
+      pendingWithdrawals: pendingWithdrawals.map(w => ({ id: w._id, amount: w.amount, status: w.status }))
     });
 
     return successResponse(res, 200, 'Finance data retrieved successfully', {
