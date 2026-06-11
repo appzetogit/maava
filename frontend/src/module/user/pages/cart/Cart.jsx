@@ -2107,6 +2107,13 @@ export default function Cart() {
                 onClick={() => {
                   if (currentLocation?.latitude) {
                     setTempMapCoords({ lat: currentLocation.latitude, lng: currentLocation.longitude })
+                    if (currentLocation?.area || currentLocation?.formattedAddress || currentLocation?.address) {
+                      setTempAddressInfo({
+                        area: currentLocation.area || currentLocation.city || 'Location Found',
+                        city: currentLocation.city || '',
+                        formattedAddress: formatFullAddress(currentLocation) || currentLocation.formattedAddress || currentLocation.address || ''
+                      })
+                    }
                   } else {
                     setTempMapCoords({ lat: 17.3850, lng: 78.4867 }) // Hyderabad default
                   }
@@ -2418,6 +2425,14 @@ export default function Cart() {
                 onClick={() => {
                   if (currentLocation?.latitude) {
                     setTempMapCoords({ lat: currentLocation.latitude, lng: currentLocation.longitude })
+                    setFlyToTarget({ lat: currentLocation.latitude, lng: currentLocation.longitude })
+                    if (currentLocation?.area || currentLocation?.formattedAddress || currentLocation?.address) {
+                      setTempAddressInfo({
+                        area: currentLocation.area || currentLocation.city || 'Location Found',
+                        city: currentLocation.city || '',
+                        formattedAddress: formatFullAddress(currentLocation) || currentLocation.formattedAddress || currentLocation.address || ''
+                      })
+                    }
                   }
                 }}
                 className="absolute bottom-52 right-4 z-[1001] p-3 bg-white shadow-lg rounded-full flex items-center gap-2 border border-gray-100"

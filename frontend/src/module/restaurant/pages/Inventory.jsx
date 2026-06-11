@@ -20,6 +20,8 @@ import { Switch } from "@/components/ui/switch"
 import { useNavigate } from "react-router-dom"
 import { restaurantAPI } from "@/lib/api"
 import { toast } from "sonner"
+import NewOrderNotification from "../components/NewOrderNotification"
+import { useRestaurantNotifications } from "../hooks/useRestaurantNotifications"
 
 const INVENTORY_STORAGE_KEY = "restaurant_inventory_state"
 
@@ -591,6 +593,8 @@ function SimpleCalendar({ selectedDate, onDateSelect, isOpen, onClose }) {
 
 export default function Inventory() {
   const navigate = useNavigate()
+  // Restaurant notifications hook
+  const { newOrder, clearNewOrder } = useRestaurantNotifications()
   const [activeTab, setActiveTab] = useState("all-items")
   const [searchQuery, setSearchQuery] = useState("")
   const [filterOpen, setFilterOpen] = useState(false)
@@ -2028,6 +2032,15 @@ export default function Inventory() {
 
       {/* Bottom Navigation */}
       <BottomNavOrders />
+
+      {/* New Order Notification */}
+      <NewOrderNotification
+        order={newOrder}
+        onClose={clearNewOrder}
+        onViewOrder={(order) => {
+          navigate(`/restaurant/orders/${order.orderMongoId || order.orderId}`)
+        }}
+      />
     </div>
   )
 }
