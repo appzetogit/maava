@@ -14,7 +14,7 @@ const WithdrawalRequest = mongoose.models.WithdrawalRequest || mongoose.model('W
 mongoose.connect(MONGO_URI).then(async () => {
   // Raju ka dhaba IDs
   const rajuMongoId = '6a087638fc8d6083b4f0b83f';
-  
+
   // MAAVA IDs  
   const maavaMongoId = '69fc3ed6bfb3d1eea69f0260';
 
@@ -22,7 +22,7 @@ mongoose.connect(MONGO_URI).then(async () => {
   const rajuWithdrawals = await WithdrawalRequest.find({
     restaurantId: new mongoose.Types.ObjectId(rajuMongoId)
   }).lean();
-  
+
   console.log('=== Raju ka dhaba Withdrawals ===');
   console.log('Total withdrawal records:', rajuWithdrawals.length);
   rajuWithdrawals.forEach(w => console.log(`  amount: ${w.amount}, status: ${w.status}`));
@@ -31,7 +31,7 @@ mongoose.connect(MONGO_URI).then(async () => {
   const maavaWithdrawals = await WithdrawalRequest.find({
     restaurantId: new mongoose.Types.ObjectId(maavaMongoId)
   }).lean();
-  
+
   console.log('\n=== MAAVA Withdrawals ===');
   console.log('Total withdrawal records:', maavaWithdrawals.length);
   maavaWithdrawals.forEach(w => console.log(`  amount: ${w.amount}, status: ${w.status}`));

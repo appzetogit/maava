@@ -5,11 +5,33 @@ import { Bell, Menu, ChevronDown, Calendar, Download, ArrowRight, FileText, Wall
 import BottomNavOrders from "../components/BottomNavOrders"
 import { restaurantAPI } from "@/lib/api"
 
+const formatDateForDisplay = (date) => {
+  const day = date.getDate()
+  const month = date.toLocaleString('en-US', { month: 'short' })
+  const year = date.getFullYear().toString().slice(-2)
+  return `${day} ${month}'${year}`
+}
+
+const formatDateRange = (start, end) => {
+  return `${formatDateForDisplay(start)} - ${formatDateForDisplay(end)}`
+}
+
+const getInitialLast7DaysRange = () => {
+  const today = new Date()
+  today.setHours(23, 59, 59, 999)
+  
+  const last7DaysStart = new Date(today)
+  last7DaysStart.setDate(today.getDate() - 7)
+  last7DaysStart.setHours(0, 0, 0, 0)
+  
+  return formatDateRange(last7DaysStart, today)
+}
+
 export default function HubFinance() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState("payouts")
-  const [selectedDateRange, setSelectedDateRange] = useState("14 Nov - 14 Dec'25")
+  const [selectedDateRange, setSelectedDateRange] = useState(getInitialLast7DaysRange())
   const [showDownloadMenu, setShowDownloadMenu] = useState(false)
   const [showDateRangePicker, setShowDateRangePicker] = useState(false)
   const downloadMenuRef = useRef(null)
@@ -145,11 +167,17 @@ export default function HubFinance() {
       const endMonth = monthMap[endParts[1]]
       
       // Determine year - check if provided in start or end parts
-      let year = currentYear
+      let startYear = currentYear
+      let endYear = currentYear
+      
+      if (startParts.length > 2) {
+        startYear = parseInt('20' + startParts[2])
+      } else if (endParts.length > 2) {
+        startYear = parseInt('20' + endParts[2])
+      }
+      
       if (endParts.length > 2) {
-        year = parseInt('20' + endParts[2])
-      } else if (startParts.length > 2) {
-        year = parseInt('20' + startParts[2])
+        endYear = parseInt('20' + endParts[2])
       }
 
       // Validate month values
@@ -158,8 +186,8 @@ export default function HubFinance() {
         return null
       }
 
-      const startDate = new Date(year, startMonth, startDay)
-      const endDate = new Date(year, endMonth, endDay)
+      const startDate = new Date(startYear, startMonth, startDay)
+      const endDate = new Date(endYear, endMonth, endDay)
 
       // Validate dates
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
@@ -797,17 +825,6 @@ export default function HubFinance() {
                                     lastMonthStart,
                                     lastMonthEnd
                                   }
-                                }
-
-                                const formatDateForDisplay = (date) => {
-                                  const day = date.getDate()
-                                  const month = date.toLocaleString('en-US', { month: 'short' })
-                                  const year = date.getFullYear().toString().slice(-2)
-                                  return `${day} ${month}'${year}`
-                                }
-
-                                const formatDateRange = (start, end) => {
-                                  return `${formatDateForDisplay(start)} - ${formatDateForDisplay(end)}`
                                 }
 
                                 const ranges = getDateRanges()
