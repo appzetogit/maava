@@ -55,9 +55,7 @@ export default function ViewHibermartZone() {
                 await new Promise(r => setTimeout(r, 100))
                 retries++
             }
-            const google = window.google?.maps ? window.google : await new Loader({
-                apiKey, version: "weekly", libraries: ["places"]
-            }).load()
+            const google = window.google?.maps ? window.google : await new Loader({ apiKey, version: "3.64", libraries: ["places", "drawing", "geometry"] }).load()
             initMap(google, zoneData, storeDoc)
         } catch (err) {
             setMapLoading(false)

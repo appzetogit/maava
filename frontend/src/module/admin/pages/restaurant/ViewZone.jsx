@@ -83,7 +83,7 @@ export default function ViewZone() {
         console.log("Loading Google Maps with Loader...")
         const loader = new Loader({
           apiKey: apiKey,
-          version: "weekly",
+          version: "3.64",
           libraries: ["places", "drawing", "geometry"]
         })
 

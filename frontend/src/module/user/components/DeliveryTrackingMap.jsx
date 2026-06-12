@@ -791,8 +791,8 @@ const DeliveryTrackingMap = ({
             if (apiKey) {
               const loader = new Loader({
                 apiKey: apiKey,
-                version: "weekly",
-                libraries: ["places", "geometry", "drawing"]
+                version: "3.64",
+                libraries: ["places", "drawing", "geometry"]
               });
               await loader.load();
               console.log('✅ Google Maps loaded manually');

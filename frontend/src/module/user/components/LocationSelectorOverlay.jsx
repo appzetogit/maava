@@ -399,8 +399,8 @@ export default function LocationSelectorOverlay({ isOpen, onClose }) {
       try {
         const loader = new Loader({
           apiKey: GOOGLE_MAPS_API_KEY,
-          version: "weekly",
-          libraries: ["places", "geocoding"]
+          version: "3.64",
+          libraries: ["places", "drawing", "geometry"]
         })
 
         const google = await loader.load()

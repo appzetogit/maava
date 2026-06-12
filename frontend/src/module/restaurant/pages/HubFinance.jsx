@@ -19,11 +19,11 @@ const formatDateRange = (start, end) => {
 const getInitialLast7DaysRange = () => {
   const today = new Date()
   today.setHours(23, 59, 59, 999)
-  
+
   const last7DaysStart = new Date(today)
   last7DaysStart.setDate(today.getDate() - 7)
   last7DaysStart.setHours(0, 0, 0, 0)
-  
+
   return formatDateRange(last7DaysStart, today)
 }
 
@@ -165,17 +165,17 @@ export default function HubFinance() {
       const startMonth = monthMap[startParts[1]]
       const endDay = parseInt(endParts[0])
       const endMonth = monthMap[endParts[1]]
-      
+
       // Determine year - check if provided in start or end parts
       let startYear = currentYear
       let endYear = currentYear
-      
+
       if (startParts.length > 2) {
         startYear = parseInt('20' + startParts[2])
       } else if (endParts.length > 2) {
         startYear = parseInt('20' + endParts[2])
       }
-      
+
       if (endParts.length > 2) {
         endYear = parseInt('20' + endParts[2])
       }

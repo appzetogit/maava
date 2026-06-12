@@ -113,7 +113,7 @@ export default function AddHibermartZone() {
             }
             if (window.google?.maps) { initializeMap(window.google); return }
             if (apiKey) {
-                const loader = new Loader({ apiKey, version: "weekly", libraries: ["places", "drawing", "geometry"] })
+                const loader = new Loader({ apiKey, version: "3.64", libraries: ["places", "drawing", "geometry"] })
                 const google = await loader.load()
                 initializeMap(google)
             } else { setMapLoading(false) }

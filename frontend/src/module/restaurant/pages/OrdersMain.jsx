@@ -710,13 +710,25 @@ export default function OrdersMain() {
       }
     }
 
-    // Check every 60 seconds for new confirmed orders (fallback mechanism - reduced frequency)
-    const interval = setInterval(checkConfirmedOrders, 60000)
+    // Check every 15 seconds for new confirmed orders (fallback mechanism - increased frequency for faster popups)
+    const interval = setInterval(checkConfirmedOrders, 15000)
 
     // Check immediately on mount
     checkConfirmedOrders()
 
-    return () => clearInterval(interval)
+    // Check immediately when app becomes visible (e.g., user taps push notification and opens app)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('📱 App became visible, checking for new orders immediately...');
+        checkConfirmedOrders();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }
   }, []) // Empty dependency array - check runs independently
 
   // Play audio when popup opens

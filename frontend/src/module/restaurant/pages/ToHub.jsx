@@ -1822,9 +1822,9 @@ export default function ToHub() {
           box-shadow: none !important;
         }
       `}</style>
-      <div className="">
+      <div className="sticky top-0 z-50 bg-[#FAFAFA] flex flex-col">
         {/* Reuse Feedback-like navbar */}
-        <div className="sticky bg-white/80 backdrop-blur-md top-0 z-40 px-4 py-4 border-b border-gray-100 flex items-center justify-between shadow-sm">
+        <div className="bg-white/80 backdrop-blur-md px-4 py-4 border-b border-gray-100 flex items-center justify-between shadow-sm shrink-0">
           <div className="pl-1">
             <p className="text-[10px] tracking-[0.18em] text-gray-400 font-black uppercase">
               Showing data for
@@ -1837,7 +1837,7 @@ export default function ToHub() {
             </h1>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
             <motion.button
               whileHover={{ scale: 1.1, rotate: 5 }}
               whileTap={{ scale: 0.9 }}
@@ -1866,7 +1866,7 @@ export default function ToHub() {
         </div>
 
         {/* Top tabs (matching Orders tab style) */}
-        <div className="sticky top-[50px] z-40 pb-2 bg-gray-100">
+        <div className="pb-2 bg-gray-100 shrink-0">
           <div
             ref={topTabBarRef}
             className="flex gap-2 overflow-x-auto scrollbar-hide bg-transparent rounded-full px-3 py-2 mt-2"
