@@ -599,6 +599,42 @@ export default function OrdersMain() {
     }
   }
 
+  // Wake Lock implementation to prevent screen from sleeping while on the Orders page
+  const wakeLockRef = useRef(null)
+
+  useEffect(() => {
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLockRef.current = await navigator.wakeLock.request('screen')
+          console.log('📱 Screen Wake Lock is active - screen will not sleep')
+        }
+      } catch (err) {
+        console.error(`Wake Lock error: ${err.name}, ${err.message}`)
+      }
+    }
+
+    // Request wake lock initially
+    requestWakeLock()
+
+    // Re-request wake lock when visibility changes to visible (e.g., after unlocking device)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        requestWakeLock()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      if (wakeLockRef.current !== null) {
+        wakeLockRef.current.release()
+          .catch(console.error)
+      }
+    }
+  }, [])
+
   // Lenis smooth scrolling
   useEffect(() => {
     const lenis = new Lenis({
