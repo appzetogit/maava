@@ -24,7 +24,7 @@ window.__googleMapsLoaded = window.__googleMapsLoaded || false;
 (async () => {
   // Check if Google Maps is already loaded
   if (window.google && window.google.maps) {
-    
+
     window.__googleMapsLoaded = true;
     return;
   }
@@ -32,7 +32,7 @@ window.__googleMapsLoaded = window.__googleMapsLoaded || false;
   // Check if script is already being loaded
   const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
   if (existingScript) {
-    
+
     window.__googleMapsLoading = true;
 
     // Wait for script to load
@@ -45,7 +45,7 @@ window.__googleMapsLoaded = window.__googleMapsLoaded || false;
 
   // Check if Loader is already loading
   if (window.__googleMapsLoading) {
-    
+
     return;
   }
 
@@ -55,11 +55,11 @@ window.__googleMapsLoaded = window.__googleMapsLoaded || false;
     const googleMapsApiKey = await getGoogleMapsApiKey()
     if (googleMapsApiKey) {
       const script = document.createElement('script')
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&v=3.64&libraries=places,geometry,drawing`
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=places,geometry,drawing`
       script.async = true
       script.defer = true
       script.onload = () => {
-        
+
         window.__googleMapsLoaded = true;
         window.__googleMapsLoading = false;
       }

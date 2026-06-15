@@ -54,7 +54,7 @@ const OptimizedImage = ({
   // Generate WebP srcset
   const generateWebPSrcSet = (imageSrc) => {
     if (!supportsOptimization(imageSrc)) return undefined
-    
+
     const sizes = [400, 600, 800, 1200, 1600]
     return sizes
       .map(size => `${imageSrc}?w=${size}&q=80&format=webp ${size}w`)
@@ -170,7 +170,7 @@ const OptimizedImage = ({
               type="image/webp"
             />
           )}
-          
+
           {/* Fallback to original format */}
           <motion.img
             src={imageSrc}

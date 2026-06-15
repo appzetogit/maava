@@ -11,6 +11,14 @@ let subscribers = []
 let lastDbUpdateTimestamp = 0
 const DB_UPDATE_THROTTLE_MS = 60000 // Only update DB every 1 minute max (reduced from 5s)
 
+// Global cache for geocoding to prevent redundant API calls across components
+let globalGeocodeCache = {
+  latitude: null,
+  longitude: null,
+  timestamp: 0,
+  address: null,
+};
+
 export function useLocation() {
   const [location, setLocation] = useState(globalLocation)
   const [loading, setLoading] = useState(!globalLocation)
@@ -19,12 +27,6 @@ export function useLocation() {
 
   const updateTimerRef = useRef(null)
   const prevLocationCoordsRef = useRef({ latitude: null, longitude: null })
-  const geocodeCacheRef = useRef({
-    latitude: null,
-    longitude: null,
-    timestamp: 0,
-    address: null,
-  })
 
   const MIN_GEO_DISTANCE_METERS = 100
   const MIN_GEO_INTERVAL_MS = 180000
@@ -484,9 +486,9 @@ export function useLocation() {
         }
       }
 
-      // ===================== GOOGLE PLACES API - via BACKEND PROXY (avoids CORS) =====================
-      // The browser cannot call maps.googleapis.com/maps/api/place/* directly (CORS blocked).
-      // The backend exposes GET /api/location/nearby which proxies the call server-side.
+      // ===================== GOOGLE PLACES API - via BACKEND PROXY =====================
+      // OPTIMIZATION: Disabled to prevent massive Google Maps API billing.
+      // Geocoding API already returns 'premise' and 'point_of_interest' which provides the exact building/cafe name.
       let placeDetails = null;
       let placeId = null;
       let placeName = "";
@@ -495,30 +497,6 @@ export function useLocation() {
       let placeRating = null;
       let placeOpeningHours = null;
       let placePhotos = [];
-
-      try {
-        debugLog("🔍 Fetching nearby place info via backend proxy...");
-        // locationAPI.getNearbyLocations calls GET /api/location/nearby
-        const nearbyRes = await locationAPI.getNearbyLocations(latitude, longitude, 50);
-        const nearbyData = nearbyRes?.data;
-
-        if (nearbyData?.success && nearbyData?.data?.locations?.length > 0) {
-          const closestPlace = nearbyData.data.locations[0];
-          placeId = closestPlace.id || null;
-          placeName = closestPlace.name || "";
-
-          debugLog("✅ Found nearby place via backend proxy:", {
-            name: placeName,
-            placeId,
-            distance: closestPlace.distance
-          });
-        } else {
-          console.warn("⚠️ No nearby places found via backend proxy");
-        }
-      } catch (placesError) {
-        console.warn("⚠️ Backend nearby places call failed (non-critical):", placesError.message);
-        // Continue with geocoding results even if Places API fails
-      }
 
 
       // ZOMATO-STYLE: Extract exact building/cafe name (Mama Loca Cafe, Princess Center)
@@ -1400,14 +1378,53 @@ export function useLocation() {
               } else {
                 debugLog("🔍 Calling reverse geocode with coordinates:", { latitude, longitude })
                 try {
-                  // Try Google Maps first
-                  addr = await reverseGeocodeWithGoogleMaps(latitude, longitude)
-                  debugLog("✅ Google Maps geocoding successful:", addr)
+                  // Check global cache before directly calling API in getPositionWithRetry
+                  const cached = globalGeocodeCache;
+                  const timeSinceLastGeocode = Date.now() - (cached.timestamp || 0);
+                  const movedSinceLastGeocode = distanceInMeters(
+                    cached.latitude,
+                    cached.longitude,
+                    latitude,
+                    longitude
+                  );
+                  const hasUsableCachedAddress =
+                    !!cached.address &&
+                    cached.address?.formattedAddress &&
+                    cached.address?.formattedAddress !== "Select location";
+
+                  if (
+                    hasUsableCachedAddress &&
+                    timeSinceLastGeocode < MIN_GEO_INTERVAL_MS &&
+                    movedSinceLastGeocode < MIN_GEO_DISTANCE_METERS
+                  ) {
+                    addr = cached.address;
+                    debugLog("✅ Using global cached geocode result instead of fresh API call:", addr);
+                  } else {
+                    // Try Google Maps first
+                    addr = await reverseGeocodeWithGoogleMaps(latitude, longitude)
+                    
+                    // Update global cache
+                    globalGeocodeCache = {
+                      latitude,
+                      longitude,
+                      timestamp: Date.now(),
+                      address: addr,
+                    };
+                    debugLog("✅ Google Maps geocoding successful:", addr)
+                  }
                 } catch (geocodeErr) {
                   console.warn("⚠️ Google Maps geocoding failed, trying fallback:", geocodeErr.message)
                   try {
                     // Fallback to direct reverse geocode (BigDataCloud)
                     addr = await reverseGeocodeDirect(latitude, longitude)
+                    
+                    // Update global cache
+                    globalGeocodeCache = {
+                      latitude,
+                      longitude,
+                      timestamp: Date.now(),
+                      address: addr,
+                    };
                     debugLog("✅ Fallback geocoding successful:", addr)
 
                     // Validate fallback result - if it still has placeholder values, don't use it
@@ -1710,7 +1727,7 @@ export function useLocation() {
                 formattedAddress: "Select location",
               }
             } else {
-              const cached = geocodeCacheRef.current
+              const cached = globalGeocodeCache
               const timeSinceLastGeocode = Date.now() - (cached.timestamp || 0)
               const movedSinceLastGeocode = distanceInMeters(
                 cached.latitude,
@@ -1733,7 +1750,7 @@ export function useLocation() {
               } else {
                 try {
                   addr = await reverseGeocodeWithGoogleMaps(latitude, longitude)
-                  geocodeCacheRef.current = {
+                  globalGeocodeCache = {
                     latitude,
                     longitude,
                     timestamp: Date.now(),
@@ -1750,7 +1767,7 @@ export function useLocation() {
                   try {
                     debugLog("🔄 Trying fallback geocoding...")
                     addr = await reverseGeocodeDirect(latitude, longitude)
-                    geocodeCacheRef.current = {
+                    globalGeocodeCache = {
                       latitude,
                       longitude,
                       timestamp: Date.now(),
