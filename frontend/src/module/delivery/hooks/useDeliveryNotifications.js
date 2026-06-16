@@ -153,6 +153,69 @@ export const useDeliveryNotifications = () => {
     fetchDeliveryPartnerId();
   }, []);
 
+  // Handle Flutter injected background order notifications (from terminated state)
+  useEffect(() => {
+    const processFlutterOrder = (orderId, payload) => {
+      console.log('📦 New order received from Flutter background injection:', orderId, payload);
+      
+      // Check if delivery partner is already on a trip
+      const hasActiveOrder = localStorage.getItem('activeOrder') || localStorage.getItem('deliveryActiveOrder');
+      if (hasActiveOrder) {
+        console.log('🚫 Ignoring Flutter injected order - delivery partner is already on an active trip');
+        return;
+      }
+
+      // If payload is empty, we at least pass the orderId so the popup can show the ID
+      // The popup component might need to fetch full details if only ID is provided
+      const orderData = payload || { orderId: orderId };
+      
+      // Deduplicate: ignore if we already showed this order
+      const incomingId = orderData?.orderId || orderData?.mongoId || orderData?.orderMongoId || orderId;
+      if (incomingId && lastNotifiedOrderIdRef.current === incomingId) {
+        console.log('⚠️ Duplicate Flutter injected order ignored:', incomingId);
+        return;
+      }
+      if (incomingId) lastNotifiedOrderIdRef.current = incomingId;
+      
+      setNewOrder(orderData);
+      playNotificationSound();
+    };
+
+    // Option A: window.onNewOrder hook
+    window.onNewOrder = (orderId, payload) => {
+      processFlutterOrder(orderId, payload);
+    };
+
+    // Option B: Event listener
+    const handleNewOrderEvent = (e) => {
+      const orderId = e.detail?.orderId;
+      const payload = e.detail?.payload;
+      if (orderId) {
+        processFlutterOrder(orderId, payload);
+      }
+    };
+    window.addEventListener('newOrder', handleNewOrderEvent);
+
+    // Option C: Poll the global on startup (for slow SPA boot)
+    // We use a short timeout to ensure the app is fully mounted
+    setTimeout(() => {
+      if (window.__pendingMaavaOrder) {
+        console.log('📦 Found pending order from Flutter on startup:', window.__pendingMaavaOrder);
+        const orderId = window.__pendingMaavaOrder.orderId;
+        const payload = window.__pendingMaavaOrder.payload;
+        if (orderId) {
+          processFlutterOrder(orderId, payload);
+        }
+        window.__pendingMaavaOrder = null; // Clear it after processing
+      }
+    }, 500);
+
+    return () => {
+      window.onNewOrder = null;
+      window.removeEventListener('newOrder', handleNewOrderEvent);
+    };
+  }, [playNotificationSound]);
+
   // Socket connection effect
   useEffect(() => {
     if (!deliveryPartnerId) {
