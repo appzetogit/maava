@@ -331,15 +331,10 @@ export async function notifyDeliveryBoyNewOrder(order, deliveryPartnerId) {
         console.warn(`⚠️ No delivery partners are currently connected to the app!`);
       }
 
-      // Still broadcast to all delivery sockets as fallback
-      console.warn(`⚠️ Broadcasting to all delivery sockets as fallback (in case they connect later)`);
-      deliveryNamespace.emit('new_order', orderNotification);
-      deliveryNamespace.emit('play_notification_sound', {
-        type: 'new_order',
-        orderId: order.orderId,
-        message: `New order assigned: ${order.orderId}`
-      });
-      notificationSent = true;
+      // REMOVED BROADCAST FALLBACK: We should NEVER broadcast to all sockets when a specific partner is targeted.
+      // This causes delivery boys in other zones to receive the order.
+      console.warn(`⚠️ Target partner not connected via socket. Relying on Push Notification only.`);
+      notificationSent = true; // Set to true since we attempt push notification anyway
     } else {
       console.log(`✅ Successfully found ${socketsInRoom.length} connected socket(s) for delivery partner ${normalizedDeliveryPartnerId}`);
       console.log(`✅ Notification sent to room: ${foundRoom}`);
@@ -641,39 +636,11 @@ export async function notifyMultipleDeliveryBoys(order, deliveryPartnerIds, phas
       }
     }
 
-    // ─── MANDATORY BROADCAST FALLBACK ───────────────────────────────────────
-    // ALWAYS broadcast to ALL connected delivery sockets as safety net.
-    // BUT only do this if no delivery partner is assigned yet.
-    if (order.deliveryPartnerId) {
-      console.log(`ℹ️ Skipping safety broadcast for order ${order.orderId} - already assigned to ${order.deliveryPartnerId}`);
-      return { success: true, notified: notifiedCount };
-    }
-
-    try {
-      const allConnectedSockets = await deliveryNamespace.fetchSockets();
-      console.log(`📡 Broadcasting new order to ALL ${allConnectedSockets.length} connected delivery sockets (safety broadcast)`);
-      if (allConnectedSockets.length > 0) {
-        const broadcastNotification = { ...orderNotification, isBroadcast: true };
-        deliveryNamespace.emit('new_order', broadcastNotification);
-        deliveryNamespace.emit('new_order_available', broadcastNotification);
-        deliveryNamespace.emit('play_notification_sound', {
-          type: 'new_order_available',
-          orderId: order.orderId,
-          message: `New order available: ${order.orderId}`,
-          phase: phase
-        });
-        console.log(`✅ Safety broadcast sent to all ${allConnectedSockets.length} delivery sockets for order ${order.orderId}`);
-      } else {
-        console.warn(`⚠️ NO delivery sockets connected! Delivery boys must open the app to receive notifications.`);
-        // Log all rooms in delivery namespace for debugging
-        const allRooms = deliveryNamespace.adapter?.rooms;
-        if (allRooms) {
-          const deliveryRooms = Array.from(allRooms.keys()).filter(r => r.startsWith('delivery:'));
-          console.warn(`⚠️ Delivery rooms in namespace:`, deliveryRooms);
-        }
-      }
-    } catch (broadcastError) {
-      console.error('❌ Error in safety broadcast:', broadcastError);
+    // ─── REMOVED BROADCAST FALLBACK TO ENFORCE ZONE RESTRICTIONS ───────────
+    // We no longer broadcast to all connected sockets to prevent delivery boys 
+    // from outside the zone (e.g. 700km away) from receiving the order.
+    if (notifiedCount === 0) {
+      console.warn(`⚠️ No delivery partners were notified for order ${order.orderId}. Order will need manual assignment or waiting for partners in zone.`);
     }
     // ─────────────────────────────────────────────────────────────────────────
 

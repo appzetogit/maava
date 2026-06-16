@@ -329,32 +329,13 @@ export const approveHibermartOrder = asyncHandler(async (req, res) => {
           if (anyDeliveryBoy) {
             await notifyMultipleDeliveryBoys(orderForNotification, [anyDeliveryBoy.deliveryPartnerId], 'immediate');
           } else {
-            // Fallback: notify all online delivery partners (no location filter)
-            const allOnlinePartners = await Delivery.find({
-              'availability.isOnline': true,
-              status: { $in: ['approved', 'active'] },
-              isActive: true
-            }).select('_id').lean();
-            const allIds = allOnlinePartners.map(p => p._id.toString());
-            if (allIds.length > 0) {
-              console.log(`📣 Hibermart fallback notify count: ${allIds.length}`);
-              await notifyMultipleDeliveryBoys(orderForNotification, allIds, 'broadcast');
-            } else {
-              console.warn('⚠️ No online delivery partners found for Hibermart fallback notification');
-            }
+            // REMOVED: Do not fallback to all online delivery partners to prevent cross-zone assignments.
+            console.warn('⚠️ No nearby delivery partners found for Hibermart order. Waiting for partners to come online in zone.');
           }
         }
       } else {
-        const allOnlinePartners = await Delivery.find({
-          'availability.isOnline': true,
-          status: { $in: ['approved', 'active'] },
-          isActive: true
-        }).select('_id').lean();
-        const allIds = allOnlinePartners.map(p => p._id.toString());
-        if (allIds.length > 0) {
-          console.log(`📣 Hibermart fallback notify count (no location): ${allIds.length}`);
-          await notifyMultipleDeliveryBoys(order.toObject ? order.toObject() : order, allIds, 'broadcast');
-        }
+        // REMOVED: Do not fallback to all online delivery partners to prevent cross-zone assignments.
+        console.warn('⚠️ Hibermart store location not resolved. Cannot notify delivery partners.');
       }
     }
   } catch (notificationError) {
