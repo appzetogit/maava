@@ -82,10 +82,10 @@ export const createWithdrawalRequest = asyncHandler(async (req, res) => {
       totalEarnings += (foodPrice - (commissionResult.commission || 0));
     }
 
-    // Get all pending/approved withdrawal requests
+    // Get all pending withdrawal requests
     const allWithdrawals = await WithdrawalRequest.find({
       restaurantId: restaurant._id,
-      status: { $in: ['Pending', 'Approved'] }
+      status: 'Pending'
     }).lean();
     const totalWithdrawnAmount = allWithdrawals.reduce((sum, req) => sum + (req.amount || 0), 0);
 
