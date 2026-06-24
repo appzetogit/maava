@@ -82,12 +82,13 @@ export const createWithdrawalRequest = asyncHandler(async (req, res) => {
       totalEarnings += (foodPrice - (commissionResult.commission || 0));
     }
 
-    // Get all pending withdrawal requests
-    const allWithdrawals = await WithdrawalRequest.find({
+    // Get all active withdrawal requests for the current cycle
+    const activeWithdrawals = await WithdrawalRequest.find({
       restaurantId: restaurant._id,
-      status: 'Pending'
+      status: { $in: ['Pending', 'Approved', 'Processed'] },
+      createdAt: { $gte: currentCycleStart, $lte: currentCycleEnd }
     }).lean();
-    const totalWithdrawnAmount = allWithdrawals.reduce((sum, req) => sum + (req.amount || 0), 0);
+    const totalWithdrawnAmount = activeWithdrawals.reduce((sum, req) => sum + (req.amount || 0), 0);
 
     // Available balance matches Hub Finance "estimatedPayout"
     const availableBalance = Math.max(0, Math.round((totalEarnings - totalWithdrawnAmount) * 100) / 100);

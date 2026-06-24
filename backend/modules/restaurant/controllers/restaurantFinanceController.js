@@ -507,25 +507,26 @@ export const getRestaurantFinance = asyncHandler(async (req, res) => {
     // Calculate current cycle payout (total - commission)
     const currentCyclePayout = Math.round((currentCycleTotal - currentCycleCommission) * 100) / 100;
 
-    // Get ONLY PENDING withdrawal requests to subtract from estimatedPayout.
-    // 'Pending' = withdrawal requested but not yet paid → hold back from display.
-    // 'Approved' = already paid out → should NOT be subtracted again from current earnings.
-    const pendingWithdrawals = await WithdrawalRequest.find({
+    // Get all non-rejected withdrawal requests for the CURRENT CYCLE.
+    // 'Pending' = requested but not paid -> hold back.
+    // 'Approved'/'Processed' = already paid out -> must remain subtracted from current cycle earnings.
+    const activeWithdrawals = await WithdrawalRequest.find({
       restaurantId: restaurant._id,
-      status: 'Pending'
+      status: { $in: ['Pending', 'Approved', 'Processed'] },
+      createdAt: { $gte: currentCycleStart, $lte: currentCycleEnd }
     }).lean();
 
-    const totalWithdrawals = pendingWithdrawals.reduce((sum, req) => sum + (req.amount || 0), 0);
+    const totalWithdrawals = activeWithdrawals.reduce((sum, req) => sum + (req.amount || 0), 0);
 
-    // Subtract only pending withdrawals from estimatedPayout to show available balance
+    // Subtract all active withdrawals from estimatedPayout to show available balance
     const availablePayout = Math.max(0, Math.round((currentCyclePayout - totalWithdrawals) * 100) / 100);
 
     console.log('💰 Finance Calculation:', {
       currentCyclePayout,
       totalWithdrawals,
       availablePayout,
-      pendingWithdrawalsCount: pendingWithdrawals.length,
-      pendingWithdrawals: pendingWithdrawals.map(w => ({ id: w._id, amount: w.amount, status: w.status }))
+      activeWithdrawalsCount: activeWithdrawals.length,
+      activeWithdrawals: activeWithdrawals.map(w => ({ id: w._id, amount: w.amount, status: w.status }))
     });
 
     return successResponse(res, 200, 'Finance data retrieved successfully', {
