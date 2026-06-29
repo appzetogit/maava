@@ -61,10 +61,10 @@ export const getRestaurantOrders = asyncHandler(async (req, res) => {
         // Exclude online orders that are still in 'pending' state (cancelled or interrupted flow)
         {
           $nor: [
-            { 
-              'payment.method': { $in: ['razorpay', 'online', null] }, 
-              'payment.status': 'pending', 
-              'status': 'pending' 
+            {
+              'payment.method': { $in: ['razorpay', 'online', null] },
+              'payment.status': 'pending',
+              'status': 'pending'
             }
           ]
         }
@@ -249,7 +249,7 @@ export const acceptOrder = asyncHandler(async (req, res) => {
       });
       if (order) console.log(`[AcceptOrder] Found order by _id: ${order.orderId}`);
     }
-    
+
     // Try by orderId (custom order ID like "ORD-123456-789")
     if (!order) {
       order = await Order.findOne({

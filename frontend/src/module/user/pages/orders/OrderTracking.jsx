@@ -644,11 +644,11 @@ export default function OrderTracking() {
 
   const handleShare = async () => {
     if (!order) return;
-    
+
     const companyName = "Maava" // Fallback if business settings not loaded
     const restaurantName = order.restaurant || "this restaurant"
     const restaurantId = order.restaurantId?._id || order.restaurantId
-    
+
     let shareUrl = window.location.href // Fallback to current tracking page
     if (isHibermart) {
       shareUrl = `${window.location.origin}/in-mart`

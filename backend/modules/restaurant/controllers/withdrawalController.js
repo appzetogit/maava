@@ -82,13 +82,12 @@ export const createWithdrawalRequest = asyncHandler(async (req, res) => {
       totalEarnings += (foodPrice - (commissionResult.commission || 0));
     }
 
-    // Get all active withdrawal requests for the current cycle
-    const activeWithdrawals = await WithdrawalRequest.find({
+    // Get all pending withdrawal requests
+    const allWithdrawals = await WithdrawalRequest.find({
       restaurantId: restaurant._id,
-      status: { $in: ['Pending', 'Approved', 'Processed'] },
-      createdAt: { $gte: currentCycleStart, $lte: currentCycleEnd }
+      status: 'Pending'
     }).lean();
-    const totalWithdrawnAmount = activeWithdrawals.reduce((sum, req) => sum + (req.amount || 0), 0);
+    const totalWithdrawnAmount = allWithdrawals.reduce((sum, req) => sum + (req.amount || 0), 0);
 
     // Available balance matches Hub Finance "estimatedPayout"
     const availableBalance = Math.max(0, Math.round((totalEarnings - totalWithdrawnAmount) * 100) / 100);
@@ -309,18 +308,18 @@ export const approveWithdrawalRequest = asyncHandler(async (req, res) => {
     // Find and update the pending withdrawal transaction to Completed
     // Balance was already deducted when request was created, so we just mark transaction as completed
     let pendingTransaction = null;
-    
+
     if (withdrawalRequest.transactionId) {
       // Find transaction by ID if linked
       pendingTransaction = wallet.transactions.id(withdrawalRequest.transactionId);
     }
-    
+
     if (!pendingTransaction) {
       // Fallback: find by description
       pendingTransaction = wallet.transactions.find(
-        t => t.type === 'withdrawal' && 
-             t.status === 'Pending' && 
-             t.description?.includes(withdrawalRequest._id.toString())
+        t => t.type === 'withdrawal' &&
+          t.status === 'Pending' &&
+          t.description?.includes(withdrawalRequest._id.toString())
       );
     }
 
@@ -351,8 +350,8 @@ export const approveWithdrawalRequest = asyncHandler(async (req, res) => {
         'restaurant',
         '💰 Withdrawal Approved',
         `Your withdrawal request for ₹${withdrawalRequest.amount.toFixed(2)} has been approved.`,
-        { 
-          type: 'WITHDRAWAL_APPROVED', 
+        {
+          type: 'WITHDRAWAL_APPROVED',
           amount: withdrawalRequest.amount.toString(),
           requestId: withdrawalRequest._id.toString()
         }
@@ -417,18 +416,18 @@ export const rejectWithdrawalRequest = asyncHandler(async (req, res) => {
     // Find and update the pending withdrawal transaction to Cancelled
     // Refund the balance back
     let pendingTransaction = null;
-    
+
     if (withdrawalRequest.transactionId) {
       // Find transaction by ID if linked
       pendingTransaction = wallet.transactions.id(withdrawalRequest.transactionId);
     }
-    
+
     if (!pendingTransaction) {
       // Fallback: find by description
       pendingTransaction = wallet.transactions.find(
-        t => t.type === 'withdrawal' && 
-             t.status === 'Pending' && 
-             t.description?.includes(withdrawalRequest._id.toString())
+        t => t.type === 'withdrawal' &&
+          t.status === 'Pending' &&
+          t.description?.includes(withdrawalRequest._id.toString())
       );
     }
 
@@ -436,7 +435,7 @@ export const rejectWithdrawalRequest = asyncHandler(async (req, res) => {
       // Update transaction status to Cancelled
       pendingTransaction.status = 'Cancelled';
       pendingTransaction.processedAt = new Date();
-      
+
       // Refund the balance back
       wallet.totalBalance = (wallet.totalBalance || 0) + withdrawalRequest.amount;
       wallet.totalWithdrawn = Math.max(0, (wallet.totalWithdrawn || 0) - withdrawalRequest.amount);
@@ -464,8 +463,8 @@ export const rejectWithdrawalRequest = asyncHandler(async (req, res) => {
         'restaurant',
         '❌ Withdrawal Rejected',
         `Your withdrawal request for ₹${withdrawalRequest.amount.toFixed(2)} has been rejected. ${rejectionReason ? 'Reason: ' + rejectionReason : ''}`,
-        { 
-          type: 'WITHDRAWAL_REJECTED', 
+        {
+          type: 'WITHDRAWAL_REJECTED',
           amount: withdrawalRequest.amount.toString(),
           requestId: withdrawalRequest._id.toString(),
           reason: rejectionReason || ''

@@ -1,0 +1,3263 @@
+[
+  {
+    "_id": "69fc10e9bfb3d1eea69eea49",
+    "phone": "+91 6266925739",
+    "name": "devendra jaiswal",
+    "status": "approved",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "69fd67d9bfb3d1eea69f5fad",
+    "phone": "+91 6266625739",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "69fefae6bfb3d1eea6a00819",
+    "phone": "+91 9553252234",
+    "name": "KURUMURTHY",
+    "status": "approved",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a02f1adfc8d6083b4ef42a5",
+    "phone": "+91 9705243147",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a0a0f66e70039972b588fed",
+    "phone": "+91 8341194495",
+    "name": "Kudavat Kishan",
+    "status": "approved",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a0d3fbbe70039972b598a1f",
+    "phone": "+91 6304650764",
+    "name": "Pathlavath Ramesh",
+    "status": "approved",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a10206ea6e1be36f67735d2",
+    "phone": "+91 6303455099",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a110f8da6e1be36f6776ba8",
+    "phone": "+91 7569808340",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a110fc6a6e1be36f6776bed",
+    "phone": "+91 8309897006",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a111a1aa6e1be36f6777dd3",
+    "phone": "+91 6301379826",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a111aa5a6e1be36f6777ed2",
+    "phone": "+91 9951930070",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a111fc9a6e1be36f677b2e6",
+    "phone": "+91 9908999619",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11212ba6e1be36f677bb1d",
+    "phone": "+91 9502557270",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11218fa6e1be36f677c2ed",
+    "phone": "+91 9553368549",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a112369a6e1be36f677d2cd",
+    "phone": "+91 9392459808",
+    "name": "Delivery Partner",
+    "status": "approved",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a112875a6e1be36f677ec48",
+    "phone": "+91 9701854907",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11287fa6e1be36f677ec9b",
+    "phone": "+91 9912234728",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a1128bca6e1be36f677ed2a",
+    "phone": "+91 9959372248",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a112a5ba6e1be36f677f52d",
+    "phone": "+91 7672018619",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a112aeea6e1be36f677f6f0",
+    "phone": "+91 7093491627",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a112b8da6e1be36f677f832",
+    "phone": "+91 6302488069",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a112c26a6e1be36f677f854",
+    "phone": "+91 9381189869",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a112f2da6e1be36f67802c8",
+    "phone": "+91 7386236800",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a113183a6e1be36f6781a6b",
+    "phone": "+91 7981332843",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1132d5a6e1be36f678298d",
+    "phone": "+91 7075608637",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11338da6e1be36f678311e",
+    "phone": "+91 9177904011",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11353ca6e1be36f6783d52",
+    "phone": "+91 8328414925",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1138baa6e1be36f6785895",
+    "phone": "+91 9052436345",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11390ba6e1be36f6785b03",
+    "phone": "+91 8886311576",
+    "name": "Raghava",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a11395ba6e1be36f6785e09",
+    "phone": "+91 7013763237",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a113a40a6e1be36f6786977",
+    "phone": "+91 7780574756",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a113b37a6e1be36f67877be",
+    "phone": "+91 7032618511",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a113ca0a6e1be36f6788d48",
+    "phone": "+91 9182634412",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a113dada6e1be36f678a319",
+    "phone": "+91 9553090278",
+    "name": "Delivery Partner",
+    "status": "approved",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a113e58a6e1be36f678b1d2",
+    "phone": "+91 7993351431",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a113eb7a6e1be36f678ba6d",
+    "phone": "+91 7569527062",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a114007a6e1be36f678c6d3",
+    "phone": "+91 8688587451",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a114117a6e1be36f678d3fd",
+    "phone": "+91 6300422053",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a114194a6e1be36f678d7d8",
+    "phone": "+91 6300448363",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1145c5a6e1be36f679082d",
+    "phone": "+91 9848776997",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11469aa6e1be36f6791aeb",
+    "phone": "+91 6305897131",
+    "name": "Raghu",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a114aa4a6e1be36f6794b78",
+    "phone": "+91 8309234584",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a114b41a6e1be36f6795512",
+    "phone": "+91 9948363191",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a114ef1a6e1be36f67977af",
+    "phone": "+91 8019362890",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a114f75a6e1be36f6797919",
+    "phone": "+91 9642137491",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a115019a6e1be36f6798199",
+    "phone": "+91 9347056562",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11529ca6e1be36f679a409",
+    "phone": "+91 9502805876",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a115434a6e1be36f679bd66",
+    "phone": "+91 8121371634",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11550ea6e1be36f679ca6d",
+    "phone": "+91 6301756969",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1155f9a6e1be36f679d5cc",
+    "phone": "+91 9390426910",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a115620a6e1be36f679d6c6",
+    "phone": "+91 9989885988",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a115621a6e1be36f679d6d5",
+    "phone": "+91 6300451645",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1158cda6e1be36f679eceb",
+    "phone": "+91 9030275421",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a115a48a6e1be36f67a0583",
+    "phone": "+91 7386994706",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a115d18a6e1be36f67a30b6",
+    "phone": "+91 9398980552",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11647fa6e1be36f67a8f8c",
+    "phone": "+91 8179214136",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a116677a6e1be36f67aa77e",
+    "phone": "+91 7095906303",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1167cba6e1be36f67aafd1",
+    "phone": "+91 9010975289",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a116aa1a6e1be36f67ac522",
+    "phone": "+91 7675887284",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a116c08a6e1be36f67ace0f",
+    "phone": "+91 7416055123",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a116f5da6e1be36f67af395",
+    "phone": "+91 8328033588",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11708ea6e1be36f67afeef",
+    "phone": "+91 8919025881",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1171f3a6e1be36f67b05f6",
+    "phone": "+91 9640100843",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a117246a6e1be36f67b0970",
+    "phone": "+91 9392568810",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a117523a6e1be36f67b1c22",
+    "phone": "+91 8712755750",
+    "name": "Delivery Partner",
+    "status": "approved",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a117641a6e1be36f67b2b73",
+    "phone": "+91 9908777065",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11769aa6e1be36f67b3070",
+    "phone": "+91 9014792032",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a117b88a6e1be36f67b524a",
+    "phone": "+91 8096126501",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a117e3ea6e1be36f67b6d8e",
+    "phone": "+91 7674876819",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a117f5aa6e1be36f67b713b",
+    "phone": "+91 9100301556",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1181efa6e1be36f67b7677",
+    "phone": "+91 9885826143",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a11876da6e1be36f67b89cb",
+    "phone": "+91 9100607415",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1188aea6e1be36f67b8cce",
+    "phone": "+91 9542719167",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a118ac3a6e1be36f67b91b8",
+    "phone": "+91 7995219019",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a118c43a6e1be36f67b94cf",
+    "phone": "+91 8897153677",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a118f45a6e1be36f67ba7b9",
+    "phone": "+91 7095313873",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11a35fa6e1be36f67c099f",
+    "phone": "+91 9059935488",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11a688a6e1be36f67c1cb7",
+    "phone": "+91 9550707786",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11a8b8a6e1be36f67c2ad4",
+    "phone": "+91 9666892505",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11a9a0a6e1be36f67c2f2d",
+    "phone": "+91 6300718078",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11aa30a6e1be36f67c2fcb",
+    "phone": "+91 6301076421",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11b078a6e1be36f67c4ea9",
+    "phone": "+91 9701160012",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11b124a6e1be36f67c5991",
+    "phone": "+91 8522834156",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11b23aa6e1be36f67c616d",
+    "phone": "+91 9542122708",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11b7bca6e1be36f67cae6e",
+    "phone": "+91 7569008576",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11ba47a6e1be36f67cc1fb",
+    "phone": "+91 6302406937",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11bc10a6e1be36f67cdea6",
+    "phone": "+91 9347581787",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11bc50a6e1be36f67ce15f",
+    "phone": "+91 9866251646",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11caada6e1be36f67d298a",
+    "phone": "+91 9392389434",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11cf01a6e1be36f67d2f71",
+    "phone": "+91 9392044521",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a11d03ea6e1be36f67d3245",
+    "phone": "+91 8184905249",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11db43a6e1be36f67d4e62",
+    "phone": "+91 7993760986",
+    "name": "Delivery Partner",
+    "status": "approved",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a11dc64a6e1be36f67d508c",
+    "phone": "+91 6302353773",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a11dcfaa6e1be36f67d523b",
+    "phone": "+91 9703724133",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a11df56a6e1be36f67d54ae",
+    "phone": "+91 7569070956",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1244f6a6e1be36f67d92fb",
+    "phone": "+91 9392229393",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a125444a6e1be36f67d97f6",
+    "phone": "+91 7569192342",
+    "name": "Delivery Partner",
+    "status": "approved",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a1259a6a6e1be36f67d9ff4",
+    "phone": "+91 9392264632",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a125e0fa6e1be36f67da8bc",
+    "phone": "+91 9030128526",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1269c6a6e1be36f67ddf5a",
+    "phone": "+91 9440064169",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1272e5a6e1be36f67e0927",
+    "phone": "+91 9989513719",
+    "name": "Delivery Partner",
+    "status": "approved",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a127affa6e1be36f67e3026",
+    "phone": "+91 7337018602",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1292e8a6e1be36f67ebaa2",
+    "phone": "+91 7793969066",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a12a150a6e1be36f67ecf80",
+    "phone": "+91 9177776347",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a12a5e4a6e1be36f67ef486",
+    "phone": "+91 9014559516",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a12c10ca6e1be36f67f6c4f",
+    "phone": "+91 9391837475",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a12cf38a6e1be36f67f7c3e",
+    "phone": "+91 8977066856",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a130210a6e1be36f67ff6e3",
+    "phone": "+91 9392667560",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a130924a6e1be36f6800557",
+    "phone": "+91 9014028913",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1309c6a6e1be36f680057b",
+    "phone": "+91 9951071024",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a131512a6e1be36f6801f3e",
+    "phone": "+91 7032832017",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a131a94a6e1be36f68026bb",
+    "phone": "+91 8341723524",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a131fdea6e1be36f6802fe6",
+    "phone": "+91 9951720959",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a132c26a6e1be36f680455b",
+    "phone": "+91 8555817767",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a133218a6e1be36f6804bab",
+    "phone": "+91 9959722191",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a13de00a6e1be36f680eb93",
+    "phone": "+91 7993750630",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1404e9a6e1be36f681479f",
+    "phone": "+91 9515584621",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1416e1a6e1be36f6816eb0",
+    "phone": "+91 9908434388",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a141e4a6f66caf6f9dda5b1",
+    "phone": "+91 9676283528",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a14227857e2d039031364bc",
+    "phone": "+91 7601061823",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a14248cd9b1f0bb348baec9",
+    "phone": "+91 9704578838",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a142bb472caf2586640c283",
+    "phone": "+91 9908372691",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a14303c72caf2586640dd85",
+    "phone": "+91 7674053745",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a144dfd72caf25866414378",
+    "phone": "+91 9100188653",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a14536672caf2586641652d",
+    "phone": "+91 8522863314",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1457aa72caf25866417b4c",
+    "phone": "+91 8688101011",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a145f4072caf25866418da6",
+    "phone": "+91 7386021584",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a14622972caf2586641980a",
+    "phone": "+91 9676341607",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a14706c72caf2586641b224",
+    "phone": "+91 9398699481",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a14819472caf2586641bcd6",
+    "phone": "+91 9010872334",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a14844e72caf2586641c1d1",
+    "phone": "+91 9553420543",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a14b0ff72caf2586641d7d6",
+    "phone": "+91 9703106637",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a15203672caf25866425e4b",
+    "phone": "+91 7286943883",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a1520e372caf258664264d1",
+    "phone": "+91 6304785601",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a1525cb72caf258664269fd",
+    "phone": "+91 8639051892",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a15280372caf25866426b27",
+    "phone": "+91 9133530648",
+    "name": "Mudda Murali",
+    "status": "approved",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a15366e72caf25866428149",
+    "phone": "+91 9032930931",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a15519d72caf2586642c6ea",
+    "phone": "+91 8247828995",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a155c8072caf2586642d1ac",
+    "phone": "+91 9290650234",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a15780772caf25866431813",
+    "phone": "+91 8143699239",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a157b8b72caf25866432603",
+    "phone": "+91 8125930043",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a15a1b572caf25866436995",
+    "phone": "+91 9010970214",
+    "name": "Medi raju",
+    "status": "approved",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a15b36072caf2586643dcab",
+    "phone": "+91 9666458895",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a15e04472caf25866443dc6",
+    "phone": "+91 9703408331",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a16040a72caf258664460e9",
+    "phone": "+91 9963207635",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a16562972caf25866447c9d",
+    "phone": "+91 9346638085",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a1692558189724ac9479d8a",
+    "phone": "+91 9704770529",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a16a773dd8e4a87b56c70ba",
+    "phone": "+91 8341413129",
+    "name": "Anchonpally Raghavender",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a16ca59dd8e4a87b56cb65c",
+    "phone": "+91 9381483226",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a16d0d7dd8e4a87b56cce0c",
+    "phone": "+91 9985126855",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a16d804dd8e4a87b56cdf73",
+    "phone": "+91 6304164884",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a16f33bdd8e4a87b56d4c74",
+    "phone": "+91 8309775783",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a171a82dd8e4a87b56d8b68",
+    "phone": "+91 9581855810",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1720c0dd8e4a87b56d8f56",
+    "phone": "+91 6300605731",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a172762dd8e4a87b56d9253",
+    "phone": "+91 9642072953",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a17b59fdd8e4a87b56db69d",
+    "phone": "+91 7093672715",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a17b954dd8e4a87b56db7f4",
+    "phone": "+91 9391267974",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a17e7000f211f83c80fd034",
+    "phone": "+91 9010829767",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a17e8c30f211f83c80fd099",
+    "phone": "+91 8096588579",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a17f68097fd32411679d35a",
+    "phone": "+91 8074978870",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a18230c97fd3241167a08f5",
+    "phone": "+91 9154189619",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1827ee97fd3241167a13b3",
+    "phone": "+91 9985700989",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a18697697fd3241167a3533",
+    "phone": "+91 8555017055",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1935e397fd3241167a6acb",
+    "phone": "+91 9307301681",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1947a997fd3241167a77ee",
+    "phone": "+91 7416846638",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a195d4897fd3241167a98c6",
+    "phone": "+91 9948719838",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a19690197fd3241167aa1a9",
+    "phone": "+91 8247289492",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1987ce97fd3241167acd38",
+    "phone": "+91 8309938179",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a19894497fd3241167acec4",
+    "phone": "+91 7075962321",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a19a3c397fd3241167ae65b",
+    "phone": "+91 9866391409",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1a7d940b0eda741cf5e410",
+    "phone": "+91 9603651093",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a1a90c50b0eda741cf5f14b",
+    "phone": "+91 6304860448",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1a90e90b0eda741cf5f1a8",
+    "phone": "+91 9347498291",
+    "name": "Konyala Bhanuprasad",
+    "status": "approved",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a1a9fcf66f76a326770fa20",
+    "phone": "+91 8074050275",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a1ab64766f76a3267713402",
+    "phone": "+91 6301653970",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1ac7fa66f76a3267715eca",
+    "phone": "+91 9010580908",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1ad89866f76a3267716c34",
+    "phone": "+91 9100126392",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a1ae8b466f76a32677173fe",
+    "phone": "+91 7396049785",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1b0ca266f76a32677182ae",
+    "phone": "+91 9948613212",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1be61166f76a326771cc22",
+    "phone": "+91 8247390170",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1c01ad66f76a32677210be",
+    "phone": "+91 7013169911",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1c519a66f76a326772487f",
+    "phone": "+91 6304652827",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1c817366f76a3267726624",
+    "phone": "+91 9912866651",
+    "name": "Manohar goud",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1d08b466f76a326772b5d2",
+    "phone": "+91 9182176200",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1d370266f76a326772da1a",
+    "phone": "+91 7013059450",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1d56a266f76a3267730a20",
+    "phone": "+91 8019690502",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a1d5d9b66f76a3267730db3",
+    "phone": "+91 6301938944",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a1d628266f76a3267730eff",
+    "phone": "+91 7207481901",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1d6eff66f76a32677332ff",
+    "phone": "+91 9820047608",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1d829f66f76a326773539f",
+    "phone": "+91 7207332757",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1d9b3d66f76a3267736188",
+    "phone": "+91 8500125745",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1dc2df66f76a32677373b5",
+    "phone": "+91 8309444089",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1e6ba366f76a326773a268",
+    "phone": "+91 7731957727",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1e735666f76a326773b55d",
+    "phone": "+91 9676719891",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1e8b4b66f76a326773c757",
+    "phone": "+91 9154855321",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1eb6a666f76a32677442ea",
+    "phone": "+91 9398445695",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1eb88b66f76a326774435a",
+    "phone": "+91 7981597806",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1eb91a66f76a3267744587",
+    "phone": "+91 8074277128",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a1ecde666f76a3267745693",
+    "phone": "+91 9398124672",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1eede366f76a3267751d55",
+    "phone": "+91 6302559757",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1ef10266f76a3267752434",
+    "phone": "+91 9848556831",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1f14e866f76a3267753b93",
+    "phone": "+91 9553926432",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1f667466f76a3267754359",
+    "phone": "+91 8019959386",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a1ffb3966f76a3267762425",
+    "phone": "+91 8309005024",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2056d366f76a3267768eb8",
+    "phone": "+91 9704917054",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a20768f66f76a3267769568",
+    "phone": "+91 8328199811",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a20851566f76a32677696c0",
+    "phone": "+91 8341911017",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a210ac666f76a326776ac7d",
+    "phone": "+91 7729944306",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a214db766f76a326777c2d9",
+    "phone": "+91 9959283572",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a226aa83190d4a14607a648",
+    "phone": "+91 9177174885",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a22773df09e6ce754845b0c",
+    "phone": "+91 7993438073",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a22920ef09e6ce754847632",
+    "phone": "+91 9381594825",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a22e20af09e6ce754854cc8",
+    "phone": "+91 7483372422",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2387fbf09e6ce75485e98b",
+    "phone": "+91 7396872138",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a25836cf09e6ce7548880d6",
+    "phone": "+91 9390200672",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a26c27af09e6ce7548be675",
+    "phone": "+91 9110718738",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a273b8cf09e6ce75490082c",
+    "phone": "+91 7093359990",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a27c74ff09e6ce754917d56",
+    "phone": "+91 8464869780",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a27e439f09e6ce75491bbfa",
+    "phone": "+91 9959141290",
+    "name": "Raju",
+    "status": "approved",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a298c6b68a5d1aac5d5f7fd",
+    "phone": "+91 7382221168",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a2a3a7668a5d1aac5db30ab",
+    "phone": "+91 9381296950",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a2a3b3368a5d1aac5db38c4",
+    "phone": "+91 6303675364",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a3b4068a5d1aac5db38d7",
+    "phone": "+91 9848689458",
+    "name": "Gadda Shivakumar",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a3f5d68a5d1aac5db4a4a",
+    "phone": "+91 9324648731",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a2a407968a5d1aac5db524a",
+    "phone": "+91 8106651432",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a408868a5d1aac5db5371",
+    "phone": "+91 8179858568",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a418568a5d1aac5db59bf",
+    "phone": "+91 7386967074",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a47d368a5d1aac5db819d",
+    "phone": "+91 6305902778",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a48aa68a5d1aac5db84ca",
+    "phone": "+91 8978176672",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a2a492968a5d1aac5db896c",
+    "phone": "+91 9490185984",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a49ec68a5d1aac5db918a",
+    "phone": "+91 9160945950",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a4ab468a5d1aac5db9baa",
+    "phone": "+91 9703180423",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a2a4b9c68a5d1aac5dba1fa",
+    "phone": "+91 8790408493",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a4bf768a5d1aac5dba43e",
+    "phone": "+91 9391129413",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a4c8468a5d1aac5dba46c",
+    "phone": "+91 8106682798",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a4d63ce4134bafbf651c3",
+    "phone": "+91 8247369338",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a2a4e2dce4134bafbf65780",
+    "phone": "+91 9052143431",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a5023ce4134bafbf66275",
+    "phone": "+91 9440061325",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a5054ce4134bafbf66300",
+    "phone": "+91 8688496127",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a51bece4134bafbf66ac9",
+    "phone": "+91 9989237249",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a524ace4134bafbf66dd1",
+    "phone": "+91 9100466832",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a5428ce4134bafbf67e40",
+    "phone": "+91 9347055012",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a5642ce4134bafbf69277",
+    "phone": "+91 9542260418",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a5842ce4134bafbf6a24b",
+    "phone": "+91 6303021015",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a5941ce4134bafbf6a5e8",
+    "phone": "+91 9553218634",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a5d59ce4134bafbf6e564",
+    "phone": "+91 8499039047",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a2a6040ce4134bafbf71662",
+    "phone": "+91 7396612900",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a2a639ba68b4aacb887fc02",
+    "phone": "+91 7396426904",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a63b5a68b4aacb887fd0e",
+    "phone": "+91 6303230528",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a658ba68b4aacb8881823",
+    "phone": "+91 8885454340",
+    "name": "Thrinethra Bovalla",
+    "status": "approved",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a2a660ea68b4aacb888218a",
+    "phone": "+91 6300971131",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a6d04a68b4aacb888777b",
+    "phone": "+91 9494387768",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a6e09a68b4aacb888822d",
+    "phone": "+91 8555819062",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a6e4ca68b4aacb888864f",
+    "phone": "+91 8688464754",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a7058a68b4aacb888a7c0",
+    "phone": "+91 9346213599",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a70efa68b4aacb888b171",
+    "phone": "+91 9885507135",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a2a731ea68b4aacb888dc5a",
+    "phone": "+91 7569728871",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a789da68b4aacb8892240",
+    "phone": "+91 6281812560",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a795ea68b4aacb889258c",
+    "phone": "+91 8519907688",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a79e3a68b4aacb8892ba5",
+    "phone": "+91 7995215968",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a7ac0a68b4aacb889381d",
+    "phone": "+91 9505634464",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a7ba5a68b4aacb889446e",
+    "phone": "+91 9491076387",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a7c2ba68b4aacb8894c08",
+    "phone": "+91 7569548184",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a7c82a68b4aacb889504e",
+    "phone": "+91 7675947953",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a7f72a68b4aacb88973c7",
+    "phone": "+91 9391999875",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a7fc9a68b4aacb88974ea",
+    "phone": "+91 8374948620",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a81aea68b4aacb8897f39",
+    "phone": "+91 8143684069",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a2a81d2a68b4aacb88981ea",
+    "phone": "+91 9347515610",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a822ea68b4aacb88986d8",
+    "phone": "+91 9676856512",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a82b6a68b4aacb8898a43",
+    "phone": "+91 8886229545",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a8431a68b4aacb8899358",
+    "phone": "+91 7386803451",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a867ba68b4aacb889a3d5",
+    "phone": "+91 9392383259",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a869fa68b4aacb889a46e",
+    "phone": "+91 7799592859",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a878da68b4aacb889a9d4",
+    "phone": "+91 9347478959",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a87b3a68b4aacb889abc4",
+    "phone": "+91 8374399120",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a884ea68b4aacb889b396",
+    "phone": "+91 8919057215",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a8898a68b4aacb889b4dc",
+    "phone": "+91 9542506371",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a8937a68b4aacb889ba35",
+    "phone": "+91 8885451193",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a8960a68b4aacb889bae8",
+    "phone": "+91 7386399434",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a8a3ea68b4aacb889c1bf",
+    "phone": "+91 8520012836",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a2a8cd1a68b4aacb889d99f",
+    "phone": "+91 9010566140",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a8d23a68b4aacb889da8f",
+    "phone": "+91 8639929630",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a8f14a68b4aacb889e03a",
+    "phone": "+91 8317629318",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a915aa68b4aacb88a0672",
+    "phone": "+91 8121750463",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a926da68b4aacb88a206d",
+    "phone": "+91 8790337059",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a9319a68b4aacb88a2ace",
+    "phone": "+91 9642571851",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a9352a68b4aacb88a2bd9",
+    "phone": "+91 8074268267",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a93dda68b4aacb88a31cf",
+    "phone": "+91 9515219743",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a949da68b4aacb88a3c5c",
+    "phone": "+91 8247007964",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a2a9778a68b4aacb88a5677",
+    "phone": "+91 6302508092",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a9d6da68b4aacb88a7e3a",
+    "phone": "+91 6305512922",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2a9fc1a68b4aacb88a85de",
+    "phone": "+91 8897388726",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2aa0d9a68b4aacb88a9309",
+    "phone": "+91 9948209661",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2aa503a68b4aacb88aef0f",
+    "phone": "+91 7660963779",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2aa72aa68b4aacb88afcf4",
+    "phone": "+91 9121879451",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2aa95ea68b4aacb88b185b",
+    "phone": "+91 6281429020",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2aa9b0a68b4aacb88b1b1b",
+    "phone": "+91 9948263962",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2aaa0aa68b4aacb88b1f36",
+    "phone": "+91 8897652293",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a2aae32a68b4aacb88b3fdd",
+    "phone": "+91 9908153897",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2aaedca68b4aacb88b4138",
+    "phone": "+91 8341146585",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2aaf7fa68b4aacb88b4228",
+    "phone": "+91 9502055164",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a2ab719a68b4aacb88b6ed4",
+    "phone": "+91 9059199052",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2aba21a68b4aacb88b7370",
+    "phone": "+91 9866769231",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2abb94a68b4aacb88b7a40",
+    "phone": "+91 8096037135",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2ac459a68b4aacb88bbb61",
+    "phone": "+91 8247572869",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a2ac5d9a68b4aacb88bc6c9",
+    "phone": "+91 8341614079",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2ac7bea68b4aacb88bd4ca",
+    "phone": "+91 9030533195",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2ac8b2a68b4aacb88bdcad",
+    "phone": "+91 7675967343",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2ac987a68b4aacb88be147",
+    "phone": "+91 8247688571",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a2ac9daa68b4aacb88be28a",
+    "phone": "+91 8919689944",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a2acacaa68b4aacb88be73d",
+    "phone": "+91 9948426872",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2acc6da68b4aacb88bf545",
+    "phone": "+91 9121050617",
+    "name": "Surya",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a2acd56a68b4aacb88c02e0",
+    "phone": "+91 9440697568",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2acdbda68b4aacb88c07d7",
+    "phone": "+91 6281378028",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2ace4ca68b4aacb88c0c94",
+    "phone": "+91 8367504816",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2ad151a68b4aacb88c2c51",
+    "phone": "+91 9032975077",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2ad1c3a68b4aacb88c2cd7",
+    "phone": "+91 9948055968",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2ad9f9a68b4aacb88c7af2",
+    "phone": "+91 9542995553",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a2adceaa68b4aacb88c9ec3",
+    "phone": "+91 9014809969",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2ae01ea68b4aacb88cb292",
+    "phone": "+91 9391885263",
+    "name": "Mr Shannu",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a2ae457a68b4aacb88cc69b",
+    "phone": "+91 9618495637",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2ae6e8a68b4aacb88cd09e",
+    "phone": "+91 7981985995",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2af8cea68b4aacb88d3848",
+    "phone": "+91 9948068280",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2af977a68b4aacb88d3ad7",
+    "phone": "+91 9966583747",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2afe01a68b4aacb88d401a",
+    "phone": "+91 9966507308",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2afefea68b4aacb88d410b",
+    "phone": "+91 6305592981",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a2b16c0a68b4aacb88d4472",
+    "phone": "+91 9346409746",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2b6cc1a68b4aacb88d55ec",
+    "phone": "+91 7386845979",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2b714da68b4aacb88d568c",
+    "phone": "+91 6281175266",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2b80a2a68b4aacb88dd90a",
+    "phone": "+91 7842667938",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2b862da68b4aacb88e0e1c",
+    "phone": "+91 9010303893",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2b895ca68b4aacb88e2ff9",
+    "phone": "+91 8074147476",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2baa5ba68b4aacb88f14ca",
+    "phone": "+91 9951570094",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2baf2fa68b4aacb88f2189",
+    "phone": "+91 8309343993",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2bb78da68b4aacb88f65d1",
+    "phone": "+91 7416607639",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a2bbb4ca68b4aacb88f6e5f",
+    "phone": "+91 9951275869",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2bc3e9a68b4aacb88f9d29",
+    "phone": "+91 9390874231",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2bcc62a68b4aacb88fc5aa",
+    "phone": "+91 9553666935",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2bcd4aa68b4aacb88fcd0f",
+    "phone": "+91 7330673242",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2bdc4da68b4aacb89009df",
+    "phone": "+91 9347554354",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2be878a68b4aacb8901ffd",
+    "phone": "+91 6301053010",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2bece5a68b4aacb89027bd",
+    "phone": "+91 9505145055",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2bf6a2a68b4aacb890363f",
+    "phone": "+91 9390825655",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2c04e0a68b4aacb8904947",
+    "phone": "+91 9154656536",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2c0c5359f803764d7d9077",
+    "phone": "+91 8639186690",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2c0ece59f803764d7d94ca",
+    "phone": "+91 7569554706",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2c11a359f803764d7d98ed",
+    "phone": "+91 9052860576",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2c175659f803764d7da882",
+    "phone": "+91 8919588614",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2c295859f803764d7dd154",
+    "phone": "+91 9177388575",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2c462359f803764d7de2ff",
+    "phone": "+91 9573463408",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2cd48e59f803764d7e216c",
+    "phone": "+91 9618833756",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2ce15c59f803764d7e4d10",
+    "phone": "+91 6301329949",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2ce33e59f803764d7e5d04",
+    "phone": "+91 9100397794",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2cfe2459f803764d7ea0ff",
+    "phone": "+91 8522927068",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2d00b359f803764d7ea2ec",
+    "phone": "+91 9505372567",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a2d510659f803764d7f7d96",
+    "phone": "+91 9966197660",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2d582e59f803764d7f9aa8",
+    "phone": "+91 8247684359",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2d5b4559f803764d7fa90a",
+    "phone": "+91 9866691867",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2d643e59f803764d7fe6ab",
+    "phone": "+91 9346175763",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2d64a059f803764d7fe8d8",
+    "phone": "+91 9177182219",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2d696d4ae087e5e7e1bc9c",
+    "phone": "+91 9963106198",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2d6ad84ae087e5e7e1c47b",
+    "phone": "+91 9603153116",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2d7765b2398cec268e54a5",
+    "phone": "+91 7569694980",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2d7979b2398cec268e5a12",
+    "phone": "+91 7780132180",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2d82d09ae0e3053ec9feed",
+    "phone": "+91 6302833532",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2d874f9ae0e3053eca02d0",
+    "phone": "+91 8184861616",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2daa419ae0e3053eca2c3d",
+    "phone": "+91 9502891008",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2e14e59ae0e3053ecaa120",
+    "phone": "+91 9059344443",
+    "name": "Gubba  Hariprasad",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2e17129ae0e3053ecaa169",
+    "phone": "+91 9505818157",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a2e2a7b4042f3ed12ff33d3",
+    "phone": "+91 9391812218",
+    "name": "Delivery Partner",
+    "status": "approved",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a2e2e20fa3f816cd817d293",
+    "phone": "+91 9550903430",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2e34da476a533ffe64d234",
+    "phone": "+91 9603552200",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2e3a7e1ad3114c89da4dac",
+    "phone": "+91 9959963479",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2e46daa9e54debd70687c1",
+    "phone": "+91 9603802653",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2e6841a9e54debd706c538",
+    "phone": "+91 9490325975",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2e68a1a9e54debd706c571",
+    "phone": "+91 8917344637",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2e9df78d446bd6c039b8b0",
+    "phone": "+91 9347062075",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a2ea00d8d446bd6c039bced",
+    "phone": "+91 9381773598",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2ea1798d446bd6c039bdd6",
+    "phone": "+91 9848407078",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2ea21f8d446bd6c039be57",
+    "phone": "+91 6303899426",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2eb9098d446bd6c039d585",
+    "phone": "+91 7569167557",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2ed2157874a15a71dd2a84",
+    "phone": "+91 7013592917",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2ef29c7874a15a71dd30e5",
+    "phone": "+91 9398123422",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2f560d7874a15a71dd3b8b",
+    "phone": "+91 9032283422",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2f784a7874a15a71dd425a",
+    "phone": "+91 9676218528",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a2f8a677874a15a71dd4917",
+    "phone": "+91 9666383961",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2f9e3d7874a15a71dd6d36",
+    "phone": "+91 9381401636",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2f9ed97874a15a71dd6e32",
+    "phone": "+91 9642152770",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2fb3537874a15a71dd94a9",
+    "phone": "+91 9553093049",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2fd6b67874a15a71dded60",
+    "phone": "+91 9908143871",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2fdc031c48a257aa0b0f1a",
+    "phone": "+91 9000165985",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2fdf9b1c48a257aa0b15b3",
+    "phone": "+91 9502074049",
+    "name": "Samreen Begum",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a2ffad91c48a257aa0b3300",
+    "phone": "+91 9100675902",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a3004be1c48a257aa0b9448",
+    "phone": "+91 8179269330",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a300d2a1c48a257aa0be2bc",
+    "phone": "+91 9491201103",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a301d9d1c48a257aa0c0923",
+    "phone": "+91 9550435095",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a30ae161c48a257aa0c2e1e",
+    "phone": "+91 8807913820",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a30d7b31c48a257aa0c48c6",
+    "phone": "+91 8208413332",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a30e9731c48a257aa0c78e3",
+    "phone": "+91 7013718221",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a30ea5f1c48a257aa0c8469",
+    "phone": "+91 8639806871",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a30f4321c48a257aa0cc704",
+    "phone": "+91 8096115003",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a30fc037cbe113ece741b65",
+    "phone": "+91 9392813193",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a3117367cbe113ece74bca3",
+    "phone": "+91 7702752523",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a313e9f7cbe113ece764c28",
+    "phone": "+91 7661962280",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a3165147cbe113ece76d659",
+    "phone": "+91 8978610069",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a3170ea7cbe113ece774a84",
+    "phone": "+91 7989670617",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a324aa27cbe113ece79fd97",
+    "phone": "+91 9542384254",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a3379d37cbe113ece8158f0",
+    "phone": "+91 9409382882",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a33b7b47cbe113ece826fb0",
+    "phone": "+91 8106641843",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a33e8487cbe113ece83172a",
+    "phone": "+91 7678641686",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a375c8c72752fdfb7506d0f",
+    "phone": "+91 8096734975",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a37d14d72752fdfb751213a",
+    "phone": "+91 9347501922",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a395acd72752fdfb7564144",
+    "phone": "+91 9948780692",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a3cc21e08ad2e43eca7fbaf",
+    "phone": "+91 9948441365",
+    "name": "Lachiram",
+    "status": "approved",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a3cc3e208ad2e43eca800ea",
+    "phone": "+91 9177816643",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a3cd3dc08ad2e43eca83faa",
+    "phone": "+91 8328426826",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a3d066808ad2e43eca9f944",
+    "phone": "+91 9010552091",
+    "name": "Mudavath Ramesh",
+    "status": "approved",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a3d077808ad2e43ecaa01a2",
+    "phone": "+91 8522982459",
+    "name": "Rishi",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a3d20b708ad2e43ecaa4d16",
+    "phone": "+91 9908940686",
+    "name": "Delivery Partner",
+    "status": "approved",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a3d228a08ad2e43ecaa5a29",
+    "phone": "+91 9705904163",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a3d481008ad2e43ecab3e4c",
+    "phone": "+91 9014057583",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a3d629b08ad2e43ecaba33b",
+    "phone": "+91 7780142891",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a3d8d0408ad2e43ecabc8cc",
+    "phone": "+91 8688669621",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a3e12d408ad2e43ecac45b6",
+    "phone": "+91 9014065391",
+    "name": "Delivery Partner",
+    "status": "blocked",
+    "isActive": true
+  },
+  {
+    "_id": "6a3e591d08ad2e43ecade4cd",
+    "phone": "+91 9177687588",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a3f618308ad2e43ecb040c9",
+    "phone": "+91 9640825018",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true,
+    "availability": {
+      "isOnline": true
+    }
+  },
+  {
+    "_id": "6a3ff85608ad2e43ecb1775f",
+    "phone": "+91 8142540991",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a40931108ad2e43ecb1a2fc",
+    "phone": "+91 6301663641",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a40cccd08ad2e43ecb1f267",
+    "phone": "+91 8623008959",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a41468b08ad2e43ecb30bc8",
+    "phone": "+91 9848852749",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true,
+    "availability": {
+      "isOnline": false
+    }
+  },
+  {
+    "_id": "6a422bd708ad2e43ecb3dc75",
+    "phone": "+91 7013432407",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  },
+  {
+    "_id": "6a4241fb08ad2e43ecb4105a",
+    "phone": "+91 6398579565",
+    "name": "Delivery Partner",
+    "status": "pending",
+    "isActive": true
+  }
+]

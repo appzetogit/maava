@@ -45,7 +45,7 @@ export async function findNearestDeliveryBoys(restaurantLat, restaurantLng, rest
       deliveryPartnerId: { $ne: null },
       status: { $nin: ['delivered', 'cancelled'] }
     }).select('deliveryPartnerId').lean();
-    
+
     const busyRiderIds = busyOrdersCount.map(order => order.deliveryPartnerId);
     console.log(`🚫 Found ${busyRiderIds.length} busy delivery partners to exclude`);
 
@@ -225,7 +225,7 @@ export async function findNearestDeliveryBoy(restaurantLat, restaurantLng, resta
       deliveryPartnerId: { $ne: null },
       status: { $nin: ['delivered', 'cancelled'] }
     }).select('deliveryPartnerId').lean();
-    
+
     const busyRiderIds = busyOrdersCount.map(order => order.deliveryPartnerId);
     console.log(`🚫 Found ${busyRiderIds.length} busy delivery partners to exclude from nearest search`);
 
