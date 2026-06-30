@@ -410,6 +410,31 @@ export default function CategoryPage() {
     }
   }, [category, categories])
 
+  // Scroll selected category into view
+  useEffect(() => {
+    if (selectedCategory && categoryScrollRef.current) {
+      // Small timeout to ensure DOM is updated
+      setTimeout(() => {
+        const container = categoryScrollRef.current;
+        if (!container) return;
+        
+        const selectedElement = container.querySelector(`[data-category="${selectedCategory}"]`);
+        if (selectedElement) {
+          const elementOffsetLeft = selectedElement.offsetLeft;
+          const elementWidth = selectedElement.offsetWidth;
+          const containerWidth = container.offsetWidth;
+          
+          const scrollPosition = elementOffsetLeft - (containerWidth / 2) + (elementWidth / 2);
+          
+          container.scrollTo({
+            left: Math.max(0, scrollPosition),
+            behavior: 'smooth'
+          });
+        }
+      }, 100);
+    }
+  }, [selectedCategory, categories]);
+
   const toggleFilter = (filterId) => {
     setActiveFilters(prev => {
       const newSet = new Set(prev)
@@ -719,6 +744,7 @@ export default function CategoryPage() {
                 return (
                   <button
                     key={cat.id}
+                    data-category={categorySlug}
                     onClick={() => handleCategorySelect(cat)}
                     className={`flex flex-col items-center gap-1.5 flex-shrink-0 pb-2 transition-all ${isSelected ? 'border-b-2 border-green-600' : ''
                       }`}
