@@ -504,28 +504,69 @@ export const getRestaurantFinance = asyncHandler(async (req, res) => {
       };
     }
 
-    // Calculate current cycle payout (total - commission)
-    const currentCyclePayout = Math.round((currentCycleTotal - currentCycleCommission) * 100) / 100;
+    // Get restaurant wallet for stable lifetime balance
+    const RestaurantWallet = (await import('../models/RestaurantWallet.js')).default;
+    const wallet = await RestaurantWallet.findOrCreateByRestaurantId(restaurant._id);
 
-    // Get ONLY PENDING withdrawal requests to subtract from estimatedPayout.
-    // 'Pending' = withdrawal requested but not yet paid → hold back from display.
-    // 'Approved' = already paid out → should NOT be subtracted again from current earnings.
-    const pendingWithdrawals = await WithdrawalRequest.find({
-      restaurantId: restaurant._id,
-      status: 'Pending'
-    }).lean();
+    // --- AUTO-SYNC MISSING ORDERS START ---
+    // This ensures any COD or legacy orders that skipped wallet update get properly added to the balance.
+    try {
+      const RestaurantCommission = (await import('../../admin/models/RestaurantCommission.js')).default;
+      const allDeliveredOrders = await Order.find({
+        restaurantId: { $in: restaurantIdVariations },
+        status: 'delivered'
+      }).select('_id orderId pricing').lean();
 
-    const totalWithdrawals = pendingWithdrawals.reduce((sum, req) => sum + (req.amount || 0), 0);
+      let walletUpdated = false;
+      for (const order of allDeliveredOrders) {
+        const orderIdStr = order._id.toString();
+        const existing = wallet.transactions?.find(t => 
+          t.orderId && t.orderId.toString() === orderIdStr && t.type === 'payment'
+        );
+        
+        if (!existing) {
+          const foodPrice = (order.pricing?.subtotal || 0) - (order.pricing?.discount || 0);
+          let commissionAmount = 0;
+          try {
+            const commissionResult = await RestaurantCommission.calculateCommissionForOrder(restaurant._id, foodPrice);
+            commissionAmount = commissionResult.commission || 0;
+          } catch (err) {
+            commissionAmount = (foodPrice * 10) / 100; // Fallback 10%
+          }
+          
+          const earning = foodPrice - commissionAmount;
+          if (earning > 0) {
+            wallet.addTransaction({
+              amount: earning,
+              type: 'payment',
+              status: 'Completed',
+              description: `Order #${order.orderId} - Auto-synced`,
+              orderId: order._id
+            });
+            walletUpdated = true;
+          }
+        }
+      }
 
-    // Subtract only pending withdrawals from estimatedPayout to show available balance
-    const availablePayout = Math.max(0, Math.round((currentCyclePayout - totalWithdrawals) * 100) / 100);
+      if (walletUpdated) {
+        await wallet.save();
+        console.log(`✅ Auto-synced missing orders to wallet for restaurant ${restaurant._id}`);
+      }
+    } catch (syncError) {
+      console.error('❌ Error during auto-sync of wallet:', syncError);
+    }
+    // --- AUTO-SYNC MISSING ORDERS END ---
 
-    console.log('💰 Finance Calculation:', {
-      currentCyclePayout,
-      totalWithdrawals,
-      availablePayout,
-      pendingWithdrawalsCount: pendingWithdrawals.length,
-      pendingWithdrawals: pendingWithdrawals.map(w => ({ id: w._id, amount: w.amount, status: w.status }))
+    // Available payout is strictly based on the stable wallet balance.
+    // Withdrawals (Pending/Approved) are already deducted from wallet.totalBalance when requested.
+    const availablePayout = Math.round((wallet.totalBalance || 0) * 100) / 100;
+
+    console.log('💰 Finance Calculation (Stable Wallet):', {
+      walletTotalBalance: wallet.totalBalance,
+      walletTotalEarned: wallet.totalEarned,
+      walletTotalWithdrawn: wallet.totalWithdrawn,
+      walletTransactions: wallet.transactions, // Added to see if there are ANY transactions
+      availablePayout
     });
 
     return successResponse(res, 200, 'Finance data retrieved successfully', {
@@ -535,7 +576,7 @@ export const getRestaurantFinance = asyncHandler(async (req, res) => {
         totalOrders: currentCycleOrders.length,
         totalOrderValue: Math.round(currentCycleTotal * 100) / 100,
         totalCommission: Math.round(currentCycleCommission * 100) / 100,
-        estimatedPayout: availablePayout, // Show available balance after pending withdrawals
+        estimatedPayout: availablePayout, // Stable wallet balance
         payoutDate: null, // Will be set when payout is processed
         orders: currentCycleOrdersData // Include orders array in response
       },

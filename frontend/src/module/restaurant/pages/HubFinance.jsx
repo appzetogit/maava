@@ -713,14 +713,6 @@ export default function HubFinance() {
                     >
                       ₹{(financeData?.currentCycle?.estimatedPayout || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </motion.p>
-                    <motion.p
-                      className="text-sm text-gray-600 mb-4"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.3 }}
-                    >
-                      {financeData?.currentCycle?.totalOrders || 0} {financeData?.currentCycle?.totalOrders === 1 ? 'order' : 'orders'}
-                    </motion.p>
                     {(financeData?.currentCycle?.estimatedPayout || 0) > 0 && (
                       <motion.button
                         initial={{ opacity: 0, y: 10 }}
@@ -728,7 +720,10 @@ export default function HubFinance() {
                         transition={{ delay: 0.4 }}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => setShowWithdrawalModal(true)}
+                        onClick={() => {
+                          setWithdrawalAmount(financeData?.currentCycle?.estimatedPayout ? financeData.currentCycle.estimatedPayout.toString() : '0')
+                          setShowWithdrawalModal(true)
+                        }}
                         className="w-full bg-black text-white py-3 px-4 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors mt-4"
                       >
                         <Wallet className="h-5 w-5" />

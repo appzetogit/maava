@@ -74,30 +74,17 @@ export const createWithdrawalRequest = asyncHandler(async (req, res) => {
       ]
     }).lean();
 
-    // Calculate earnings from orders (food price - commission)
-    let totalEarnings = 0;
-    for (const order of currentCycleOrders) {
-      const foodPrice = (order.pricing?.subtotal || 0) - (order.pricing?.discount || 0);
-      const commissionResult = await RestaurantCommission.calculateCommissionForOrder(restaurant._id, foodPrice);
-      totalEarnings += (foodPrice - (commissionResult.commission || 0));
-    }
+    // Get restaurant wallet for stable lifetime balance
+    const wallet = await RestaurantWallet.findOrCreateByRestaurantId(restaurant._id);
 
-    // Get all pending withdrawal requests
-    const allWithdrawals = await WithdrawalRequest.find({
-      restaurantId: restaurant._id,
-      status: 'Pending'
-    }).lean();
-    const totalWithdrawnAmount = allWithdrawals.reduce((sum, req) => sum + (req.amount || 0), 0);
-
-    // Available balance matches Hub Finance "estimatedPayout"
-    const availableBalance = Math.max(0, Math.round((totalEarnings - totalWithdrawnAmount) * 100) / 100);
+    // Available balance is strictly based on the stable wallet balance.
+    const availableBalance = Math.round((wallet.totalBalance || 0) * 100) / 100;
 
     if (amount > availableBalance) {
       return errorResponse(res, 400, 'Insufficient balance. Available balance: ₹' + availableBalance.toFixed(2));
     }
 
-    // Get restaurant wallet (to keep it updated if possible)
-    const wallet = await RestaurantWallet.findOrCreateByRestaurantId(restaurant._id);
+    // (wallet is already fetched above)
 
     // Check for pending requests
     const pendingRequest = await WithdrawalRequest.findOne({
