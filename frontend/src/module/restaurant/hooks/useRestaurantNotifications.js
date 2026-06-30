@@ -221,7 +221,23 @@ export const useRestaurantNotifications = () => {
     // Listen for order status updates
     socketRef.current.on('order_status_update', (data) => {
       console.log('📊 Order status update:', data);
-      // You can handle status updates here if needed
+      
+      if (data.status === 'cancelled' || data.status === 'rejected') {
+        setNewOrder(currentOrder => {
+          if (currentOrder && (currentOrder.orderId === data.orderId || currentOrder.orderMongoId === data.orderId)) {
+            console.log('🛑 Incoming order cancelled by user, clearing popup');
+            return null;
+          }
+          return currentOrder;
+        });
+
+        // Dispatch an event so pages can show a toast and close their internal popup state
+        if (window.dispatchEvent) {
+          window.dispatchEvent(new CustomEvent('incoming_order_cancelled', {
+            detail: { orderId: data.orderId }
+          }));
+        }
+      }
     });
 
     // Load notification sound

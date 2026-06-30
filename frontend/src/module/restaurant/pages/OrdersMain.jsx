@@ -677,6 +677,7 @@ export default function OrdersMain() {
   // Track popup state with ref to avoid stale closures
   const showNewOrderPopupRef = useRef(showNewOrderPopup)
   const newOrderRef = useRef(newOrder)
+  const popupOrderRef = useRef(popupOrder)
 
   useEffect(() => {
     showNewOrderPopupRef.current = showNewOrderPopup
@@ -686,17 +687,85 @@ export default function OrdersMain() {
     newOrderRef.current = newOrder
   }, [newOrder])
 
+  useEffect(() => {
+    popupOrderRef.current = popupOrder
+  }, [popupOrder])
+
+  // Handle incoming order cancellation
+  useEffect(() => {
+    const handleOrderCancelled = (e) => {
+      const cancelledOrderId = e.detail?.orderId;
+      if (!cancelledOrderId) return;
+
+      const orderToAccept = popupOrder || newOrder;
+      if (orderToAccept && (orderToAccept.orderId === cancelledOrderId || orderToAccept.orderMongoId === cancelledOrderId)) {
+        toast.error(`Order #${cancelledOrderId} was cancelled by the customer.`);
+        setShowNewOrderPopup(false);
+        setPopupOrder(null);
+        clearNewOrder();
+        setCountdown(600);
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+        }
+      }
+    };
+
+    window.addEventListener('incoming_order_cancelled', handleOrderCancelled);
+    return () => window.removeEventListener('incoming_order_cancelled', handleOrderCancelled);
+  }, [popupOrder, newOrder, clearNewOrder]);
+
   // Check for confirmed orders that haven't been shown in popup yet (fallback if Socket.IO fails)
   useEffect(() => {
     const checkConfirmedOrders = async () => {
-      // Skip if popup is already showing or Socket.IO order exists
-      if (showNewOrderPopupRef.current || newOrderRef.current) return
-
       try {
         const response = await restaurantAPI.getOrders()
         if (response.data?.success && response.data.data?.orders) {
+          const orders = response.data.data.orders
+
+          // Check if the CURRENTLY ringing order was cancelled
+          if (showNewOrderPopupRef.current) {
+            // Find the active order in popup using refs to avoid stale closures
+            const currentPopupOrder = popupOrderRef.current || newOrderRef.current;
+            if (currentPopupOrder) {
+              const currentId = currentPopupOrder.orderId || currentPopupOrder.orderMongoId || currentPopupOrder._id;
+              const liveOrder = orders.find(o => o.orderId === currentId || o._id === currentId);
+              
+              // If the order is confirmed cancelled, OR if it's completely missing from active orders
+              if (liveOrder && (liveOrder.status === 'cancelled' || liveOrder.status === 'rejected')) {
+                console.log('🛑 Active popup order was cancelled, closing popup...');
+                toast.error(`Order #${currentId} was cancelled by the customer.`);
+                setShowNewOrderPopup(false);
+                setPopupOrder(null);
+                clearNewOrder();
+                setCountdown(600);
+                if (audioRef.current) {
+                  audioRef.current.pause();
+                  audioRef.current.currentTime = 0;
+                }
+                return; // Stop here, popup closed
+              } else if (!liveOrder) {
+                // If it's missing from the recent orders entirely, it might have been moved to cancelled list
+                console.log('🛑 Active popup order disappeared from recent orders, closing popup...');
+                toast.error(`Order #${currentId} is no longer active.`);
+                setShowNewOrderPopup(false);
+                setPopupOrder(null);
+                clearNewOrder();
+                setCountdown(600);
+                if (audioRef.current) {
+                  audioRef.current.pause();
+                  audioRef.current.currentTime = 0;
+                }
+                return; // Stop here, popup closed
+              }
+            }
+          }
+
+          // Skip if popup is already showing or Socket.IO order exists
+          if (showNewOrderPopupRef.current || newOrderRef.current) return
+
           // Find confirmed orders that haven't been shown yet
-          const confirmedOrders = response.data.data.orders.filter(
+          const confirmedOrders = orders.filter(
             order => order.status === 'confirmed' &&
               !shownOrdersRef.current.has(order.orderId || order._id)
           )
@@ -2447,7 +2516,7 @@ function ReadyOrders({ onSelectOrder, onCancel }) {
           // Filter orders with 'ready' status
           // Also omit very old orders (e.g. older than 12 hours) to keep the list clean
           const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000)
-          
+
           const readyOrders = response.data.data.orders.filter(
             order => order.status === 'ready' && new Date(order.createdAt) > twelveHoursAgo
           )
@@ -2575,8 +2644,8 @@ const OutForDeliveryOrders = ({ onSelectOrder, onCancel }) => {
           const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000)
 
           const outForDeliveryOrders = response.data.data.orders.filter(
-            order => (order.status === 'out_for_delivery' || order.status === 'shipped' || order.status === 'picked_up') && 
-                    new Date(order.createdAt) > twelveHoursAgo
+            order => (order.status === 'out_for_delivery' || order.status === 'shipped' || order.status === 'picked_up') &&
+              new Date(order.createdAt) > twelveHoursAgo
           )
 
           const transformedOrders = outForDeliveryOrders.map(order => ({

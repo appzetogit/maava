@@ -351,10 +351,10 @@ export default function OrderTracking() {
     return () => clearInterval(interval);
   }, [orderId, order?.deliveryState?.status, order?.deliveryState?.currentPhase]);
 
-  // Fetch order from API if not found in context
+  // Fetch order from API (always fetch fresh data on mount to ensure live tracking is updated)
   useEffect(() => {
     const fetchOrder = async () => {
-      // First try to get from context (localStorage)
+      // First try to get from context (localStorage) for instant UI rendering
       const contextOrder = getOrderById(orderId)
       if (contextOrder) {
         // Ensure restaurant location is available in context order
@@ -363,19 +363,15 @@ export default function OrderTracking() {
             coordinates: contextOrder.restaurantId.location.coordinates
           };
         }
-        // Also ensure restaurantId is present
-        if (!contextOrder.restaurantId && contextOrder.restaurant) {
-          // Try to preserve restaurantId if it exists
-          console.log('⚠️ Context order missing restaurantId, will fetch from API');
-        }
         setOrder(contextOrder)
+        // Don't set loading to true since we already have data to show
         setLoading(false)
-        return
+      } else {
+        setLoading(true)
       }
 
-      // If not in context, fetch from API
+      // ALWAYS fetch fresh data from API to ensure tracking state is accurate
       try {
-        setLoading(true)
         setError(null)
 
         const response = await orderAPI.getOrderDetails(orderId)
@@ -1055,6 +1051,11 @@ export default function OrderTracking() {
               title={`Delivery Partner: ${order.deliveryPartner.name}`}
               subtitle={order.deliveryPartner.phone || 'Phone number not available'}
               showArrow={false}
+              onClick={() => {
+                if (order.deliveryPartner.phone) {
+                  window.location.href = `tel:${order.deliveryPartner.phone}`
+                }
+              }}
             />
           )}
           {/* Add delivery instructions removed as requested */}

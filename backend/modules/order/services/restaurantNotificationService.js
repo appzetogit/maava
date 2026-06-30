@@ -246,10 +246,27 @@ export async function notifyRestaurantOrderUpdate(orderId, status) {
     // Get restaurant namespace
     const restaurantNamespace = io.of('/restaurant');
 
-    restaurantNamespace.to(`restaurant:${order.restaurantId}`).emit('order_status_update', {
-      orderId: order.orderId,
-      status,
-      updatedAt: new Date()
+    const normalizedRestaurantId = order.restaurantId?.toString() || order.restaurantId;
+    
+    const roomVariations = [
+      `restaurant:${normalizedRestaurantId}`
+    ];
+    
+    // Add ObjectId variation if valid
+    if (mongoose.Types.ObjectId.isValid(normalizedRestaurantId)) {
+      const objectIdStr = new mongoose.Types.ObjectId(normalizedRestaurantId).toString();
+      if (!roomVariations.includes(`restaurant:${objectIdStr}`)) {
+        roomVariations.push(`restaurant:${objectIdStr}`);
+      }
+    }
+
+    // Emit to all room variations
+    roomVariations.forEach(room => {
+      restaurantNamespace.to(room).emit('order_status_update', {
+        orderId: order.orderId,
+        status,
+        updatedAt: new Date()
+      });
     });
 
     // --- PUSH NOTIFICATION ---
