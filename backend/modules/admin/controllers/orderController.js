@@ -199,6 +199,30 @@ export const getOrders = asyncHandler(async (req, res) => {
     // Get total count
     const total = await Order.countDocuments(query);
 
+    // Get status counts (aggregation)
+    const statusCountsAgg = await Order.aggregate([
+      { $match: query },
+      { $group: { _id: "$status", count: { $sum: 1 } } }
+    ]);
+
+    const statusCounts = {
+      total: total,
+      scheduled: 0,
+      pending: 0,
+      confirmed: 0,
+      preparing: 0,
+      out_for_delivery: 0,
+      delivered: 0,
+      cancelled: 0,
+      dine_in: 0
+    };
+
+    statusCountsAgg.forEach(item => {
+      if (item._id && statusCounts[item._id] !== undefined) {
+        statusCounts[item._id] = item.count;
+      }
+    });
+
     // Batch fetch settlements for platform fee and refund status (more efficient than individual queries)
     let settlementMap = new Map();
     let refundStatusMap = new Map();
@@ -389,6 +413,7 @@ export const getOrders = asyncHandler(async (req, res) => {
 
     return successResponse(res, 200, 'Orders retrieved successfully', {
       orders: transformedOrders,
+      statusCounts: statusCounts,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
