@@ -468,6 +468,7 @@ export default function OrderTracking() {
             createdAt: apiOrder.createdAt,
             deliveryPartner: apiOrder.deliveryPartnerId ? {
               name: apiOrder.deliveryPartnerId.name || 'Delivery Partner',
+              phone: apiOrder.deliveryPartnerId.phone || '',
               avatar: null
             } : null,
             deliveryPartnerId: apiOrder.deliveryPartnerId?._id || apiOrder.deliveryPartnerId || apiOrder.assignmentInfo?.deliveryPartnerId || null,
@@ -739,6 +740,7 @@ export default function OrderTracking() {
           createdAt: apiOrder.createdAt,
           deliveryPartner: apiOrder.deliveryPartnerId ? {
             name: apiOrder.deliveryPartnerId.name || 'Delivery Partner',
+            phone: apiOrder.deliveryPartnerId.phone || '',
             avatar: null
           } : null,
           tracking: apiOrder.tracking || {}
@@ -1047,6 +1049,14 @@ export default function OrderTracking() {
             })()}
             showArrow={false}
           />
+          {order?.deliveryPartner && (
+            <SectionItem
+              icon={Phone}
+              title={`Delivery Partner: ${order.deliveryPartner.name}`}
+              subtitle={order.deliveryPartner.phone || 'Phone number not available'}
+              showArrow={false}
+            />
+          )}
           {/* Add delivery instructions removed as requested */}
         </motion.div>
 

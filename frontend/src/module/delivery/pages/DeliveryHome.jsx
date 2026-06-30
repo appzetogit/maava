@@ -9411,6 +9411,23 @@ export default function DeliveryHome() {
                     </p>
                   </div>
 
+                  {/* Order Items */}
+                  {(newOrder?.items?.length > 0 || selectedRestaurant?.items?.length > 0) && (
+                    <div className="mb-4">
+                      <p className="text-gray-500 text-xs mb-1">Order Items</p>
+                      <div className="bg-gray-50 rounded-xl p-3 max-h-32 overflow-y-auto border border-gray-100">
+                        {(newOrder?.items || selectedRestaurant?.items)?.map((item, index) => (
+                          <div key={index} className="flex justify-between items-start mb-2 last:mb-0 border-b border-gray-100 last:border-0 pb-2 last:pb-0">
+                            <div className="flex-1 pr-2">
+                              <span className="text-sm font-semibold text-gray-900 leading-tight block">{item.quantity}x {item.name}</span>
+                            </div>
+                            <span className="text-sm font-bold text-gray-900 shrink-0">₹{(item.price * item.quantity).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Pickup Details */}
                   <div className="bg-gray-50 rounded-xl p-4 mb-6">
                     <div className="mb-3">
@@ -9993,6 +10010,23 @@ export default function DeliveryHome() {
                 {selectedRestaurant?.orderId || selectedRestaurant?.id || newOrder?.orderId || newOrder?.orderMongoId || 'ORD1234567890'}
               </p>
             </div>
+
+            {/* Order Items */}
+            {(selectedRestaurant?.items?.length > 0 || newOrder?.items?.length > 0) && (
+              <div className="mb-6 text-left">
+                <p className="text-gray-500 text-xs mb-1">Order Items</p>
+                <div className="bg-gray-50 rounded-xl p-3 max-h-32 overflow-y-auto border border-gray-100">
+                  {(selectedRestaurant?.items || newOrder?.items)?.map((item, index) => (
+                    <div key={index} className="flex justify-between items-start mb-2 last:mb-0 border-b border-gray-100 last:border-0 pb-2 last:pb-0">
+                      <div className="flex-1 pr-2">
+                        <span className="text-sm font-semibold text-gray-900 leading-tight block">{item.quantity}x {item.name}</span>
+                      </div>
+                      <span className="text-sm font-bold text-gray-900 shrink-0">₹{(item.price * item.quantity).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Bill Image Upload Section */}
             <div className="mb-6">

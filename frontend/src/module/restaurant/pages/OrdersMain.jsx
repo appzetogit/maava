@@ -2006,6 +2006,7 @@ function OrderCard({
   mongoId,
   status,
   customerName,
+  customerPhone,
   type,
   tableOrToken,
   timePlaced,
@@ -2014,6 +2015,8 @@ function OrderCard({
   photoUrl,
   photoAlt,
   deliveryPartnerId,
+  deliveryPartnerName,
+  deliveryPartnerPhone,
   note,
   onSelect,
   onCancel,
@@ -2079,7 +2082,7 @@ function OrderCard({
                 Order #{orderId}
               </p>
               <p className="text-[11px] text-gray-500 mt-1">
-                {customerName}
+                {customerName} {customerPhone && `• ${customerPhone}`}
               </p>
             </div>
 
@@ -2124,17 +2127,24 @@ function OrderCard({
               </p>
               {/* Delivery Assignment Status - show for preparing and ready orders */}
               {(status === 'preparing' || status === 'ready') && (
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${deliveryPartnerId
-                    ? 'bg-green-100 text-green-700 border border-green-300'
-                    : 'bg-orange-100 text-orange-700 border border-orange-300'
-                    }`}>
-                    <span className={`h-1.5 w-1.5 rounded-full ${deliveryPartnerId ? 'bg-green-500' : 'bg-orange-500'
-                      }`} />
-                    {deliveryPartnerId ? 'Assigned' : 'Not Assigned'}
-                  </span>
-                  {!deliveryPartnerId && (
-                    <ResendNotificationButton orderId={orderId} mongoId={mongoId} onSuccess={onSelect} />
+                <div className="flex flex-col gap-1 mt-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium shrink-0 ${deliveryPartnerId
+                      ? 'bg-green-100 text-green-700 border border-green-300'
+                      : 'bg-orange-100 text-orange-700 border border-orange-300'
+                      }`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${deliveryPartnerId ? 'bg-green-500' : 'bg-orange-500'
+                        }`} />
+                      {deliveryPartnerId ? 'Assigned' : 'Not Assigned'}
+                    </span>
+                    {!deliveryPartnerId && (
+                      <ResendNotificationButton orderId={orderId} mongoId={mongoId} onSuccess={onSelect} />
+                    )}
+                  </div>
+                  {deliveryPartnerId && deliveryPartnerName && (
+                    <span className="text-[10px] text-gray-600 font-medium leading-tight">
+                      {deliveryPartnerName} • {deliveryPartnerPhone}
+                    </span>
                   )}
                 </div>
               )}
@@ -2200,6 +2210,7 @@ function PreparingOrders({ onSelectOrder, onCancel, onMarkReady }) {
               mongoId: order._id,
               status: order.status || 'preparing',
               customerName: order.userId?.name || 'Customer',
+              customerPhone: order.userId?.phone || null,
               type: order.deliveryFleet === 'standard' ? 'Home Delivery' : 'Express Delivery',
               tableOrToken: null,
               timePlaced: new Date(order.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
@@ -2208,7 +2219,9 @@ function PreparingOrders({ onSelectOrder, onCancel, onMarkReady }) {
               itemsSummary: order.items?.map(item => `${item.quantity}x ${item.name}`).join(', ') || 'No items',
               photoUrl: order.items?.[0]?.image || null,
               photoAlt: order.items?.[0]?.name || 'Order',
-              deliveryPartnerId: order.deliveryPartnerId || null, // Track if delivery partner is assigned
+              deliveryPartnerId: order.deliveryPartnerId?._id || order.deliveryPartnerId || null,
+              deliveryPartnerName: order.deliveryPartnerId?.name || null,
+              deliveryPartnerPhone: order.deliveryPartnerId?.phone || null,
               note: order.note || ''
             }
           })
@@ -2399,6 +2412,8 @@ function PreparingOrders({ onSelectOrder, onCancel, onMarkReady }) {
                 photoUrl={order.photoUrl}
                 photoAlt={order.photoAlt}
                 deliveryPartnerId={order.deliveryPartnerId}
+                deliveryPartnerName={order.deliveryPartnerName}
+                deliveryPartnerPhone={order.deliveryPartnerPhone}
                 note={order.note}
                 onSelect={onSelectOrder}
                 onCancel={onCancel}
@@ -2442,6 +2457,7 @@ function ReadyOrders({ onSelectOrder, onCancel }) {
             mongoId: order._id,
             status: order.status || 'ready',
             customerName: order.userId?.name || 'Customer',
+            customerPhone: order.userId?.phone || null,
             type: order.deliveryFleet === 'standard' ? 'Home Delivery' : 'Express Delivery',
             tableOrToken: null,
             timePlaced: new Date(order.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
@@ -2449,6 +2465,9 @@ function ReadyOrders({ onSelectOrder, onCancel }) {
             itemsSummary: order.items?.map(item => `${item.quantity}x ${item.name}`).join(', ') || 'No items',
             photoUrl: order.items?.[0]?.image || null,
             photoAlt: order.items?.[0]?.name || 'Order',
+            deliveryPartnerId: order.deliveryPartnerId?._id || order.deliveryPartnerId || null,
+            deliveryPartnerName: order.deliveryPartnerId?.name || null,
+            deliveryPartnerPhone: order.deliveryPartnerId?.phone || null,
             note: order.note || ''
           }))
 
@@ -2565,6 +2584,7 @@ const OutForDeliveryOrders = ({ onSelectOrder, onCancel }) => {
             mongoId: order._id,
             status: order.status || 'out_for_delivery',
             customerName: order.userId?.name || 'Customer',
+            customerPhone: order.userId?.phone || null,
             type: order.deliveryFleet === 'standard' ? 'Home Delivery' : 'Express Delivery',
             tableOrToken: null,
             timePlaced: new Date(order.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
@@ -2572,6 +2592,9 @@ const OutForDeliveryOrders = ({ onSelectOrder, onCancel }) => {
             itemsSummary: order.items?.map(item => `${item.quantity}x ${item.name}`).join(', ') || 'No items',
             photoUrl: order.items?.[0]?.image || null,
             photoAlt: order.items?.[0]?.name || 'Order',
+            deliveryPartnerId: order.deliveryPartnerId?._id || order.deliveryPartnerId || null,
+            deliveryPartnerName: order.deliveryPartnerId?.name || null,
+            deliveryPartnerPhone: order.deliveryPartnerId?.phone || null,
             note: order.note || ''
           }))
 
