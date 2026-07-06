@@ -114,16 +114,32 @@ export function HibermartCartProvider({ children }) {
 
     setCart((prev) => {
       const existingItem = prev.find((i) => i.id === itemId)
-      if (existingItem && quantity < existingItem.quantity && sourcePosition && productInfo) {
-        setLastRemoveEvent({
-          product: {
-            id: productInfo.id || existingItem.id,
-            name: productInfo.name || existingItem.name,
-            imageUrl: productInfo.imageUrl || productInfo.image || existingItem.image || existingItem.imageUrl,
-          },
-          sourcePosition,
-        })
-        setTimeout(() => setLastRemoveEvent(null), 1500)
+      if (existingItem && sourcePosition && productInfo) {
+        if (quantity < existingItem.quantity) {
+          // Set last remove event for animation when decreasing quantity
+          setLastRemoveEvent({
+            product: {
+              id: productInfo.id || existingItem.id,
+              name: productInfo.name || existingItem.name,
+              imageUrl: productInfo.imageUrl || productInfo.image || existingItem.image || existingItem.imageUrl,
+            },
+            sourcePosition,
+          })
+          // Clear after animation completes
+          setTimeout(() => setLastRemoveEvent(null), 1500)
+        } else if (quantity > existingItem.quantity) {
+          // Set last add event for animation when increasing quantity
+          setLastAddEvent({
+            product: {
+              id: productInfo.id || existingItem.id,
+              name: productInfo.name || existingItem.name,
+              imageUrl: productInfo.imageUrl || productInfo.image || existingItem.image || existingItem.imageUrl,
+            },
+            sourcePosition,
+          })
+          // Clear after animation completes
+          setTimeout(() => setLastAddEvent(null), 1500)
+        }
       }
       return prev.map((i) => (i.id === itemId ? { ...i, quantity } : i))
     })
