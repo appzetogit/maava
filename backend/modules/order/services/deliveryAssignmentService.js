@@ -109,7 +109,7 @@ export async function findNearestDeliveryBoys(restaurantLat, restaurantLng, rest
     }
 
     const deliveryPartners = await Delivery.find(deliveryQuery)
-      .select('_id name phone availability.currentLocation availability.lastLocationUpdate status isActive zoneId')
+      .select('_id name phone availability.currentLocation availability.lastLocationUpdate status isActive availability.zones')
       .lean();
 
     console.log(`📊 Found ${deliveryPartners?.length || 0} online delivery partners`);
@@ -133,12 +133,16 @@ export async function findNearestDeliveryBoys(restaurantLat, restaurantLng, rest
         let lat = null, lng = null, distance = LARGE_DISTANCE;
 
         // Zone filtering - apply ALWAYS, even if no GPS location
+        let hasZoneMatch = false;
+        const partnerZones = partner.availability?.zones || [];
+
         if (zone) {
-          if (partner.zoneId && partner.zoneId.toString() !== zone._id.toString()) {
-            return null; // Explicitly in a different zone
+          if (partnerZones.length > 0) {
+            hasZoneMatch = partnerZones.some(z => z.toString() === zone._id.toString());
+            if (!hasZoneMatch) return null; // Explicitly in a different zone
           }
-          // If no GPS, but zoneId doesn't match/exist, we have to assume they aren't here
-          if (!hasValidLocation && !partner.zoneId) {
+          // If no GPS, but zone doesn't match/exist, we have to assume they aren't here
+          if (!hasValidLocation && partnerZones.length === 0) {
             return null;
           }
         }
@@ -146,8 +150,8 @@ export async function findNearestDeliveryBoys(restaurantLat, restaurantLng, rest
         if (hasValidLocation) {
           [lng, lat] = location.coordinates;
 
-          // Geo-spatial check if zone exists and partner doesn't explicitly have zoneId
-          if (zone && !partner.zoneId && zone.coordinates && zone.coordinates.length >= 3) {
+          // Geo-spatial check if zone exists and partner doesn't explicitly have zone assigned
+          if (zone && partnerZones.length === 0 && zone.coordinates && zone.coordinates.length >= 3) {
             const zoneCoords = zone.coordinates;
             let inside = false;
             for (let i = 0, j = zoneCoords.length - 1; i < zoneCoords.length; j = i++) {
@@ -174,7 +178,7 @@ export async function findNearestDeliveryBoys(restaurantLat, restaurantLng, rest
           latitude: lat,
           longitude: lng,
           hasValidLocation,
-          zoneId: partner.zoneId || null
+          zoneId: partnerZones.length > 0 ? partnerZones[0] : null
         };
       })
       .filter(partner => {
@@ -309,7 +313,7 @@ export async function findNearestDeliveryBoy(restaurantLat, restaurantLng, resta
 
     // Find all online delivery partners (with zone filter if applicable)
     const deliveryPartners = await Delivery.find(deliveryQuery)
-      .select('_id name phone availability.currentLocation availability.lastLocationUpdate status isActive zoneId')
+      .select('_id name phone availability.currentLocation availability.lastLocationUpdate status isActive availability.zones')
       .lean();
 
     console.log(`📊 Found ${deliveryPartners?.length || 0} online delivery partners in database`);
@@ -346,17 +350,22 @@ export async function findNearestDeliveryBoy(restaurantLat, restaurantLng, resta
           return null;
         }
 
+        const partnerZones = partner.availability?.zones || [];
+
         // Filter by zone if zone exists
         if (zone) {
-          // Option A: Check zoneId match (when zoneId is added to Delivery model)
-          if (partner.zoneId && partner.zoneId.toString() !== zone._id.toString()) {
-            console.log(`⚠️ Delivery partner ${partner._id} not in zone ${zone.name} (partner zone: ${partner.zoneId}, required zone: ${zone._id})`);
-            return null; // Skip delivery partners not in the restaurant's zone
+          // Option A: Check zone match
+          if (partnerZones.length > 0) {
+            const hasZoneMatch = partnerZones.some(z => z.toString() === zone._id.toString());
+            if (!hasZoneMatch) {
+              console.log(`⚠️ Delivery partner ${partner._id} not in zone ${zone.name}`);
+              return null; // Skip delivery partners not in the restaurant's zone
+            }
           }
 
-          // Option B: Geo-spatial check (point-in-polygon) if zoneId not available
+          // Option B: Geo-spatial check (point-in-polygon) if zone explicitly not assigned
           // Simple point-in-polygon using ray casting algorithm
-          if (!partner.zoneId && zone.coordinates && zone.coordinates.length >= 3) {
+          if (partnerZones.length === 0 && zone.coordinates && zone.coordinates.length >= 3) {
             // Zone coordinates: [{ latitude, longitude }, ...]
             const zoneCoords = zone.coordinates;
             let inside = false;
@@ -387,7 +396,7 @@ export async function findNearestDeliveryBoy(restaurantLat, restaurantLng, resta
           distance,
           latitude: lat,
           longitude: lng,
-          zoneId: partner.zoneId || null
+          zoneId: partnerZones.length > 0 ? partnerZones[0] : null
         };
       })
       .filter(partner => partner !== null && partner.distance <= maxDistance)

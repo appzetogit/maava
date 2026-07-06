@@ -4,6 +4,7 @@ import { Plus, Minus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCart } from "../context/CartContext"
 import { useHibermartCart } from "../context/HibermartCartContext"
+import { toast } from "sonner"
 
 export default function AddToCartButton({ item, className = "", disabled = false, size = "sm", onClickAction, onModalStateChange }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -55,7 +56,8 @@ export default function AddToCartButton({ item, className = "", disabled = false
     }
     
     const sourcePosition = getSourcePosition(e)
-    addToCart(item, sourcePosition)
+    const result = addToCart(item, sourcePosition)
+    if (result !== false) toast.success("Item added", { duration: 1500, position: 'top-center' })
     if (onClickAction) onClickAction(false) // Pass false indicating it has no variations
   }
 
@@ -235,7 +237,8 @@ export default function AddToCartButton({ item, className = "", disabled = false
                               variationId: variation.id,
                               variationName: variation.name
                             }
-                            addToCart(itemToAdd, getSourcePosition(e))
+                            const result = addToCart(itemToAdd, getSourcePosition(e))
+                            if (result !== false) toast.success("Item added", { duration: 1500, position: 'top-center' })
                           }}
                         >
                           ADD
