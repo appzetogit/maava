@@ -410,10 +410,16 @@ export const acceptOrder = asyncHandler(async (req, res) => {
             console.error(`❌ Could not populate order ${order.orderId} for notification`);
           } else if (restaurantLat !== null && restaurantLng !== null) {
             // We have restaurant location — do priority-based notification
-            const priorityDeliveryBoys = await findNearestDeliveryBoys(restaurantLat, restaurantLng, restaurantId, 5);
+            const priorityDeliveryBoys = await findNearestDeliveryBoys(
+              restaurantLat,
+              restaurantLng,
+              restaurantId,
+              20, // 20km radius
+              10  // Top 10 nearest
+            );
 
             if (priorityDeliveryBoys && priorityDeliveryBoys.length > 0) {
-              console.log(`✅ Found ${priorityDeliveryBoys.length} priority delivery partners within 5km`);
+              console.log(`✅ Found ${priorityDeliveryBoys.length} priority delivery partners within 20km`);
 
               // Store priority notification info in order
               freshOrder.assignmentInfo = {
@@ -426,69 +432,33 @@ export const acceptOrder = asyncHandler(async (req, res) => {
               const priorityIds = priorityDeliveryBoys.map(db => db.deliveryPartnerId);
               await notifyMultipleDeliveryBoys(populatedOrder, priorityIds, 'priority');
               console.log(`✅ Notified ${priorityIds.length} priority delivery partners for order ${order.orderId}`);
-
-              // Step 2: Set timeout to expand to other delivery boys after 30 seconds
-              setTimeout(async () => {
-                try {
-                  const checkOrder = await Order.findById(order._id);
-                  if (!checkOrder || checkOrder.deliveryPartnerId) {
-                    console.log(`ℹ️ Order ${order.orderId} already assigned, skipping expanded notification`);
-                    return;
-                  }
-
-                  console.log(`⏰ 30 seconds passed, expanding notification for order ${order.orderId}`);
-
-                  const allDeliveryBoys = await findNearestDeliveryBoys(
-                    restaurantLat,
-                    restaurantLng,
-                    restaurantId,
-                    50
-                  );
-
-                  const expandedDeliveryBoys = allDeliveryBoys.filter(
-                    db => !priorityIds.includes(db.deliveryPartnerId)
-                  );
-
-                  if (expandedDeliveryBoys && expandedDeliveryBoys.length > 0) {
-                    const expandedIds = expandedDeliveryBoys.map(db => db.deliveryPartnerId);
-
-                    checkOrder.assignmentInfo = {
-                      ...(checkOrder.assignmentInfo || {}),
-                      expandedNotifiedAt: new Date(),
-                      expandedDeliveryPartnerIds: expandedIds,
-                      notificationPhase: 'expanded'
-                    };
-                    await checkOrder.save();
-
-                    const expandedOrder = await Order.findById(checkOrder._id)
-                      .populate('userId', 'name phone')
-                      .populate('restaurantId', 'name address location phone ownerPhone')
-                      .lean();
-
-                    if (expandedOrder) {
-                      await notifyMultipleDeliveryBoys(expandedOrder, expandedIds, 'expanded');
-                      console.log(`✅ Notified ${expandedIds.length} expanded delivery partners for order ${order.orderId}`);
-                    }
-                  } else {
-                    // Even at expanded stage, do a broadcast as final fallback
-                    console.warn(`⚠️ No additional delivery partners found; broadcasting expanded for order ${order.orderId}`);
-                    await notifyMultipleDeliveryBoys(populatedOrder, [], 'expanded-broadcast');
-                  }
-                } catch (expandError) {
-                  console.error(`❌ Error in expanded notification for order ${order.orderId}:`, expandError);
-                }
-              }, 30000);
             } else {
-              // No priority delivery boys found via DB — try wider radius
-              console.log(`⚠️ No priority delivery partners in DB, searching wider area...`);
-              const anyDeliveryBoy = await findNearestDeliveryBoy(restaurantLat, restaurantLng, restaurantId, 50);
+              console.log(`⚠️ No priority delivery partners within 20km, searching up to 50km...`);
+              
+              const allDeliveryBoys = await findNearestDeliveryBoys(
+                restaurantLat,
+                restaurantLng,
+                restaurantId,
+                50, // 50km radius
+                20  // Top 20 nearest
+              );
 
-              if (anyDeliveryBoy) {
-                await notifyMultipleDeliveryBoys(populatedOrder, [anyDeliveryBoy.deliveryPartnerId], 'immediate');
-                console.log(`✅ Notified delivery partner immediately for order ${order.orderId}`);
+              if (allDeliveryBoys && allDeliveryBoys.length > 0) {
+                const expandedIds = allDeliveryBoys.map(db => db.deliveryPartnerId);
+
+                freshOrder.assignmentInfo = {
+                  ...(freshOrder.assignmentInfo || {}),
+                  expandedNotifiedAt: new Date(),
+                  expandedDeliveryPartnerIds: expandedIds,
+                  notificationPhase: 'expanded'
+                };
+                await freshOrder.save();
+
+                await notifyMultipleDeliveryBoys(populatedOrder, expandedIds, 'expanded');
+                console.log(`✅ Notified ${expandedIds.length} expanded delivery partners for order ${order.orderId}`);
               } else {
                 // Broadcast to all sockets — last resort
-                console.warn(`⚠️ No delivery partners found in DB. Broadcasting to all connected sockets.`);
+                console.warn(`⚠️ No delivery partners found in DB up to 50km. Broadcasting to all connected sockets.`);
                 await notifyMultipleDeliveryBoys(populatedOrder, [], 'broadcast');
                 console.log(`✅ Broadcast notification sent for order ${order.orderId}`);
               }

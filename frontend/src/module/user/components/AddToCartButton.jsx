@@ -166,7 +166,7 @@ export default function AddToCartButton({ item, className = "", disabled = false
           }}
         >
           <div 
-            className="bg-white w-full sm:w-[400px] sm:rounded-xl rounded-t-xl p-5 shadow-xl animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10 max-h-[90vh] flex flex-col"
+            className="bg-white w-full sm:w-[400px] sm:rounded-xl rounded-t-xl p-5 pb-24 sm:pb-5 shadow-xl animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10 max-h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-start mb-4 border-b border-gray-100 pb-3">

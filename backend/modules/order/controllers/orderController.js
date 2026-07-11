@@ -1200,7 +1200,7 @@ export const getUserOrders = async (req, res) => {
 
     // Only show confirmed/completed/delivered orders for online payments
     // Pending orders are only shown for COD or wallet
-    const allowedStatuses = ['confirmed', 'completed', 'delivered'];
+    const allowedStatuses = ['confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered', 'completed', 'cancelled'];
 
     if (status) {
       // If status is explicitly requested, use it
