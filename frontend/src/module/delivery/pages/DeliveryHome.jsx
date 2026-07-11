@@ -4120,7 +4120,8 @@ export default function DeliveryHome() {
       }
 
       // Check if available cash limit is exhausted
-      if (availableCashLimit <= 0) {
+      // Only block if wallet state has been fully loaded (totalCashLimit is defined)
+      if (walletState?.totalCashLimit !== undefined && availableCashLimit <= 0) {
         console.log('🚫 Available cash limit exhausted, ignoring order request');
         toast.error("Cash Limit Exhausted", {
           description: "Settlement your amount to start getting orders.",
