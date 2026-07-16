@@ -20,7 +20,8 @@ import {
   Settings as SettingsIcon,
   Power,
   ShoppingCart,
-  BellRing
+  BellRing,
+  MessageCircle
 } from "lucide-react"
 
 import AnimatedPage from "../../components/AnimatedPage"
@@ -645,7 +646,14 @@ export default function Profile() {
                         whileHover={{ rotate: 15, scale: 1.1 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <Info className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                        <svg 
+                          xmlns="http://www.w3.org/2000/svg" 
+                          className="h-5 w-5 text-gray-700 dark:text-gray-300" 
+                          viewBox="0 0 24 24" 
+                          fill="currentColor"
+                        >
+                          <path d="M12.031 0C5.406 0 .025 5.38.025 12.008c0 2.124.55 4.195 1.597 6.023L0 24l6.113-1.603c1.763.953 3.753 1.455 5.918 1.455 6.623 0 12.002-5.38 12.002-12.008S18.654 0 12.031 0zm6.544 17.37c-.276.776-1.585 1.472-2.183 1.547-.55.071-1.258.117-4.048-1.04-3.37-1.396-5.568-4.836-5.735-5.062-.167-.225-1.371-1.823-1.371-3.48 0-1.657.859-2.475 1.164-2.812.305-.337.666-.421.888-.421.222 0 .445.002.639.011.205.011.482-.08.734.526.252.607.86 2.102.937 2.253.078.151.13.328.025.54-.105.21-.157.34-.314.526-.157.185-.333.407-.474.55-.157.167-.323.344-.136.666.185.323.824 1.365 1.77 2.208 1.221 1.087 2.235 1.42 2.553 1.57.318.151.503.125.69-.089.185-.214.793-.923 1.004-1.242.21-.318.421-.264.714-.151.292.112 1.848.872 2.162 1.03.314.157.525.236.602.368.077.132.077.765-.199 1.541z"/>
+                        </svg>
                       </motion.div>
                       <span className="text-base font-medium text-gray-900 dark:text-white">Support</span>
                     </div>
