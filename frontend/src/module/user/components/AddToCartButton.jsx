@@ -57,7 +57,9 @@ export default function AddToCartButton({ item, className = "", disabled = false
     
     const sourcePosition = getSourcePosition(e)
     const result = addToCart(item, sourcePosition)
-    if (result !== false) toast.success("Item added", { duration: 1500, position: 'top-center' })
+    if (result !== false) {
+      // toast removed per user request
+    }
     if (onClickAction) onClickAction(false) // Pass false indicating it has no variations
   }
 
@@ -238,7 +240,7 @@ export default function AddToCartButton({ item, className = "", disabled = false
                               variationName: variation.name
                             }
                             const result = addToCart(itemToAdd, getSourcePosition(e))
-                            if (result !== false) toast.success("Item added", { duration: 1500, position: 'top-center' })
+                            // if (result !== false) toast.success("Item added", { duration: 1500, position: 'top-center' })
                           }}
                         >
                           ADD
