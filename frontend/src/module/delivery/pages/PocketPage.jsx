@@ -784,7 +784,7 @@ export default function PocketPage() {
       )}
 
       {/* Available Cash Limit Warning */}
-      {availableCashLimit <= 0 && (
+      {walletState?.totalCashLimit !== undefined && availableCashLimit <= 0 && (
         <div className="mx-4 mt-4 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3 shadow-sm">
           <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0 text-red-600">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
