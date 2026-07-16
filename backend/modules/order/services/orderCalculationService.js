@@ -65,6 +65,29 @@ const getFeeSettings = async (deliveryAddress = null) => {
 };
 
 /**
+ * Calculate distance between two coordinates (Haversine formula)
+ * Returns distance in kilometers
+ */
+export const calculateDistance = (coord1, coord2) => {
+  const [lng1, lat1] = coord1;
+  const [lng2, lat2] = coord2;
+  
+  const R = 6371; // Earth's radius in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c;
+  
+  return distance;
+};
+
+/**
  * Calculate delivery fee based on order value, distance, and restaurant settings
  */
 export const calculateDeliveryFee = async (orderValue, restaurant, deliveryAddress = null) => {
@@ -84,44 +107,29 @@ export const calculateDeliveryFee = async (orderValue, restaurant, deliveryAddre
     }
   }
   
-  // Check if delivery fee ranges are configured
-  if (feeSettings.deliveryFeeRanges && Array.isArray(feeSettings.deliveryFeeRanges) && feeSettings.deliveryFeeRanges.length > 0) {
-    // Sort ranges by min value to ensure proper checking
-    const sortedRanges = [...feeSettings.deliveryFeeRanges].sort((a, b) => a.min - b.min);
-    
-    // Find matching range (orderValue >= min && orderValue < max)
-    // For the last range, we check orderValue >= min && orderValue <= max
-    for (let i = 0; i < sortedRanges.length; i++) {
-      const range = sortedRanges[i];
-      const isLastRange = i === sortedRanges.length - 1;
-      
-      if (isLastRange) {
-        // Last range: include max value
-        if (orderValue >= range.min && orderValue <= range.max) {
-          return range.fee;
-        }
-      } else {
-        // Other ranges: exclude max value (handled by next range)
-        if (orderValue >= range.min && orderValue < range.max) {
-          return range.fee;
-        }
-      }
-    }
+  // Calculate distance if available
+  let distance = 0;
+  if (deliveryAddress?.location?.coordinates && restaurant?.location?.coordinates) {
+    distance = calculateDistance(
+      restaurant.location.coordinates,
+      deliveryAddress.location.coordinates
+    );
+  } else if (deliveryAddress?.location?.coordinates && restaurant?.location?.latitude && restaurant?.location?.longitude) {
+    distance = calculateDistance(
+      [restaurant.location.longitude, restaurant.location.latitude],
+      deliveryAddress.location.coordinates
+    );
   }
   
-  // Fallback to default delivery fee if no range matches
-  const baseDeliveryFee = feeSettings.deliveryFee ?? 25;
-  
-  // TODO: Add distance-based calculation when address coordinates are available
-  // if (deliveryAddress?.location?.coordinates && restaurant?.location?.coordinates) {
-  //   const distance = calculateDistance(
-  //     restaurant.location.coordinates,
-  //     deliveryAddress.location.coordinates
-  //   );
-  //   deliveryFee = baseFee + (distance * perKmFee);
-  // }
-  
-  return baseDeliveryFee;
+  try {
+    const DeliveryBoyCommission = (await import('../../admin/models/DeliveryBoyCommission.js')).default;
+    const commissionResult = await DeliveryBoyCommission.calculateCommission(distance);
+    return commissionResult.commission;
+  } catch (error) {
+    console.error('Error calculating delivery fee from commission rule:', error);
+    // Fallback to default delivery fee if commission rule fails
+    return feeSettings.deliveryFee ?? 25;
+  }
 };
 
 /**
@@ -168,28 +176,6 @@ export const calculateDiscount = (coupon, subtotal) => {
   return Math.min(coupon.discount || 0, subtotal);
 };
 
-/**
- * Calculate distance between two coordinates (Haversine formula)
- * Returns distance in kilometers
- */
-export const calculateDistance = (coord1, coord2) => {
-  const [lng1, lat1] = coord1;
-  const [lng2, lat2] = coord2;
-  
-  const R = 6371; // Earth's radius in kilometers
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  
-  const a = 
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const distance = R * c;
-  
-  return distance;
-};
 
 /**
  * Main function to calculate order pricing

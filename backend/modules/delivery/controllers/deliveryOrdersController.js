@@ -1859,38 +1859,45 @@ export const completeDelivery = asyncHandler(async (req, res) => {
     let totalEarning = 0;
     let commissionBreakdown = null;
 
-    try {
-      // Use DeliveryBoyCommission model to calculate commission based on distance
-      const commissionResult = await DeliveryBoyCommission.calculateCommission(deliveryDistance);
-      const tipAmount = order.pricing?.deliveryTip || 0;
-      totalEarning = commissionResult.commission + tipAmount;
+      // Base commission on actual distance calculated above
+      let calculatedCommission = 0;
+      let breakdown = null;
+      try {
+        const commissionResult = await DeliveryBoyCommission.calculateCommission(deliveryDistance);
+        calculatedCommission = commissionResult.commission;
+        breakdown = commissionResult.breakdown;
+      } catch (err) {
+        console.error('Error calculating commission from distance, falling back:', err);
+      }
+
+      // 🚨 CRITICAL FIX: Ensure delivery boy receives EXACTLY what the user paid for delivery!
+      // This prevents discrepancies between Cart (user payment) and Wallet (boy payout).
+      const userPaidDeliveryFee = Number(order.pricing?.deliveryFee) || calculatedCommission || 0;
+      const tipAmount = Number(order.pricing?.deliveryTip) || 0;
+      
+      totalEarning = userPaidDeliveryFee + tipAmount;
+
+      // Adjust breakdown visually if we are forcing the amount
       commissionBreakdown = {
-        ...commissionResult.breakdown,
+        ...(breakdown || { basePayout: userPaidDeliveryFee, distance: deliveryDistance, commissionPerKm: 0, distanceCommission: 0 }),
         tipAmount: tipAmount
       };
 
-      console.log(`💰 Delivery earnings calculated: ₹${totalEarning.toFixed(2)} (Commission: ₹${commissionResult.commission.toFixed(2)}, Tip: ₹${tipAmount.toFixed(2)}) for order ${orderIdForLog}`);
+      // Ensure the breakdown matches the forced amount for UI consistency
+      if (breakdown && userPaidDeliveryFee !== calculatedCommission) {
+         // Reconstruct visual distance commission so math adds up: Base + Distance = Total
+         const adjustedDistanceCommission = userPaidDeliveryFee - breakdown.basePayout;
+         commissionBreakdown.distanceCommission = adjustedDistanceCommission > 0 ? adjustedDistanceCommission : 0;
+      }
+
+      console.log(`💰 Delivery earnings calculated: ₹${totalEarning.toFixed(2)} (Base: ₹${userPaidDeliveryFee.toFixed(2)}, Tip: ₹${tipAmount.toFixed(2)}) for order ${orderIdForLog}`);
       console.log(`📊 Commission breakdown:`, {
-        rule: commissionResult.rule.name,
-        basePayout: commissionResult.breakdown.basePayout,
-        distance: commissionResult.breakdown.distance,
-        commissionPerKm: commissionResult.breakdown.commissionPerKm,
-        distanceCommission: commissionResult.breakdown.distanceCommission,
+        basePayout: commissionBreakdown.basePayout,
+        distance: commissionBreakdown.distance,
+        commissionPerKm: commissionBreakdown.commissionPerKm,
+        distanceCommission: commissionBreakdown.distanceCommission,
         total: totalEarning
       });
-    } catch (commissionError) {
-      console.error('⚠️ Error calculating commission using rules:', commissionError.message);
-      // Fallback: Use delivery fee as earnings if commission calculation fails
-      totalEarning = order.pricing?.deliveryFee || 0;
-      
-      // If still 0, use a bare minimum payout of ₹10 for delivery partners
-      if (totalEarning <= 0) {
-        totalEarning = 10;
-        console.warn(`⚠️ Using absolute minimum fallback earnings: ₹${totalEarning.toFixed(2)}`);
-      } else {
-        console.warn(`⚠️ Using fallback earnings (delivery fee): ₹${totalEarning.toFixed(2)}`);
-      }
-    }
     
     // Final check: Ensure delivery partner gets at least some minimum earning (e.g., ₹10)
     if (totalEarning <= 0) {

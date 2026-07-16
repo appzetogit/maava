@@ -119,18 +119,25 @@ export const calculateOrderSettlement = async (orderId) => {
       
       // Get surge multiplier (can be configured in order or settings)
       const surgeMultiplier = order.assignmentInfo?.surgeMultiplier || 1;
-      const baseEarning = deliveryCommission.commission;
+      
+      // 🚨 CRITICAL FIX: Ensure delivery boy receives EXACTLY what the user paid
+      const userPaidDeliveryFee = Number(order.pricing?.deliveryFee) || deliveryCommission.commission || 0;
+      const baseEarning = userPaidDeliveryFee;
+      
       const surgeAmount = baseEarning * (surgeMultiplier - 1);
+      const tipAmount = order.pricing?.deliveryTip || 0;
+      
+      const adjustedDistanceCommission = userPaidDeliveryFee - deliveryCommission.breakdown.basePayout;
 
       deliveryPartnerEarning = {
-        basePayout: deliveryCommission.breakdown.basePayout,
+        basePayout: userPaidDeliveryFee,
         distance: distance,
         commissionPerKm: deliveryCommission.breakdown.commissionPerKm,
-        distanceCommission: deliveryCommission.breakdown.distanceCommission,
+        distanceCommission: adjustedDistanceCommission > 0 ? adjustedDistanceCommission : 0,
         surgeMultiplier: surgeMultiplier,
         surgeAmount: surgeAmount,
-        tipAmount: (order.pricing.deliveryTip || 0),
-        totalEarning: baseEarning + surgeAmount + (order.pricing.deliveryTip || 0),
+        tipAmount: tipAmount,
+        totalEarning: baseEarning + surgeAmount + tipAmount,
         status: 'pending'
       };
     }

@@ -779,7 +779,7 @@ export default function Cart() {
         const response = await orderAPI.calculateOrder({
           items,
           restaurantId: restaurantData?.restaurantId || restaurantData?._id || restaurantId || null,
-          deliveryAddress: defaultAddress,
+          deliveryAddress: selectedAddressForOrder || defaultAddress,
           couponCode: appliedCoupon?.code || couponCode || null,
           deliveryFleet: 'standard'
         })
@@ -809,7 +809,7 @@ export default function Cart() {
     }
 
     calculatePricing()
-  }, [cart, defaultAddress, appliedCoupon, couponCode, restaurantId])
+  }, [cart, defaultAddress, selectedAddressForOrder, appliedCoupon, couponCode, restaurantId])
 
   // Fetch wallet balance
   useEffect(() => {
@@ -962,7 +962,7 @@ export default function Cart() {
           const response = await orderAPI.calculateOrder({
             items,
             restaurantId: restaurantData?.restaurantId || restaurantData?._id || restaurantId || null,
-            deliveryAddress: defaultAddress,
+            deliveryAddress: selectedAddressForOrder || defaultAddress,
             couponCode: coupon.code,
             deliveryFleet: 'standard'
           })
@@ -999,7 +999,7 @@ export default function Cart() {
         const response = await orderAPI.calculateOrder({
           items,
           restaurantId: restaurantData?.restaurantId || restaurantData?._id || restaurantId || null,
-          deliveryAddress: defaultAddress,
+          deliveryAddress: selectedAddressForOrder || defaultAddress,
           couponCode: null,
           deliveryFleet: 'standard'
         })

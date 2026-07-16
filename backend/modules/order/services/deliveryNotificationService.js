@@ -181,14 +181,22 @@ export async function notifyDeliveryBoyNewOrder(order, deliveryPartnerId) {
       deliveryDistance = calculateDistance(restaurantLat, restaurantLng, customerLat, customerLng);
     }
 
-    // Calculate estimated earnings; use order's delivery fee as fallback when 0 or distance missing
     const deliveryFeeFromOrder = order.pricing?.deliveryFee ?? 0;
     let estimatedEarnings = await calculateEstimatedEarnings(deliveryDistance || 0);
-    const earnedValue = typeof estimatedEarnings === 'object' ? (estimatedEarnings.totalEarning ?? 0) : (Number(estimatedEarnings) || 0);
-    if (earnedValue <= 0 && deliveryFeeFromOrder > 0) {
-      estimatedEarnings = typeof estimatedEarnings === 'object'
-        ? { ...estimatedEarnings, totalEarning: deliveryFeeFromOrder }
-        : deliveryFeeFromOrder;
+    
+    // 🚨 CRITICAL FIX: Always force estimatedEarnings to match exactly what the user paid
+    // This prevents discrepancies between the checkout fee, this pop-up, and the final wallet settlement.
+    if (deliveryFeeFromOrder > 0) {
+      if (typeof estimatedEarnings === 'object') {
+        const adjustedDistanceCommission = deliveryFeeFromOrder - (estimatedEarnings.basePayout || 0);
+        estimatedEarnings = {
+          ...estimatedEarnings,
+          totalEarning: deliveryFeeFromOrder,
+          distanceCommission: adjustedDistanceCommission > 0 ? adjustedDistanceCommission : 0
+        };
+      } else {
+        estimatedEarnings = deliveryFeeFromOrder;
+      }
     }
 
     // Prepare order notification data
@@ -487,21 +495,19 @@ export async function notifyMultipleDeliveryBoys(order, deliveryPartnerIds, phas
 
     try {
       estimatedEarnings = await calculateEstimatedEarnings(deliveryDistance);
-      const earnedValue = typeof estimatedEarnings === 'object' ? (estimatedEarnings.totalEarning ?? 0) : (Number(estimatedEarnings) || 0);
-
-      console.log(`💰 Earnings calculation result:`, {
-        estimatedEarnings,
-        earnedValue,
-        deliveryFeeFromOrder,
-        deliveryDistance
-      });
-
-      // Use deliveryFee as fallback if earnings is 0 or invalid
-      if (earnedValue <= 0 && deliveryFeeFromOrder > 0) {
-        console.log(`⚠️ Earnings is 0, using deliveryFee as fallback: ₹${deliveryFeeFromOrder}`);
-        estimatedEarnings = typeof estimatedEarnings === 'object'
-          ? { ...estimatedEarnings, totalEarning: deliveryFeeFromOrder }
-          : deliveryFeeFromOrder;
+      
+      // 🚨 CRITICAL FIX: Always force estimatedEarnings to match exactly what the user paid
+      if (deliveryFeeFromOrder > 0) {
+        if (typeof estimatedEarnings === 'object') {
+          const adjustedDistanceCommission = deliveryFeeFromOrder - (estimatedEarnings.basePayout || 0);
+          estimatedEarnings = {
+            ...estimatedEarnings,
+            totalEarning: deliveryFeeFromOrder,
+            distanceCommission: adjustedDistanceCommission > 0 ? adjustedDistanceCommission : 0
+          };
+        } else {
+          estimatedEarnings = deliveryFeeFromOrder;
+        }
       }
 
       console.log(`✅ Final estimated earnings for order ${orderWithUser.orderId}: ₹${typeof estimatedEarnings === 'object' ? estimatedEarnings.totalEarning : estimatedEarnings} (distance: ${deliveryDistance.toFixed(2)} km)`);
