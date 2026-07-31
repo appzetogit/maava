@@ -605,6 +605,10 @@ export const restaurantAPI = {
   getOfferById: (id) => {
     return apiClient.get(API_ENDPOINTS.RESTAURANT.OFFER_BY_ID.replace(':id', id));
   },
+  // Add getOrderById
+  getOrderById: (id) => {
+    return apiClient.get(API_ENDPOINTS.RESTAURANT.ORDER_BY_ID.replace(':id', id));
+  },
   updateOfferStatus: (id, status) => {
     return apiClient.put(API_ENDPOINTS.RESTAURANT.OFFER_STATUS.replace(':id', id), { status });
   },

@@ -8828,17 +8828,67 @@ export default function DeliveryHome() {
 
                 {/* Content Area - Shows map info when down */}
                 <div className="px-4 pb-6">
-                  {mapViewMode === "hotspot" ? (
-                    <div className="flex flex-col items-center">
-                      {/* <h3 className="text-lg font-bold text-gray-900 mb-2">No hotspots are available</h3>
-                  <p className="text-sm text-gray-600 mb-4">Please go online to see hotspots</p> */}
+                  {/* Today's Progress Card */}
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.3 }}
+                    className="w-full rounded-xl overflow-hidden shadow-lg bg-white"
+                  >
+                    {/* Header */}
+                    <div className="bg-black px-4 py-3 flex items-center gap-3">
+                      <div className="relative">
+                        <Calendar className="w-5 h-5 text-white" />
+                        <CheckCircle className="w-3 h-3 text-green-500 absolute -top-1 -right-1 bg-white rounded-full" fill="currentColor" />
+                      </div>
+                      <span className="text-white font-semibold">{t('delivery.todays_progress')}</span>
                     </div>
-                  ) : (
-                    <div className="flex flex-col items-center">
-                      {/* <h3 className="text-lg font-bold text-gray-900 mb-2">Select drop location</h3>
-                  <p className="text-sm text-gray-600 mb-4">Choose a drop location on the map</p> */}
+
+                    {/* Content */}
+                    <div className="p-4">
+                      {/* Grid Layout - 3 columns */}
+                      <div className="grid grid-cols-3 gap-2">
+                        {/* Top Left - Earnings */}
+                        <button
+                          onClick={() => navigate("/delivery/earnings")}
+                          className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity"
+                        >
+                          <span className="text-xl font-bold text-gray-900 truncate w-full text-center">
+                            {formatCurrency(todayEarnings)}
+                          </span>
+                          <div className="flex items-center gap-1 text-[10px] text-gray-500 uppercase font-semibold">
+                            <span>{t('delivery.earnings')}</span>
+                          </div>
+                        </button>
+
+                        {/* Top Right - Trips */}
+                        <button
+                          onClick={() => navigate("/delivery/trip-history")}
+                          className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity"
+                        >
+                          <span className="text-xl font-bold text-gray-900">
+                            {todayTrips}
+                          </span>
+                          <div className="flex items-center gap-1 text-[10px] text-gray-500 uppercase font-semibold">
+                            <span>{t('delivery.trips')}</span>
+                          </div>
+                        </button>
+
+                        {/* Bottom Left - Time on orders */}
+                        <button
+                          onClick={() => navigate("/delivery/time-on-orders")}
+                          className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity"
+                        >
+                          <span className="text-xl font-bold text-gray-900">
+                            {`${formatHours(todayHoursWorked)}`}
+                          </span>
+                          <div className="flex items-center gap-1 text-[10px] text-gray-500 uppercase font-semibold">
+                            <span>Time</span>
+                          </div>
+                        </button>
+                      </div>
                     </div>
-                  )}
+                  </motion.div>
                 </div>
               </motion.div>
             )}

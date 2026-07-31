@@ -2093,6 +2093,155 @@ function OrderCard({
 }) {
   const isReady = status.toLowerCase() === "ready"
 
+  const handlePrint = async (e) => {
+    e.stopPropagation();
+    try {
+      const toastId = toast.loading("Generating bill...");
+      
+      let itemsList = [];
+      let totalAmount = 0;
+      let subtotal = 0;
+      let tax = 0;
+      let deliveryFee = 0;
+      let packingFee = 0;
+      let discount = 0;
+      
+      try {
+        const response = await restaurantAPI.getOrderById(mongoId || orderId);
+        const fullOrder = response.data?.data?.order || response.data?.order || response.data;
+        
+        if (fullOrder && fullOrder.items) {
+          itemsList = fullOrder.items.map(item => ({
+            name: `${item.quantity}x ${item.name}`,
+            price: (item.price || item.unitPrice || 0) * item.quantity
+          }));
+          totalAmount = fullOrder.totalAmount || fullOrder.total || 0;
+          subtotal = fullOrder.subTotal || fullOrder.subtotal || 0;
+          tax = fullOrder.tax || fullOrder.taxes || 0;
+          deliveryFee = fullOrder.deliveryFee || 0;
+          packingFee = fullOrder.packingFee || fullOrder.restaurantCharges || 0;
+          discount = fullOrder.discount || 0;
+        } else {
+          throw new Error("Missing items");
+        }
+      } catch (err) {
+        console.warn("Failed to fetch full details for print, using summary", err);
+        itemsList = itemsSummary.split(', ').map(item => ({ name: item, price: null }));
+      }
+      
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: [80, 200] // 80mm thermal printer format
+      });
+      
+      let y = 10;
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("MAAVA receipt", 40, y, { align: "center" });
+      
+      y += 10;
+      doc.setFontSize(10);
+      doc.text(`Order ID: #${orderId}`, 10, y);
+      y += 6;
+      doc.text(`Time: ${timePlaced}`, 10, y);
+      y += 6;
+      doc.text(`Customer: ${customerName}`, 10, y);
+      if (customerPhone) {
+        y += 6;
+        doc.text(`Phone: ${customerPhone}`, 10, y);
+      }
+      y += 6;
+      doc.text(`Type: ${type}`, 10, y);
+      
+      y += 8;
+      doc.setLineWidth(0.5);
+      doc.line(10, y, 70, y);
+      y += 6;
+      
+      doc.setFont("helvetica", "bold");
+      doc.text("ITEMS", 10, y);
+      y += 6;
+      doc.setFont("helvetica", "normal");
+      
+      itemsList.forEach(item => {
+        const splitText = doc.splitTextToSize(item.name, 45);
+        doc.text(splitText, 10, y);
+        if (item.price !== null) {
+          doc.text(`Rs. ${item.price.toFixed(2)}`, 70, y, { align: 'right' });
+        }
+        y += (6 * splitText.length);
+      });
+      
+      y += 2;
+      doc.line(10, y, 70, y);
+      y += 6;
+      
+      if (subtotal > 0) {
+        doc.text("Subtotal:", 10, y);
+        doc.text(`Rs. ${subtotal.toFixed(2)}`, 70, y, { align: 'right' });
+        y += 6;
+      }
+      if (packingFee > 0) {
+        doc.text("Packing/Charges:", 10, y);
+        doc.text(`Rs. ${packingFee.toFixed(2)}`, 70, y, { align: 'right' });
+        y += 6;
+      }
+      if (tax > 0) {
+        doc.text("Tax:", 10, y);
+        doc.text(`Rs. ${tax.toFixed(2)}`, 70, y, { align: 'right' });
+        y += 6;
+      }
+      if (deliveryFee > 0) {
+        doc.text("Delivery Fee:", 10, y);
+        doc.text(`Rs. ${deliveryFee.toFixed(2)}`, 70, y, { align: 'right' });
+        y += 6;
+      }
+      if (discount > 0) {
+        doc.text("Discount:", 10, y);
+        doc.text(`-Rs. ${discount.toFixed(2)}`, 70, y, { align: 'right' });
+        y += 6;
+      }
+      
+      if (totalAmount > 0) {
+        y += 2;
+        doc.setFont("helvetica", "bold");
+        doc.text("Total Amount:", 10, y);
+        doc.text(`Rs. ${totalAmount.toFixed(2)}`, 70, y, { align: 'right' });
+        doc.setFont("helvetica", "normal");
+        y += 6;
+      }
+      
+      if (note) {
+        y += 2;
+        doc.line(10, y, 70, y);
+        y += 6;
+        doc.setFont("helvetica", "bold");
+        doc.text("Note:", 10, y);
+        y += 6;
+        doc.setFont("helvetica", "normal");
+        const splitNote = doc.splitTextToSize(note, 60);
+        doc.text(splitNote, 10, y);
+        y += (6 * splitNote.length);
+      }
+      
+      y += 2;
+      doc.line(10, y, 70, y);
+      y += 6;
+      
+      doc.setFontSize(10);
+      doc.text("Thank you!", 40, y, { align: "center" });
+      
+      toast.dismiss(toastId);
+      doc.autoPrint();
+      window.open(doc.output('bloburl'), '_blank');
+    } catch (err) {
+      console.error("Print error:", err);
+      toast.dismiss();
+      toast.error("Failed to generate bill");
+    }
+  };
+
   return (
     <div className="w-full bg-white rounded-2xl p-4 mb-3 border border-gray-200 hover:border-gray-400 transition-colors relative">
       {/* Cancel button - show for preparing and ready orders */}
@@ -2209,6 +2358,15 @@ function OrderCard({
                     {!deliveryPartnerId && (
                       <ResendNotificationButton orderId={orderId} mongoId={mongoId} onSuccess={onSelect} />
                     )}
+                    <button
+                      type="button"
+                      onClick={handlePrint}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition-colors ml-1"
+                      title="Print Bill"
+                    >
+                      <Printer className="w-3 h-3" />
+                      <span>Print</span>
+                    </button>
                   </div>
                   {deliveryPartnerId && deliveryPartnerName && (
                     <span className="text-[10px] text-gray-600 font-medium leading-tight">
