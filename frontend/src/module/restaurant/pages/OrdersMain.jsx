@@ -2233,8 +2233,8 @@ function OrderCard({
       doc.text("Thank you!", 40, y, { align: "center" });
       
       toast.dismiss(toastId);
-      doc.autoPrint();
-      window.open(doc.output('bloburl'), '_blank');
+      doc.save(`Bill_${orderId}.pdf`);
+      toast.success("Bill downloaded");
     } catch (err) {
       console.error("Print error:", err);
       toast.dismiss();
@@ -2292,7 +2292,7 @@ function OrderCard({
         </div>
 
         {/* Content */}
-        <div className="flex-1 flex flex-col justify-between min-h-[80px]">
+        <div className="flex-1 min-w-0 flex flex-col justify-between min-h-[80px]">
           {/* Top row */}
           <div className="flex items-start justify-between gap-2 pr-12">
             <div>
@@ -2378,24 +2378,24 @@ function OrderCard({
             </div>
 
           </div>
-
-          {/* Mark as Ready button - only show for preparing orders */}
-          {status === 'preparing' && onMarkReady && (
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMarkReady(mongoId || orderId);
-                }}
-                className="flex-1 bg-green-600 text-white py-2 rounded-xl text-xs font-bold hover:bg-green-700 transition-colors shadow-sm"
-              >
-                Mark as Ready
-              </button>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Mark as Ready button - moved outside flex row for full width on mobile without overflowing */}
+      {status === 'preparing' && onMarkReady && (
+        <div className="mt-3.5 pt-3 border-t border-gray-100 w-full flex">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMarkReady(mongoId || orderId);
+            }}
+            className="w-full bg-green-600 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-green-700 transition-colors shadow-sm flex items-center justify-center"
+          >
+            Mark as Ready
+          </button>
+        </div>
+      )}
     </div>
   )
 }
